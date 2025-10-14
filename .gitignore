@@ -1,0 +1,116 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Keep .env.production and .env.example for deployment reference
+
+# Security and sensitive files
+*.key
+*.pem
+*.cert
+*.crt
+*.p12
+*.pfx
+secret*
+secrets/
+config/secrets/
+ssl/
+keys/
+
+# Production builds
+/dist
+/build
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+database/
+backup/
+dumps/
+
+# Log files
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Uploads and user data
+uploads/
+temp/
+storage/
+
+# Security logs and monitoring
+security.log
+audit.log
+access.log
+error.log
+
+# Configuration backups
+*.backup
+*.bak
+*.orig
+
+# Docker secrets (if used)
+docker-compose.override.yml
+docker-compose.prod.yml
