@@ -50,7 +50,8 @@ exports.transactionLedgerController = {
             const purchases = await purchaseRepository.find({
                 where: {
                     businessId: Number(businessId),
-                }
+                },
+                relations: ['customer', 'items']
             });
             // 지급/수금 데이터 조회
             const payments = await paymentRepository.find({
@@ -95,14 +96,16 @@ exports.transactionLedgerController = {
             });
             // 매입 항목 추가
             purchases.forEach((purchase) => {
-                // 매입은 공급가액/세액 구분 없이 전체 금액만 표시
-                const totalAmount = purchase.totalAmount;
-                const supplyAmount = Math.round(totalAmount / 1.1);
-                const vatAmount = totalAmount - supplyAmount;
+                // Purchase의 totalAmount는 공급가액, vatAmount는 세액
+                const supplyAmount = purchase.totalAmount; // 공급가액
+                const vatAmount = purchase.vatAmount; // 세액
+                const totalAmount = supplyAmount + vatAmount; // 합계 (공급가액 + 세액)
                 runningBalance -= totalAmount;
+                // 품목 개수 계산
+                const itemCount = purchase.items?.length || 0;
                 entries.push({
                     id: purchase.id + 10000,
-                    date: (0, dayjs_1.default)(purchase.transactionDate).format('YYYY-MM-DD'),
+                    date: (0, dayjs_1.default)(purchase.purchaseDate).format('YYYY-MM-DD'),
                     type: 'purchase',
                     description: '매입',
                     customerName: customer.name,
@@ -111,7 +114,16 @@ exports.transactionLedgerController = {
                     vatAmount: vatAmount,
                     totalAmount: totalAmount,
                     balance: runningBalance,
-                    memo: purchase.description || '거래완료'
+                    memo: purchase.memo || '',
+                    itemCount: itemCount, // 품목 개수 추가
+                    itemInfo: purchase.items && purchase.items[0] ? {
+                        itemCode: purchase.items[0].productId?.toString() || '',
+                        itemName: purchase.items[0].productName || '',
+                        spec: purchase.items[0].spec || '',
+                        quantity: purchase.items[0].quantity || 0,
+                        unitPrice: purchase.items[0].unitPrice || 0,
+                        amount: purchase.items[0].amount || 0
+                    } : undefined
                 });
             });
             // 지급/수금 항목 추가

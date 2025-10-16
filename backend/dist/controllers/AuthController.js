@@ -96,19 +96,20 @@ exports.AuthController = {
             res.cookie('authToken', token, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
                 maxAge: 15 * 60 * 1000 // 15분
             });
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
             });
             res.status(201).json({
                 success: true,
                 message: '회원가입이 완료되었습니다.',
                 data: {
+                    token,
                     user: {
                         id: savedUser.id,
                         email: savedUser.email,
@@ -164,19 +165,20 @@ exports.AuthController = {
             res.cookie('authToken', token, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
                 maxAge: 15 * 60 * 1000 // 15분
             });
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
             });
             res.json({
                 success: true,
                 message: '로그인되었습니다.',
                 data: {
+                    token,
                     user: {
                         id: user.id,
                         email: user.email,
@@ -335,13 +337,13 @@ exports.AuthController = {
             res.cookie('authToken', newToken, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
                 maxAge: 15 * 60 * 1000 // 15분
             });
             res.cookie('refreshToken', newRefreshToken, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
             });
             res.json({

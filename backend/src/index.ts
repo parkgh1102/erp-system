@@ -72,6 +72,8 @@ app.use(cors({
     'http://localhost:5179',
     'http://localhost:5180',
     'http://192.168.0.140:5173',
+    'https://webapperp.ai.kr',
+    'https://www.webapperp.ai.kr',
     validatedEnv.FRONTEND_URL
   ],
   credentials: true
@@ -153,25 +155,6 @@ async function bootstrap() {
   try {
     await AppDataSource.initialize();
     console.log('✅ Database connection established');
-
-    // 개발환경에서 샘플 데이터 생성
-    if (validatedEnv.NODE_ENV === 'development') {
-      const { createSampleData } = await import('./utils/sampleData');
-      try {
-        // 기존 데이터가 있는지 확인
-        const { User } = await import('./entities/User');
-        const userRepository = AppDataSource.getRepository(User);
-        const userCount = await userRepository.count();
-
-        if (userCount === 0) {
-          await createSampleData();
-        } else {
-          console.log('📊 기존 데이터가 있어 샘플 데이터 생성을 건너뜁니다.');
-        }
-      } catch (sampleError) {
-        console.warn('⚠️ 샘플 데이터 생성 실패:', sampleError);
-      }
-    }
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);

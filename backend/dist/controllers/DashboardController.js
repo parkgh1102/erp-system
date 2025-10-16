@@ -53,7 +53,7 @@ class DashboardController {
                 purchaseRepo
                     .createQueryBuilder('purchases')
                     .where('purchases.businessId = :businessId', { businessId })
-                    .andWhere('purchases.transactionDate BETWEEN :startDate AND :endDate', { startDate: queryStartDate, endDate: queryEndDate })
+                    .andWhere('purchases.purchaseDate BETWEEN :startDate AND :endDate', { startDate: queryStartDate, endDate: queryEndDate })
                     .select('COALESCE(SUM(purchases.totalAmount), 0)', 'total')
                     .getRawOne(),
                 customerRepo.count({ where: { businessId: parseInt(businessId), isActive: true } }),
@@ -72,7 +72,7 @@ class DashboardController {
                 purchaseRepo
                     .createQueryBuilder('purchases')
                     .where('purchases.businessId = :businessId', { businessId })
-                    .andWhere('purchases.transactionDate BETWEEN :startDate AND :endDate', { startDate: prevStartDate, endDate: prevEndDate })
+                    .andWhere('purchases.purchaseDate BETWEEN :startDate AND :endDate', { startDate: prevStartDate, endDate: prevEndDate })
                     .select('COALESCE(SUM(purchases.totalAmount), 0)', 'total')
                     .getRawOne()
             ]);
@@ -119,7 +119,8 @@ class DashboardController {
             // 최근 매입 데이터 조회
             const recentPurchases = await purchaseRepo.find({
                 where: { businessId: parseInt(businessId) },
-                order: { transactionDate: 'DESC', createdAt: 'DESC' },
+                relations: ['customer'],
+                order: { purchaseDate: 'DESC', createdAt: 'DESC' },
                 take: Math.ceil(limit / 2)
             });
             // 매출 데이터 변환
@@ -136,11 +137,11 @@ class DashboardController {
             const purchaseTransactions = recentPurchases.map(purchase => ({
                 id: `purchase-${purchase.id}`,
                 type: '매입',
-                customer: purchase.supplierName || '미지정',
+                customer: purchase.customer?.name || '미지정',
                 amount: parseFloat(purchase.totalAmount.toString()),
-                date: (0, dayjs_1.default)(purchase.transactionDate).format('YYYY-MM-DD'),
+                date: (0, dayjs_1.default)(purchase.purchaseDate).format('YYYY-MM-DD'),
                 status: '완료',
-                description: purchase.description || ''
+                description: purchase.memo || ''
             }));
             // 두 배열 합치고 날짜순으로 정렬
             const allTransactions = [...salesTransactions, ...purchaseTransactions]
@@ -195,16 +196,16 @@ class DashboardController {
             const purchaseData = await purchaseRepo
                 .createQueryBuilder('purchases')
                 .select([
-                "strftime('%Y', purchases.transactionDate) as year",
-                "strftime('%m', purchases.transactionDate) as month",
+                "strftime('%Y', purchases.purchaseDate) as year",
+                "strftime('%m', purchases.purchaseDate) as month",
                 'COALESCE(SUM(purchases.totalAmount), 0) as total'
             ])
                 .where('purchases.businessId = :businessId', { businessId })
-                .andWhere('purchases.transactionDate BETWEEN :startDate AND :endDate', {
+                .andWhere('purchases.purchaseDate BETWEEN :startDate AND :endDate', {
                 startDate: startDate.toDate(),
                 endDate: endDate.toDate()
             })
-                .groupBy("strftime('%Y', purchases.transactionDate), strftime('%m', purchases.transactionDate)")
+                .groupBy("strftime('%Y', purchases.purchaseDate), strftime('%m', purchases.purchaseDate)")
                 .orderBy('year, month')
                 .getRawMany();
             // 모든 월에 대한 배열 생성

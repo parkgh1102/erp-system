@@ -1,37 +1,4 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -52,7 +19,6 @@ const httpsRedirect_1 = require("./middleware/httpsRedirect");
 const csrfProtection_1 = require("./middleware/csrfProtection");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const businessRoutes_1 = require("./routes/businessRoutes");
-const customerRoutes_1 = __importDefault(require("./routes/customerRoutes"));
 const transactionLedgerRoutes_1 = __importDefault(require("./routes/transactionLedgerRoutes"));
 // 환경변수 로드 및 검증
 dotenv_1.default.config();
@@ -104,6 +70,9 @@ app.use((0, cors_1.default)({
         'http://localhost:5178',
         'http://localhost:5179',
         'http://localhost:5180',
+        'http://192.168.0.140:5173',
+        'https://webapperp.ai.kr',
+        'https://www.webapperp.ai.kr',
         validatedEnv.FRONTEND_URL
     ],
     credentials: true
@@ -131,7 +100,6 @@ app.use('/uploads', express_1.default.static('uploads'));
 // 라우트 설정 (모든 환경에서 Rate Limiting 적용)
 app.use('/api/auth', rateLimiter_1.authRateLimit, authRoutes_1.default);
 app.use('/api/businesses', rateLimiter_1.apiRateLimit, businessRoutes_1.businessRoutes);
-app.use('/api', rateLimiter_1.apiRateLimit, customerRoutes_1.default);
 app.use('/api/transaction-ledger', rateLimiter_1.apiRateLimit, transactionLedgerRoutes_1.default);
 // 헬스체크 엔드포인트
 app.get('/health', (req, res) => {
@@ -172,25 +140,6 @@ async function bootstrap() {
     try {
         await database_1.AppDataSource.initialize();
         console.log('✅ Database connection established');
-        // 개발환경에서 샘플 데이터 생성
-        if (validatedEnv.NODE_ENV === 'development') {
-            const { createSampleData } = await Promise.resolve().then(() => __importStar(require('./utils/sampleData')));
-            try {
-                // 기존 데이터가 있는지 확인
-                const { User } = await Promise.resolve().then(() => __importStar(require('./entities/User')));
-                const userRepository = database_1.AppDataSource.getRepository(User);
-                const userCount = await userRepository.count();
-                if (userCount === 0) {
-                    await createSampleData();
-                }
-                else {
-                    console.log('📊 기존 데이터가 있어 샘플 데이터 생성을 건너뜁니다.');
-                }
-            }
-            catch (sampleError) {
-                console.warn('⚠️ 샘플 데이터 생성 실패:', sampleError);
-            }
-        }
         app.listen(PORT, () => {
             console.log(`🚀 Server running on http://localhost:${PORT}`);
             console.log(`📊 Health check: http://localhost:${PORT}/health`);

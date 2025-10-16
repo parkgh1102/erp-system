@@ -1,6 +1,7 @@
 import { Business } from './Business';
 import { TransactionItem } from './TransactionItem';
 import { SalesItem } from './SalesItem';
+import { PurchaseItem } from './PurchaseItem';
 export declare class Product {
     id: number;
     business: Business;
@@ -19,5 +20,6 @@ export declare class Product {
     updatedAt: Date;
     transactionItems: TransactionItem[];
     salesItems: SalesItem[];
+    purchaseItems: PurchaseItem[];
 }
 //# sourceMappingURL=Product.d.ts.map

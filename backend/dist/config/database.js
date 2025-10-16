@@ -10,6 +10,7 @@ const Product_1 = require("../entities/Product");
 const Sales_1 = require("../entities/Sales");
 const SalesItem_1 = require("../entities/SalesItem");
 const Purchase_1 = require("../entities/Purchase");
+const PurchaseItem_1 = require("../entities/PurchaseItem");
 const Account_1 = require("../entities/Account");
 const Transaction_1 = require("../entities/Transaction");
 const TransactionItem_1 = require("../entities/TransactionItem");
@@ -19,7 +20,7 @@ const Note_1 = require("../entities/Note");
 const CompanySettings_1 = require("../entities/CompanySettings");
 const env = (0, envValidator_1.getValidatedEnv)();
 const baseConfig = {
-    synchronize: env.NODE_ENV !== 'production',
+    synchronize: false, // 프로덕션에서는 비활성화 (보안)
     logging: env.NODE_ENV === 'development' && env.LOG_LEVEL === 'debug',
     entities: [
         User_1.User,
@@ -29,6 +30,7 @@ const baseConfig = {
         Sales_1.Sales,
         SalesItem_1.SalesItem,
         Purchase_1.Purchase,
+        PurchaseItem_1.PurchaseItem,
         Account_1.Account,
         Transaction_1.Transaction,
         TransactionItem_1.TransactionItem,

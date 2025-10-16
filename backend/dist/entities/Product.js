@@ -14,6 +14,7 @@ const typeorm_1 = require("typeorm");
 const Business_1 = require("./Business");
 const TransactionItem_1 = require("./TransactionItem");
 const SalesItem_1 = require("./SalesItem");
+const PurchaseItem_1 = require("./PurchaseItem");
 let Product = class Product {
 };
 exports.Product = Product;
@@ -86,6 +87,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => SalesItem_1.SalesItem, item => item.product),
     __metadata("design:type", Array)
 ], Product.prototype, "salesItems", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => PurchaseItem_1.PurchaseItem, item => item.product),
+    __metadata("design:type", Array)
+], Product.prototype, "purchaseItems", void 0);
 exports.Product = Product = __decorate([
     (0, typeorm_1.Entity)('products')
 ], Product);
