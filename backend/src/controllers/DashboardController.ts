@@ -47,14 +47,14 @@ export class DashboardController {
           .createQueryBuilder('sales')
           .where('sales.businessId = :businessId', { businessId })
           .andWhere('sales.transactionDate BETWEEN :startDate AND :endDate', { startDate: queryStartDate, endDate: queryEndDate })
-          .select('COALESCE(SUM(sales.totalAmount), 0)', 'total')
+          .select('COALESCE(SUM(sales.totalAmount + sales.vatAmount), 0)', 'total')
           .getRawOne(),
 
         purchaseRepo
           .createQueryBuilder('purchases')
           .where('purchases.businessId = :businessId', { businessId })
           .andWhere('purchases.purchaseDate BETWEEN :startDate AND :endDate', { startDate: queryStartDate, endDate: queryEndDate })
-          .select('COALESCE(SUM(purchases.totalAmount), 0)', 'total')
+          .select('COALESCE(SUM(purchases.totalAmount + purchases.vatAmount), 0)', 'total')
           .getRawOne(),
 
         customerRepo.count({ where: { businessId: parseInt(businessId as string), isActive: true } }),
@@ -70,14 +70,14 @@ export class DashboardController {
           .createQueryBuilder('sales')
           .where('sales.businessId = :businessId', { businessId })
           .andWhere('sales.transactionDate BETWEEN :startDate AND :endDate', { startDate: prevStartDate, endDate: prevEndDate })
-          .select('COALESCE(SUM(sales.totalAmount), 0)', 'total')
+          .select('COALESCE(SUM(sales.totalAmount + sales.vatAmount), 0)', 'total')
           .getRawOne(),
 
         purchaseRepo
           .createQueryBuilder('purchases')
           .where('purchases.businessId = :businessId', { businessId })
           .andWhere('purchases.purchaseDate BETWEEN :startDate AND :endDate', { startDate: prevStartDate, endDate: prevEndDate })
-          .select('COALESCE(SUM(purchases.totalAmount), 0)', 'total')
+          .select('COALESCE(SUM(purchases.totalAmount + purchases.vatAmount), 0)', 'total')
           .getRawOne()
       ]);
 
@@ -140,7 +140,7 @@ export class DashboardController {
         id: `sale-${sale.id}`,
         type: '매출',
         customer: sale.customer?.name || '미지정',
-        amount: parseFloat(sale.totalAmount.toString()),
+        amount: parseFloat(sale.totalAmount.toString()) + parseFloat(sale.vatAmount.toString()),
         date: dayjs(sale.transactionDate).format('YYYY-MM-DD'),
         status: '완료',
         description: sale.description || ''
@@ -151,7 +151,7 @@ export class DashboardController {
         id: `purchase-${purchase.id}`,
         type: '매입',
         customer: purchase.customer?.name || '미지정',
-        amount: parseFloat(purchase.totalAmount.toString()),
+        amount: parseFloat(purchase.totalAmount.toString()) + parseFloat(purchase.vatAmount.toString()),
         date: dayjs(purchase.purchaseDate).format('YYYY-MM-DD'),
         status: '완료',
         description: purchase.memo || ''
@@ -201,7 +201,7 @@ export class DashboardController {
         .select([
           "strftime('%Y', sales.transactionDate) as year",
           "strftime('%m', sales.transactionDate) as month",
-          'COALESCE(SUM(sales.totalAmount), 0) as total'
+          'COALESCE(SUM(sales.totalAmount + sales.vatAmount), 0) as total'
         ])
         .where('sales.businessId = :businessId', { businessId })
         .andWhere('sales.transactionDate BETWEEN :startDate AND :endDate', {
@@ -218,7 +218,7 @@ export class DashboardController {
         .select([
           "strftime('%Y', purchases.purchaseDate) as year",
           "strftime('%m', purchases.purchaseDate) as month",
-          'COALESCE(SUM(purchases.totalAmount), 0) as total'
+          'COALESCE(SUM(purchases.totalAmount + purchases.vatAmount), 0) as total'
         ])
         .where('purchases.businessId = :businessId', { businessId })
         .andWhere('purchases.purchaseDate BETWEEN :startDate AND :endDate', {
@@ -369,7 +369,7 @@ export class DashboardController {
         .createQueryBuilder('sales')
         .select([
           "strftime('%d', sales.transactionDate) as day",
-          'COALESCE(SUM(sales.totalAmount), 0) as total'
+          'COALESCE(SUM(sales.totalAmount + sales.vatAmount), 0) as total'
         ])
         .where('sales.businessId = :businessId', { businessId })
         .andWhere('sales.transactionDate BETWEEN :startDate AND :endDate', {
@@ -412,6 +412,88 @@ export class DashboardController {
     } catch (error) {
       console.error('Monthly trend error:', error);
       res.status(500).json({ success: false, message: '월별 추이 조회에 실패했습니다.' });
+    }
+  }
+
+  static async getAllTransactions(req: Request, res: Response) {
+    try {
+      const { businessId } = req.params;
+      const { startDate, endDate, search } = req.query;
+
+      const salesRepo = AppDataSource.getRepository(Sales);
+      const purchaseRepo = AppDataSource.getRepository(Purchase);
+
+      // 매출 데이터 조회
+      let salesQuery = salesRepo
+        .createQueryBuilder('sales')
+        .leftJoinAndSelect('sales.customer', 'customer')
+        .where('sales.businessId = :businessId', { businessId });
+
+      if (startDate && endDate) {
+        salesQuery = salesQuery.andWhere('sales.transactionDate BETWEEN :startDate AND :endDate', {
+          startDate,
+          endDate
+        });
+      }
+
+      if (search) {
+        salesQuery = salesQuery.andWhere(
+          '(customer.name LIKE :search OR CAST(sales.totalAmount AS TEXT) LIKE :search)',
+          { search: `%${search}%` }
+        );
+      }
+
+      const salesData = await salesQuery.getMany();
+
+      // 매입 데이터 조회
+      let purchaseQuery = purchaseRepo
+        .createQueryBuilder('purchase')
+        .leftJoinAndSelect('purchase.customer', 'customer')
+        .where('purchase.businessId = :businessId', { businessId });
+
+      if (startDate && endDate) {
+        purchaseQuery = purchaseQuery.andWhere('purchase.purchaseDate BETWEEN :startDate AND :endDate', {
+          startDate,
+          endDate
+        });
+      }
+
+      if (search) {
+        purchaseQuery = purchaseQuery.andWhere(
+          '(customer.name LIKE :search OR CAST(purchase.totalAmount AS TEXT) LIKE :search)',
+          { search: `%${search}%` }
+        );
+      }
+
+      const purchaseData = await purchaseQuery.getMany();
+
+      // 데이터 변환
+      const transactions = [
+        ...salesData.map(sale => ({
+          id: `sale-${sale.id}`,
+          type: '매출',
+          customer: sale.customer?.name || '알 수 없음',
+          amount: (parseFloat(sale.totalAmount.toString()) || 0) + (parseFloat(sale.vatAmount.toString()) || 0),
+          date: sale.transactionDate,
+          status: '완료'
+        })),
+        ...purchaseData.map(purchase => ({
+          id: `purchase-${purchase.id}`,
+          type: '매입',
+          customer: purchase.customer?.name || '알 수 없음',
+          amount: (parseFloat(purchase.totalAmount.toString()) || 0) + (parseFloat(purchase.vatAmount.toString()) || 0),
+          date: purchase.purchaseDate,
+          status: '완료'
+        }))
+      ];
+
+      // 날짜순 정렬 (최신순)
+      transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      res.json({ success: true, data: transactions });
+    } catch (error) {
+      console.error('Get all transactions error:', error);
+      res.status(500).json({ success: false, message: '전체 거래 내역 조회에 실패했습니다.' });
     }
   }
 }

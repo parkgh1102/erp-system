@@ -5,6 +5,12 @@ import { Sales } from '../entities/Sales';
 import { Purchase } from '../entities/Purchase';
 import { Payment } from '../entities/Payment';
 import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+
 
 interface LedgerEntry {
   id: number;
@@ -97,32 +103,61 @@ export const transactionLedgerController = {
       const start = startDate ? dayjs(startDate as string) : dayjs().startOf('month');
       const end = endDate ? dayjs(endDate as string) : dayjs().endOf('month');
 
-      // 매출 데이터 조회
-      const sales = await salesRepository.find({
+      console.log('📅 날짜 범위:', {
+        startDate: start.format('YYYY-MM-DD'),
+        endDate: end.format('YYYY-MM-DD')
+      });
+
+      // 매출 데이터 조회 (날짜 범위 포함)
+      const allSales = await salesRepository.find({
         where: {
           customerId: Number(customerId),
           businessId: Number(businessId),
-          // 날짜 범위 조건은 실제 구현에 따라 수정 필요
         },
         relations: ['customer', 'items']
       });
 
-      // 매입 데이터 조회
-      const purchases = await purchaseRepository.find({
+      // 날짜 범위 필터링
+      const sales = allSales.filter(sale => {
+        const saleDate = dayjs(sale.transactionDate);
+        return saleDate.isSameOrAfter(start, 'day') && saleDate.isSameOrBefore(end, 'day');
+      });
+
+      console.log(`📊 매출 데이터: 전체 ${allSales.length}건, 필터링 후 ${sales.length}건`);
+
+      // 매입 데이터 조회 (날짜 범위 포함)
+      const allPurchases = await purchaseRepository.find({
         where: {
+          customerId: Number(customerId),
           businessId: Number(businessId),
         },
         relations: ['customer', 'items']
       });
 
-      // 지급/수금 데이터 조회
-      const payments = await paymentRepository.find({
+      // 날짜 범위 필터링
+      const purchases = allPurchases.filter(purchase => {
+        const purchaseDate = dayjs(purchase.purchaseDate);
+        return purchaseDate.isSameOrAfter(start, 'day') && purchaseDate.isSameOrBefore(end, 'day');
+      });
+
+      console.log(`📊 매입 데이터: 전체 ${allPurchases.length}건, 필터링 후 ${purchases.length}건`);
+
+      // 지급/수금 데이터 조회 (날짜 범위 포함)
+      const allPayments = await paymentRepository.find({
         where: {
           customerId: Number(customerId),
           businessId: Number(businessId),
         },
         relations: ['customer']
       });
+
+      // 날짜 범위 필터링
+      const payments = allPayments.filter(payment => {
+        const paymentDate = dayjs(payment.paymentDate);
+        return paymentDate.isSameOrAfter(start, 'day') && paymentDate.isSameOrBefore(end, 'day');
+      });
+
+      console.log(`📊 수금/지급 데이터: 전체 ${allPayments.length}건, 필터링 후 ${payments.length}건`);
 
       // 거래원장 엔트리 생성
       const entries: LedgerEntry[] = [];
@@ -198,9 +233,10 @@ export const transactionLedgerController = {
         });
       });
 
-      // 지급/수금 항목 추가
+      // 수금/입금 항목 추가
       payments.forEach((payment) => {
-        const isReceipt = payment.paymentType === '수금';
+        // 수금과 입금 모두 거래처로부터 돈을 받는 것으로 처리
+        const isReceipt = payment.paymentType === '수금' || payment.paymentType === '입금';
         if (isReceipt) {
           runningBalance -= payment.amount;
         } else {
@@ -211,10 +247,10 @@ export const transactionLedgerController = {
           id: payment.id + 20000,
           date: dayjs(payment.paymentDate).format('YYYY-MM-DD'),
           type: isReceipt ? 'receipt' : 'payment',
-          description: isReceipt ? '수금' : '지급',
+          description: payment.paymentType,  // 실제 paymentType 값 표시
           customerName: customer.name,
           amount: payment.amount,
-          supplyAmount: payment.amount,  // 수금/지급은 세액 없이 전체 금액
+          supplyAmount: payment.amount,  // 수금/입금은 세액 없이 전체 금액
           vatAmount: 0,
           totalAmount: payment.amount,
           balance: runningBalance,
@@ -348,8 +384,15 @@ export const transactionLedgerController = {
   async getCustomerBalance(req: Request, res: Response) {
     try {
       const { businessId, customerId } = req.params;
+      const { beforeDate } = req.query; // 특정 날짜 이전의 잔액 조회용
+
+      console.log(`📊 전잔금 조회 - businessId: ${businessId}, customerId: ${customerId}, beforeDate: ${beforeDate}`);
 
       const customerRepository = AppDataSource.getRepository(Customer);
+      const salesRepository = AppDataSource.getRepository(Sales);
+      const purchaseRepository = AppDataSource.getRepository(Purchase);
+      const paymentRepository = AppDataSource.getRepository(Payment);
+
       const customer = await customerRepository.findOne({
         where: { id: Number(customerId), businessId: Number(businessId) }
       });
@@ -361,8 +404,89 @@ export const transactionLedgerController = {
         });
       }
 
-      // 임시 잔액 계산 로직
-      const balance = 500000; // 실제로는 매출-매입-수금+지급 계산
+      // 잔액 계산을 위한 날짜 설정 (beforeDate가 있으면 그 날짜 이전까지만 계산)
+      const endDate = beforeDate ? dayjs(beforeDate as string) : dayjs();
+
+      // 매출 데이터 조회 (전체 기간)
+      const sales = await salesRepository.find({
+        where: {
+          businessId: Number(businessId),
+          customerId: Number(customerId)
+        },
+        relations: ['items', 'customer']
+      });
+
+      // 매입 데이터 조회 (전체 기간)
+      const purchases = await purchaseRepository.find({
+        where: {
+          businessId: Number(businessId),
+          customerId: Number(customerId)
+        },
+        relations: ['items', 'customer']
+      });
+
+      // 수금/지급 데이터 조회 (전체 기간)
+      const payments = await paymentRepository.find({
+        where: {
+          businessId: Number(businessId),
+          customerId: Number(customerId)
+        },
+        relations: ['customer']
+      });
+
+      // 잔액 계산
+      let balance = 0;
+      let lastTransactionDate = null;
+
+      console.log(`\n===== 잔액 계산 시작 (customerId: ${customerId}, beforeDate: ${beforeDate}) =====`);
+      console.log(`🔍 발견된 payment 레코드 수: ${payments.length}`);
+      payments.forEach((p, idx) => {
+        console.log(`  Payment ${idx + 1}: id=${p.id}, date=${p.paymentDate}, type=${p.paymentType}, amount=${p.amount}`);
+      });
+
+      // 매출 합산 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      sales.forEach(sale => {
+        const saleDate = dayjs(sale.transactionDate);
+        if (saleDate.isBefore(endDate, 'day')) {
+          const totalAmount = (sale.totalAmount || 0) + (sale.vatAmount || 0);
+          balance += totalAmount; // 매출은 +
+          console.log(`매출 추가: 날짜=${saleDate.format('YYYY-MM-DD')}, 공급가액=${sale.totalAmount}, 세액=${sale.vatAmount}, 합계=${totalAmount}, 누적잔액=${balance}`);
+          if (!lastTransactionDate || saleDate.isAfter(dayjs(lastTransactionDate))) {
+            lastTransactionDate = saleDate.format('YYYY-MM-DD');
+          }
+        }
+      });
+
+      // 매입 차감 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      purchases.forEach(purchase => {
+        const purchaseDate = dayjs(purchase.transactionDate || purchase.purchaseDate);
+        if (purchaseDate.isBefore(endDate, 'day')) {
+          // 매입의 totalAmount는 이미 공급가액이고, vatAmount는 세액
+          const totalAmount = (purchase.totalAmount || 0) + (purchase.vatAmount || 0);
+          balance -= totalAmount; // 매입은 -
+          console.log(`매입 차감: 날짜=${purchaseDate.format('YYYY-MM-DD')}, 공급가액=${purchase.totalAmount}, 세액=${purchase.vatAmount}, 합계=${totalAmount}, 누적잔액=${balance}`);
+          if (!lastTransactionDate || purchaseDate.isAfter(dayjs(lastTransactionDate))) {
+            lastTransactionDate = purchaseDate.format('YYYY-MM-DD');
+          }
+        }
+      });
+
+      // 수금/입금 처리 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      payments.forEach(payment => {
+        const paymentDate = dayjs(payment.paymentDate);
+        if (paymentDate.isBefore(endDate, 'day')) {
+          // 수금과 입금 모두 거래처로부터 돈을 받는 것이므로 받을 돈(balance) 감소
+          if (payment.paymentType === '수금' || payment.paymentType === '입금') {
+            balance -= payment.amount;
+            console.log(`${payment.paymentType} 차감: 날짜=${paymentDate.format('YYYY-MM-DD')}, 금액=${payment.amount}, 누적잔액=${balance}`);
+          }
+          if (!lastTransactionDate || paymentDate.isAfter(dayjs(lastTransactionDate))) {
+            lastTransactionDate = paymentDate.format('YYYY-MM-DD');
+          }
+        }
+      });
+
+      console.log(`===== 최종 잔액: ${balance} =====\n`);
 
       res.json({
         success: true,
@@ -370,7 +494,7 @@ export const transactionLedgerController = {
           customerId: Number(customerId),
           customerName: customer.name,
           balance: balance,
-          lastTransactionDate: dayjs().format('YYYY-MM-DD')
+          lastTransactionDate: lastTransactionDate || dayjs().format('YYYY-MM-DD')
         }
       });
     } catch (error) {

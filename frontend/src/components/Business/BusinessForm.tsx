@@ -51,7 +51,7 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
 
     try {
       const response = await businessAPI.validateBusinessNumber(businessNumber);
-      if (response.isValid) {
+      if (response.data?.isValid) {
         setBusinessNumberValidation({
           status: 'success',
           message: '사용 가능한 사업자번호입니다.'

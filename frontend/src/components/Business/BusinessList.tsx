@@ -131,12 +131,12 @@ export const BusinessList: React.FC = () => {
         search
       });
 
-      if (response.success) {
-        setBusinesses(response.data);
+      if (response.data?.success) {
+        setBusinesses(response.data.data);
         setPagination(prev => ({
           ...prev,
-          current: response.pagination.page,
-          total: response.pagination.total
+          current: response.data.pagination?.page || 1,
+          total: response.data.pagination?.total || 0
         }));
       }
     } catch (error) {
@@ -169,7 +169,7 @@ export const BusinessList: React.FC = () => {
   const handleDelete = async (id: number) => {
     try {
       const response = await businessAPI.delete(id);
-      if (response.success) {
+      if (response.data?.success) {
         message.success('사업자가 삭제되었습니다.');
         fetchBusinesses(pagination.current, searchTerm);
       }

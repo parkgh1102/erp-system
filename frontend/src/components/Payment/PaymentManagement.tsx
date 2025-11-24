@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, message, Popconfirm, Card, Row, Col, InputNumber, Tabs, Spin, AutoComplete, Typography, Dropdown, Radio, Alert } from 'antd';
-import { EditOutlined, DeleteOutlined, MoneyCollectOutlined, PayCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, PlusOutlined, PrinterOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, MoneyCollectOutlined, PayCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, PrinterOutlined } from '@ant-design/icons';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -72,12 +72,6 @@ const PaymentManagement: React.FC = () => {
     }
   }, [currentBusiness]);
 
-  // Add 기능을 위한 래퍼 함수 (기본적으로 수금으로 설정)
-  const handleAddWrapper = () => {
-    handleAdd('receipt');
-  };
-
-
   useEffect(() => {
     if (!modalVisible) return;
 
@@ -107,13 +101,14 @@ const PaymentManagement: React.FC = () => {
     try {
       const [paymentsRes, customersRes] = await Promise.all([
         paymentAPI.getAll(currentBusiness.id),
-        customerAPI.getAll(currentBusiness.id)
+        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 })
       ]);
 
       setPayments(paymentsRes.data.data.payments || []);
       setCustomers(customersRes.data.data.customers || []);
 
     } catch (error) {
+      console.error('데이터 로드 오류:', error);
       message.error('데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -202,7 +197,7 @@ const PaymentManagement: React.FC = () => {
     try {
       const response = await paymentAPI.delete(currentBusiness.id, id);
 
-      if (response.ok) {
+      if (response.data?.success || response.status === 200) {
         message.success('수금/지급이 삭제되었습니다.', 2);
         fetchData();
       } else {
@@ -332,11 +327,13 @@ const PaymentManagement: React.FC = () => {
 
       if (resetAfterSave && !editingPayment) {
         // 저장 후 초기화 - 새로 등록할 때만
+        const currentType = form.getFieldValue('type');
         form.resetFields();
         await fetchData();
-        // 오늘 날짜로 설정
+        // 오늘 날짜와 type 다시 설정
         form.setFieldsValue({
-          paymentDate: dayjs()
+          paymentDate: dayjs(),
+          type: currentType
         });
       } else {
         // 일반 저장
@@ -668,12 +665,12 @@ const PaymentManagement: React.FC = () => {
   const filteredPaymentData = getFilteredPaymentData();
 
 
-  const actionMenuItems = createExportMenuItems(
-    payments,
-    receiptColumns, // 수금 컬럼을 기본으로 사용
-    '수금지급_목록',
-    'payment-table'
-  );
+  const handleExport = async (type: 'excel' | 'pdf') => {
+    // Export functionality can be implemented here
+    message.info(`${type.toUpperCase()} 내보내기 기능은 준비 중입니다.`);
+  };
+
+  const actionMenuItems = createExportMenuItems(handleExport);
 
   return (
     <div style={{
@@ -932,17 +929,20 @@ const PaymentManagement: React.FC = () => {
                   placeholder="거래처 선택"
                   showSearch
                   allowClear
-                  optionFilterProp="children"
-                  filterOption={(input, option) =>
-                    (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-                  }
-                >
-                  {customers.map(customer => (
-                    <Option key={customer.id} value={customer.id}>
-                      {customer.name} ({customer.customerCode})
-                    </Option>
-                  ))}
-                </Select>
+                  virtual={true}
+                  listHeight={256}
+                  filterOption={(input, option: any) => {
+                    if (!input) return true;
+                    const label = String(option?.label || '');
+                    const searchText = String(input || '').toLowerCase().trim();
+                    return label.toLowerCase().includes(searchText);
+                  }}
+                  options={customers.map(customer => ({
+                    label: `${customer.name} (${customer.customerCode})`,
+                    value: customer.id,
+                    key: customer.id
+                  }))}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -1182,10 +1182,12 @@ const PaymentManagement: React.FC = () => {
         visible={excelUploadModalVisible}
         onCancel={() => setExcelUploadModalVisible(false)}
         onSuccess={handleExcelUpload}
-        title="결제 엑셀 업로드"
-        templateType="payment"
-        description="결제 정보를 엑셀 파일로 일괄 업로드할 수 있습니다. 먼저 템플릿을 다운로드하여 양식을 확인하세요."
-        requiredFields={['거래처명', '유형', '금액']}
+        title={activeTab === 'receipt' ? '수금 엑셀 업로드' : '지급 엑셀 업로드'}
+        templateType={activeTab === 'receipt' ? 'receivable' : 'payable'}
+        description={activeTab === 'receipt'
+          ? '수금 정보를 엑셀 파일로 일괄 업로드할 수 있습니다. 먼저 템플릿을 다운로드하여 양식을 확인하세요.'
+          : '지급 정보를 엑셀 파일로 일괄 업로드할 수 있습니다. 먼저 템플릿을 다운로드하여 양식을 확인하세요.'}
+        requiredFields={activeTab === 'receipt' ? ['수금일자', '거래처', '수금금액'] : ['지급일자', '거래처', '지급금액']}
       />
 
       <PaymentPrintModal

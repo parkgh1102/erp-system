@@ -138,12 +138,12 @@ const Dashboard: React.FC = () => {
 
   // 실제 데이터가 없을 때 사용할 기본값
   const defaultStats = {
-    totalSales: 125000000,
-    totalPurchases: 85000000,
-    totalCustomers: 156,
-    totalProducts: 89,
-    salesGrowth: 12.5,
-    purchaseGrowth: -3.2,
+    totalSales: 0,
+    totalPurchases: 0,
+    totalCustomers: 0,
+    totalProducts: 0,
+    salesGrowth: 0,
+    purchaseGrowth: 0,
   };
 
   // 현재 사용할 데이터 (실제 데이터가 있으면 사용, 없으면 기본값)

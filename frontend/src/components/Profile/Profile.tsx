@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Form,
@@ -13,6 +13,7 @@ import {
   Typography,
   Space,
   Tag,
+  Spin,
 } from 'antd';
 import {
   UserOutlined,
@@ -27,11 +28,12 @@ import { useThemeStore } from '../../stores/themeStore';
 import { authAPI, businessAPI } from '../../utils/api';
 import { formatBusinessNumber, formatPhoneNumber } from '../../utils/formatters';
 import type { UploadProps } from 'antd';
+import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 
 const Profile: React.FC = () => {
-  const { user, updateUser, currentBusiness } = useAuthStore();
+  const { user, updateUser, currentBusiness, setAuth, token } = useAuthStore();
   const { isDark } = useThemeStore();
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
@@ -41,6 +43,32 @@ const Profile: React.FC = () => {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [businessEditing, setBusinessEditing] = useState(false);
   const [businessLoading, setBusinessLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+
+  // 프로필 정보 로드
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await authAPI.getProfile();
+        if (response.data.success) {
+          const userData = response.data.data;
+          // 토큰을 유지하면서 사용자 정보 업데이트
+          setAuth(userData, token || '');
+          form.setFieldsValue({
+            name: userData.name,
+            email: userData.email,
+            phone: userData.phone || '',
+          });
+        }
+      } catch (error) {
+        console.error('프로필 로드 실패:', error);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleFinish = async (values: any) => {
     setLoading(true);
@@ -142,6 +170,14 @@ const Profile: React.FC = () => {
     beforeUpload: handleAvatarUpload,
   };
 
+  if (pageLoading) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center', marginTop: '100px' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: '24px' }}>
       <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
@@ -182,13 +218,17 @@ const Profile: React.FC = () => {
               <div>
                 <Text strong>가입일</Text>
                 <br />
-                <Text type="secondary">2024-01-15</Text>
+                <Text type="secondary">
+                  {user?.createdAt ? dayjs(user.createdAt).format('YYYY-MM-DD') : '-'}
+                </Text>
               </div>
               <Divider style={{ margin: '12px 0' }} />
               <div>
-                <Text strong>마지막 로그인</Text>
+                <Text strong>마지막 수정</Text>
                 <br />
-                <Text type="secondary">2024-01-20 14:30</Text>
+                <Text type="secondary">
+                  {user?.updatedAt ? dayjs(user.updatedAt).format('YYYY-MM-DD HH:mm') : '-'}
+                </Text>
               </div>
               <Divider style={{ margin: '12px 0' }} />
               <div>
@@ -354,7 +394,7 @@ const Profile: React.FC = () => {
             title="사업체 정보"
             style={{ marginTop: '24px' }}
             extra={
-              !businessEditing && (
+              !businessEditing && currentBusiness && (
                 <Button
                   icon={<EditOutlined />}
                   onClick={() => setBusinessEditing(true)}
@@ -365,7 +405,11 @@ const Profile: React.FC = () => {
               )
             }
           >
-            {currentBusiness && (
+            {!currentBusiness ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                <Text type="secondary">등록된 사업체 정보가 없습니다.</Text>
+              </div>
+            ) : (
               <Form
                 form={businessForm}
                 layout="vertical"

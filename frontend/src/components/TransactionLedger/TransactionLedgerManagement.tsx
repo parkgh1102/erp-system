@@ -56,6 +56,8 @@ const TransactionLedgerManagement: React.FC = () => {
   const printRef = useRef<HTMLDivElement>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<number | null>(null);
+  const [customerSearchText, setCustomerSearchText] = useState('');
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
     dayjs().startOf('month'),
     dayjs().endOf('month')
@@ -72,6 +74,8 @@ const TransactionLedgerManagement: React.FC = () => {
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [generalPrintModalVisible, setGeneralPrintModalVisible] = useState(false);
   const [ledgerPrintModalVisible, setLedgerPrintModalVisible] = useState(false);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
@@ -81,6 +85,20 @@ const TransactionLedgerManagement: React.FC = () => {
       fetchCustomers();
     }
   }, [currentBusiness]);
+
+  // 거래처 검색 (2글자 이상)
+  useEffect(() => {
+    if (customerSearchText.length >= 2) {
+      const filtered = customers.filter(customer =>
+        customer.name.toLowerCase().includes(customerSearchText.toLowerCase()) ||
+        customer.customerCode.toLowerCase().includes(customerSearchText.toLowerCase())
+      );
+      console.log('🔍 검색어:', customerSearchText, '/ 결과:', filtered.length, '개');
+      setFilteredCustomers(filtered);
+    } else {
+      setFilteredCustomers([]);
+    }
+  }, [customerSearchText, customers]);
 
   // 키보드 단축키를 위한 래퍼 함수들
   const handleAddWrapper = () => {
@@ -129,8 +147,11 @@ const TransactionLedgerManagement: React.FC = () => {
     if (!currentBusiness) return;
 
     try {
-      const response = await customerAPI.getAll(currentBusiness.id);
-      setCustomers(response.data.data.customers || []);
+      // 모든 거래처를 가져오기 위해 limit을 크게 설정
+      const response = await customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 });
+      const customerList = response.data.data.customers || [];
+      console.log('📋 거래처 목록 로드:', customerList.length, '개');
+      setCustomers(customerList);
     } catch (error: any) {
       if (error.response?.status === 404) {
         setCustomers([]);
@@ -153,8 +174,14 @@ const TransactionLedgerManagement: React.FC = () => {
         endDate: endDate.format('YYYY-MM-DD')
       };
 
+      console.log('🔍 거래원장 조회 요청:', {
+        businessId: currentBusiness.id,
+        params
+      });
+
       // 거래원장 데이터 조회
       const response = await transactionLedgerAPI.getLedger(currentBusiness.id, params);
+      console.log('📊 거래원장 응답:', response.data);
 
       if (response.data.success && response.data.data.entries) {
         setLedgerEntries(response.data.data.entries);
@@ -349,10 +376,10 @@ const TransactionLedgerManagement: React.FC = () => {
       align: 'right' as const,
       render: (supplyAmount: number, record: LedgerEntry) => {
         const colorMap = {
-          'sales': '#1890ff',    // 매출 - 파랑
-          'purchase': '#000000', // 매입 - 검정
-          'receipt': '#ff4d4f',  // 수금 - 빨강
-          'payment': '#000000'   // 지급 - 검정
+          'sales': isDark ? '#40a9ff' : '#1890ff',    // 매출 - 파랑
+          'purchase': isDark ? '#d9d9d9' : '#000000', // 매입 - 다크모드: 밝은 회색, 라이트모드: 검정
+          'receipt': isDark ? '#ff7875' : '#ff4d4f',  // 수금 - 빨강
+          'payment': isDark ? '#d9d9d9' : '#000000'   // 지급 - 다크모드: 밝은 회색, 라이트모드: 검정
         };
         return (
           <span style={{ color: colorMap[record.type] }}>
@@ -391,11 +418,16 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'balance',
       width: 120,
       align: 'right' as const,
-      render: (balance: number) => (
-        <span style={{ fontWeight: 'bold', color: balance >= 0 ? 'blue' : 'red' }}>
-          {balance?.toLocaleString() || 0}원
-        </span>
-      ),
+      render: (balance: number) => {
+        const color = balance >= 0
+          ? (isDark ? '#40a9ff' : '#1890ff')  // 양수: 파랑
+          : (isDark ? '#ff7875' : '#ff4d4f'); // 음수: 빨강
+        return (
+          <span style={{ fontWeight: 'bold', color }}>
+            {balance?.toLocaleString() || 0}원
+          </span>
+        );
+      },
     },
     {
       title: '비고',
@@ -424,24 +456,29 @@ const TransactionLedgerManagement: React.FC = () => {
         </Col>
         <Col style={{ marginLeft: '100px' }}>
           <Space size="middle" wrap>
-            <Select
+            <AutoComplete
               style={{ width: 300 }}
-              placeholder="거래처 선택"
-              value={selectedCustomer || undefined}
-              onChange={(value) => setSelectedCustomer(value)}
-              showSearch
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-              }
+              value={customerSearchText}
+              onChange={(value) => setCustomerSearchText(value)}
+              onSelect={(value, option: any) => {
+                setSelectedCustomer(option.key);
+                setCustomerSearchText(option.label);
+              }}
+              placeholder="거래처명 입력 (2글자 이상)"
               size="middle"
-            >
-              {customers.map(customer => (
-                <Option key={customer.id} value={customer.id}>
-                  {customer.name} ({customer.customerCode})
-                </Option>
-              ))}
-            </Select>
+              options={filteredCustomers.map(customer => ({
+                key: customer.id,
+                value: customer.name,
+                label: `${customer.name} (${customer.customerCode})`
+              }))}
+              notFoundContent={
+                customerSearchText.length < 2
+                  ? '2글자 이상 입력해주세요'
+                  : filteredCustomers.length === 0
+                    ? '검색 결과가 없습니다'
+                    : null
+              }
+            />
             <RangePicker
               style={{ width: 300 }}
               value={dateRange}
@@ -516,10 +553,18 @@ const TransactionLedgerManagement: React.FC = () => {
             dataSource={ledgerEntries}
             rowKey="id"
             pagination={{
+              current: currentPage,
+              pageSize: pageSize,
               total: ledgerEntries.length,
-              pageSize: 50,
               showSizeChanger: true,
               showTotal: (total) => `총 ${total}건`,
+              onChange: (page, size) => {
+                setCurrentPage(page);
+                if (size !== pageSize) {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }
+              },
             }}
             summary={(pageData) => {
               if (pageData.length === 0) return null;
@@ -539,51 +584,51 @@ const TransactionLedgerManagement: React.FC = () => {
 
               return (
                 <>
-                  <Table.Summary.Row style={{ backgroundColor: '#fafafa', fontWeight: 'bold' }}>
+                  <Table.Summary.Row style={{ backgroundColor: isDark ? '#1f1f1f' : '#fafafa', fontWeight: 'bold' }}>
                     <Table.Summary.Cell index={0} colSpan={3} align="center">합계</Table.Summary.Cell>
                     <Table.Summary.Cell index={3} align="center">-</Table.Summary.Cell>
                     <Table.Summary.Cell index={4} align="right">-</Table.Summary.Cell>
                     <Table.Summary.Cell index={5} align="right">-</Table.Summary.Cell>
                     <Table.Summary.Cell index={6} align="right">-</Table.Summary.Cell>
                     <Table.Summary.Cell index={7} align="right">
-                      <span style={{ color: finalBalance >= 0 ? 'blue' : 'red' }}>
+                      <span style={{ color: finalBalance >= 0 ? (isDark ? '#40a9ff' : '#1890ff') : (isDark ? '#ff7875' : '#ff4d4f') }}>
                         {finalBalance?.toLocaleString() || 0}원
                       </span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={8}>-</Table.Summary.Cell>
                   </Table.Summary.Row>
-                  <Table.Summary.Row style={{ backgroundColor: '#f0f0f0' }}>
+                  <Table.Summary.Row style={{ backgroundColor: isDark ? '#141414' : '#f0f0f0' }}>
                     <Table.Summary.Cell index={0} colSpan={3} align="center">매출 합계</Table.Summary.Cell>
                     <Table.Summary.Cell index={3} align="center">-</Table.Summary.Cell>
                     <Table.Summary.Cell index={4} align="right">
-                      <span style={{ color: '#1890ff' }}>{totalSalesSupply.toLocaleString()}원</span>
+                      <span style={{ color: isDark ? '#40a9ff' : '#1890ff' }}>{totalSalesSupply.toLocaleString()}원</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={5} align="right">
-                      <span style={{ color: '#1890ff' }}>{totalSalesVat.toLocaleString()}원</span>
+                      <span style={{ color: isDark ? '#40a9ff' : '#1890ff' }}>{totalSalesVat.toLocaleString()}원</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={6} align="right">
-                      <span style={{ color: '#1890ff', fontWeight: 'bold' }}>{totalSales.toLocaleString()}원</span>
+                      <span style={{ color: isDark ? '#40a9ff' : '#1890ff', fontWeight: 'bold' }}>{totalSales.toLocaleString()}원</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={7} colSpan={1} align="center">수금 합계</Table.Summary.Cell>
                     <Table.Summary.Cell index={8} align="right">
-                      <span style={{ color: '#ff4d4f' }}>{totalReceipt.toLocaleString()}원</span>
+                      <span style={{ color: isDark ? '#ff7875' : '#ff4d4f' }}>{totalReceipt.toLocaleString()}원</span>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
-                  <Table.Summary.Row style={{ backgroundColor: '#f0f0f0' }}>
+                  <Table.Summary.Row style={{ backgroundColor: isDark ? '#141414' : '#f0f0f0' }}>
                     <Table.Summary.Cell index={0} colSpan={3} align="center">매입 합계</Table.Summary.Cell>
                     <Table.Summary.Cell index={3} align="center">-</Table.Summary.Cell>
                     <Table.Summary.Cell index={4} align="right">
-                      {totalPurchaseSupply.toLocaleString()}원
+                      <span style={{ color: isDark ? '#d9d9d9' : '#000000' }}>{totalPurchaseSupply.toLocaleString()}원</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={5} align="right">
-                      {totalPurchaseVat.toLocaleString()}원
+                      <span style={{ color: isDark ? '#d9d9d9' : '#000000' }}>{totalPurchaseVat.toLocaleString()}원</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={6} align="right">
-                      <span style={{ fontWeight: 'bold' }}>{totalPurchase.toLocaleString()}원</span>
+                      <span style={{ color: isDark ? '#d9d9d9' : '#000000', fontWeight: 'bold' }}>{totalPurchase.toLocaleString()}원</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={7} colSpan={1} align="center">지급 합계</Table.Summary.Cell>
                     <Table.Summary.Cell index={8} align="right">
-                      {totalPayment.toLocaleString()}원
+                      <span style={{ color: isDark ? '#d9d9d9' : '#000000' }}>{totalPayment.toLocaleString()}원</span>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
                 </>

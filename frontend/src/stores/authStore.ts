@@ -6,7 +6,11 @@ interface User {
   email: string;
   name: string;
   phone?: string;
+  role?: string; // 'admin', 'sales_viewer'
   businesses: Business[];
+  createdAt?: string;
+  updatedAt?: string;
+  avatar?: string;
 }
 
 interface Business {
@@ -29,11 +33,15 @@ interface AuthState {
   isAuthenticated: boolean;
   currentBusiness: Business | null;
   isNewUser: boolean;
+  loginTime: number | null; // 로그인 시간 (timestamp)
   setAuth: (user: User, token: string, isNewUser?: boolean) => void;
   setCurrentBusiness: (business: Business) => void;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   clearNewUserFlag: () => void;
+  hasRole: (role: string) => boolean;
+  canAccessSales: () => boolean;
+  refreshToken: () => void; // 토큰 갱신
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -44,12 +52,14 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       currentBusiness: null,
       isNewUser: false,
+      loginTime: null,
       setAuth: (user, token, isNewUser = false) => set({
         user,
         token,
         isAuthenticated: true,
         currentBusiness: user.businesses?.[0] || null,
-        isNewUser
+        isNewUser,
+        loginTime: Date.now() // 로그인 시간 저장
       }),
       setCurrentBusiness: (business) => set({ currentBusiness: business }),
       logout: () => set({
@@ -57,12 +67,25 @@ export const useAuthStore = create<AuthState>()(
         token: null,
         isAuthenticated: false,
         currentBusiness: null,
-        isNewUser: false
+        isNewUser: false,
+        loginTime: null
       }),
       updateUser: (userData) => set((state) => ({
         user: state.user ? { ...state.user, ...userData } : null
       })),
-      clearNewUserFlag: () => set({ isNewUser: false })
+      clearNewUserFlag: () => set({ isNewUser: false }),
+      hasRole: (role) => {
+        const state = useAuthStore.getState();
+        return state.user?.role === role;
+      },
+      canAccessSales: () => {
+        const state = useAuthStore.getState();
+        return state.user?.role === 'admin' || state.user?.role === 'sales_viewer';
+      },
+      refreshToken: () => {
+        // 토큰 갱신 시 로그인 시간 업데이트
+        set({ loginTime: Date.now() });
+      }
     }),
     {
       name: 'erp-auth-storage',

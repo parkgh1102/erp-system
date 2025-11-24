@@ -18,6 +18,6 @@ router.get('/:businessId/ledger/details', businessAccessMiddleware, transactionL
 router.get('/:businessId/ledger/summary', businessAccessMiddleware, transactionLedgerController.getLedgerSummary);
 
 // 거래처별 잔액 조회
-router.get('/:businessId/ledger/balance/:customerId', businessAccessMiddleware, transactionLedgerController.getCustomerBalance);
+router.get('/:businessId/customer/:customerId/balance', businessAccessMiddleware, transactionLedgerController.getCustomerBalance);
 
 export default router;

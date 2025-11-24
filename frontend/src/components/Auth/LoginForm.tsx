@@ -1,35 +1,31 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Typography, Alert, Divider, ConfigProvider, theme, App } from 'antd';
+import { Card, Form, Input, Button, Typography, Alert, Divider } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
-import { authAPI } from '../../utils/api';
-import { useAuthStore } from '../../stores/authStore';
+import { api } from '../../utils/api';
 import { AxiosErrorResponse } from '../../types';
 
 const { Title, Text } = Typography;
 
-const LoginForm: React.FC = () => {
-  const { message } = App.useApp();
+const LoginFormContent: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
 
-  const onFinish = async (values: { email: string; password: string }) => {
+  const handleSubmit = async (values: { email: string; password: string }) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await authAPI.login(values);
-      const { user, token } = response.data.data;
+      // OTP 전송
+      await api.post('/otp/send', { email: values.email });
 
-      setAuth(user, token);
-      navigate('/dashboard');
+      // OTP 입력 페이지로 이동 (로그인 정보를 state로 전달)
+      navigate('/otp', { state: { credentials: values } });
     } catch (error: unknown) {
       const axiosError = error as AxiosErrorResponse;
-      const errorMessage = axiosError.response?.data?.message || '아이디 또는 비밀번호가 올바르지 않습니다.';
-      message.error(errorMessage);
+      const errorMessage = axiosError.response?.data?.message || 'OTP 전송에 실패했습니다.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -37,14 +33,6 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: theme.defaultAlgorithm,
-        token: {
-          colorPrimary: '#1890ff',
-        },
-      }}
-    >
     <div
       style={{
         minHeight: '100vh',
@@ -99,7 +87,7 @@ const LoginForm: React.FC = () => {
         <Form
           form={form}
           name="login"
-          onFinish={onFinish}
+          onFinish={handleSubmit}
           autoComplete="off"
           size="large"
         >
@@ -178,7 +166,12 @@ const LoginForm: React.FC = () => {
         </Form>
       </Card>
     </div>
-    </ConfigProvider>
+  );
+};
+
+const LoginForm: React.FC = () => {
+  return (
+    <LoginFormContent />
   );
 };
 

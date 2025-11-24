@@ -25,8 +25,14 @@ export class Product {
   @Column({ length: 50, nullable: true, comment: '규격' })
   spec?: string;
 
+  @Column({ length: 255, nullable: true, comment: '사양' })
+  specification?: string;
+
   @Column({ length: 20, nullable: true, comment: '단위' })
   unit?: string;
+
+  @Column({ type: 'int', nullable: true, default: 0, comment: '현재재고' })
+  currentStock?: number;
 
   @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, comment: '매입단가' })
   buyPrice?: number;

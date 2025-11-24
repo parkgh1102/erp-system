@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, App } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import * as ExcelJS from 'exceljs';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { purchaseAPI, customerAPI, productAPI } from '../../utils/api';
+import api, { purchaseAPI, customerAPI, productAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import { PrintPreviewModal } from '../Print/PrintPreviewModal';
 
 dayjs.extend(isBetween);
-import { PrintPreviewModal } from '../Print/PrintPreviewModal';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -106,6 +106,8 @@ const PurchaseManagement: React.FC = () => {
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   const [printMode, setPrintMode] = useState<'full' | 'receiver' | 'supplier'>('full');
   const [selectedPurchaseForStatement, setSelectedPurchaseForStatement] = useState<Purchase | null>(null);
+  const [specOptions, setSpecOptions] = useState<string[]>(['box', 'ea', 'pallet', '자루', 'set', 'pack']);
+  const [unitOptions, setUnitOptions] = useState<string[]>(['EA', 'BOX', 'KG', 'M', 'SET', 'kg', 'ea', 'box', 'set', 'pcs', '개']);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
@@ -671,6 +673,45 @@ const PurchaseManagement: React.FC = () => {
     }]);
   };
 
+  // 거래명세서 인쇄 미리보기
+  const handlePrintStatement = async (purchase: Purchase, mode: 'full' | 'receiver' | 'supplier') => {
+    try {
+      // 전잔금 조회
+      let balanceAmount = 0;
+      if (purchase.customerId && currentBusiness) {
+        try {
+          const response = await api.get(
+            `/transaction-ledger/${currentBusiness.id}/customer/${purchase.customerId}/balance`,
+            {
+              params: {
+                beforeDate: purchase.purchaseDate
+              }
+            }
+          );
+          if (response.data.success) {
+            balanceAmount = response.data.data.balance || 0;
+          }
+        } catch (error) {
+          console.error('전잔금 조회 실패:', error);
+          // 실패해도 0으로 계속 진행
+        }
+      }
+
+      // 전잔금을 포함한 데이터 설정
+      const purchaseWithBalance = {
+        ...purchase,
+        balanceAmount
+      };
+
+      setSelectedPurchaseForStatement(purchaseWithBalance as any);
+      setPrintMode(mode);
+      setPrintPreviewOpen(true);
+    } catch (error) {
+      console.error('거래명세서 준비 중 오류:', error);
+      message.error('거래명세서를 준비하는 중 오류가 발생했습니다.');
+    }
+  };
+
   // 엑셀 업로드 관련 함수들 - 사용하지 않음 (ExcelUploadModal 사용)
   const handleFileUpload = (file: File) => {
     return false;
@@ -742,16 +783,9 @@ const PurchaseManagement: React.FC = () => {
 
   const columns = [
     {
-      title: 'No.',
-      key: 'index',
-      width: '8%',
-      align: 'center' as const,
-      render: (_: any, __: any, index: number) => index + 1,
-    },
-    {
-      title: '일자',
+      title: '매입일자',
       key: 'purchaseDate',
-      width: '12%',
+      width: '10%',
       align: 'center' as const,
       render: (record: Purchase) => {
         const date = record.purchaseDate;
@@ -764,9 +798,9 @@ const PurchaseManagement: React.FC = () => {
       },
     },
     {
-      title: '거래처',
+      title: '거래처명',
       key: 'customerName',
-      width: '15%',
+      width: '12%',
       align: 'center' as const,
       render: (record: Purchase) => record.customer?.name || '-',
       sorter: (a: Purchase, b: Purchase) => (a.customer?.name || '').localeCompare(b.customer?.name || ''),
@@ -775,7 +809,7 @@ const PurchaseManagement: React.FC = () => {
       title: '품목명',
       dataIndex: 'items',
       key: 'productName',
-      width: '15%',
+      width: '12%',
       align: 'center' as const,
       render: (items: PurchaseItem[]) => {
         if (!items || items.length === 0) return '-';
@@ -784,7 +818,7 @@ const PurchaseManagement: React.FC = () => {
         if (items.length === 1) {
           return firstItem.productName || '-';
         } else {
-          return `${firstItem.productName || '품목'} 외1`;
+          return `${firstItem.productName || '품목'} 외 ${items.length - 1}`;
         }
       },
       sorter: (a: Purchase, b: Purchase) => {
@@ -794,33 +828,67 @@ const PurchaseManagement: React.FC = () => {
       },
     },
     {
+      title: '규격',
+      dataIndex: 'items',
+      key: 'spec',
+      width: '8%',
+      align: 'center' as const,
+      render: (items: PurchaseItem[]) => {
+        if (!items || items.length === 0) return '-';
+        return items[0]?.spec || '-';
+      },
+    },
+    {
+      title: '수량',
+      dataIndex: 'items',
+      key: 'quantity',
+      width: '7%',
+      align: 'right' as const,
+      render: (items: PurchaseItem[]) => {
+        if (!items || items.length === 0) return '-';
+        const totalQty = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        return totalQty.toLocaleString();
+      },
+    },
+    {
+      title: '단위',
+      dataIndex: 'items',
+      key: 'unit',
+      width: '6%',
+      align: 'center' as const,
+      render: (items: PurchaseItem[]) => {
+        if (!items || items.length === 0) return '-';
+        return items[0]?.unit || '-';
+      },
+    },
+    {
+      title: '단가',
+      dataIndex: 'items',
+      key: 'unitPrice',
+      width: '9%',
+      align: 'right' as const,
+      render: (items: PurchaseItem[]) => {
+        if (!items || items.length === 0) return '-';
+        return (items[0]?.unitPrice || 0).toLocaleString() + '원';
+      },
+    },
+    {
       title: '공급가액',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
-      width: '12%',
+      width: '10%',
       align: 'right' as const,
       render: (amount: number) => (amount || 0).toLocaleString() + '원',
       sorter: (a: Purchase, b: Purchase) => (a.totalAmount || 0) - (b.totalAmount || 0),
     },
     {
-      title: '부가세',
+      title: '세액',
       dataIndex: 'vatAmount',
       key: 'vatAmount',
-      width: '12%',
+      width: '9%',
       align: 'right' as const,
       render: (amount: number) => (amount || 0).toLocaleString() + '원',
       sorter: (a: Purchase, b: Purchase) => (a.vatAmount || 0) - (b.vatAmount || 0),
-    },
-    {
-      title: '합계',
-      key: 'grandTotal',
-      width: '12%',
-      align: 'right' as const,
-      render: (record: Purchase) => {
-        const total = (record.totalAmount || 0) + (record.vatAmount || 0);
-        return total.toLocaleString() + '원';
-      },
-      sorter: (a: Purchase, b: Purchase) => ((a.totalAmount || 0) + (a.vatAmount || 0)) - ((b.totalAmount || 0) + (b.vatAmount || 0)),
     },
     {
       title: '비고',
@@ -833,7 +901,7 @@ const PurchaseManagement: React.FC = () => {
     {
       title: '작업',
       key: 'action',
-      width: '14%',
+      width: '7%',
       align: 'center' as const,
       render: (_: any, record: Purchase) => (
         <Space size="small">
@@ -996,9 +1064,7 @@ const PurchaseManagement: React.FC = () => {
                       }
                       const selectedPurchase = purchases.find(p => p.id === selectedRowKeys[0]);
                       if (selectedPurchase) {
-                        setSelectedPurchaseForStatement(selectedPurchase);
-                        setPrintMode('full');
-                        setPrintPreviewOpen(true);
+                        handlePrintStatement(selectedPurchase, 'full');
                       }
                     }
                   },
@@ -1012,9 +1078,7 @@ const PurchaseManagement: React.FC = () => {
                       }
                       const selectedPurchase = purchases.find(p => p.id === selectedRowKeys[0]);
                       if (selectedPurchase) {
-                        setSelectedPurchaseForStatement(selectedPurchase);
-                        setPrintMode('receiver');
-                        setPrintPreviewOpen(true);
+                        handlePrintStatement(selectedPurchase, 'receiver');
                       }
                     }
                   },
@@ -1028,9 +1092,7 @@ const PurchaseManagement: React.FC = () => {
                       }
                       const selectedPurchase = purchases.find(p => p.id === selectedRowKeys[0]);
                       if (selectedPurchase) {
-                        setSelectedPurchaseForStatement(selectedPurchase);
-                        setPrintMode('supplier');
-                        setPrintPreviewOpen(true);
+                        handlePrintStatement(selectedPurchase, 'supplier');
                       }
                     }
                   }
@@ -1093,8 +1155,19 @@ const PurchaseManagement: React.FC = () => {
         keyboard={true}
         destroyOnHidden={true}
         footer={null}
-        width={window.innerWidth <= 768 ? '95%' : 1400}
-        style={{ top: window.innerWidth <= 768 ? 20 : 30 }}
+        width={window.innerWidth <= 768 ? '100%' : 1400}
+        style={{
+          top: window.innerWidth <= 768 ? 0 : 30,
+          maxWidth: window.innerWidth <= 768 ? '100vw' : '1400px',
+          paddingBottom: 0,
+          margin: window.innerWidth <= 768 ? 0 : 'auto'
+        }}
+        styles={{
+          body: {
+            maxHeight: window.innerWidth <= 768 ? 'calc(100vh - 110px)' : 'calc(100vh - 200px)',
+            overflowY: 'auto'
+          }
+        }}
       >
         <Form
           form={form}
@@ -1113,19 +1186,19 @@ const PurchaseManagement: React.FC = () => {
                   showSearch
                   allowClear
                   loading={loading}
-                  optionFilterProp="children"
                   size={window.innerWidth <= 768 ? "small" : "middle"}
-                  filterOption={(input, option) =>
-                    (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-                  }
+                  filterOption={(input, option) => {
+                    const customer = customers.find(c => c.id === option?.value);
+                    if (!customer) return false;
+                    const searchText = `${customer.name} ${customer.customerCode} ${customer.customerType}`.toLowerCase();
+                    return searchText.includes(input.toLowerCase());
+                  }}
                 >
-                  {customers
-                    .filter(customer => customer.customerType === '매입처' || customer.customerType === '기타')
-                    .map(customer => (
-                      <Option key={customer.id} value={customer.id}>
-                        {customer.name} ({customer.customerCode})
-                      </Option>
-                    ))}
+                  {customers.map(customer => (
+                    <Option key={customer.id} value={customer.id}>
+                      {customer.name} ({customer.customerCode}) - {customer.customerType}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
@@ -1185,13 +1258,43 @@ const PurchaseManagement: React.FC = () => {
                     allowClear
                     showSearch
                     style={{ width: '100%' }}
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                          <Input
+                            placeholder="새 규격 추가"
+                            size="small"
+                            onPressEnter={(e) => {
+                              const value = (e.target as HTMLInputElement).value.trim();
+                              if (value && !specOptions.includes(value)) {
+                                setSpecOptions([...specOptions, value]);
+                                handleItemChange(index, 'spec', value);
+                                (e.target as HTMLInputElement).value = '';
+                              }
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
                   >
-                    <Option value="box">box</Option>
-                    <Option value="ea">ea</Option>
-                    <Option value="pallet">pallet</Option>
-                    <Option value="자루">자루</Option>
-                    <Option value="set">set</Option>
-                    <Option value="pack">pack</Option>
+                    {specOptions.map(spec => (
+                      <Option key={spec} value={spec}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{spec}</span>
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<CloseOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSpecOptions(specOptions.filter(s => s !== spec));
+                            }}
+                            style={{ color: '#ff4d4f', padding: '0 4px' }}
+                          />
+                        </div>
+                      </Option>
+                    ))}
                   </Select>
                 </Col>
                 <Col span={2}>
@@ -1202,18 +1305,43 @@ const PurchaseManagement: React.FC = () => {
                     allowClear
                     showSearch
                     style={{ width: '100%' }}
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                          <Input
+                            placeholder="새 단위 추가"
+                            size="small"
+                            onPressEnter={(e) => {
+                              const value = (e.target as HTMLInputElement).value.trim();
+                              if (value && !unitOptions.includes(value)) {
+                                setUnitOptions([...unitOptions, value]);
+                                handleItemChange(index, 'unit', value);
+                                (e.target as HTMLInputElement).value = '';
+                              }
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
                   >
-                    <Option value="EA">EA</Option>
-                    <Option value="BOX">BOX</Option>
-                    <Option value="KG">KG</Option>
-                    <Option value="M">M</Option>
-                    <Option value="SET">SET</Option>
-                    <Option value="kg">kg</Option>
-                    <Option value="ea">ea</Option>
-                    <Option value="box">box</Option>
-                    <Option value="set">set</Option>
-                    <Option value="pcs">pcs</Option>
-                    <Option value="개">개</Option>
+                    {unitOptions.map(unit => (
+                      <Option key={unit} value={unit}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{unit}</span>
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<CloseOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setUnitOptions(unitOptions.filter(u => u !== unit));
+                            }}
+                            style={{ color: '#ff4d4f', padding: '0 4px' }}
+                          />
+                        </div>
+                      </Option>
+                    ))}
                   </Select>
                 </Col>
                 <Col span={2}>
@@ -1396,7 +1524,18 @@ const PurchaseManagement: React.FC = () => {
           setUploadData([]);
         }}
         onOk={handleUploadConfirm}
-        width={window.innerWidth <= 768 ? '95%' : 1200}
+        width={window.innerWidth <= 768 ? '100%' : 1200}
+        style={{
+          top: window.innerWidth <= 768 ? 0 : 30,
+          maxWidth: window.innerWidth <= 768 ? '100vw' : '1200px',
+          margin: window.innerWidth <= 768 ? 0 : 'auto'
+        }}
+        styles={{
+          body: {
+            maxHeight: window.innerWidth <= 768 ? 'calc(100vh - 150px)' : 'calc(100vh - 200px)',
+            overflowY: 'auto'
+          }
+        }}
         okText="업로드 실행"
         cancelText="취소"
       >
@@ -1448,7 +1587,7 @@ const PurchaseManagement: React.FC = () => {
         title="매입 엑셀 업로드"
         templateType="purchase"
         description="매입 정보를 엑셀 파일로 일괄 업로드할 수 있습니다. 먼저 템플릿을 다운로드하여 양식을 확인하세요."
-        requiredFields={['거래처명', '상품명']}
+        requiredFields={['매입일자', '거래처명', '품목명']}
       />
 
       <PrintPreviewModal
@@ -1486,7 +1625,7 @@ const PurchaseManagement: React.FC = () => {
           totalAmount: selectedPurchaseForStatement.totalAmount || 0,
           tax: selectedPurchaseForStatement.vatAmount || 0,
           grandTotal: (selectedPurchaseForStatement.totalAmount || 0) + (selectedPurchaseForStatement.vatAmount || 0),
-          balanceAmount: 0,
+          balanceAmount: (selectedPurchaseForStatement as any).balanceAmount || 0,
           memo: '',
           notice: ''
         } : null}

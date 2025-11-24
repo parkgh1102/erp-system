@@ -15,11 +15,17 @@ export class User {
   @Column()
   name!: string;
 
-  @Column({ nullable: true })
-  phone?: string;
+  @Column()
+  phone!: string;
 
   @Column({ nullable: true })
   avatar?: string;
+
+  @Column({ default: 'admin' })
+  role!: string; // 'admin', 'sales_viewer'
+
+  @Column({ nullable: true })
+  businessId?: number; // 소속 사업자 ID (sales_viewer용)
 
   @Column({ default: true })
   isActive!: boolean;

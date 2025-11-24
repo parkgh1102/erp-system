@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Upload, Typography, Dropdown } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, UploadOutlined, DownloadOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import { createExportMenuItems } from '../../utils/exportUtils';
-import * as ExcelJS from 'exceljs';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { salesAPI, customerAPI, productAPI } from '../../utils/api';
+import api, { salesAPI, customerAPI, productAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 
 dayjs.extend(isBetween);
 import { PrintPreviewModal } from '../Print/PrintPreviewModal';
+import { ESignaturePreviewModal } from '../Print/ESignaturePreviewModal';
+import TransactionStatement from '../Print/TransactionStatement';
 import { useMessage } from '../../hooks/useMessage';
 import logger from '../../utils/logger';
 
@@ -44,6 +45,13 @@ interface Customer {
   representative?: string;
 }
 
+interface User {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+}
+
 interface SaleItem {
   productId: number;
   productCode: string;
@@ -68,9 +76,14 @@ interface Sale {
   totalAmount: number;
   vatAmount: number;
   description?: string;
+  memo?: string;
   businessId: number;
   createdAt: string;
   updatedAt: string;
+  signedBy?: number;
+  signedAt?: string;
+  signedByUser?: User;
+  signatureImage?: string;
 }
 
 const SalesManagement: React.FC = () => {
@@ -109,7 +122,13 @@ const SalesManagement: React.FC = () => {
   const [printMode, setPrintMode] = useState<'full' | 'receiver' | 'supplier'>('full');
   const [transactionStatementModalVisible, setTransactionStatementVisible] = useState(false);
   const [selectedSaleForStatement, setSelectedSaleForStatement] = useState<Sale | null>(null);
-  const { currentBusiness } = useAuthStore();
+  const [transactionDataForPrint, setTransactionDataForPrint] = useState<any[]>([]); // 인쇄용 거래 데이터 (잔액 포함)
+  const [eSignaturePreviewOpen, setESignaturePreviewOpen] = useState(false);
+  const [eSignatureTransactionData, setESignatureTransactionData] = useState<any>(null);
+  const [specOptions, setSpecOptions] = useState<string[]>(['box', 'ea', 'pallet', '자루', 'set', 'pack']);
+  const [unitOptions, setUnitOptions] = useState<string[]>(['EA', 'BOX', 'KG', 'M', 'SET', 'kg', 'ea', 'box', 'set', 'pcs', '개']);
+  const { currentBusiness, user } = useAuthStore();
+  const isSalesViewer = user?.role === 'sales_viewer';
   const { isDark } = useThemeStore();
 
   useEffect(() => {
@@ -171,11 +190,21 @@ const SalesManagement: React.FC = () => {
     try {
       const [salesRes, customersRes, productsRes] = await Promise.all([
         salesAPI.getAll(currentBusiness.id),
-        customerAPI.getAll(currentBusiness.id),
-        productAPI.getAll(currentBusiness.id)
+        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
+        productAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 })
       ]);
 
-      setSales(salesRes.data.data.sales || []);
+      const salesData = salesRes.data.data.sales || [];
+
+      // 서명 정보가 있는 매출 로그
+      const signedSales = salesData.filter((s: Sale) => s.signatureImage);
+      console.log('📊 매출 데이터 로드 완료:', {
+        전체매출수: salesData.length,
+        서명된매출수: signedSales.length,
+        서명된매출ID들: signedSales.map((s: Sale) => s.id)
+      });
+
+      setSales(salesData);
       setCustomers(customersRes.data.data.customers || []);
       setProducts(productsRes.data.data.products || []);
 
@@ -344,6 +373,288 @@ const SalesManagement: React.FC = () => {
       message.success('매출이 삭제되었습니다.', 2);
     } catch (error) {
       message.error('매출 삭제에 실패했습니다.', 2);
+    }
+  };
+
+  // 전자서명 준비: 첫 번째 선택된 매출에 대해 전잔금 조회 후 전자서명 프리뷰 열기
+  const prepareESignature = async () => {
+    if (!currentBusiness) return;
+
+    if (selectedRowKeys.length === 0) {
+      message.warning('전자서명할 거래명세표를 선택해주세요', 2);
+      return;
+    }
+
+    if (selectedRowKeys.length > 1) {
+      message.warning('전자서명은 한 건씩만 가능합니다', 2);
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const selectedSale = sales.find(s => s.id === selectedRowKeys[0]);
+      if (!selectedSale) {
+        message.error('선택한 매출을 찾을 수 없습니다', 2);
+        setLoading(false);
+        return;
+      }
+
+      // 서명 정보 디버깅
+      console.log('📝 전자서명 모달 열기 (선택) - SelectedSale 정보:', {
+        id: selectedSale.id,
+        signatureImage: selectedSale.signatureImage ? `있음 (${selectedSale.signatureImage.substring(0, 50)}...)` : '없음',
+        signedBy: selectedSale.signedBy,
+        signedAt: selectedSale.signedAt
+      });
+
+      let balanceAmount = 0;
+
+      // 거래처가 있는 경우에만 전잔금 조회
+      if (selectedSale.customerId) {
+        try {
+          const response = await api.get(
+            `/transaction-ledger/${currentBusiness.id}/customer/${selectedSale.customerId}/balance`,
+            {
+              params: {
+                beforeDate: selectedSale.transactionDate || selectedSale.saleDate
+              }
+            }
+          );
+          if (response.data.success) {
+            balanceAmount = response.data.data.balance || 0;
+          }
+        } catch (error) {
+          console.error('전잔금 조회 실패:', error);
+          // 실패해도 0으로 계속 진행
+        }
+      }
+
+      // TransactionData 형식으로 변환
+      const transactionData = {
+        id: selectedSale.id || 0,
+        date: selectedSale.transactionDate || selectedSale.saleDate || '',
+        companyName: selectedSale.customer?.name || '',
+        companyAddress: selectedSale.customer?.address || '',
+        companyPhone: selectedSale.customer?.phone || '',
+        companyRegistrationNumber: selectedSale.customer?.businessNumber || '',
+        ceoName: selectedSale.customer?.representative || '',
+        items: selectedSale.items?.map((item: any) => {
+          const taxType = item.product?.taxType || item.taxType || 'tax_separate';
+          const isTaxFree = taxType === 'tax_free';
+          const isTaxInclusive = taxType === 'tax_inclusive';
+
+          return {
+            itemName: item.itemName || item.productName || item.product?.name || '',
+            specification: item.spec || item.specification || item.product?.spec || '',
+            spec: item.spec || item.specification || item.product?.spec || '',
+            unit: item.unit || item.product?.unit || 'EA',
+            quantity: item.quantity || 0,
+            unitPrice: item.unitPrice || 0,
+            amount: item.amount || (item.quantity * item.unitPrice) || 0,
+            supplyAmount: item.supplyAmount,
+            vatAmount: item.vatAmount,
+            totalAmount: item.totalAmount,
+            taxExempt: isTaxFree,
+            taxType: taxType,
+            taxInclusive: isTaxInclusive
+          };
+        }) || [],
+        totalAmount: selectedSale.totalAmount || 0,
+        tax: selectedSale.vatAmount || 0,
+        grandTotal: (selectedSale.totalAmount || 0) + (selectedSale.vatAmount || 0),
+        balanceAmount: balanceAmount,
+        signatureImage: selectedSale.signatureImage,
+        signedBy: selectedSale.signedBy,
+        signedByUser: selectedSale.signedByUser,
+        signedAt: selectedSale.signedAt,
+        memo: '',
+        notice: ''
+      };
+
+      setESignatureTransactionData(transactionData);
+      setESignaturePreviewOpen(true);
+      setLoading(false);
+
+    } catch (error) {
+      setLoading(false);
+      message.error('전자서명 준비 중 오류가 발생했습니다.', 2);
+      console.error('전자서명 준비 오류:', error);
+    }
+  };
+
+  // 더블클릭시 전자서명 모달 열기
+  const openESignatureForRecord = async (record: Sale) => {
+    if (!currentBusiness) return;
+
+    try {
+      setLoading(true);
+
+      let balanceAmount = 0;
+
+      // 거래처가 있는 경우에만 전잔금 조회
+      if (record.customerId) {
+        try {
+          const response = await api.get(
+            `/transaction-ledger/${currentBusiness.id}/customer/${record.customerId}/balance`,
+            {
+              params: {
+                beforeDate: record.transactionDate || record.saleDate
+              }
+            }
+          );
+          if (response.data.success) {
+            balanceAmount = response.data.data.balance || 0;
+          }
+        } catch (error) {
+          console.error('전잔금 조회 실패:', error);
+          // 실패해도 0으로 계속 진행
+        }
+      }
+
+      // 서명 정보 디버깅
+      console.log('📝 전자서명 모달 열기 - Record 정보:', {
+        id: record.id,
+        signatureImage: record.signatureImage ? `있음 (${record.signatureImage.substring(0, 50)}...)` : '없음',
+        signedBy: record.signedBy,
+        signedAt: record.signedAt
+      });
+
+      // TransactionData 형식으로 변환
+      const transactionData = {
+        id: record.id || 0,
+        date: record.transactionDate || record.saleDate || '',
+        companyName: record.customer?.name || '',
+        companyAddress: record.customer?.address || '',
+        companyPhone: record.customer?.phone || '',
+        companyRegistrationNumber: record.customer?.businessNumber || '',
+        ceoName: record.customer?.representative || '',
+        items: record.items?.map((item: any) => {
+          const taxType = item.product?.taxType || item.taxType || 'tax_separate';
+          const isTaxFree = taxType === 'tax_free';
+          const isTaxInclusive = taxType === 'tax_inclusive';
+
+          return {
+            itemName: item.itemName || item.productName || item.product?.name || '',
+            specification: item.spec || item.specification || item.product?.spec || '',
+            spec: item.spec || item.specification || item.product?.spec || '',
+            unit: item.unit || item.product?.unit || 'EA',
+            quantity: item.quantity || 0,
+            unitPrice: item.unitPrice || 0,
+            amount: item.amount || (item.quantity * item.unitPrice) || 0,
+            supplyAmount: item.supplyAmount,
+            vatAmount: item.vatAmount,
+            totalAmount: item.totalAmount,
+            taxExempt: isTaxFree,
+            taxType: taxType,
+            taxInclusive: isTaxInclusive
+          };
+        }) || [],
+        totalAmount: record.totalAmount || 0,
+        tax: record.vatAmount || 0,
+        grandTotal: (record.totalAmount || 0) + (record.vatAmount || 0),
+        balanceAmount: balanceAmount,
+        signatureImage: record.signatureImage,
+        signedBy: record.signedBy,
+        signedByUser: record.signedByUser,
+        signedAt: record.signedAt,
+        memo: '',
+        notice: ''
+      };
+
+      setESignatureTransactionData(transactionData);
+      setESignaturePreviewOpen(true);
+      setLoading(false);
+
+    } catch (error) {
+      setLoading(false);
+      message.error('전자서명 준비 중 오류가 발생했습니다.', 2);
+      console.error('전자서명 준비 오류:', error);
+    }
+  };
+
+  // 인쇄 준비: 전잔금 조회 후 인쇄 프리뷰 열기
+  const preparePrintWithBalance = async (selectedSales: Sale[], mode: 'full' | 'receiver' | 'supplier') => {
+    if (!currentBusiness) return;
+
+    try {
+      setLoading(true);
+
+      // 각 매출에 대해 전잔금 조회
+      const transactionDataPromises = selectedSales.map(async (sale) => {
+        let balanceAmount = 0;
+
+        // 거래처가 있는 경우에만 전잔금 조회
+        if (sale.customerId) {
+          try {
+            const response = await api.get(
+              `/transaction-ledger/${currentBusiness.id}/customer/${sale.customerId}/balance`,
+              {
+                params: {
+                  beforeDate: sale.transactionDate || sale.saleDate
+                }
+              }
+            );
+            if (response.data.success) {
+              balanceAmount = response.data.data.balance || 0;
+            }
+          } catch (error) {
+            console.error('전잔금 조회 실패:', error);
+            // 실패해도 0으로 계속 진행
+          }
+        }
+
+        // TransactionData 형식으로 변환
+        return {
+          id: sale.id || 0,
+          date: sale.transactionDate || sale.saleDate || '',
+          companyName: sale.customer?.name || '',
+          companyAddress: sale.customer?.address || '',
+          companyPhone: sale.customer?.phone || '',
+          companyRegistrationNumber: sale.customer?.businessNumber || '',
+          ceoName: sale.customer?.representative || '',
+          items: sale.items?.map((item: any) => {
+            const taxType = item.product?.taxType || item.taxType || 'tax_separate';
+            const isTaxFree = taxType === 'tax_free';
+            const isTaxInclusive = taxType === 'tax_inclusive';
+
+            return {
+              itemName: item.itemName || item.productName || item.product?.name || '',
+              specification: item.spec || item.specification || item.product?.spec || '',
+              spec: item.spec || item.specification || item.product?.spec || '',
+              unit: item.unit || item.product?.unit || 'EA',
+              quantity: item.quantity || 0,
+              unitPrice: item.unitPrice || 0,
+              amount: item.amount || (item.quantity * item.unitPrice) || 0,
+              supplyAmount: item.supplyAmount,
+              vatAmount: item.vatAmount,
+              totalAmount: item.totalAmount,
+              taxExempt: isTaxFree,
+              taxType: taxType,
+              taxInclusive: isTaxInclusive
+            };
+          }) || [],
+          totalAmount: sale.totalAmount || 0,
+          tax: sale.vatAmount || 0,
+          grandTotal: (sale.totalAmount || 0) + (sale.vatAmount || 0),
+          balanceAmount: balanceAmount, // 조회한 전잔금
+          memo: '',
+          notice: ''
+        };
+      });
+
+      const transactionData = await Promise.all(transactionDataPromises);
+
+      setTransactionDataForPrint(transactionData);
+      setPrintMode(mode);
+      setPrintPreviewOpen(true);
+      setLoading(false);
+
+      message.info(`${selectedSales.length}건의 거래명세서를 인쇄합니다.`, 2);
+    } catch (error) {
+      setLoading(false);
+      message.error('인쇄 준비 중 오류가 발생했습니다.', 2);
+      console.error('인쇄 준비 오류:', error);
     }
   };
 
@@ -687,42 +998,6 @@ const SalesManagement: React.FC = () => {
   };
 
   // 엑셀 업로드 관련 함수들
-  const handleFileUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-        // 엑셀 데이터를 매출 형식으로 변환
-        const salesData = jsonData.map((row: any, index: number) => {
-          return {
-            index: index + 1,
-            saleDate: row['매출일'] || row['saleDate'] || new Date().toISOString().split('T')[0],
-            customerName: row['거래처명'] || row['customerName'] || '',
-            productName: row['품목명'] || row['productName'] || '',
-            quantity: Number(row['수량'] || row['quantity']) || 1,
-            unitPrice: Number(row['단가'] || row['unitPrice']) || 0,
-            totalAmount: Number(row['공급가액'] || row['totalAmount']) || 0,
-            vatAmount: Number(row['부가세'] || row['vatAmount']) || 0,
-            memo: row['비고'] || row['memo'] || ''
-          };
-        });
-
-        setUploadData(salesData);
-        setUploadModalVisible(true);
-      } catch (error) {
-        message.error('엑셀 파일 읽기에 실패했습니다.', 2);
-        logger.error(error);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-    return false; // 파일 업로드를 막음
-  };
-
   const handleUploadConfirm = async () => {
     if (!currentBusiness || uploadData.length === 0) return;
 
@@ -783,38 +1058,11 @@ const SalesManagement: React.FC = () => {
     }
   };
 
-  const downloadTemplate = () => {
-    const template = [
-      {
-        '매출일': '2024-01-01',
-        '거래처명': '샘플거래처',
-        '품목명': '샘플품목',
-        '수량': 10,
-        '단가': 1000,
-        '공급가액': 10000,
-        '부가세': 1000,
-        '비고': '샘플 데이터'
-      }
-    ];
-
-    const worksheet = XLSX.utils.json_to_sheet(template);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, '매출');
-    XLSX.writeFile(workbook, '매출_업로드_템플릿.xlsx');
-  };
-
-  const columns = [
+  const allColumns = [
     {
-      title: 'No.',
-      key: 'index',
-      width: '8%',
-      align: 'center' as const,
-      render: (_: any, __: any, index: number) => index + 1,
-    },
-    {
-      title: '일자',
+      title: '매출일자',
       key: 'transactionDate',
-      width: '12%',
+      width: '10%',
       align: 'center' as const,
       render: (record: Sale) => {
         const date = record.transactionDate || record.saleDate;
@@ -827,9 +1075,9 @@ const SalesManagement: React.FC = () => {
       },
     },
     {
-      title: '거래처',
+      title: '거래처명',
       key: 'customerName',
-      width: '15%',
+      width: '12%',
       align: 'center' as const,
       render: (record: Sale) => record.customer?.name || '-',
       sorter: (a: Sale, b: Sale) => (a.customer?.name || '').localeCompare(b.customer?.name || ''),
@@ -838,66 +1086,120 @@ const SalesManagement: React.FC = () => {
       title: '품목명',
       dataIndex: 'items',
       key: 'productName',
-      width: '15%',
+      width: '12%',
       align: 'center' as const,
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
 
         const firstItem = items[0];
         if (items.length === 1) {
-          return firstItem.itemName || '-';
+          return firstItem.itemName || firstItem.productName || '-';
         } else {
-          return `${firstItem.itemName || '품목'} 외1`;
+          return `${firstItem.itemName || firstItem.productName || '품목'} 외 ${items.length - 1}`;
         }
       },
       sorter: (a: Sale, b: Sale) => {
-        const aFirstItem = (a.items && a.items[0]?.itemName) || '';
-        const bFirstItem = (b.items && b.items[0]?.itemName) || '';
+        const aFirstItem = (a.items && (a.items[0]?.itemName || a.items[0]?.productName)) || '';
+        const bFirstItem = (b.items && (b.items[0]?.itemName || b.items[0]?.productName)) || '';
         return aFirstItem.localeCompare(bFirstItem);
+      },
+    },
+    {
+      title: '규격',
+      dataIndex: 'items',
+      key: 'spec',
+      width: '8%',
+      align: 'center' as const,
+      render: (items: SaleItem[]) => {
+        if (!items || items.length === 0) return '-';
+        return items[0]?.spec || '-';
+      },
+    },
+    {
+      title: '수량',
+      dataIndex: 'items',
+      key: 'quantity',
+      width: '7%',
+      align: 'right' as const,
+      render: (items: SaleItem[]) => {
+        if (!items || items.length === 0) return '-';
+        const totalQty = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        return totalQty.toLocaleString();
+      },
+    },
+    {
+      title: '단위',
+      dataIndex: 'items',
+      key: 'unit',
+      width: '6%',
+      align: 'center' as const,
+      render: (items: SaleItem[]) => {
+        if (!items || items.length === 0) return '-';
+        return items[0]?.unit || '-';
+      },
+    },
+    {
+      title: '단가',
+      dataIndex: 'items',
+      key: 'unitPrice',
+      width: '9%',
+      align: 'right' as const,
+      render: (items: SaleItem[]) => {
+        if (!items || items.length === 0) return '-';
+        return (items[0]?.unitPrice || 0).toLocaleString() + '원';
       },
     },
     {
       title: '공급가액',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
-      width: '12%',
+      width: '10%',
       align: 'right' as const,
       render: (amount: number) => (amount || 0).toLocaleString() + '원',
       sorter: (a: Sale, b: Sale) => (a.totalAmount || 0) - (b.totalAmount || 0),
     },
     {
-      title: '부가세',
+      title: '세액',
       dataIndex: 'vatAmount',
       key: 'vatAmount',
-      width: '12%',
+      width: '9%',
       align: 'right' as const,
       render: (amount: number) => (amount || 0).toLocaleString() + '원',
       sorter: (a: Sale, b: Sale) => (a.vatAmount || 0) - (b.vatAmount || 0),
     },
     {
-      title: '합계',
-      key: 'grandTotal',
-      width: '12%',
-      align: 'right' as const,
-      render: (record: Sale) => {
-        const total = (record.totalAmount || 0) + (record.vatAmount || 0);
-        return total.toLocaleString() + '원';
-      },
-      sorter: (a: Sale, b: Sale) => ((a.totalAmount || 0) + (a.vatAmount || 0)) - ((b.totalAmount || 0) + (b.vatAmount || 0)),
-    },
-    {
       title: '비고',
-      dataIndex: 'memo',
       key: 'memo',
       width: '10%',
       align: 'center' as const,
-      render: (memo: string) => memo || '-',
+      render: (record: Sale) => {
+        const memo = record.memo || '-';
+        // 전자서명이 완료된 경우 V 체크 표시 with Tooltip
+        if (record.signedBy && record.signedByUser && record.signedAt) {
+          const signedDate = dayjs(record.signedAt).format('YYYY-MM-DD HH:mm:ss');
+          const tooltipContent = (
+            <div>
+              <div>담당자: {record.signedByUser.name}</div>
+              <div>날짜: {signedDate}</div>
+            </div>
+          );
+          return (
+            <Tooltip title={tooltipContent}>
+              <span style={{ color: '#52c41a', cursor: 'pointer', fontSize: '18px', fontWeight: 'bold' }}>
+                ✓{memo !== '-' ? ` ${memo}` : ''}
+              </span>
+            </Tooltip>
+          );
+        }
+        return memo;
+      },
     },
     {
       title: '작업',
       key: 'action',
-      width: '14%',
+      width: '7%',
       align: 'center' as const,
+      hidden: isSalesViewer, // sales_viewer는 작업 컬럼 숨김
       render: (_: any, record: Sale) => (
         <Space size="small">
           <Button
@@ -928,6 +1230,9 @@ const SalesManagement: React.FC = () => {
       ),
     },
   ];
+
+  // sales_viewer인 경우 작업 컬럼 제외
+  const columns = allColumns.filter(col => !col.hidden);
 
   const actionMenuItems = createExportMenuItems(
     sales,
@@ -964,150 +1269,159 @@ const SalesManagement: React.FC = () => {
                 onSearch={handleSearch}
               />
             </AutoComplete>
-            <RangePicker
-              style={{ width: 300 }}
-              value={dateRange}
-              onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-              format="YYYY-MM-DD"
-            />
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-              추가
-            </Button>
+            {!isSalesViewer && (
+              <>
+                <RangePicker
+                  style={{ width: 300 }}
+                  value={dateRange}
+                  onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+                  format="YYYY-MM-DD"
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+                  추가
+                </Button>
+                <Button
+                  icon={<ImportOutlined />}
+                  size="middle"
+                  onClick={() => setExcelUploadModalVisible(true)}
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+                >
+                  엑셀업로드
+                </Button>
+                <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
+                  <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                    파일저장
+                  </Button>
+                </Dropdown>
+                <Button
+                  onClick={handleSelectAll}
+                  type="default"
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+                >
+                  {selectedRowKeys.length === filteredSales.length && filteredSales.length > 0 ? '전체 해제' : '전체 선택'}
+                </Button>
+                <Popconfirm
+                  title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
+                  onConfirm={handleBulkDelete}
+                  okText="예"
+                  cancelText="아니오"
+                  disabled={selectedRowKeys.length === 0}
+                  okButtonProps={{
+                    autoFocus: true,
+                    size: 'large',
+                    style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+                  }}
+                  cancelButtonProps={{
+                    size: 'large',
+                    style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+                  }}
+                  placement="top"
+                  overlayStyle={{
+                    position: 'fixed',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 9999,
+                    pointerEvents: 'auto'
+                  }}
+                  styles={{
+                    body: {
+                      padding: '20px',
+                      fontSize: '18px',
+                      fontWeight: '500',
+                      minWidth: '350px',
+                      textAlign: 'center',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
+                    }
+                  }}
+                  transitionName=""
+                  mouseEnterDelay={0}
+                  mouseLeaveDelay={0}
+                  onOpenChange={(visible) => {
+                    if (visible) {
+                      setTimeout(() => {
+                        const okButton = document.querySelector('.ant-popconfirm .ant-btn-primary') as HTMLButtonElement;
+                        if (okButton) {
+                          okButton.focus();
+                        }
+                      }, 0);
+                    }
+                  }}
+                >
+                  <Button danger disabled={selectedRowKeys.length === 0}>
+                    선택 삭제 ({selectedRowKeys.length})
+                  </Button>
+                </Popconfirm>
+                <Dropdown
+                  menu={{
+                    items: [
+                      {
+                        key: 'full',
+                        label: '전체 인쇄',
+                        onClick: () => {
+                          if (selectedRowKeys.length === 0) {
+                            message.warning('목록을 선택후 인쇄버튼을 누르세요', 2);
+                            return;
+                          }
+                          // 선택된 모든 매출 가져오기
+                          const selectedSales = sales.filter(s => selectedRowKeys.includes(s.id));
+                          if (selectedSales.length > 0) {
+                            preparePrintWithBalance(selectedSales, 'full');
+                          }
+                        }
+                      },
+                      {
+                        key: 'receiver',
+                        label: '공급받는자 보관용',
+                        onClick: () => {
+                          if (selectedRowKeys.length === 0) {
+                            message.warning('목록을 선택후 인쇄버튼을 누르세요', 2);
+                            return;
+                          }
+                          // 선택된 모든 매출 가져오기
+                          const selectedSales = sales.filter(s => selectedRowKeys.includes(s.id));
+                          if (selectedSales.length > 0) {
+                            preparePrintWithBalance(selectedSales, 'receiver');
+                          }
+                        }
+                      },
+                      {
+                        key: 'supplier',
+                        label: '공급자 보관용',
+                        onClick: () => {
+                          if (selectedRowKeys.length === 0) {
+                            message.warning('목록을 선택후 인쇄버튼을 누르세요', 2);
+                            return;
+                          }
+                          // 선택된 모든 매출 가져오기
+                          const selectedSales = sales.filter(s => selectedRowKeys.includes(s.id));
+                          if (selectedSales.length > 0) {
+                            preparePrintWithBalance(selectedSales, 'supplier');
+                          }
+                        }
+                      }
+                    ]
+                  }}
+                >
+                  <Button
+                    icon={<PrinterOutlined />}
+                    size="middle"
+                    style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
+                  >
+                    인쇄 <DownOutlined />
+                  </Button>
+                </Dropdown>
+              </>
+            )}
             <Button
-              icon={<ImportOutlined />}
+              icon={<EditOutlined />}
               size="middle"
-              onClick={() => setExcelUploadModalVisible(true)}
-              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+              onClick={prepareESignature}
+              style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
             >
-              엑셀업로드
+              전자서명
             </Button>
-            <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-              <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
-                파일저장
-              </Button>
-            </Dropdown>
-            <Button
-              onClick={handleSelectAll}
-              type="default"
-              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
-            >
-              {selectedRowKeys.length === filteredSales.length && filteredSales.length > 0 ? '전체 해제' : '전체 선택'}
-            </Button>
-            <Popconfirm
-              title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
-              onConfirm={handleBulkDelete}
-              okText="예"
-              cancelText="아니오"
-              disabled={selectedRowKeys.length === 0}
-              okButtonProps={{
-                autoFocus: true,
-                size: 'large',
-                style: { minWidth: '80px', height: '40px', fontSize: '16px' }
-              }}
-              cancelButtonProps={{
-                size: 'large',
-                style: { minWidth: '80px', height: '40px', fontSize: '16px' }
-              }}
-              placement="top"
-              overlayStyle={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 9999,
-                pointerEvents: 'auto'
-              }}
-              styles={{
-                body: {
-                  padding: '20px',
-                  fontSize: '18px',
-                  fontWeight: '500',
-                  minWidth: '350px',
-                  textAlign: 'center',
-                  borderRadius: '12px',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
-                }
-              }}
-              transitionName=""
-              mouseEnterDelay={0}
-              mouseLeaveDelay={0}
-              onOpenChange={(visible) => {
-                if (visible) {
-                  setTimeout(() => {
-                    const okButton = document.querySelector('.ant-popconfirm .ant-btn-primary') as HTMLButtonElement;
-                    if (okButton) {
-                      okButton.focus();
-                    }
-                  }, 0);
-                }
-              }}
-            >
-              <Button danger disabled={selectedRowKeys.length === 0}>
-                선택 삭제 ({selectedRowKeys.length})
-              </Button>
-            </Popconfirm>
-            <Dropdown
-              menu={{
-                items: [
-                  {
-                    key: 'full',
-                    label: '전체 인쇄',
-                    onClick: () => {
-                      if (selectedRowKeys.length === 0) {
-                        message.warning('목록을 선택후 인쇄버튼을 누르세요', 2);
-                        return;
-                      }
-                      const selectedSale = sales.find(s => s.id === selectedRowKeys[0]);
-                      if (selectedSale) {
-                        setSelectedSaleForStatement(selectedSale);
-                        setPrintMode('full');
-                        setPrintPreviewOpen(true);
-                      }
-                    }
-                  },
-                  {
-                    key: 'receiver',
-                    label: '공급받는자 보관용',
-                    onClick: () => {
-                      if (selectedRowKeys.length === 0) {
-                        message.warning('목록을 선택후 인쇄버튼을 누르세요', 2);
-                        return;
-                      }
-                      const selectedSale = sales.find(s => s.id === selectedRowKeys[0]);
-                      if (selectedSale) {
-                        setSelectedSaleForStatement(selectedSale);
-                        setPrintMode('receiver');
-                        setPrintPreviewOpen(true);
-                      }
-                    }
-                  },
-                  {
-                    key: 'supplier',
-                    label: '공급자 보관용',
-                    onClick: () => {
-                      if (selectedRowKeys.length === 0) {
-                        message.warning('목록을 선택후 인쇄버튼을 누르세요', 2);
-                        return;
-                      }
-                      const selectedSale = sales.find(s => s.id === selectedRowKeys[0]);
-                      if (selectedSale) {
-                        setSelectedSaleForStatement(selectedSale);
-                        setPrintMode('supplier');
-                        setPrintPreviewOpen(true);
-                      }
-                    }
-                  }
-                ]
-              }}
-            >
-              <Button
-                icon={<PrinterOutlined />}
-                size="middle"
-                style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
-              >
-                인쇄 <DownOutlined />
-              </Button>
-            </Dropdown>
           </Space>
         </Col>
       </Row>
@@ -1128,7 +1442,7 @@ const SalesManagement: React.FC = () => {
         showSorterTooltip={false}
         onRow={(record) => ({
           onClick: (e) => handleRowClick(record, e),
-          onDoubleClick: () => handleEdit(record),
+          onDoubleClick: () => openESignatureForRecord(record),
           style: { cursor: 'pointer' }
         })}
         scroll={{ x: 1200 }}
@@ -1156,8 +1470,19 @@ const SalesManagement: React.FC = () => {
         keyboard={true}
         destroyOnHidden={true}
         footer={null}
-        width={window.innerWidth <= 768 ? '95%' : 1400}
-        style={{ top: window.innerWidth <= 768 ? 20 : 30 }}
+        width={window.innerWidth <= 768 ? '100%' : 1400}
+        style={{
+          top: window.innerWidth <= 768 ? 0 : 30,
+          maxWidth: window.innerWidth <= 768 ? '100vw' : '1400px',
+          paddingBottom: 0,
+          margin: window.innerWidth <= 768 ? 0 : 'auto'
+        }}
+        styles={{
+          body: {
+            maxHeight: window.innerWidth <= 768 ? 'calc(100vh - 110px)' : 'calc(100vh - 200px)',
+            overflowY: 'auto'
+          }
+        }}
       >
         <Form
           form={form}
@@ -1176,17 +1501,24 @@ const SalesManagement: React.FC = () => {
                   showSearch
                   allowClear
                   loading={loading}
-                  optionFilterProp="children"
                   size={window.innerWidth <= 768 ? "small" : "middle"}
-                  filterOption={(input, option) =>
-                    (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-                  }
+                  filterOption={(input, option) => {
+                    try {
+                      const children = option?.children;
+                      if (Array.isArray(children)) {
+                        return children.join('').toLowerCase().includes(input.toLowerCase());
+                      }
+                      return String(children || '').toLowerCase().includes(input.toLowerCase());
+                    } catch (error) {
+                      return false;
+                    }
+                  }}
                 >
                   {customers
                     .filter(customer => customer.customerType === '매출처' || customer.customerType === '기타')
                     .map(customer => (
                       <Option key={customer.id} value={customer.id}>
-                        {customer.name} ({customer.customerCode})
+                        {customer.name} ({customer.customerCode}) - {customer.customerType}
                       </Option>
                     ))}
                 </Select>
@@ -1229,9 +1561,17 @@ const SalesManagement: React.FC = () => {
                     style={{ width: '100%' }}
                     showSearch
                     optionFilterProp="children"
-                    filterOption={(input, option) =>
-                      (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-                    }
+                    filterOption={(input, option) => {
+                      try {
+                        const children = option?.children;
+                        if (Array.isArray(children)) {
+                          return children.join('').toLowerCase().includes(input.toLowerCase());
+                        }
+                        return String(children || '').toLowerCase().includes(input.toLowerCase());
+                      } catch (error) {
+                        return false;
+                      }
+                    }}
                   >
                     {products.map(product => (
                       <Option key={product.id} value={product.id}>
@@ -1248,13 +1588,43 @@ const SalesManagement: React.FC = () => {
                     allowClear
                     showSearch
                     style={{ width: '100%' }}
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                          <Input
+                            placeholder="새 규격 추가"
+                            size="small"
+                            onPressEnter={(e) => {
+                              const value = (e.target as HTMLInputElement).value.trim();
+                              if (value && !specOptions.includes(value)) {
+                                setSpecOptions([...specOptions, value]);
+                                handleItemChange(index, 'spec', value);
+                                (e.target as HTMLInputElement).value = '';
+                              }
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
                   >
-                    <Option value="box">box</Option>
-                    <Option value="ea">ea</Option>
-                    <Option value="pallet">pallet</Option>
-                    <Option value="자루">자루</Option>
-                    <Option value="set">set</Option>
-                    <Option value="pack">pack</Option>
+                    {specOptions.map(spec => (
+                      <Option key={spec} value={spec}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{spec}</span>
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<CloseOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSpecOptions(specOptions.filter(s => s !== spec));
+                            }}
+                            style={{ color: '#ff4d4f', padding: '0 4px' }}
+                          />
+                        </div>
+                      </Option>
+                    ))}
                   </Select>
                 </Col>
                 <Col span={2}>
@@ -1265,18 +1635,43 @@ const SalesManagement: React.FC = () => {
                     allowClear
                     showSearch
                     style={{ width: '100%' }}
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                          <Input
+                            placeholder="새 단위 추가"
+                            size="small"
+                            onPressEnter={(e) => {
+                              const value = (e.target as HTMLInputElement).value.trim();
+                              if (value && !unitOptions.includes(value)) {
+                                setUnitOptions([...unitOptions, value]);
+                                handleItemChange(index, 'unit', value);
+                                (e.target as HTMLInputElement).value = '';
+                              }
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
                   >
-                    <Option value="EA">EA</Option>
-                    <Option value="BOX">BOX</Option>
-                    <Option value="KG">KG</Option>
-                    <Option value="M">M</Option>
-                    <Option value="SET">SET</Option>
-                    <Option value="kg">kg</Option>
-                    <Option value="ea">ea</Option>
-                    <Option value="box">box</Option>
-                    <Option value="set">set</Option>
-                    <Option value="pcs">pcs</Option>
-                    <Option value="개">개</Option>
+                    {unitOptions.map(unit => (
+                      <Option key={unit} value={unit}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span>{unit}</span>
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<CloseOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setUnitOptions(unitOptions.filter(u => u !== unit));
+                            }}
+                            style={{ color: '#ff4d4f', padding: '0 4px' }}
+                          />
+                        </div>
+                      </Option>
+                    ))}
                   </Select>
                 </Col>
                 <Col span={2}>
@@ -1459,13 +1854,24 @@ const SalesManagement: React.FC = () => {
           setUploadData([]);
         }}
         onOk={handleUploadConfirm}
-        width={window.innerWidth <= 768 ? '95%' : 1200}
+        width={window.innerWidth <= 768 ? '100%' : 1200}
+        style={{
+          top: window.innerWidth <= 768 ? 0 : 30,
+          maxWidth: window.innerWidth <= 768 ? '100vw' : '1200px',
+          margin: window.innerWidth <= 768 ? 0 : 'auto'
+        }}
+        styles={{
+          body: {
+            maxHeight: window.innerWidth <= 768 ? 'calc(100vh - 150px)' : 'calc(100vh - 200px)',
+            overflowY: 'auto'
+          }
+        }}
         okText="업로드 실행"
         cancelText="취소"
       >
         <div style={{ marginBottom: 16 }}>
           <Typography.Text type="secondary">
-            총 {uploadData.length}건의 데이터가 업로드됩니다. 확인 후 '업로드 실행' 버튼을 클릭하세요.
+            총 {uploadData.length}건의 데이터가 업로드됩니다. 확인 후 &quot;업로드 실행&quot; 버튼을 클릭하세요.
           </Typography.Text>
         </div>
         <Table
@@ -1511,50 +1917,26 @@ const SalesManagement: React.FC = () => {
         title="매출 엑셀 업로드"
         templateType="sales"
         description="매출 정보를 엑셀 파일로 일괄 업로드할 수 있습니다. 먼저 템플릿을 다운로드하여 양식을 확인하세요."
-        requiredFields={['거래처명', '상품명']}
+        requiredFields={['매출일자', '거래처명', '품목명']}
       />
 
       <PrintPreviewModal
         open={printPreviewOpen}
         onClose={() => setPrintPreviewOpen(false)}
-        transactionData={selectedSaleForStatement ? {
-          id: selectedSaleForStatement.id || 0,
-          date: selectedSaleForStatement.transactionDate || selectedSaleForStatement.saleDate || '',
-          companyName: selectedSaleForStatement.customer?.name || '',
-          companyAddress: selectedSaleForStatement.customer?.address || '',
-          companyPhone: selectedSaleForStatement.customer?.phone || '',
-          companyRegistrationNumber: selectedSaleForStatement.customer?.businessNumber || '',
-          ceoName: selectedSaleForStatement.customer?.representative || '',
-          items: selectedSaleForStatement.items?.map((item: any) => {
-            const taxType = item.product?.taxType || item.taxType || 'tax_separate';
-            const isTaxFree = taxType === 'tax_free';
-            const isTaxInclusive = taxType === 'tax_inclusive';
-
-            return {
-              itemName: item.itemName || item.productName || item.product?.name || '',
-              specification: item.spec || item.specification || item.product?.spec || '',
-              spec: item.spec || item.specification || item.product?.spec || '',
-              unit: item.unit || item.product?.unit || 'EA',
-              quantity: item.quantity || 0,
-              unitPrice: item.unitPrice || 0,
-              amount: item.amount || (item.quantity * item.unitPrice) || 0,
-              supplyAmount: item.supplyAmount,
-              vatAmount: item.vatAmount,
-              totalAmount: item.totalAmount,
-              taxExempt: isTaxFree,
-              taxType: taxType,
-              taxInclusive: isTaxInclusive
-            };
-          }) || [],
-          totalAmount: selectedSaleForStatement.totalAmount || 0,
-          tax: selectedSaleForStatement.vatAmount || 0,
-          grandTotal: (selectedSaleForStatement.totalAmount || 0) + (selectedSaleForStatement.vatAmount || 0),
-          balanceAmount: 0,
-          memo: '',
-          notice: ''
-        } : null}
+        transactionData={transactionDataForPrint}
         type="sales"
         printMode={printMode}
+      />
+
+      <ESignaturePreviewModal
+        open={eSignaturePreviewOpen}
+        onClose={() => {
+          setESignaturePreviewOpen(false);
+          setESignatureTransactionData(null);
+        }}
+        onSave={fetchData}
+        transactionData={eSignatureTransactionData}
+        type="sales"
       />
 
       {transactionStatementModalVisible && selectedSaleForStatement && (

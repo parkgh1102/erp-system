@@ -1,0 +1,62 @@
+# Render Blueprint - Backend + Database
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Backend API Service
+  - type: web
+    name: erp-backend
+    runtime: node
+    region: singapore  # 한국에서 가장 가까운 리전
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DB_TYPE
+        value: postgres
+      - key: DB_HOST
+        fromDatabase:
+          name: erp-database
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: erp-database
+          property: port
+      - key: DB_USERNAME
+        fromDatabase:
+          name: erp-database
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: erp-database
+          property: password
+      - key: DB_DATABASE
+        fromDatabase:
+          name: erp-database
+          property: database
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://webapperp.ai.kr
+      - key: BCRYPT_ROUNDS
+        value: 12
+      - key: JWT_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+
+databases:
+  - name: erp-database
+    plan: free
+    region: singapore
+    databaseName: erp_system
+    user: erp_user

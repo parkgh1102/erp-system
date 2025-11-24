@@ -1,6 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ConfigProvider, App as AntApp } from 'antd';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { ConfigProvider, App as AntApp, theme } from 'antd';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from './stores/themeStore';
 import AppLayout from './components/Layout/AppLayout';
@@ -8,6 +8,7 @@ import LoginForm from './components/Auth/LoginForm';
 import SignupForm from './components/Auth/SignupForm';
 import PasswordReset from './components/Auth/PasswordReset';
 import PasswordChange from './components/Auth/PasswordChange';
+import { OTPPage } from './components/Auth/OTPPage';
 import Dashboard from './components/Dashboard/Dashboard';
 import CustomerManagement from './components/Customer/CustomerManagement';
 import ProductManagement from './components/Product/ProductManagement';
@@ -17,6 +18,8 @@ import PaymentManagement from './components/Payment/PaymentManagement';
 import TransactionLedgerManagement from './components/TransactionLedger/TransactionLedgerManagement';
 import Profile from './components/Profile/Profile';
 import Settings from './components/Settings/Settings';
+import TokenExpirationNotifier from './components/Common/TokenExpirationNotifier';
+import ChatbotWidget from './components/Chatbot/ChatbotWidget';
 import koKR from 'antd/locale/ko_KR';
 import 'dayjs/locale/ko';
 
@@ -31,28 +34,64 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
-// 공개 라우트 컴포넌트 (이미 로그인된 경우 대시보드로 리다이렉트)
+// 공개 라우트 컴포넌트 (이미 로그인된 경우 역할에 따라 리다이렉트)
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    // 역할에 따라 다른 페이지로 리다이렉트
+    if (user?.role === 'admin') {
+      return <Navigate to="/dashboard" replace />;
+    } else {
+      return <Navigate to="/sales" replace />;
+    }
   }
 
   return <>{children}</>;
 };
 
-const App: React.FC = () => {
+// 테마 래퍼 컴포넌트 (라우터 내부에서 사용)
+const ThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
   const { getThemeConfig } = useThemeStore();
 
+  // 공개 페이지 경로 목록 (다크모드 비활성화)
+  const publicPaths = ['/login', '/signup', '/otp', '/password-reset', '/password-change'];
+  const isPublicPage = publicPaths.includes(location.pathname);
+
+  // 공개 페이지는 항상 라이트 테마 사용
+  const themeConfig = isPublicPage
+    ? {
+        algorithm: theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#1890ff',
+          borderRadius: 6,
+        },
+      }
+    : getThemeConfig();
+
   return (
-    <ConfigProvider theme={getThemeConfig()} locale={koKR}>
+    <ConfigProvider theme={themeConfig} locale={koKR}>
       <AntApp
         message={{ top: 24, duration: 3, maxCount: 1 }}
         notification={{ placement: 'top' }}
       >
-        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <Routes>
+        {children}
+      </AntApp>
+    </ConfigProvider>
+  );
+};
+
+const App: React.FC = () => {
+  const { isAuthenticated } = useAuthStore();
+
+  return (
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <ThemeWrapper>
+        <TokenExpirationNotifier />
+        {/* 로그인된 사용자에게만 챗봇 표시 */}
+        {isAuthenticated && <ChatbotWidget />}
+        <Routes>
           {/* 공개 라우트 */}
           <Route
             path="/login"
@@ -62,6 +101,7 @@ const App: React.FC = () => {
               </PublicRoute>
             }
           />
+          <Route path="/otp" element={<OTPPage />} />
           <Route
             path="/signup"
             element={
@@ -180,7 +220,21 @@ const App: React.FC = () => {
           />
 
           {/* 기본 리다이렉트 */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                {(() => {
+                  const { user } = useAuthStore.getState();
+                  if (user?.role === 'admin') {
+                    return <Navigate to="/dashboard" replace />;
+                  } else {
+                    return <Navigate to="/sales" replace />;
+                  }
+                })()}
+              </ProtectedRoute>
+            }
+          />
 
           {/* 404 페이지 */}
           <Route
@@ -196,10 +250,9 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          </Routes>
-        </Router>
-      </AntApp>
-    </ConfigProvider>
+        </Routes>
+      </ThemeWrapper>
+    </Router>
   );
 };
 

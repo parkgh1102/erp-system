@@ -116,7 +116,6 @@ const SignupForm: React.FC = () => {
         phone: currentValues.businessPhone || '',
         fax: currentValues.fax || '',
       };
-      setBusinessInfo(currentBusinessInfo);
 
       // personalInfo가 비어있는지 확인
       if (!personalInfo.email || !personalInfo.password || !personalInfo.name) {
@@ -129,7 +128,7 @@ const SignupForm: React.FC = () => {
         email: personalInfo.email,
         password: personalInfo.password,
         name: personalInfo.name,
-        phone: personalInfo.phone || '',
+        phone: personalInfo.phone,
         businessInfo: currentBusinessInfo,
       };
 

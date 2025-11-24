@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMan
 import { Business } from './Business';
 import { Customer } from './Customer';
 import { SalesItem } from './SalesItem';
+import { User } from './User';
 
 @Entity('sales')
 export class Sales {
@@ -36,6 +37,20 @@ export class Sales {
 
   @Column({ nullable: true })
   memo?: string;
+
+  // 전자서명 관련 필드
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'signed_by' })
+  signedByUser?: User;
+
+  @Column({ name: 'signed_by', nullable: true })
+  signedBy?: number;
+
+  @Column({ name: 'signed_at', nullable: true })
+  signedAt?: Date;
+
+  @Column({ name: 'signature_image', type: 'text', nullable: true })
+  signatureImage?: string;
 
   @OneToMany(() => SalesItem, item => item.sales)
   items!: SalesItem[];

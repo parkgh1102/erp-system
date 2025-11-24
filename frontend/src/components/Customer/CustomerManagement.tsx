@@ -11,10 +11,10 @@ import {
   Col,
   Popconfirm,
   message,
-  Checkbox,
   Tooltip,
 } from 'antd';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
+import ExcelBulkUploadModal from '../Common/ExcelBulkUploadModal';
 import {
   PlusOutlined,
   SearchOutlined,
@@ -214,6 +214,20 @@ const CustomerManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (!currentBusiness) return;
+
+    try {
+      const response = await customerAPI.deleteAll(currentBusiness.id);
+      message.success(response.data.message || '모든 거래처가 삭제되었습니다.', 2);
+      setSelectedRowKeys([]);
+      loadCustomers();
+    } catch (error) {
+      logger.error('Failed to delete all customers:', error);
+      message.error('거래처 전체 삭제에 실패했습니다.');
+    }
+  };
+
   const handleSelectAll = () => {
     if (selectedRowKeys.length === customers.length && customers.length > 0) {
       setSelectedRowKeys([]);
@@ -410,7 +424,7 @@ const CustomerManagement: React.FC = () => {
       width: 110,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'customerCode' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'customerCode' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       ellipsis: true,
     },
     {
@@ -420,7 +434,7 @@ const CustomerManagement: React.FC = () => {
       width: 160,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'name' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'name' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       ellipsis: {
         showTitle: false,
       },
@@ -443,7 +457,7 @@ const CustomerManagement: React.FC = () => {
       width: 130,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'businessNumber' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'businessNumber' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       render: (text: string) => text ? formatBusinessNumber(text) : '-',
     },
     {
@@ -453,7 +467,7 @@ const CustomerManagement: React.FC = () => {
       width: 180,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'address' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'address' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       ellipsis: {
         showTitle: false,
       },
@@ -470,7 +484,7 @@ const CustomerManagement: React.FC = () => {
       width: 100,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'businessType' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'businessType' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       ellipsis: {
         showTitle: false,
       },
@@ -487,7 +501,7 @@ const CustomerManagement: React.FC = () => {
       width: 100,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'businessItem' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'businessItem' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       ellipsis: {
         showTitle: false,
       },
@@ -504,7 +518,7 @@ const CustomerManagement: React.FC = () => {
       width: 90,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'representative' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'representative' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       ellipsis: {
         showTitle: false,
       },
@@ -521,7 +535,7 @@ const CustomerManagement: React.FC = () => {
       width: 120,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'phone' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'phone' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       render: (text: string) => text ? formatPhoneNumber(text) : '-',
     },
     {
@@ -531,7 +545,7 @@ const CustomerManagement: React.FC = () => {
       width: 120,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'fax' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'fax' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       render: (text: string) => text ? formatPhoneNumber(text) : '-',
     },
     {
@@ -541,7 +555,7 @@ const CustomerManagement: React.FC = () => {
       width: 150,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'email' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'email' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       ellipsis: {
         showTitle: false,
       },
@@ -558,7 +572,7 @@ const CustomerManagement: React.FC = () => {
       width: 130,
       align: 'center' as const,
       sorter: true,
-      sortOrder: sortField === 'managerContact' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : null,
+      sortOrder: sortField === 'managerContact' ? (sortOrder === 'asc' ? 'ascend' : 'descend') : undefined,
       render: (text: string) => text ? formatPhoneNumber(text) : '-',
     },
     {
@@ -708,6 +722,54 @@ const CustomerManagement: React.FC = () => {
                   disabled={selectedRowKeys.length === 0}
                 >
                   {window.innerWidth <= 768 ? `삭제(${selectedRowKeys.length})` : `선택 삭제 (${selectedRowKeys.length})`}
+                </Button>
+              </Popconfirm>
+              <Popconfirm
+                title="모든 거래처를 삭제하시겠습니까?"
+                description="이 작업은 되돌릴 수 없습니다."
+                onConfirm={handleDeleteAll}
+                okText="예"
+                cancelText="아니오"
+                okButtonProps={{
+                  autoFocus: true,
+                  size: 'large',
+                  style: { minWidth: '80px', height: '40px', fontSize: '16px' },
+                  danger: true
+                }}
+                cancelButtonProps={{
+                  size: 'large',
+                  style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+                }}
+                placement="top"
+                overlayStyle={{
+                  position: 'fixed',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 9999,
+                  pointerEvents: 'auto'
+                }}
+                styles={{
+                  body: {
+                    padding: '20px',
+                    fontSize: '18px',
+                    fontWeight: '500',
+                    minWidth: '350px',
+                    textAlign: 'center',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
+                  }
+                }}
+                transitionName=""
+                mouseEnterDelay={0}
+                mouseLeaveDelay={0}
+              >
+                <Button
+                  size={window.innerWidth <= 768 ? "small" : "middle"}
+                  danger
+                  type="primary"
+                >
+                  전체 삭제
                 </Button>
               </Popconfirm>
             </Space>

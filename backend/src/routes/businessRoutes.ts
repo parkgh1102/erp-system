@@ -7,10 +7,18 @@ import { PurchaseController } from '../controllers/PurchaseController';
 import { PaymentController } from '../controllers/PaymentController';
 import { DashboardController } from '../controllers/DashboardController';
 import { transactionLedgerController } from '../controllers/transactionLedgerController';
-import { SampleDataController } from '../controllers/SampleDataController';
 import { authenticateToken } from '../middleware/auth';
+import multer from 'multer';
 
 const router = Router();
+
+// Multer 설정 (메모리 스토리지 사용, limits 추가)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB
+  }
+});
 
 // 모든 business 라우트에 인증 미들웨어 적용
 router.use(authenticateToken);
@@ -26,6 +34,7 @@ router.get('/validate/:businessNumber', BusinessController.validateBusinessNumbe
 // 거래처 관리 API 라우트
 router.post('/:businessId/customers', CustomerController.create);
 router.get('/:businessId/customers', CustomerController.getAll);
+router.delete('/:businessId/customers/all', CustomerController.deleteAll); // 전체 삭제 (개별 삭제보다 먼저)
 router.get('/:businessId/customers/:id', CustomerController.getById);
 router.put('/:businessId/customers/:id', CustomerController.update);
 router.delete('/:businessId/customers/:id', CustomerController.delete);
@@ -43,6 +52,9 @@ router.get('/:businessId/sales', SalesController.getAll);
 router.get('/:businessId/sales/:id', SalesController.getById);
 router.put('/:businessId/sales/:id', SalesController.update);
 router.delete('/:businessId/sales/:id', SalesController.delete);
+router.post('/:businessId/sales/:id/sign', SalesController.signSales);
+router.post('/:businessId/sales/:id/upload-statement', upload.single('image'), SalesController.uploadStatement);
+router.post('/:businessId/sales/:id/send-alimtalk', SalesController.sendAlimtalk);
 
 // 매입 관리 API 라우트
 router.post('/:businessId/purchases', PurchaseController.create);
@@ -68,5 +80,6 @@ router.get('/:businessId/dashboard/recent-transactions', DashboardController.get
 router.get('/:businessId/dashboard/sales-chart', DashboardController.getSalesChart);
 router.get('/:businessId/dashboard/category-data', DashboardController.getCategoryData);
 router.get('/:businessId/dashboard/monthly-trend', DashboardController.getMonthlyTrend);
+router.get('/:businessId/dashboard/all-transactions', DashboardController.getAllTransactions);
 
 export { router as businessRoutes };

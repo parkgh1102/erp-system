@@ -39,9 +39,11 @@ interface TransactionStatementProps {
   printOptions?: {
     hideBalance?: boolean;
     hideAmounts?: boolean;
+    hideStorageLabel?: boolean;
   };
   printMode?: 'full' | 'receiver' | 'supplier';
   showActions?: boolean;
+  signatureSlot?: React.ReactNode;
 }
 
 export const TransactionStatement: React.FC<TransactionStatementProps> = ({
@@ -49,7 +51,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
   type,
   printOptions: _printOptions = {},
   printMode = 'full',
-  showActions: _showActions = true
+  showActions: _showActions = true,
+  signatureSlot
 }) => {
   const title = type === 'purchase' ? '매입 거래명세표' : '매출 거래명세표';
 
@@ -93,13 +96,15 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
         }}>
           {type === 'purchase' ? 'Purchase Statement' : 'Sales Statement'}
         </div>
-        <div style={{
-          fontSize: '11pt', // 보관용 표시 크기 증가
-          fontWeight: 'bold',
-          color: isSupplier ? '#d32f2f' : '#1976d2'
-        }}>
-          {isSupplier ? '공급자 보관용' : '공급받는자 보관용'}
-        </div>
+        {!_printOptions.hideStorageLabel && (
+          <div style={{
+            fontSize: '11pt', // 보관용 표시 크기 증가
+            fontWeight: 'bold',
+            color: isSupplier ? '#d32f2f' : '#1976d2'
+          }}>
+            {isSupplier ? '공급자 보관용' : '공급받는자 보관용'}
+          </div>
+        )}
 
         {/* 거래처명 귀중 - 우측 끝 */}
         <div style={{
@@ -390,37 +395,47 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           <tbody>
             {(() => {
               // 실제 합계 계산 - 품목별로 계산된 값을 합산
+              // 품목 행 렌더링과 동일한 로직 사용
               const totalSupplyAmount = (data?.items || []).reduce((sum, item) => {
-                if (item.supplyAmount !== undefined) {
+                // 새로운 데이터 구조: 모두 있어야 사용 (품목 행 렌더링과 동일)
+                if (item.supplyAmount !== undefined && item.vatAmount !== undefined && item.totalAmount !== undefined) {
                   return sum + item.supplyAmount;
                 }
-                // 이전 데이터 구조 처리
+
+                // 이전 데이터 구조: amount와 taxType으로 계산
                 const amount = item.amount || (item.quantity * item.unitPrice);
                 const taxType = item.taxType || '';
                 const isTaxExempt = item.taxExempt || taxType === 'tax_free';
                 const isTaxInclusive = item.taxInclusive || taxType === 'tax_inclusive';
 
-                if (isTaxExempt || isTaxInclusive) {
-                  return sum + (isTaxInclusive ? Math.round(amount / 1.1) : amount);
+                if (isTaxExempt) {
+                  return sum + amount;
+                } else if (isTaxInclusive) {
+                  return sum + Math.round(amount / 1.1);
+                } else {
+                  return sum + amount;
                 }
-                return sum + amount;
               }, 0);
 
               const totalTax = (data?.items || []).reduce((sum, item) => {
-                if (item.vatAmount !== undefined) {
+                // 새로운 데이터 구조: 모두 있어야 사용 (품목 행 렌더링과 동일)
+                if (item.supplyAmount !== undefined && item.vatAmount !== undefined && item.totalAmount !== undefined) {
                   return sum + item.vatAmount;
                 }
-                // 이전 데이터 구조 처리
+
+                // 이전 데이터 구조: amount와 taxType으로 계산
                 const amount = item.amount || (item.quantity * item.unitPrice);
                 const taxType = item.taxType || '';
                 const isTaxExempt = item.taxExempt || taxType === 'tax_free';
                 const isTaxInclusive = item.taxInclusive || taxType === 'tax_inclusive';
 
-                if (isTaxExempt) return sum;
-                if (isTaxInclusive) {
+                if (isTaxExempt) {
+                  return sum;
+                } else if (isTaxInclusive) {
                   return sum + (amount - Math.round(amount / 1.1));
+                } else {
+                  return sum + Math.round(amount * 0.1);
                 }
-                return sum + Math.round(amount * 0.1);
               }, 0);
 
               const grandTotal = totalSupplyAmount + totalTax;
@@ -494,6 +509,13 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
             })()}
           </tbody>
         </table>
+
+        {/* 서명란 슬롯 */}
+        {signatureSlot && (
+          <div style={{ marginTop: '5mm' }}>
+            {signatureSlot}
+          </div>
+        )}
       </div>
 
     </div>

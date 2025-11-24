@@ -185,6 +185,20 @@ declare module 'express-serve-static-core' {
   }
 }
 
+// Express Session 확장
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    businessId?: number;
+    email?: string;
+    role?: string;
+    csrfToken?: string;
+    csrfTokenCreatedAt?: number;
+    originalIp?: string;
+    originalUserAgent?: string;
+  }
+}
+
 // 에러 타입
 export interface ValidationError {
   field: string;

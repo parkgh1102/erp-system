@@ -1,0 +1,21 @@
+import { Router } from 'express';
+import { SettingsController } from '../controllers/SettingsController';
+import { authenticateToken } from '../middleware/auth';
+
+const router = Router();
+
+// 모든 라우트에 인증 미들웨어 적용
+router.use(authenticateToken);
+
+// 설정 조회
+router.get('/:businessId', SettingsController.getSettings);
+
+// 설정 저장
+router.put('/:businessId', SettingsController.updateSettings);
+
+// 데이터 내보내기
+router.get('/:businessId/export/customers', SettingsController.exportCustomers);
+router.get('/:businessId/export/products', SettingsController.exportProducts);
+router.get('/:businessId/export/transactions', SettingsController.exportTransactions);
+
+export default router;

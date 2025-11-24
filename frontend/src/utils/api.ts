@@ -53,6 +53,12 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // FormData일 경우 Content-Type을 제거하여 브라우저가 자동으로 설정하도록 함
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     return config;
   },
   (error) => {
@@ -117,6 +123,8 @@ export const customerAPI = {
     api.put(`/businesses/${businessId}/customers/${id}`, data),
   delete: (businessId: number, id: number) =>
     api.delete(`/businesses/${businessId}/customers/${id}`),
+  deleteAll: (businessId: number) =>
+    api.delete(`/businesses/${businessId}/customers/all`),
 };
 
 export const productAPI = {
@@ -225,6 +233,74 @@ export const passwordResetAPI = {
     const response = await api.post('/auth/reset-password', data);
     return response.data;
   },
+};
+
+export const settingsAPI = {
+  getSettings: (businessId: number) =>
+    api.get(`/settings/${businessId}`),
+  updateSettings: (businessId: number, data: Record<string, any>) =>
+    api.put(`/settings/${businessId}`, data),
+  exportCustomers: (businessId: number) =>
+    api.get(`/settings/${businessId}/export/customers`, { responseType: 'blob' }),
+  exportProducts: (businessId: number) =>
+    api.get(`/settings/${businessId}/export/products`, { responseType: 'blob' }),
+  exportTransactions: (businessId: number) =>
+    api.get(`/settings/${businessId}/export/transactions`, { responseType: 'blob' }),
+};
+
+export const activityLogAPI = {
+  getUserLogs: (params?: { limit?: number; offset?: number }) =>
+    api.get('/activity-logs/user', { params }),
+  getRecentLogs: () =>
+    api.get('/activity-logs/recent'),
+  getBusinessLogs: (businessId: number, params?: { limit?: number; offset?: number; actionType?: string; entity?: string }) =>
+    api.get(`/activity-logs/business/${businessId}`, { params }),
+  createLog: (data: { actionType: string; entity: string; entityId?: number; description: string; metadata?: any }) =>
+    api.post('/activity-logs', data),
+  deleteLog: (logId: number) =>
+    api.delete(`/activity-logs/${logId}`),
+};
+
+export const excelAPI = {
+  // 템플릿 다운로드
+  downloadCustomerTemplate: () =>
+    api.get('/excel/template/customers', { responseType: 'blob' }),
+  downloadProductTemplate: () =>
+    api.get('/excel/template/products', { responseType: 'blob' }),
+  downloadSalesTemplate: () =>
+    api.get('/excel/template/sales', { responseType: 'blob' }),
+  downloadPurchaseTemplate: () =>
+    api.get('/excel/template/purchases', { responseType: 'blob' }),
+
+  // 업로드
+  uploadCustomers: (businessId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/excel/${businessId}/upload/customers`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  uploadProducts: (businessId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/excel/${businessId}/upload/products`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  uploadSales: (businessId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/excel/${businessId}/upload/sales`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  uploadPurchases: (businessId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/excel/${businessId}/upload/purchases`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
 };
 
 export default api;

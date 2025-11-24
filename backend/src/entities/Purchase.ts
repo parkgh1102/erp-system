@@ -28,6 +28,15 @@ export class Purchase {
   @Column({ type: 'date', comment: '매입일자' })
   purchaseDate!: Date;
 
+  // Alias for compatibility with transactionDate references
+  get transactionDate(): Date {
+    return this.purchaseDate;
+  }
+
+  set transactionDate(value: Date) {
+    this.purchaseDate = value;
+  }
+
   @Column({ type: 'decimal', precision: 15, scale: 2, default: 0, comment: '합계금액' })
   totalAmount!: number;
 

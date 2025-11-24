@@ -10,7 +10,7 @@ const { TextArea } = Input;
 interface PrintPreviewModalProps {
   open: boolean;
   onClose: () => void;
-  transactionData: any;
+  transactionData: any | any[]; // 단일 또는 배열
   type: 'purchase' | 'sales';
   printMode: 'full' | 'receiver' | 'supplier';
 }
@@ -22,6 +22,10 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   type,
   printMode
 }) => {
+  // transactionData를 배열로 정규화
+  const transactionDataArray = Array.isArray(transactionData)
+    ? transactionData
+    : transactionData ? [transactionData] : [];
   const [paperSize] = useState<'A4' | 'A3' | 'Letter'>('A4');
   const [orientation] = useState<'portrait' | 'landscape'>('portrait');
   const [scale] = useState<number>(100);
@@ -144,15 +148,15 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   const handleDirectPrint = () => {
     console.log('handleDirectPrint 실행됨');
 
-    // 새 창에서 인쇄 (현재 페이지 상태 유지)
-    const printContent = document.querySelector('.print-preview-content');
-    if (!printContent) {
+    // 모든 인쇄 컨텐츠 가져오기
+    const printContents = document.querySelectorAll('.print-preview-content');
+    if (!printContents || printContents.length === 0) {
       console.error('인쇄 컨텐츠를 찾을 수 없음');
       message.error('인쇄할 내용을 찾을 수 없습니다.');
       return;
     }
 
-    console.log('인쇄 컨텐츠 찾음:', printContent);
+    console.log('인쇄 컨텐츠 찾음:', printContents.length, '개');
 
     // 용지 크기 결정
     let finalPaperSize = paperSize;
@@ -176,6 +180,16 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
     console.log('새 창 열림:', printWindow);
 
+    // 모든 페이지의 HTML을 합침 (페이지 구분선 제외)
+    const allPagesHTML = Array.from(printContents)
+      .map((content, index) => `
+        <div class="print-page" style="page-break-after: ${index < printContents.length - 1 ? 'always' : 'auto'};">
+          ${content.innerHTML}
+        </div>
+      `).join('');
+
+    console.log('총 페이지 수:', printContents.length);
+
     // 새 창에 인쇄용 HTML 작성
     const printHTML = `
       <!DOCTYPE html>
@@ -183,7 +197,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
       <head>
         <meta charset="UTF-8">
         <title>거래명세서_${printMode === 'full' ? '전체' :
-                          printMode === 'receiver' ? '공급받는자보관용' : '공급자보관용'}</title>
+                          printMode === 'receiver' ? '공급받는자보관용' : '공급자보관용'}_${printContents.length}건</title>
         <style>
           * {
             margin: 0;
@@ -207,6 +221,11 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           }
 
           .print-container {
+            width: 100%;
+            background: white;
+          }
+
+          .print-page {
             width: 100%;
             background: white;
           }
@@ -236,12 +255,21 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
             .print-container {
               transform: none !important;
             }
+            .print-page {
+              page-break-after: always;
+            }
+            .print-page:last-child {
+              page-break-after: auto;
+            }
+            .page-separator {
+              display: none !important;
+            }
           }
         </style>
       </head>
       <body>
         <div class="print-container">
-          ${printContent.innerHTML}
+          ${allPagesHTML}
         </div>
       </body>
       </html>
@@ -275,8 +303,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   };
 
   const handleSaveFile = async (format: string) => {
-    const printElement = document.querySelector('.print-preview-content') as HTMLElement;
-    if (!printElement) return;
+    const printElements = document.querySelectorAll('.print-preview-content') as NodeListOf<HTMLElement>;
+    if (!printElements || printElements.length === 0) return;
 
     try {
       switch (format) {
@@ -287,27 +315,42 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
         case 'jpg':
         case 'png': {
-          const canvas = await html2canvas(printElement, {
-            background: '#ffffff',
-            allowTaint: true,
-            useCORS: true,
-            width: printElement.scrollWidth,
-            height: printElement.scrollHeight
-          });
+          // 여러 페이지를 각각 저장
+          message.loading(`${printElements.length}개 페이지를 ${format.toUpperCase()}로 저장 중...`, 0);
 
-          const link = document.createElement('a');
-          link.download = `거래명세표_${new Date().getTime()}.${format}`;
-          link.href = canvas.toDataURL(`image/${format}`, 1.0);
-          link.click();
-          message.success(`${format.toUpperCase()} 파일이 다운로드되었습니다.`);
+          for (let i = 0; i < printElements.length; i++) {
+            const canvas = await html2canvas(printElements[i], {
+              background: '#ffffff',
+              allowTaint: true,
+              useCORS: true,
+              width: printElements[i].scrollWidth,
+              height: printElements[i].scrollHeight,
+              scale: 2 // 고화질
+            });
+
+            const link = document.createElement('a');
+            const timestamp = new Date().getTime();
+            const pageNum = printElements.length > 1 ? `_페이지${i + 1}` : '';
+            link.download = `거래명세표_${timestamp}${pageNum}.${format}`;
+            link.href = canvas.toDataURL(`image/${format}`, 1.0);
+            link.click();
+
+            // 파일 저장 간격 (브라우저가 여러 다운로드를 처리할 시간)
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+
+          message.destroy();
+          message.success(`${printElements.length}개의 ${format.toUpperCase()} 파일이 다운로드되었습니다.`);
           break;
         }
 
         case 'clipboard': {
-          const clipboardCanvas = await html2canvas(printElement, {
+          // 첫 번째 페이지만 클립보드에 복사
+          const clipboardCanvas = await html2canvas(printElements[0], {
             background: '#ffffff',
             allowTaint: true,
-            useCORS: true
+            useCORS: true,
+            scale: 2
           });
 
           clipboardCanvas.toBlob(async (blob) => {
@@ -318,7 +361,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                     'image/png': blob
                   })
                 ]);
-                message.success('거래명세표가 클립보드에 복사되었습니다!');
+                const pageInfo = printElements.length > 1 ? ` (첫 번째 페이지만)` : '';
+                message.success(`거래명세표가 클립보드에 복사되었습니다!${pageInfo}`);
               } catch (error) {
                 logger.error('클립보드 복사 실패:', error);
                 message.error('클립보드 복사에 실패했습니다. 브라우저가 클립보드 기능을 지원하지 않습니다.');
@@ -616,31 +660,72 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
         padding: '20px',
         overflow: 'auto',
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start'
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '20px'
       }}>
-        <div
-          className="print-preview-content"
-          style={{
-            backgroundColor: 'white',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-            transform: `scale(${getPreviewScale()})`,
-            transformOrigin: 'top center',
-            border: '1px solid #ddd'
-          }}
-        >
-          <TransactionStatement
-            data={{
-              ...transactionData,
-              memo: showMemo ? memoText : null,
-              notice: showNotice ? noticeText : null
-            }}
-            type={type}
-            printMode={printMode}
-            printOptions={{ hideBalance: false, hideAmounts: false }}
-            showActions={false}
-          />
-        </div>
+        {transactionDataArray.map((data, index) => (
+          <div key={index} style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div
+              className="print-preview-content"
+              data-page-number={index}
+              style={{
+                backgroundColor: 'white',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                transform: `scale(${getPreviewScale()})`,
+                transformOrigin: 'top center',
+                border: '1px solid #ddd',
+                pageBreakAfter: 'always',
+                marginBottom: '20px'
+              }}
+            >
+              <TransactionStatement
+                data={{
+                  ...data,
+                  memo: showMemo ? memoText : null,
+                  notice: showNotice ? noticeText : null
+                }}
+                type={type}
+                printMode={printMode}
+                printOptions={{ hideBalance: false, hideAmounts: false }}
+                showActions={false}
+              />
+            </div>
+            {/* 페이지 구분선 및 페이지 번호 - 인쇄 시 숨김 */}
+            {transactionDataArray.length > 1 && (
+              <div style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '10px 0 30px 0',
+                gap: '10px'
+              }} className="page-separator">
+                <div style={{
+                  flex: 1,
+                  height: '2px',
+                  background: 'linear-gradient(to right, transparent, #999, transparent)'
+                }}></div>
+                <div style={{
+                  padding: '5px 15px',
+                  backgroundColor: '#1890ff',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  borderRadius: '15px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                  페이지 {index + 1} / {transactionDataArray.length}
+                </div>
+                <div style={{
+                  flex: 1,
+                  height: '2px',
+                  background: 'linear-gradient(to right, #999, transparent)'
+                }}></div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </Modal>
   );

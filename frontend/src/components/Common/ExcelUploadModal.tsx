@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Upload, Button, message, Table, Alert, Space, Divider } from 'antd';
+import { Modal, Upload, Button, App, Table, Alert, Space, Divider } from 'antd';
 import { DownloadOutlined, FileExcelOutlined } from '@ant-design/icons';
 import * as ExcelJS from 'exceljs';
 
@@ -10,7 +10,7 @@ interface ExcelUploadModalProps {
   onCancel: () => void;
   onSuccess: (data: any[]) => void;
   title: string;
-  templateType: 'customer' | 'product' | 'sales' | 'purchase' | 'payment';
+  templateType: 'customer' | 'product' | 'sales' | 'purchase' | 'payment' | 'receivable' | 'payable';
   description: string;
   requiredFields: string[];
 }
@@ -24,6 +24,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   description,
   requiredFields
 }) => {
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [previewData, setPreviewData] = useState<any[]>([]);
 
@@ -31,49 +32,79 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   const sampleTemplates = {
     customer: [
       {
-        거래처코드: 'C0001',
-        거래처명: '샘플거래처',
+        거래처코드: 'C001',
+        거래처명: '예시거래처',
         사업자번호: '123-45-67890',
+        주소: '서울시 강남구',
+        업태: '도소매',
+        종목: '사무용품',
         대표자: '홍길동',
-        전화번호: '02-123-4567',
-        주소: '서울시 강남구 테헤란로 123',
-        이메일: 'sample@company.com',
-        비고: '샘플 거래처입니다'
+        전화번호: '02-1234-5678',
+        팩스번호: '02-1234-5679',
+        이메일: 'example@email.com',
+        담당자연락처: '010-1234-5678',
+        거래처구분: '매출처',
+        활성여부: 'Y'
       }
     ],
     product: [
       {
-        상품코드: 'P0001',
-        상품명: '샘플상품',
-        카테고리: '일반',
+        품목코드: 'P001',
+        품목명: '예시품목',
+        규격: 'A4',
         단위: 'EA',
-        매입가격: 4500,
-        판매가격: 5000,
-        재고수량: 100,
-        안전재고: 10,
-        비고: '샘플 상품입니다'
+        매입단가: 10000,
+        매출단가: 15000,
+        분류: '사무용품',
+        세금구분: 'tax_separate',
+        비고: '',
+        활성여부: 'Y'
       }
     ],
     sales: [
       {
-        거래처명: '샘플거래처',
-        매출일자: '2024-01-15',
-        상품명: '샘플상품',
+        매출일자: '2025-01-01',
+        거래처명: '예시거래처',
+        품목명: '예시품목',
+        규격: 'A4',
         수량: 10,
-        단가: 5000,
-        금액: 50000,
-        비고: '샘플 매출입니다'
+        단위: 'EA',
+        단가: 15000,
+        공급가액: 150000,
+        세액: 15000,
+        비고: ''
       }
     ],
     purchase: [
       {
-        거래처명: '샘플거래처',
-        매입일자: '2024-01-15',
-        상품명: '샘플상품',
+        매입일자: '2025-01-01',
+        거래처명: '예시거래처',
+        품목명: '예시품목',
+        규격: 'A4',
         수량: 10,
-        단가: 4500,
-        금액: 45000,
-        비고: '샘플 매입입니다'
+        단위: 'EA',
+        단가: 10000,
+        공급가액: 100000,
+        세액: 10000,
+        비고: ''
+      }
+    ],
+    receivable: [
+      {
+        'No.': 1,
+        수금일자: '2025-01-01',
+        거래처: '예시거래처',
+        수금금액: 1000000,
+        메모: ''
+      }
+    ],
+    payable: [
+      {
+        'No.': 1,
+        지급일자: '2025-01-01',
+        거래처: '예시거래처',
+        지급금액: 1000000,
+        메모: ''
       }
     ],
     payment: [
@@ -91,43 +122,69 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   // 컬럼 정의
   const columnMappings = {
     customer: [
-      { title: '거래처코드', dataIndex: '거래처코드', key: '거래처코드' },
-      { title: '거래처명', dataIndex: '거래처명', key: '거래처명' },
-      { title: '사업자번호', dataIndex: '사업자번호', key: '사업자번호' },
-      { title: '대표자', dataIndex: '대표자', key: '대표자' },
-      { title: '전화번호', dataIndex: '전화번호', key: '전화번호' },
-      { title: '주소', dataIndex: '주소', key: '주소' },
-      { title: '이메일', dataIndex: '이메일', key: '이메일' },
-      { title: '비고', dataIndex: '비고', key: '비고' }
+      { title: '거래처코드', dataIndex: '거래처코드', key: '거래처코드', width: 120 },
+      { title: '거래처명', dataIndex: '거래처명', key: '거래처명', width: 150 },
+      { title: '사업자번호', dataIndex: '사업자번호', key: '사업자번호', width: 120 },
+      { title: '주소', dataIndex: '주소', key: '주소', width: 200 },
+      { title: '업태', dataIndex: '업태', key: '업태', width: 100 },
+      { title: '종목', dataIndex: '종목', key: '종목', width: 100 },
+      { title: '대표자', dataIndex: '대표자', key: '대표자', width: 100 },
+      { title: '전화번호', dataIndex: '전화번호', key: '전화번호', width: 120 },
+      { title: '팩스번호', dataIndex: '팩스번호', key: '팩스번호', width: 120 },
+      { title: '이메일', dataIndex: '이메일', key: '이메일', width: 180 },
+      { title: '담당자연락처', dataIndex: '담당자연락처', key: '담당자연락처', width: 120 },
+      { title: '거래처구분', dataIndex: '거래처구분', key: '거래처구분', width: 100 },
+      { title: '활성여부', dataIndex: '활성여부', key: '활성여부', width: 80 }
     ],
     product: [
-      { title: '상품코드', dataIndex: '상품코드', key: '상품코드' },
-      { title: '상품명', dataIndex: '상품명', key: '상품명' },
-      { title: '카테고리', dataIndex: '카테고리', key: '카테고리' },
-      { title: '단위', dataIndex: '단위', key: '단위' },
-      { title: '매입가격', dataIndex: '매입가격', key: '매입가격', render: (val: any) => val?.toLocaleString() + '원' },
-      { title: '판매가격', dataIndex: '판매가격', key: '판매가격', render: (val: any) => val?.toLocaleString() + '원' },
-      { title: '재고수량', dataIndex: '재고수량', key: '재고수량' },
-      { title: '안전재고', dataIndex: '안전재고', key: '안전재고' },
-      { title: '비고', dataIndex: '비고', key: '비고' }
+      { title: '품목코드', dataIndex: '품목코드', key: '품목코드', width: 120 },
+      { title: '품목명', dataIndex: '품목명', key: '품목명', width: 150 },
+      { title: '규격', dataIndex: '규격', key: '규격', width: 100 },
+      { title: '단위', dataIndex: '단위', key: '단위', width: 80 },
+      { title: '매입단가', dataIndex: '매입단가', key: '매입단가', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '매출단가', dataIndex: '매출단가', key: '매출단가', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '분류', dataIndex: '분류', key: '분류', width: 100 },
+      { title: '세금구분', dataIndex: '세금구분', key: '세금구분', width: 120 },
+      { title: '비고', dataIndex: '비고', key: '비고', width: 150 },
+      { title: '활성여부', dataIndex: '활성여부', key: '활성여부', width: 80 }
     ],
     sales: [
-      { title: '거래처명', dataIndex: '거래처명', key: '거래처명' },
-      { title: '매출일자', dataIndex: '매출일자', key: '매출일자' },
-      { title: '상품명', dataIndex: '상품명', key: '상품명' },
-      { title: '수량', dataIndex: '수량', key: '수량' },
-      { title: '단가', dataIndex: '단가', key: '단가', render: (val: any) => val?.toLocaleString() + '원' },
-      { title: '금액', dataIndex: '금액', key: '금액', render: (val: any) => val?.toLocaleString() + '원' },
-      { title: '비고', dataIndex: '비고', key: '비고' }
+      { title: '매출일자', dataIndex: '매출일자', key: '매출일자', width: 120 },
+      { title: '거래처명', dataIndex: '거래처명', key: '거래처명', width: 150 },
+      { title: '품목명', dataIndex: '품목명', key: '품목명', width: 150 },
+      { title: '규격', dataIndex: '규격', key: '규격', width: 100 },
+      { title: '수량', dataIndex: '수량', key: '수량', width: 80 },
+      { title: '단위', dataIndex: '단위', key: '단위', width: 80 },
+      { title: '단가', dataIndex: '단가', key: '단가', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '공급가액', dataIndex: '공급가액', key: '공급가액', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '세액', dataIndex: '세액', key: '세액', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '비고', dataIndex: '비고', key: '비고', width: 150 }
     ],
     purchase: [
-      { title: '거래처명', dataIndex: '거래처명', key: '거래처명' },
-      { title: '매입일자', dataIndex: '매입일자', key: '매입일자' },
-      { title: '상품명', dataIndex: '상품명', key: '상품명' },
-      { title: '수량', dataIndex: '수량', key: '수량' },
-      { title: '단가', dataIndex: '단가', key: '단가', render: (val: any) => val?.toLocaleString() + '원' },
-      { title: '금액', dataIndex: '금액', key: '금액', render: (val: any) => val?.toLocaleString() + '원' },
-      { title: '비고', dataIndex: '비고', key: '비고' }
+      { title: '매입일자', dataIndex: '매입일자', key: '매입일자', width: 120 },
+      { title: '거래처명', dataIndex: '거래처명', key: '거래처명', width: 150 },
+      { title: '품목명', dataIndex: '품목명', key: '품목명', width: 150 },
+      { title: '규격', dataIndex: '규격', key: '규격', width: 100 },
+      { title: '수량', dataIndex: '수량', key: '수량', width: 80 },
+      { title: '단위', dataIndex: '단위', key: '단위', width: 80 },
+      { title: '단가', dataIndex: '단가', key: '단가', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '공급가액', dataIndex: '공급가액', key: '공급가액', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '세액', dataIndex: '세액', key: '세액', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '비고', dataIndex: '비고', key: '비고', width: 150 }
+    ],
+    receivable: [
+      { title: 'No.', dataIndex: 'No.', key: 'No.', width: 80 },
+      { title: '수금일자', dataIndex: '수금일자', key: '수금일자', width: 120 },
+      { title: '거래처', dataIndex: '거래처', key: '거래처', width: 150 },
+      { title: '수금금액', dataIndex: '수금금액', key: '수금금액', width: 120, render: (val: any) => val?.toLocaleString() + '원' },
+      { title: '메모', dataIndex: '메모', key: '메모', width: 200 }
+    ],
+    payable: [
+      { title: 'No.', dataIndex: 'No.', key: 'No.', width: 80 },
+      { title: '지급일자', dataIndex: '지급일자', key: '지급일자', width: 120 },
+      { title: '거래처', dataIndex: '거래처', key: '거래처', width: 150 },
+      { title: '지급금액', dataIndex: '지급금액', key: '지급금액', width: 120, render: (val: any) => val?.toLocaleString() + '원' },
+      { title: '메모', dataIndex: '메모', key: '메모', width: 200 }
     ],
     payment: [
       { title: '거래처명', dataIndex: '거래처명', key: '거래처명' },

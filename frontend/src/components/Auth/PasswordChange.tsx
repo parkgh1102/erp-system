@@ -9,7 +9,7 @@ interface PasswordChangeProps {
   onShowForgotPassword?: () => void;
 }
 
-const PasswordChange: React.FC<PasswordChangeProps> = ({ _onBack, _onShowLogin, _onShowForgotPassword }) => {
+const PasswordChange: React.FC<PasswordChangeProps> = ({ onBack, onShowLogin, onShowForgotPassword }) => {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [form] = Form.useForm();

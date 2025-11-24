@@ -12,7 +12,7 @@ interface PasswordResetProps {
 
 const { Step } = Steps;
 
-const PasswordReset: React.FC<PasswordResetProps> = ({ _onBack, _onLoginSuccess, _onShowRegister }) => {
+const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, onShowRegister }) => {
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);

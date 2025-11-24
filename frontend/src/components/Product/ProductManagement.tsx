@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconfirm, Radio, Row, Col, AutoComplete, Spin, Dropdown } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconfirm, Radio, Row, Col, AutoComplete, Spin, Dropdown, Select, Tag } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import ProductPrintModal from '../Print/ProductPrintModal';
@@ -42,6 +42,7 @@ const ProductManagement: React.FC = () => {
   const [uploadData, setUploadData] = useState<any[]>([]);
   const [excelUploadModalVisible, setExcelUploadModalVisible] = useState(false);
   const [printModalVisible, setPrintModalVisible] = useState(false);
+  const [pageSize, setPageSize] = useState<number>(window.innerWidth <= 768 ? 5 : 10);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
@@ -97,14 +98,18 @@ const ProductManagement: React.FC = () => {
   }, [modalVisible, editingProduct, form]);
 
   const fetchProducts = async () => {
-    if (!currentBusiness) return;
+    if (!currentBusiness) return [];
 
     setLoading(true);
     try {
-      const response = await productAPI.getAll(currentBusiness.id);
-      setProducts(response.data.data.products || []);
+      // 전체 데이터를 가져오기 위해 limit을 크게 설정
+      const response = await productAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 });
+      const updatedProducts = response.data.data.products || [];
+      setProducts(updatedProducts);
+      return updatedProducts;
     } catch (error) {
       message.error('품목 목록을 불러오는데 실패했습니다.');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -170,8 +175,8 @@ const ProductManagement: React.FC = () => {
   };
 
   // 다음 품목코드 생성 함수
-  const generateNextProductCode = () => {
-    const maxProductCode = products
+  const generateNextProductCode = (productList: Product[] = products) => {
+    const maxProductCode = productList
       .filter(product => product.productCode?.startsWith('P'))
       .map(product => {
         const match = product.productCode?.match(/^P(\d+)$/);
@@ -254,15 +259,26 @@ const ProductManagement: React.FC = () => {
 
       for (const row of data) {
         try {
+          // 세금구분 매핑
+          let taxType = 'tax_separate';
+          const taxTypeValue = row['세금구분']?.toString().toLowerCase();
+          if (taxTypeValue === 'tax_inclusive' || taxTypeValue === '과세') {
+            taxType = 'tax_inclusive';
+          } else if (taxTypeValue === 'tax_free' || taxTypeValue === '면세') {
+            taxType = 'tax_free';
+          } else if (taxTypeValue === 'tax_separate' || taxTypeValue === '별도') {
+            taxType = 'tax_separate';
+          }
+
           await productAPI.create(currentBusiness.id, {
-            productCode: row['상품코드'] || '',
-            name: row['상품명'] || '',
-            category: row['카테고리'] || '',
+            productCode: row['품목코드'] || '',
+            name: row['품목명'] || '',
+            spec: row['규격'] || '',
             unit: row['단위'] || '',
-            buyPrice: Number(row['매입가격']) || 0,
-            sellPrice: Number(row['판매가격']) || 0,
-            spec: row['재고수량']?.toString() || '',
-            taxType: '과세',
+            buyPrice: Number(row['매입단가']) || 0,
+            sellPrice: Number(row['매출단가']) || 0,
+            category: row['분류'] || '',
+            taxType: taxType,
             memo: row['비고'] || ''
           });
           successCount++;
@@ -356,11 +372,13 @@ const ProductManagement: React.FC = () => {
       if (resetAfterSave && !editingProduct) {
         // 저장 후 초기화 - 새로 등록할 때만
         form.resetFields();
-        await fetchProducts(); // 품목 목록을 새로 불러와서 코드 생성에 반영
+        const updatedProducts = await fetchProducts(); // 품목 목록을 새로 불러와서 코드 생성에 반영
+        const nextCode = generateNextProductCode(updatedProducts);
         form.setFieldsValue({
-          productCode: generateNextProductCode(),
+          productCode: nextCode,
           taxType: 'tax_separate'
         });
+        message.info(`다음 품목코드: ${nextCode}`, 1.5);
       } else {
         // 일반 저장
         setModalVisible(false);
@@ -738,7 +756,7 @@ const ProductManagement: React.FC = () => {
         scroll={{ x: window.innerWidth <= 768 ? 1200 : undefined }}
         size={window.innerWidth <= 768 ? 'small' : 'middle'}
         pagination={{
-          pageSize: window.innerWidth <= 768 ? 5 : 10,
+          pageSize: pageSize,
           pageSizeOptions: window.innerWidth <= 768 ? ['5', '10', '20'] : ['10', '20', '50', '100'],
           showSizeChanger: window.innerWidth > 768,
           showQuickJumper: window.innerWidth > 768,
@@ -748,6 +766,9 @@ const ProductManagement: React.FC = () => {
             return window.innerWidth <= 768
               ? `${total}건`
               : `${range[0]}-${range[1]} / ${total}건${searchInfo}`;
+          },
+          onShowSizeChange: (current, size) => {
+            setPageSize(size);
           },
         }}
       />
@@ -763,7 +784,7 @@ const ProductManagement: React.FC = () => {
         closable={true}
         maskClosable={false}
         keyboard={true}
-        destroyOnClose={true}
+        destroyOnHidden={true}
         footer={null}
         width={window.innerWidth <= 768 ? '95%' : 1000}
         style={{ top: window.innerWidth <= 768 ? 20 : 50 }}
@@ -806,20 +827,55 @@ const ProductManagement: React.FC = () => {
                 name="spec"
                 label="규격 (선택)"
               >
-                <AutoComplete
-                  options={specOptions.map(spec => ({ value: spec, label: spec }))}
+                <Select
+                  showSearch
                   placeholder={window.innerWidth <= 768 ? "규격" : "규격 선택 또는 직접 입력 (예: box, ea, pallet, 자루)"}
-                  filterOption={(inputValue, option) =>
-                    option?.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-                  }
                   size={window.innerWidth <= 768 ? 'small' : 'middle'}
-                  onBlur={(e) => {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (value && !specOptions.includes(value)) {
-                      setSpecOptions([...specOptions, value]);
-                    }
-                  }}
-                />
+                  allowClear
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                        <Input
+                          placeholder="새 규격 추가"
+                          size="small"
+                          onPressEnter={(e) => {
+                            const value = (e.target as HTMLInputElement).value.trim();
+                            if (value && !specOptions.includes(value)) {
+                              setSpecOptions([...specOptions, value]);
+                              form.setFieldValue('spec', value);
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
+                  }
+                >
+                  {specOptions.map(spec => (
+                    <Select.Option key={spec} value={spec} label={spec}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{spec}</span>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CloseOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSpecOptions(specOptions.filter(s => s !== spec));
+                            if (form.getFieldValue('spec') === spec) {
+                              form.setFieldValue('spec', undefined);
+                            }
+                          }}
+                          style={{ color: '#ff4d4f' }}
+                        />
+                      </div>
+                    </Select.Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
@@ -827,20 +883,55 @@ const ProductManagement: React.FC = () => {
                 name="unit"
                 label="단위 (선택)"
               >
-                <AutoComplete
-                  options={unitOptions.map(unit => ({ value: unit, label: unit }))}
+                <Select
+                  showSearch
                   placeholder={window.innerWidth <= 768 ? "단위" : "단위 선택 또는 직접 입력 (예: kg, ea, set)"}
-                  filterOption={(inputValue, option) =>
-                    option?.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-                  }
                   size={window.innerWidth <= 768 ? 'small' : 'middle'}
-                  onBlur={(e) => {
-                    const value = (e.target as HTMLInputElement).value;
-                    if (value && !unitOptions.includes(value)) {
-                      setUnitOptions([...unitOptions, value]);
-                    }
-                  }}
-                />
+                  allowClear
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                        <Input
+                          placeholder="새 단위 추가"
+                          size="small"
+                          onPressEnter={(e) => {
+                            const value = (e.target as HTMLInputElement).value.trim();
+                            if (value && !unitOptions.includes(value)) {
+                              setUnitOptions([...unitOptions, value]);
+                              form.setFieldValue('unit', value);
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
+                  }
+                >
+                  {unitOptions.map(unit => (
+                    <Select.Option key={unit} value={unit} label={unit}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{unit}</span>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<CloseOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUnitOptions(unitOptions.filter(u => u !== unit));
+                            if (form.getFieldValue('unit') === unit) {
+                              form.setFieldValue('unit', undefined);
+                            }
+                          }}
+                          style={{ color: '#ff4d4f' }}
+                        />
+                      </div>
+                    </Select.Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
           </Row>
@@ -982,7 +1073,7 @@ const ProductManagement: React.FC = () => {
         title="품목 엑셀 업로드"
         templateType="product"
         description="품목 정보를 엑셀 파일로 일괄 업로드할 수 있습니다. 먼저 템플릿을 다운로드하여 양식을 확인하세요."
-        requiredFields={['상품명']}
+        requiredFields={['품목명']}
       />
 
       <ProductPrintModal

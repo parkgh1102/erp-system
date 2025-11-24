@@ -18,6 +18,7 @@ import {
   InputNumber,
   Tabs,
   Modal,
+  Spin,
 } from 'antd';
 import {
   SettingOutlined,
@@ -26,18 +27,34 @@ import {
   GlobalOutlined,
   DatabaseOutlined,
   ExclamationCircleOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
 import { useThemeStore } from '../../stores/themeStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useMessage } from '../../hooks/useMessage';
+import { settingsAPI, activityLogAPI } from '../../utils/api';
+import UserManagement from './UserManagement';
 
 const { Title, Text } = Typography;
+
+interface ActivityLog {
+  id: number;
+  actionType: string;
+  entity: string;
+  entityId?: number;
+  description?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  browser?: string;
+  os?: string;
+  createdAt: string;
+}
 
 const Settings: React.FC = () => {
   const [form] = Form.useForm();
   const { isDark, toggleTheme } = useThemeStore();
-  const { currentBusiness } = useAuthStore();
-  const message = useMessage();
+  const { currentBusiness, user } = useAuthStore();
+  const { success: showSuccess, error: showError } = useMessage();
   const [loading, setLoading] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [notifications, setNotifications] = useState({
@@ -46,6 +63,9 @@ const Settings: React.FC = () => {
     inventory: false,
     system: true,
   });
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsModalVisible, setLogsModalVisible] = useState(false);
 
   // localStorage에서 설정 불러오기
   useEffect(() => {
@@ -55,6 +75,25 @@ const Settings: React.FC = () => {
     }
   }, []);
 
+  // 활동 로그 불러오기
+  useEffect(() => {
+    fetchActivityLogs();
+  }, []);
+
+  const fetchActivityLogs = async () => {
+    setLogsLoading(true);
+    try {
+      const response = await activityLogAPI.getRecentLogs();
+      if (response.data.success) {
+        setActivityLogs(response.data.data.logs || []);
+      }
+    } catch (error) {
+      console.error('활동 로그 조회 실패:', error);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
+
   const handleNotificationChange = (key: string, checked: boolean) => {
     const updatedNotifications = {
       ...notifications,
@@ -62,7 +101,7 @@ const Settings: React.FC = () => {
     };
     setNotifications(updatedNotifications);
     localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
-    message.success(`${getNotificationLabel(key)} 알림이 ${checked ? '활성화' : '비활성화'}되었습니다.`);
+    showSuccess(`${getNotificationLabel(key)} 알림이 ${checked ? '활성화' : '비활성화'}되었습니다.`);
   };
 
   const getNotificationLabel = (key: string) => {
@@ -75,15 +114,32 @@ const Settings: React.FC = () => {
     return labels[key as keyof typeof labels];
   };
 
+  const getActionTypeLabel = (actionType: string) => {
+    const labels: Record<string, string> = {
+      'login': '로그인',
+      'logout': '로그아웃',
+      'create': '생성',
+      'update': '수정',
+      'delete': '삭제',
+      'password_change': '비밀번호 변경',
+      'export': '데이터 내보내기',
+      'import': '데이터 가져오기',
+      'print': '인쇄',
+      'signup': '회원가입',
+      'view': '조회'
+    };
+    return labels[actionType] || actionType;
+  };
+
   const handleFinish = async (values: any) => {
     setLoading(true);
     try {
       // 실제로는 서버에 설정 저장
       localStorage.setItem('userSettings', JSON.stringify(values));
       await new Promise(resolve => setTimeout(resolve, 1000));
-      message.success('설정이 성공적으로 저장되었습니다.');
+      showSuccess('설정이 성공적으로 저장되었습니다.');
     } catch (error) {
-      message.error('설정 저장에 실패했습니다.');
+      showError('설정 저장에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -98,31 +154,69 @@ const Settings: React.FC = () => {
       okType: 'danger',
       cancelText: '취소',
       onOk() {
-        message.success('계정 삭제가 예약되었습니다. 7일 후에 완전히 삭제됩니다.');
+        showSuccess('계정 삭제가 예약되었습니다. 7일 후에 완전히 삭제됩니다.');
       },
     });
   };
 
-  return (
-    <div style={{ padding: '24px' }}>
-      <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
-        설정
-      </Title>
+  const handleExport = async (type: 'customers' | 'products' | 'transactions') => {
+    if (!currentBusiness) {
+      showError('사업체 정보를 찾을 수 없습니다.');
+      return;
+    }
 
-      <Tabs
-        defaultActiveKey="general"
-        type="card"
-        items={[
-          {
-            key: 'general',
-            label: '일반 설정',
-            icon: <SettingOutlined />,
+    try {
+      setLoading(true);
+      let response;
+      let filename;
+
+      switch (type) {
+        case 'customers':
+          response = await settingsAPI.exportCustomers(currentBusiness.id);
+          filename = '거래처.xlsx';
+          break;
+        case 'products':
+          response = await settingsAPI.exportProducts(currentBusiness.id);
+          filename = '품목.xlsx';
+          break;
+        case 'transactions':
+          response = await settingsAPI.exportTransactions(currentBusiness.id);
+          filename = '매출매입.xlsx';
+          break;
+      }
+
+      // Blob 다운로드
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      showSuccess('데이터가 성공적으로 내보내졌습니다.');
+    } catch (error) {
+      showError('데이터 내보내기에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // role에 따른 탭 필터링
+  const getTabItems = () => {
+    const allTabs = [
+      {
+        key: 'general',
+        label: '일반 설정',
+        icon: <SettingOutlined />,
+        roles: ['admin', 'sales_viewer'], // 모든 권한 접근 가능
             children: (
           <Row gutter={[24, 24]}>
             <Col xs={24} lg={12}>
               <Card title="화면 설정">
-                <Form layout="vertical" initialValues={{ theme: isDark }}>
-                  <Form.Item label="테마 설정" name="theme">
+                <Form layout="vertical" initialValues={{ theme: isDark, language: 'ko', timezone: 'Asia/Seoul', currency: 'KRW' }}>
+                  <Form.Item label="테마 설정">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <Text>라이트 모드</Text>
                       <Switch
@@ -136,7 +230,7 @@ const Settings: React.FC = () => {
                   </Form.Item>
 
                   <Form.Item label="언어 설정" name="language">
-                    <Select defaultValue="ko" style={{ width: '100%' }}>
+                    <Select style={{ width: '100%' }}>
                       <Select.Option value="ko">한국어</Select.Option>
                       <Select.Option value="en">English</Select.Option>
                       <Select.Option value="ja">日本語</Select.Option>
@@ -144,7 +238,7 @@ const Settings: React.FC = () => {
                   </Form.Item>
 
                   <Form.Item label="시간대" name="timezone">
-                    <Select defaultValue="Asia/Seoul" style={{ width: '100%' }}>
+                    <Select style={{ width: '100%' }}>
                       <Select.Option value="Asia/Seoul">서울 (GMT+9)</Select.Option>
                       <Select.Option value="America/New_York">뉴욕 (GMT-5)</Select.Option>
                       <Select.Option value="Europe/London">런던 (GMT+0)</Select.Option>
@@ -152,7 +246,7 @@ const Settings: React.FC = () => {
                   </Form.Item>
 
                   <Form.Item label="화폐 단위" name="currency">
-                    <Select defaultValue="KRW" style={{ width: '100%' }}>
+                    <Select style={{ width: '100%' }}>
                       <Select.Option value="KRW">원 (₩)</Select.Option>
                       <Select.Option value="USD">달러 ($)</Select.Option>
                       <Select.Option value="EUR">유로 (€)</Select.Option>
@@ -162,13 +256,12 @@ const Settings: React.FC = () => {
               </Card>
 
               <Card title="데이터 설정" style={{ marginTop: '16px' }}>
-                <Form layout="vertical">
+                <Form layout="vertical" initialValues={{ pageSize: 20, autoSaveInterval: 5, backupEnabled: true }}>
                   <Form.Item label="페이지당 항목 수" name="pageSize">
                     <Slider
                       min={10}
                       max={100}
                       step={10}
-                      defaultValue={20}
                       marks={{
                         10: '10',
                         50: '50',
@@ -181,16 +274,17 @@ const Settings: React.FC = () => {
                     <InputNumber
                       min={1}
                       max={60}
-                      defaultValue={5}
                       style={{ width: '100%' }}
                     />
                   </Form.Item>
 
                   <Form.Item label="데이터 백업" name="backupEnabled">
-                    <Switch defaultChecked />
-                    <Text type="secondary" style={{ marginLeft: '8px' }}>
-                      매일 자동으로 데이터를 백업합니다
-                    </Text>
+                    <Space>
+                      <Switch />
+                      <Text type="secondary">
+                        매일 자동으로 데이터를 백업합니다
+                      </Text>
+                    </Space>
                   </Form.Item>
                 </Form>
               </Card>
@@ -198,26 +292,32 @@ const Settings: React.FC = () => {
 
             <Col xs={24} lg={12}>
               <Card title="알림 설정" icon={<BellOutlined />}>
-                <Form layout="vertical">
+                <Form layout="vertical" initialValues={{ emailNotifications: true, browserNotifications: true, smsNotifications: false }}>
                   <Form.Item label="이메일 알림" name="emailNotifications">
-                    <Switch defaultChecked />
-                    <Text type="secondary" style={{ marginLeft: '8px' }}>
-                      중요한 업데이트를 이메일로 받습니다
-                    </Text>
+                    <Space>
+                      <Switch />
+                      <Text type="secondary">
+                        중요한 업데이트를 이메일로 받습니다
+                      </Text>
+                    </Space>
                   </Form.Item>
 
                   <Form.Item label="브라우저 알림" name="browserNotifications">
-                    <Switch defaultChecked />
-                    <Text type="secondary" style={{ marginLeft: '8px' }}>
-                      브라우저 푸시 알림을 받습니다
-                    </Text>
+                    <Space>
+                      <Switch />
+                      <Text type="secondary">
+                        브라우저 푸시 알림을 받습니다
+                      </Text>
+                    </Space>
                   </Form.Item>
 
                   <Form.Item label="SMS 알림" name="smsNotifications">
-                    <Switch />
-                    <Text type="secondary" style={{ marginLeft: '8px' }}>
-                      중요한 알림을 SMS로 받습니다
-                    </Text>
+                    <Space>
+                      <Switch />
+                      <Text type="secondary">
+                        중요한 알림을 SMS로 받습니다
+                      </Text>
+                    </Space>
                   </Form.Item>
 
                   <Divider />
@@ -255,26 +355,29 @@ const Settings: React.FC = () => {
 
             </Col>
           </Row>
-            )
-          },
-          {
-            key: 'security',
-            label: '보안',
-            icon: <SecurityScanOutlined />,
+        )
+      },
+      {
+        key: 'security',
+        label: '보안',
+        icon: <SecurityScanOutlined />,
+        roles: ['admin', 'sales_viewer'], // 모든 권한 접근 가능
             children: (
           <Row gutter={[24, 24]}>
             <Col xs={24} lg={12}>
               <Card title="보안 설정">
-                <Form layout="vertical">
+                <Form layout="vertical" initialValues={{ twoFactorAuth: false, sessionTimeout: '8h', ipRestriction: false, loginNotification: true }}>
                   <Form.Item label="2단계 인증" name="twoFactorAuth">
-                    <Switch />
-                    <Text type="secondary" style={{ marginLeft: '8px' }}>
-                      로그인 시 추가 인증을 요구합니다
-                    </Text>
+                    <Space>
+                      <Switch />
+                      <Text type="secondary">
+                        로그인 시 추가 인증을 요구합니다
+                      </Text>
+                    </Space>
                   </Form.Item>
 
                   <Form.Item label="세션 유지 시간" name="sessionTimeout">
-                    <Radio.Group defaultValue="8h">
+                    <Radio.Group>
                       <Radio value="1h">1시간</Radio>
                       <Radio value="4h">4시간</Radio>
                       <Radio value="8h">8시간</Radio>
@@ -283,71 +386,127 @@ const Settings: React.FC = () => {
                   </Form.Item>
 
                   <Form.Item label="IP 제한" name="ipRestriction">
-                    <Switch />
-                    <Text type="secondary" style={{ marginLeft: '8px' }}>
-                      특정 IP에서만 접속을 허용합니다
-                    </Text>
+                    <Space>
+                      <Switch />
+                      <Text type="secondary">
+                        특정 IP에서만 접속을 허용합니다
+                      </Text>
+                    </Space>
                   </Form.Item>
 
                   <Form.Item label="로그인 알림" name="loginNotification">
-                    <Switch defaultChecked />
-                    <Text type="secondary" style={{ marginLeft: '8px' }}>
-                      새로운 기기에서 로그인 시 알림을 받습니다
-                    </Text>
+                    <Space>
+                      <Switch />
+                      <Text type="secondary">
+                        새로운 기기에서 로그인 시 알림을 받습니다
+                      </Text>
+                    </Space>
                   </Form.Item>
                 </Form>
               </Card>
             </Col>
 
             <Col xs={24} lg={12}>
-              <Card title="활동 로그">
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <div>
-                    <Text strong>최근 로그인</Text>
-                    <br />
-                    <Text type="secondary">2024-01-20 14:30:25 (Chrome, Windows)</Text>
+              <Card
+                title="활동 로그"
+                extra={
+                  <Button
+                    type="link"
+                    onClick={fetchActivityLogs}
+                    loading={logsLoading}
+                  >
+                    새로고침
+                  </Button>
+                }
+              >
+                {logsLoading ? (
+                  <div style={{ textAlign: 'center', padding: '20px' }}>
+                    <Spin />
                   </div>
-                  <Divider style={{ margin: '12px 0' }} />
-                  <div>
-                    <Text strong>비밀번호 변경</Text>
-                    <br />
-                    <Text type="secondary">2024-01-15 09:22:11</Text>
+                ) : activityLogs.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px' }}>
+                    <Text type="secondary">활동 로그가 없습니다.</Text>
                   </div>
-                  <Divider style={{ margin: '12px 0' }} />
-                  <div>
-                    <Text strong>계정 생성</Text>
-                    <br />
-                    <Text type="secondary">2024-01-10 16:45:32</Text>
-                  </div>
-                </Space>
-                <Button type="link" style={{ padding: 0, marginTop: '16px' }}>
-                  전체 활동 내역 보기
-                </Button>
+                ) : (
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    {activityLogs.slice(0, 5).map((log, index) => (
+                      <React.Fragment key={log.id}>
+                        {index > 0 && <Divider style={{ margin: '12px 0' }} />}
+                        <div>
+                          <Text strong>{getActionTypeLabel(log.actionType)}</Text>
+                          {log.description && (
+                            <>
+                              <br />
+                              <Text>{log.description}</Text>
+                            </>
+                          )}
+                          <br />
+                          <Text type="secondary">
+                            {new Date(log.createdAt).toLocaleString('ko-KR', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })}
+                            {log.browser && log.os && ` (${log.browser}, ${log.os})`}
+                          </Text>
+                        </div>
+                      </React.Fragment>
+                    ))}
+                  </Space>
+                )}
+                {!logsLoading && activityLogs.length > 5 && (
+                  <Button
+                    type="link"
+                    style={{ padding: 0, marginTop: '16px' }}
+                    onClick={() => setLogsModalVisible(true)}
+                  >
+                    전체 활동 내역 보기 ({activityLogs.length}건)
+                  </Button>
+                )}
               </Card>
             </Col>
           </Row>
-            )
-          },
-          {
-            key: 'data',
-            label: '데이터 관리',
-            icon: <DatabaseOutlined />,
+        )
+      },
+      {
+        key: 'data',
+        label: '데이터 관리',
+        icon: <DatabaseOutlined />,
+        roles: ['admin'], // admin만 접근 가능
             children: (
           <Row gutter={[24, 24]}>
             <Col xs={24} lg={12}>
               <Card title="데이터 내보내기">
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <Button type="primary" block>
+                  <Button
+                    type="primary"
+                    block
+                    onClick={() => handleExport('customers')}
+                    loading={loading}
+                  >
                     거래처 데이터 내보내기
                   </Button>
-                  <Button type="primary" block>
+                  <Button
+                    type="primary"
+                    block
+                    onClick={() => handleExport('products')}
+                    loading={loading}
+                  >
                     품목 데이터 내보내기
                   </Button>
-                  <Button type="primary" block>
+                  <Button
+                    type="primary"
+                    block
+                    onClick={() => handleExport('transactions')}
+                    loading={loading}
+                  >
                     매출/매입 데이터 내보내기
                   </Button>
-                  <Button type="primary" block>
-                    전체 데이터 내보내기
+                  <Button type="primary" block disabled>
+                    전체 데이터 내보내기 (준비 중)
                   </Button>
                 </Space>
                 <Alert
@@ -380,9 +539,32 @@ const Settings: React.FC = () => {
               </Card>
             </Col>
           </Row>
-            )
-          }
-        ]}
+        )
+      },
+      {
+        key: 'users',
+        label: '사용자관리',
+        icon: <UserOutlined />,
+        roles: ['admin'], // admin만 접근 가능
+        children: <UserManagement />
+      }
+    ];
+
+    // 현재 사용자의 role에 따라 탭 필터링
+    const userRole = user?.role || 'admin';
+    return allTabs.filter(tab => tab.roles.includes(userRole));
+  };
+
+  return (
+    <div style={{ padding: '24px' }}>
+      <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
+        설정
+      </Title>
+
+      <Tabs
+        defaultActiveKey="general"
+        type="card"
+        items={getTabItems()}
       />
 
       <Form form={form} onFinish={handleFinish}>
@@ -392,6 +574,76 @@ const Settings: React.FC = () => {
           </Button>
         </div>
       </Form>
+
+      {/* 전체 활동 로그 Modal */}
+      <Modal
+        title="전체 활동 내역"
+        open={logsModalVisible}
+        onCancel={() => setLogsModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setLogsModalVisible(false)}>
+            닫기
+          </Button>
+        ]}
+        width={800}
+        style={{
+          top: 20,
+        }}
+        styles={{
+          body: {
+            maxHeight: 'calc(100vh - 200px)',
+            overflowY: 'auto'
+          }
+        }}
+      >
+        {logsLoading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin size="large" />
+          </div>
+        ) : activityLogs.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Text type="secondary">활동 로그가 없습니다.</Text>
+          </div>
+        ) : (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            {activityLogs.map((log, index) => (
+              <React.Fragment key={log.id}>
+                {index > 0 && <Divider style={{ margin: '12px 0' }} />}
+                <div>
+                  <Text strong style={{ fontSize: '15px' }}>
+                    {getActionTypeLabel(log.actionType)}
+                  </Text>
+                  {log.entity && (
+                    <>
+                      <Text type="secondary"> - {log.entity}</Text>
+                      {log.entityId && <Text type="secondary"> #{log.entityId}</Text>}
+                    </>
+                  )}
+                  {log.description && (
+                    <>
+                      <br />
+                      <Text style={{ fontSize: '14px' }}>{log.description}</Text>
+                    </>
+                  )}
+                  <br />
+                  <Text type="secondary" style={{ fontSize: '13px' }}>
+                    {new Date(log.createdAt).toLocaleString('ko-KR', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    })}
+                    {log.browser && log.os && ` · ${log.browser} · ${log.os}`}
+                    {log.ipAddress && ` · IP: ${log.ipAddress}`}
+                  </Text>
+                </div>
+              </React.Fragment>
+            ))}
+          </Space>
+        )}
+      </Modal>
     </div>
   );
 };
