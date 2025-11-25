@@ -620,8 +620,8 @@ const CustomerManagement: React.FC = () => {
       padding: window.innerWidth <= 768 ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
-      <Row align="middle" gutter={[16, 16]} style={{ marginBottom: window.innerWidth <= 768 ? 16 : 24 }}>
-        <Col xs={24} md={8}>
+      <Row align="middle" style={{ marginBottom: 24 }}>
+        <Col>
           <h2 style={{
             margin: 0,
             color: isDark ? '#ffffff' : '#000000',
@@ -631,172 +631,147 @@ const CustomerManagement: React.FC = () => {
             거래처 관리
           </h2>
         </Col>
-        <Col xs={24} md={16}>
-          <Space
-            direction={window.innerWidth <= 768 ? "vertical" : "horizontal"}
-            size={window.innerWidth <= 768 ? 8 : 16}
-            wrap
-            style={{ width: '100%' }}
-          >
+        <Col style={{ marginLeft: '100px' }}>
+          <Space size="middle" wrap>
             <Input.Search
-              placeholder={window.innerWidth <= 768 ? "거래처명/사업자번호" : "거래처명 또는 사업자번호 검색"}
+              placeholder="거래처명 또는 사업자번호 검색"
               allowClear
               enterButton={<SearchOutlined />}
-              size={window.innerWidth <= 768 ? "small" : "middle"}
+              size="middle"
               onSearch={handleSearch}
-              style={{ width: window.innerWidth <= 768 ? '100%' : 300 }}
+              style={{ width: 300 }}
             />
-            <Space wrap size={window.innerWidth <= 768 ? 4 : 8}>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleAddCustomer}
-                size={window.innerWidth <= 768 ? "small" : "middle"}
-              >
-                추가
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCustomer}>
+              추가
+            </Button>
+            <Button
+              icon={<ImportOutlined />}
+              onClick={() => setExcelUploadModalVisible(true)}
+              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+            >
+              엑셀업로드
+            </Button>
+            <Button
+              type="default"
+              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+              onClick={() => {
+                if (selectedRowKeys.length === customers.length && customers.length > 0) {
+                  setSelectedRowKeys([]);
+                } else {
+                  setSelectedRowKeys(customers.map(customer => customer.id));
+                }
+              }}
+            >
+              {selectedRowKeys.length === customers.length && customers.length > 0 ? '전체 해제' : '전체 선택'}
+            </Button>
+            <Popconfirm
+              title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
+              onConfirm={handleBatchDelete}
+              okText="예"
+              cancelText="아니오"
+              disabled={selectedRowKeys.length === 0}
+              okButtonProps={{
+                autoFocus: true,
+                size: 'large',
+                style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+              }}
+              cancelButtonProps={{
+                size: 'large',
+                style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+              }}
+              placement="top"
+              overlayStyle={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 9999,
+                pointerEvents: 'auto'
+              }}
+              styles={{
+                body: {
+                  padding: '20px',
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  minWidth: '350px',
+                  textAlign: 'center',
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
+                }
+              }}
+              transitionName=""
+              mouseEnterDelay={0}
+              mouseLeaveDelay={0}
+            >
+              <Button danger disabled={selectedRowKeys.length === 0}>
+                선택 삭제 ({selectedRowKeys.length})
               </Button>
-              <Button
-                icon={<ImportOutlined />}
-                size={window.innerWidth <= 768 ? "small" : "middle"}
-                onClick={() => setExcelUploadModalVisible(true)}
-                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
-              >
-                {window.innerWidth <= 768 ? '엑셀' : '엑셀업로드'}
+            </Popconfirm>
+            <Popconfirm
+              title="모든 거래처를 삭제하시겠습니까?"
+              description="이 작업은 되돌릴 수 없습니다."
+              onConfirm={handleDeleteAll}
+              okText="예"
+              cancelText="아니오"
+              okButtonProps={{
+                autoFocus: true,
+                size: 'large',
+                style: { minWidth: '80px', height: '40px', fontSize: '16px' },
+                danger: true
+              }}
+              cancelButtonProps={{
+                size: 'large',
+                style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+              }}
+              placement="top"
+              overlayStyle={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 9999,
+                pointerEvents: 'auto'
+              }}
+              styles={{
+                body: {
+                  padding: '20px',
+                  fontSize: '18px',
+                  fontWeight: '500',
+                  minWidth: '350px',
+                  textAlign: 'center',
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
+                }
+              }}
+              transitionName=""
+              mouseEnterDelay={0}
+              mouseLeaveDelay={0}
+            >
+              <Button danger type="primary">
+                전체 삭제
               </Button>
-              <Button
-                size={window.innerWidth <= 768 ? "small" : "middle"}
-                type="default"
-                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
-                onClick={() => {
-                  if (selectedRowKeys.length === customers.length && customers.length > 0) {
-                    setSelectedRowKeys([]);
-                  } else {
-                    setSelectedRowKeys(customers.map(customer => customer.id));
-                  }
-                }}
-              >
-                {window.innerWidth <= 768 ? '전체' : (selectedRowKeys.length === customers.length && customers.length > 0 ? '전체 해제' : '전체 선택')}
-              </Button>
-              <Popconfirm
-                title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
-                onConfirm={handleBatchDelete}
-                okText="예"
-                cancelText="아니오"
-                disabled={selectedRowKeys.length === 0}
-                okButtonProps={{
-                  autoFocus: true,
-                  size: 'large',
-                  style: { minWidth: '80px', height: '40px', fontSize: '16px' }
-                }}
-                cancelButtonProps={{
-                  size: 'large',
-                  style: { minWidth: '80px', height: '40px', fontSize: '16px' }
-                }}
-                placement="top"
-                overlayStyle={{
-                  position: 'fixed',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  zIndex: 9999,
-                  pointerEvents: 'auto'
-                }}
-                styles={{
-                  body: {
-                    padding: '20px',
-                    fontSize: '18px',
-                    fontWeight: '500',
-                    minWidth: '350px',
-                    textAlign: 'center',
-                    borderRadius: '12px',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
-                  }
-                }}
-                transitionName=""
-                mouseEnterDelay={0}
-                mouseLeaveDelay={0}
-              >
-                <Button
-                  size={window.innerWidth <= 768 ? "small" : "middle"}
-                  danger
-                  disabled={selectedRowKeys.length === 0}
-                >
-                  {window.innerWidth <= 768 ? `삭제(${selectedRowKeys.length})` : `선택 삭제 (${selectedRowKeys.length})`}
-                </Button>
-              </Popconfirm>
-              <Popconfirm
-                title="모든 거래처를 삭제하시겠습니까?"
-                description="이 작업은 되돌릴 수 없습니다."
-                onConfirm={handleDeleteAll}
-                okText="예"
-                cancelText="아니오"
-                okButtonProps={{
-                  autoFocus: true,
-                  size: 'large',
-                  style: { minWidth: '80px', height: '40px', fontSize: '16px' },
-                  danger: true
-                }}
-                cancelButtonProps={{
-                  size: 'large',
-                  style: { minWidth: '80px', height: '40px', fontSize: '16px' }
-                }}
-                placement="top"
-                overlayStyle={{
-                  position: 'fixed',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  zIndex: 9999,
-                  pointerEvents: 'auto'
-                }}
-                styles={{
-                  body: {
-                    padding: '20px',
-                    fontSize: '18px',
-                    fontWeight: '500',
-                    minWidth: '350px',
-                    textAlign: 'center',
-                    borderRadius: '12px',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
-                  }
-                }}
-                transitionName=""
-                mouseEnterDelay={0}
-                mouseLeaveDelay={0}
-              >
-                <Button
-                  size={window.innerWidth <= 768 ? "small" : "middle"}
-                  danger
-                  type="primary"
-                >
-                  전체 삭제
-                </Button>
-              </Popconfirm>
-              <Button
-                onClick={() => handleExport('excel')}
-                icon={<FileExcelOutlined />}
-                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
-                size={window.innerWidth <= 768 ? "small" : "middle"}
-              >
-                엑셀
-              </Button>
-              <Button
-                onClick={() => handleExport('pdf')}
-                icon={<FilePdfOutlined />}
-                style={{ backgroundColor: '#fa541c', borderColor: '#fa541c', color: 'white' }}
-                size={window.innerWidth <= 768 ? "small" : "middle"}
-              >
-                PDF
-              </Button>
-              <Button
-                onClick={() => setPrintModalVisible(true)}
-                icon={<PrinterOutlined />}
-                style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
-                size={window.innerWidth <= 768 ? "small" : "middle"}
-              >
-                인쇄
-              </Button>
-            </Space>
+            </Popconfirm>
+            <Button
+              onClick={() => handleExport('excel')}
+              icon={<FileExcelOutlined />}
+              style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
+            >
+              엑셀
+            </Button>
+            <Button
+              onClick={() => handleExport('pdf')}
+              icon={<FilePdfOutlined />}
+              style={{ backgroundColor: '#fa541c', borderColor: '#fa541c', color: 'white' }}
+            >
+              PDF
+            </Button>
+            <Button
+              onClick={() => setPrintModalVisible(true)}
+              icon={<PrinterOutlined />}
+              style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
+            >
+              인쇄
+            </Button>
           </Space>
         </Col>
       </Row>
