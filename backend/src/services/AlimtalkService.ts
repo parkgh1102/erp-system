@@ -22,7 +22,7 @@ export class AlimtalkService {
   private static API_KEY = 'FVLKIK16YSJ0513';
   private static OTP_TEMPLATE_CODE = 'SJT_123168'; // OTP 템플릿
   private static WELCOME_TEMPLATE_CODE = 'SJT_123166'; // 회원가입 환영 템플릿
-  private static ESIGNATURE_TEMPLATE_CODE = 'SJT_125142'; // 전자서명 완료 안내 템플릿 (변경됨)
+  private static ESIGNATURE_TEMPLATE_CODE = 'SJT_125177'; // 전자서명 완료 안내 템플릿
   private static SENDER_KEY = 'ebb6785f05eeae3c22142d465bb46603ff1eeb32';
   private static CALLBACK = '01040167148'; // 발신번호
 
