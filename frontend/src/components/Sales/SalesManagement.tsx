@@ -1124,7 +1124,7 @@ const SalesManagement: React.FC = () => {
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
         const totalQty = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        return totalQty.toLocaleString();
+        return Math.round(totalQty).toLocaleString();
       },
     },
     {
@@ -1146,7 +1146,7 @@ const SalesManagement: React.FC = () => {
       align: 'right' as const,
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
-        return (items[0]?.unitPrice || 0).toLocaleString() + '원';
+        return Math.round(items[0]?.unitPrice || 0).toLocaleString() + '원';
       },
     },
     {
@@ -1155,7 +1155,7 @@ const SalesManagement: React.FC = () => {
       key: 'totalAmount',
       width: '10%',
       align: 'right' as const,
-      render: (amount: number) => (amount || 0).toLocaleString() + '원',
+      render: (amount: number) => Math.round(amount || 0).toLocaleString() + '원',
       sorter: (a: Sale, b: Sale) => (a.totalAmount || 0) - (b.totalAmount || 0),
     },
     {
@@ -1164,7 +1164,7 @@ const SalesManagement: React.FC = () => {
       key: 'vatAmount',
       width: '9%',
       align: 'right' as const,
-      render: (amount: number) => (amount || 0).toLocaleString() + '원',
+      render: (amount: number) => Math.round(amount || 0).toLocaleString() + '원',
       sorter: (a: Sale, b: Sale) => (a.vatAmount || 0) - (b.vatAmount || 0),
     },
     {
@@ -1253,7 +1253,7 @@ const SalesManagement: React.FC = () => {
           <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>매출 관리</h2>
         </Col>
         <Col style={{ marginLeft: '100px' }}>
-          <Space size="middle" wrap>
+          <Space size={window.innerWidth <= 768 ? 4 : 8} wrap>
             <AutoComplete
               options={autoCompleteOptions}
               value={searchText}
@@ -1265,37 +1265,39 @@ const SalesManagement: React.FC = () => {
                 placeholder="거래처, 품목명, 금액, 메모 등으로 검색 (2글자 이상)"
                 allowClear
                 enterButton={<SearchOutlined />}
-                size="middle"
+                size={window.innerWidth <= 768 ? "small" : "middle"}
                 onSearch={handleSearch}
               />
             </AutoComplete>
+            <RangePicker
+              style={{ width: 300 }}
+              value={dateRange}
+              onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+              format="YYYY-MM-DD"
+              size={window.innerWidth <= 768 ? "small" : "middle"}
+            />
             {!isSalesViewer && (
               <>
-                <RangePicker
-                  style={{ width: 300 }}
-                  value={dateRange}
-                  onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-                  format="YYYY-MM-DD"
-                />
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size={window.innerWidth <= 768 ? "small" : "middle"}>
                   추가
                 </Button>
                 <Button
                   icon={<ImportOutlined />}
-                  size="middle"
+                  size={window.innerWidth <= 768 ? "small" : "middle"}
                   onClick={() => setExcelUploadModalVisible(true)}
                   style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
                 >
                   엑셀업로드
                 </Button>
                 <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-                  <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                  <Button icon={<ExportOutlined />} size={window.innerWidth <= 768 ? "small" : "middle"} style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
                     파일저장
                   </Button>
                 </Dropdown>
                 <Button
                   onClick={handleSelectAll}
                   type="default"
+                  size={window.innerWidth <= 768 ? "small" : "middle"}
                   style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
                 >
                   {selectedRowKeys.length === filteredSales.length && filteredSales.length > 0 ? '전체 해제' : '전체 선택'}
@@ -1349,7 +1351,7 @@ const SalesManagement: React.FC = () => {
                     }
                   }}
                 >
-                  <Button danger disabled={selectedRowKeys.length === 0}>
+                  <Button danger disabled={selectedRowKeys.length === 0} size={window.innerWidth <= 768 ? "small" : "middle"}>
                     선택 삭제 ({selectedRowKeys.length})
                   </Button>
                 </Popconfirm>
@@ -1406,7 +1408,7 @@ const SalesManagement: React.FC = () => {
                 >
                   <Button
                     icon={<PrinterOutlined />}
-                    size="middle"
+                    size={window.innerWidth <= 768 ? "small" : "middle"}
                     style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
                   >
                     인쇄 <DownOutlined />
@@ -1416,7 +1418,7 @@ const SalesManagement: React.FC = () => {
             )}
             <Button
               icon={<EditOutlined />}
-              size="middle"
+              size={window.innerWidth <= 768 ? "small" : "middle"}
               onClick={prepareESignature}
               style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
             >
