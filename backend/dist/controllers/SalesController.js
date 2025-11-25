@@ -14,8 +14,7 @@ const Notification_1 = require("../entities/Notification");
 // import { Product } from '../entities/Product';
 const joi_1 = __importDefault(require("joi"));
 const AlimtalkService_1 = require("../services/AlimtalkService");
-const promises_1 = __importDefault(require("fs/promises"));
-const path_1 = __importDefault(require("path"));
+const ImgbbService_1 = require("../services/ImgbbService");
 const salesRepository = database_1.AppDataSource.getRepository(Sales_1.Sales);
 const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
 const customerRepository = database_1.AppDataSource.getRepository(Customer_1.Customer);
@@ -689,30 +688,16 @@ class SalesController {
             if (!sales) {
                 return res.status(404).json({ success: false, message: '매출 정보를 찾을 수 없습니다.' });
             }
-            // 이미지 저장 경로 생성
-            const uploadsDir = path_1.default.join(__dirname, '../../uploads/statements');
-            await promises_1.default.mkdir(uploadsDir, { recursive: true });
-            // 파일명 생성 (안전한 파일명)
-            const ext = path_1.default.extname(req.file.originalname) || '.jpg';
-            const fileName = `statement_${Date.now()}${ext}`;
-            const filePath = path_1.default.join(uploadsDir, fileName);
-            // 파일 저장 (Buffer 직접 저장 - binary 모드)
-            await promises_1.default.writeFile(filePath, req.file.buffer, { encoding: null });
-            console.log('✅ 파일 저장 완료:', {
-                filePath,
-                fileName,
-                savedSize: (await promises_1.default.stat(filePath)).size
-            });
-            // URL 생성 (프로덕션에서는 HTTPS 강제)
-            const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
-            const host = req.get('host');
-            const imageUrl = `${protocol}://${host}/uploads/statements/${fileName}`;
-            console.log('🔗 생성된 이미지 URL:', {
-                protocol,
-                host,
-                imageUrl,
-                uploadsDir
-            });
+            // ImgBB에 이미지 업로드
+            const fileName = `statement_${businessId}_${id}_${Date.now()}`;
+            const imageUrl = await ImgbbService_1.ImgbbService.uploadImage(req.file.buffer, fileName);
+            if (!imageUrl) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'ImgBB 이미지 업로드에 실패했습니다. IMGBB_API_KEY를 확인하세요.'
+                });
+            }
+            console.log('✅ ImgBB 업로드 완료:', { imageUrl, fileName });
             res.json({
                 success: true,
                 message: '이미지가 업로드되었습니다.',

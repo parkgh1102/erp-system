@@ -9,8 +9,7 @@ import { Notification } from '../entities/Notification';
 // import { Product } from '../entities/Product';
 import Joi from 'joi';
 import { AlimtalkService } from '../services/AlimtalkService';
-import fs from 'fs/promises';
-import path from 'path';
+import { ImgbbService } from '../services/ImgbbService';
 
 const salesRepository = AppDataSource.getRepository(Sales);
 const businessRepository = AppDataSource.getRepository(Business);
@@ -762,35 +761,18 @@ export class SalesController {
         return res.status(404).json({ success: false, message: '매출 정보를 찾을 수 없습니다.' });
       }
 
-      // 이미지 저장 경로 생성
-      const uploadsDir = path.join(__dirname, '../../uploads/statements');
-      await fs.mkdir(uploadsDir, { recursive: true });
+      // ImgBB에 이미지 업로드
+      const fileName = `statement_${businessId}_${id}_${Date.now()}`;
+      const imageUrl = await ImgbbService.uploadImage(req.file.buffer, fileName);
 
-      // 파일명 생성 (안전한 파일명)
-      const ext = path.extname(req.file.originalname) || '.jpg';
-      const fileName = `statement_${Date.now()}${ext}`;
-      const filePath = path.join(uploadsDir, fileName);
+      if (!imageUrl) {
+        return res.status(500).json({
+          success: false,
+          message: 'ImgBB 이미지 업로드에 실패했습니다. IMGBB_API_KEY를 확인하세요.'
+        });
+      }
 
-      // 파일 저장 (Buffer 직접 저장 - binary 모드)
-      await fs.writeFile(filePath, req.file.buffer, { encoding: null });
-
-      console.log('✅ 파일 저장 완료:', {
-        filePath,
-        fileName,
-        savedSize: (await fs.stat(filePath)).size
-      });
-
-      // URL 생성 (프로덕션에서는 HTTPS 강제)
-      const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
-      const host = req.get('host');
-      const imageUrl = `${protocol}://${host}/uploads/statements/${fileName}`;
-
-      console.log('🔗 생성된 이미지 URL:', {
-        protocol,
-        host,
-        imageUrl,
-        uploadsDir
-      });
+      console.log('✅ ImgBB 업로드 완료:', { imageUrl, fileName });
 
       res.json({
         success: true,

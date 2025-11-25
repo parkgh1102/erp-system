@@ -76,6 +76,7 @@ const envSchema = joi_1.default.object({
     // 외부 서비스 (선택사항)
     REDIS_URL: joi_1.default.string().uri().optional(),
     SENTRY_DSN: joi_1.default.string().uri().optional(),
+    IMGBB_API_KEY: joi_1.default.string().optional(), // ImgBB 이미지 호스팅 API 키
 }).unknown();
 /**
  * 개선된 환경 변수 검증
