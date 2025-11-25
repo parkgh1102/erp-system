@@ -148,21 +148,27 @@ app.use('/api/notifications', apiRateLimit, notificationRoutes);
 app.use('/api/chatbot', apiRateLimit, chatbotRoutes);
 app.use('/api/excel', apiRateLimit, excelRoutes);
 
-// Health check endpoints
+// 데이터베이스 연결 상태 추적
+let isDatabaseConnected = false;
+
+// Health check endpoints - 서버가 먼저 시작되어야 함
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    environment: validatedEnv.NODE_ENV
+    environment: validatedEnv.NODE_ENV,
+    database: isDatabaseConnected ? 'connected' : 'connecting'
   });
 });
 
 app.get('/api/health', (req, res) => {
+  // Render 헬스체크용 - 서버가 살아있으면 OK 응답
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
     environment: validatedEnv.NODE_ENV,
-    service: 'erp-backend'
+    service: 'erp-backend',
+    database: isDatabaseConnected ? 'connected' : 'connecting'
   });
 });
 
@@ -183,17 +189,37 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
 });
 
 async function bootstrap() {
+  // 1. HTTP 서버를 먼저 시작 (헬스체크가 응답할 수 있도록)
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📊 Health: http://localhost:${PORT}/health`);
+    console.log(`⏳ Connecting to database...`);
+  });
+
+  // 2. 데이터베이스 연결 (비동기)
   try {
     await AppDataSource.initialize();
+    isDatabaseConnected = true;
     console.log('✅ Database connected');
-    
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`📊 Health: http://localhost:${PORT}/health`);
-    });
   } catch (error) {
-    console.error('❌ Startup error:', error);
-    process.exit(1);
+    console.error('❌ Database connection failed:', error);
+    // 데이터베이스 연결 실패해도 서버는 유지 (재시도 가능)
+    // 하지만 API 요청은 실패할 것임
+
+    // 프로덕션에서는 일정 시간 후 재시도
+    if (validatedEnv.NODE_ENV === 'production') {
+      console.log('🔄 Retrying database connection in 5 seconds...');
+      setTimeout(async () => {
+        try {
+          await AppDataSource.initialize();
+          isDatabaseConnected = true;
+          console.log('✅ Database connected (retry successful)');
+        } catch (retryError) {
+          console.error('❌ Database connection retry failed:', retryError);
+          console.error('⚠️ Server is running but database is not connected');
+        }
+      }, 5000);
+    }
   }
 }
 
