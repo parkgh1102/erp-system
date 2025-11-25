@@ -1,12 +1,5 @@
-import { Request } from 'express';
-
 declare global {
   namespace Express {
-    interface Request {
-      file?: Multer.File;
-      files?: Multer.File[] | { [fieldname: string]: Multer.File[] };
-    }
-
     namespace Multer {
       interface File {
         fieldname: string;
@@ -19,6 +12,11 @@ declare global {
         path: string;
         buffer: Buffer;
       }
+    }
+
+    interface Request {
+      file?: Multer.File;
+      files?: Multer.File[] | { [fieldname: string]: Multer.File[] };
     }
   }
 }
