@@ -40,8 +40,8 @@ import { OTP } from '../entities/OTP';
 const env = getValidatedEnv();
 
 const baseConfig = {
-  // ✅ 모든 환경에서 synchronize false (안전한 마이그레이션 사용)
-  synchronize: false,
+  // ✅ synchronize 설정 (환경 변수로 제어 가능)
+  synchronize: process.env.DB_SYNCHRONIZE === 'true' || env.NODE_ENV === 'development',
 
   // 개발 환경에서만 쿼리 로깅
   logging: env.NODE_ENV === 'development' && env.LOG_LEVEL === 'debug',
