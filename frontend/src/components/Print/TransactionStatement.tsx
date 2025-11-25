@@ -269,7 +269,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
             }
 
             // 과세 유형 표시 텍스트
-            const taxTypeText = item.taxType === 'tax_free' || item.taxExempt ? '면세' : itemTax.toLocaleString();
+            const taxTypeText = item.taxType === 'tax_free' || item.taxExempt ? '면세' : Math.round(itemTax).toLocaleString();
 
             return (
               <tr key={index}>
@@ -297,18 +297,18 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
                   border: '1px solid #000',
                   padding: '1mm',
                   textAlign: 'right'
-                }}>{item.quantity.toLocaleString()}</td>
+                }}>{Math.round(item.quantity).toLocaleString()}</td>
                 <td style={{
                   border: '1px solid #000',
                   padding: '1mm',
                   textAlign: 'right'
-                }}>{item.unitPrice.toLocaleString()}</td>
+                }}>{Math.round(item.unitPrice).toLocaleString()}</td>
                 <td style={{
                   border: '1px solid #000',
                   padding: '1mm',
                   textAlign: 'right',
                   fontWeight: 'bold'
-                }}>{displaySupplyAmount.toLocaleString()}</td>
+                }}>{Math.round(displaySupplyAmount).toLocaleString()}</td>
                 <td style={{
                   border: '1px solid #000',
                   padding: '1mm',
@@ -320,7 +320,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
                   textAlign: 'right',
                   fontWeight: 'bold',
                   color: '#d32f2f'
-                }}>{itemTotal.toLocaleString()}</td>
+                }}>{Math.round(itemTotal).toLocaleString()}</td>
               </tr>
             );
           })}
@@ -460,7 +460,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
                       textAlign: 'right',
                       fontWeight: 'bold',
                       height: '6.5mm'
-                    }}>{previousBalance.toLocaleString()}원</td>
+                    }}>{Math.round(previousBalance).toLocaleString()}원</td>
                   </tr>
                   <tr style={{ backgroundColor: '#e8f4f8' }}>
                     <td style={{
@@ -481,7 +481,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
                       color: '#d32f2f',
                       height: '6.5mm',
                       whiteSpace: 'nowrap'
-                    }}>{grandTotal.toLocaleString()}원</td>
+                    }}>{Math.round(grandTotal).toLocaleString()}원</td>
                   </tr>
                   <tr style={{ backgroundColor: '#fff3e0' }}>
                     <td style={{
@@ -502,7 +502,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
                       color: '#f57c00',
                       height: '6.5mm',
                       whiteSpace: 'nowrap'
-                    }}>{totalBalance.toLocaleString()}원</td>
+                    }}>{Math.round(totalBalance).toLocaleString()}원</td>
                   </tr>
                 </>
               );
