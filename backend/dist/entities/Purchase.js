@@ -15,6 +15,13 @@ const Business_1 = require("./Business");
 const Customer_1 = require("./Customer");
 const PurchaseItem_1 = require("./PurchaseItem");
 let Purchase = class Purchase {
+    // Alias for compatibility with transactionDate references
+    get transactionDate() {
+        return this.purchaseDate;
+    }
+    set transactionDate(value) {
+        this.purchaseDate = value;
+    }
 };
 exports.Purchase = Purchase;
 __decorate([

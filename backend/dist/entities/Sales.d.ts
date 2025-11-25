@@ -1,6 +1,7 @@
 import { Business } from './Business';
 import { Customer } from './Customer';
 import { SalesItem } from './SalesItem';
+import { User } from './User';
 export declare class Sales {
     id: number;
     business: Business;
@@ -12,6 +13,10 @@ export declare class Sales {
     vatAmount: number;
     description?: string;
     memo?: string;
+    signedByUser?: User;
+    signedBy?: number;
+    signedAt?: Date;
+    signatureImage?: string;
     items: SalesItem[];
     createdAt: Date;
     updatedAt: Date;

@@ -14,6 +14,8 @@ const securityLogger_1 = require("../middleware/securityLogger");
 const passwordValidator_1 = require("../utils/passwordValidator");
 const logger_1 = require("../utils/logger");
 const envValidator_1 = require("../config/envValidator");
+const ActivityLogController_1 = require("./ActivityLogController");
+const AlimtalkService_1 = require("../services/AlimtalkService");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const userRepository = database_1.AppDataSource.getRepository(User_1.User);
@@ -22,7 +24,7 @@ const signupSchema = joi_1.default.object({
     email: joi_1.default.string().email().required(),
     password: passwordValidator_1.passwordSchema.required(),
     name: joi_1.default.string().min(2).required(),
-    phone: joi_1.default.string().pattern(/^[0-9-+\s()]+$/).allow(''),
+    phone: joi_1.default.string().pattern(/^[0-9-+\s()]+$/).required(),
     businessInfo: joi_1.default.object({
         businessNumber: joi_1.default.string().pattern(/^\d{3}-\d{2}-\d{5}$/).required(),
         companyName: joi_1.default.string().min(1).max(200).required(),
@@ -88,9 +90,22 @@ exports.AuthController = {
                 fax: businessInfo.fax
             });
             await businessRepository.save(business);
+            // 회원가입 환영 알림톡 전송 (비동기로 처리하여 응답 지연 방지)
+            AlimtalkService_1.AlimtalkService.sendWelcome(savedUser.phone, savedUser.name, businessInfo.companyName)
+                .then((sent) => {
+                if (sent) {
+                    logger_1.logger.info('회원가입 환영 알림톡 전송 성공', { userId: savedUser.id, phone: savedUser.phone });
+                }
+                else {
+                    logger_1.logger.warn('회원가입 환영 알림톡 전송 실패', { userId: savedUser.id, phone: savedUser.phone });
+                }
+            })
+                .catch((error) => {
+                logger_1.logger.error('회원가입 환영 알림톡 전송 중 오류', error);
+            });
             const env = (0, envValidator_1.getValidatedEnv)();
-            const token = jsonwebtoken_1.default.sign({ userId: savedUser.id, email: savedUser.email }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
-            const refreshToken = jsonwebtoken_1.default.sign({ userId: savedUser.id, email: savedUser.email, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
+            const token = jsonwebtoken_1.default.sign({ userId: savedUser.id, email: savedUser.email, businessId: business.id }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
+            const refreshToken = jsonwebtoken_1.default.sign({ userId: savedUser.id, email: savedUser.email, businessId: business.id, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
             logger_1.logger.info('Signup completed successfully');
             // HttpOnly 쿠키로 토큰 설정
             res.cookie('authToken', token, {
@@ -145,7 +160,7 @@ exports.AuthController = {
                 securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: User not found', { email });
                 return res.status(401).json({
                     success: false,
-                    message: '이메일 또는 비밀번호가 올바르지 않습니다.'
+                    message: '이메일 또는 비밀번호가 틀립니다.'
                 });
             }
             const isPasswordValid = await bcrypt_1.default.compare(password, user.password);
@@ -153,14 +168,35 @@ exports.AuthController = {
                 securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: Invalid password', { email, userId: user.id });
                 return res.status(401).json({
                     success: false,
-                    message: '이메일 또는 비밀번호가 올바르지 않습니다.'
+                    message: '이메일 또는 비밀번호가 틀립니다.'
                 });
+            }
+            // sales_viewer인 경우 businessId로 비즈니스 정보 조회
+            console.log('🔑 Login user info:', {
+                userId: user.id,
+                email: user.email,
+                role: user.role,
+                businessId: user.businessId
+            });
+            if (user.role === 'sales_viewer' && user.businessId) {
+                const business = await businessRepository.findOne({
+                    where: { id: user.businessId }
+                });
+                console.log('🏢 Found business for sales_viewer:', business ? { id: business.id, name: business.companyName } : 'null');
+                if (business) {
+                    user.businesses = [business];
+                }
             }
             // 로그인 성공 로깅
             securityLogger_1.securityLogger.logAuthSuccess(req, user.id);
+            // 활동 로그 기록
+            await (0, ActivityLogController_1.logActivity)('login', 'user', user.id, `사용자가 로그인했습니다.`, req, { email: user.email });
+            // businessId 결정: sales_viewer는 user.businessId, admin은 첫 번째 비즈니스
+            const businessId = user.businessId || user.businesses[0]?.id || 0;
+            console.log('🔐 JWT 토큰 생성:', { userId: user.id, email: user.email, businessId });
             const env = (0, envValidator_1.getValidatedEnv)();
-            const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
-            const refreshToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
+            const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
+            const refreshToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
             // HttpOnly 쿠키로 토큰 설정
             res.cookie('authToken', token, {
                 httpOnly: true,
@@ -184,6 +220,7 @@ exports.AuthController = {
                         email: user.email,
                         name: user.name,
                         phone: user.phone,
+                        role: user.role,
                         businesses: user.businesses
                     }
                 }
@@ -210,6 +247,15 @@ exports.AuthController = {
                     message: '사용자를 찾을 수 없습니다.'
                 });
             }
+            // sales_viewer인 경우 businessId로 비즈니스 정보 조회
+            if (user.role === 'sales_viewer' && user.businessId) {
+                const business = await businessRepository.findOne({
+                    where: { id: user.businessId }
+                });
+                if (business) {
+                    user.businesses = [business];
+                }
+            }
             res.json({
                 success: true,
                 data: {
@@ -217,8 +263,11 @@ exports.AuthController = {
                     email: user.email,
                     name: user.name,
                     phone: user.phone,
+                    role: user.role,
                     avatar: user.avatar ? `/uploads/avatars/${user.avatar}` : null,
-                    businesses: user.businesses
+                    businesses: user.businesses,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt
                 }
             });
         }
@@ -323,7 +372,8 @@ exports.AuthController = {
                 });
             }
             const user = await userRepository.findOne({
-                where: { id: decoded.userId, isActive: true }
+                where: { id: decoded.userId, isActive: true },
+                relations: ['businesses']
             });
             if (!user) {
                 return res.status(403).json({
@@ -331,8 +381,11 @@ exports.AuthController = {
                     message: '사용자를 찾을 수 없습니다.'
                 });
             }
-            const newToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
-            const newRefreshToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
+            // businessId 결정: sales_viewer는 user.businessId, admin은 첫 번째 비즈니스
+            const businessId = user.businessId || user.businesses[0]?.id || 0;
+            console.log('🔐 JWT 토큰 생성:', { userId: user.id, email: user.email, businessId });
+            const newToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
+            const newRefreshToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
             // HttpOnly 쿠키로 새 토큰 설정
             res.cookie('authToken', newToken, {
                 httpOnly: true,
@@ -348,7 +401,10 @@ exports.AuthController = {
             });
             res.json({
                 success: true,
-                message: '토큰이 갱신되었습니다.'
+                message: '토큰이 갱신되었습니다.',
+                data: {
+                    token: newToken
+                }
             });
         }
         catch (error) {

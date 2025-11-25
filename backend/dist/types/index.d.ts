@@ -155,6 +155,18 @@ declare module 'express-serve-static-core' {
         };
     }
 }
+declare module 'express-session' {
+    interface SessionData {
+        userId?: number;
+        businessId?: number;
+        email?: string;
+        role?: string;
+        csrfToken?: string;
+        csrfTokenCreatedAt?: number;
+        originalIp?: string;
+        originalUserAgent?: string;
+    }
+}
 export interface ValidationError {
     field: string;
     message: string;

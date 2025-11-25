@@ -44,9 +44,17 @@ __decorate([
     __metadata("design:type", String)
 ], Product.prototype, "spec", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ length: 255, nullable: true, comment: '사양' }),
+    __metadata("design:type", String)
+], Product.prototype, "specification", void 0);
+__decorate([
     (0, typeorm_1.Column)({ length: 20, nullable: true, comment: '단위' }),
     __metadata("design:type", String)
 ], Product.prototype, "unit", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'int', nullable: true, default: 0, comment: '현재재고' }),
+    __metadata("design:type", Number)
+], Product.prototype, "currentStock", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'decimal', precision: 15, scale: 2, nullable: true, comment: '매입단가' }),
     __metadata("design:type", Number)

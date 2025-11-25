@@ -9,27 +9,32 @@ const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
 const morgan_1 = __importDefault(require("morgan"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const express_session_1 = __importDefault(require("express-session"));
 const crypto_1 = __importDefault(require("crypto"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const path_1 = __importDefault(require("path"));
 const envValidator_1 = require("./config/envValidator");
 const database_1 = require("./config/database");
 const rateLimiter_1 = require("./middleware/rateLimiter");
 const securityLogger_1 = require("./middleware/securityLogger");
 const httpsRedirect_1 = require("./middleware/httpsRedirect");
-const csrfProtection_1 = require("./middleware/csrfProtection");
+const sessionConfig_1 = require("./config/sessionConfig");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const businessRoutes_1 = require("./routes/businessRoutes");
 const transactionLedgerRoutes_1 = __importDefault(require("./routes/transactionLedgerRoutes"));
-// 환경변수 로드 및 검증
-dotenv_1.default.config();
+const settings_1 = __importDefault(require("./routes/settings"));
+const activityLogRoutes_1 = __importDefault(require("./routes/activityLogRoutes"));
+const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
+const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
+const otpRoutes_1 = __importDefault(require("./routes/otpRoutes"));
+const chatbotRoutes_1 = __importDefault(require("./routes/chatbotRoutes"));
+const excelRoutes_1 = __importDefault(require("./routes/excelRoutes"));
+dotenv_1.default.config({ path: path_1.default.join(__dirname, '../.env') });
 const validatedEnv = (0, envValidator_1.getValidatedEnv)();
 const app = (0, express_1.default)();
 const PORT = validatedEnv.PORT;
-// HTTPS 리다이렉트 및 보안 헤더 (맨 먼저 적용)
 app.use(httpsRedirect_1.httpsRedirect);
 app.use(httpsRedirect_1.secureHeaders);
-// 미들웨어 설정
-// CSP nonce 생성 미들웨어
 app.use((req, res, next) => {
     res.locals.nonce = Buffer.from(crypto_1.default.randomBytes(16)).toString('base64');
     next();
@@ -47,61 +52,97 @@ app.use((0, helmet_1.default)({
             mediaSrc: ["'self'"],
             frameSrc: ["'none'"],
             baseUri: ["'self'"],
-            formAction: ["'self'"]
+            formAction: ["'self'"],
+            upgradeInsecureRequests: []
         }
     },
     crossOriginEmbedderPolicy: false,
-    hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true
-    },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
     noSniff: true,
     xssFilter: true,
     referrerPolicy: { policy: "strict-origin-when-cross-origin" }
 }));
+app.use((req, res, next) => {
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=()');
+    next();
+});
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:5176',
+    'http://localhost:5177',
+    'http://localhost:5178',
+    'http://localhost:5179',
+    'http://localhost:5180',
+    'http://192.168.0.140:5173',
+    'https://webapperp.ai.kr',
+    'https://www.webapperp.ai.kr',
+    'https://erp-system-production-3ea2.up.railway.app',
+    // Vercel 배포 URL
+    'https://webapperp.vercel.app',
+    'https://webapperp-bkjnoq76a-blackallstar12-86948-projects.vercel.app',
+    'https://erp-frontend.vercel.app',
+    'https://erp-frontend-git-main.vercel.app'
+];
+if (validatedEnv.FRONTEND_URL && !allowedOrigins.includes(validatedEnv.FRONTEND_URL)) {
+    allowedOrigins.push(validatedEnv.FRONTEND_URL);
+}
 app.use((0, cors_1.default)({
-    origin: [
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:5175',
-        'http://localhost:5176',
-        'http://localhost:5177',
-        'http://localhost:5178',
-        'http://localhost:5179',
-        'http://localhost:5180',
-        'http://192.168.0.140:5173',
-        'https://webapperp.ai.kr',
-        'https://www.webapperp.ai.kr',
-        validatedEnv.FRONTEND_URL
-    ],
-    credentials: true
+    origin: (origin, callback) => {
+        if (!origin)
+            return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            console.warn(`CORS blocked: ${origin}`);
+            callback(null, false);
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Authorization']
 }));
 app.use((0, compression_1.default)());
 app.use((0, morgan_1.default)('combined'));
-// Rate Limiting 미들웨어 적용 (모든 환경에서 활성화)
 app.use(rateLimiter_1.generalRateLimit);
 app.use((0, cookie_parser_1.default)());
+app.use((0, express_session_1.default)(sessionConfig_1.sessionConfig));
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
-// 보안 미들웨어 추가
 app.use(securityLogger_1.securityMiddleware);
-// CSRF 보호 미들웨어 추가 (모든 환경에서 활성화)
-app.use(csrfProtection_1.conditionalCsrfProtection);
-app.get('/api/csrf-token', csrfProtection_1.getCsrfToken);
-// UTF-8 인코딩 설정
+// 정적 파일 제공 (uploads) - 먼저 설정하여 JSON 헤더 영향 받지 않음
+app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads'), {
+    setHeaders: (res, filePath) => {
+        // 이미지 파일 MIME 타입 자동 설정
+        if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+            res.setHeader('Content-Type', 'image/jpeg');
+        }
+        else if (filePath.endsWith('.png')) {
+            res.setHeader('Content-Type', 'image/png');
+        }
+    }
+}));
 app.use((req, res, next) => {
-    req.setEncoding('utf8');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    // /uploads 경로는 이미 처리됨, JSON API에만 헤더 설정
+    if (!req.path.startsWith('/uploads')) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    }
     next();
 });
-// Static file serving for uploads
-app.use('/uploads', express_1.default.static('uploads'));
-// 라우트 설정 (모든 환경에서 Rate Limiting 적용)
 app.use('/api/auth', rateLimiter_1.authRateLimit, authRoutes_1.default);
+app.use('/api/otp', rateLimiter_1.authRateLimit, otpRoutes_1.default);
 app.use('/api/businesses', rateLimiter_1.apiRateLimit, businessRoutes_1.businessRoutes);
+app.use('/api/businesses', rateLimiter_1.apiRateLimit, userRoutes_1.default);
 app.use('/api/transaction-ledger', rateLimiter_1.apiRateLimit, transactionLedgerRoutes_1.default);
-// 헬스체크 엔드포인트
+app.use('/api/settings', rateLimiter_1.apiRateLimit, settings_1.default);
+app.use('/api/activity-logs', rateLimiter_1.apiRateLimit, activityLogRoutes_1.default);
+app.use('/api/notifications', rateLimiter_1.apiRateLimit, notificationRoutes_1.default);
+app.use('/api/chatbot', rateLimiter_1.apiRateLimit, chatbotRoutes_1.default);
+app.use('/api/excel', rateLimiter_1.apiRateLimit, excelRoutes_1.default);
+// Health check endpoints
 app.get('/health', (req, res) => {
     res.json({
         status: 'OK',
@@ -109,46 +150,37 @@ app.get('/health', (req, res) => {
         environment: validatedEnv.NODE_ENV
     });
 });
-// 404 핸들러
-app.use('*', (req, res) => {
-    res.status(404).json({
-        success: false,
-        message: '요청한 리소스를 찾을 수 없습니다.'
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        environment: validatedEnv.NODE_ENV,
+        service: 'erp-backend'
     });
 });
-// CSRF 에러 핸들러
-app.use(csrfProtection_1.csrfErrorHandler);
-// 에러 핸들러
+app.use('*', (req, res) => {
+    res.status(404).json({ success: false, message: '요청한 리소스를 찾을 수 없습니다.' });
+});
 app.use((err, req, res, _next) => {
-    // 보안 로깅
     securityLogger_1.securityLogger.logError(req, err, res.statusCode || 500);
-    // 운영환경에서는 상세 에러 정보 숨김
     const errorResponse = {
         success: false,
-        message: validatedEnv.NODE_ENV === 'production' ?
-            '서버 내부 오류가 발생했습니다.' :
-            err.message,
-        ...(validatedEnv.NODE_ENV === 'development' && {
-            error: err.message,
-            stack: err.stack
-        })
+        message: validatedEnv.NODE_ENV === 'production' ? '서버 내부 오류가 발생했습니다.' : err.message,
+        ...(validatedEnv.NODE_ENV === 'development' && { error: err.message, stack: err.stack })
     };
     res.status(500).json(errorResponse);
 });
-// 데이터베이스 연결 및 서버 시작
 async function bootstrap() {
     try {
         await database_1.AppDataSource.initialize();
-        console.log('✅ Database connection established');
+        console.log('✅ Database connected');
         app.listen(PORT, () => {
-            console.log(`🚀 Server running on http://localhost:${PORT}`);
-            console.log(`📊 Health check: http://localhost:${PORT}/health`);
-            console.log(`🏢 Business API: http://localhost:${PORT}/api/businesses`);
-            console.log(`👤 Test account: admin@test.com / test123!@#`);
+            console.log(`🚀 Server running on port ${PORT}`);
+            console.log(`📊 Health: http://localhost:${PORT}/health`);
         });
     }
     catch (error) {
-        console.error('❌ Error during application startup:', error);
+        console.error('❌ Startup error:', error);
         process.exit(1);
     }
 }

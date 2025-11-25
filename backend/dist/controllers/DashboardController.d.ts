@@ -5,5 +5,6 @@ export declare class DashboardController {
     static getSalesChart(req: Request, res: Response): Promise<void>;
     static getCategoryData(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static getMonthlyTrend(req: Request, res: Response): Promise<void>;
+    static getAllTransactions(req: Request, res: Response): Promise<void>;
 }
 //# sourceMappingURL=DashboardController.d.ts.map

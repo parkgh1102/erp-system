@@ -81,7 +81,9 @@ const allowedOrigins = [
   'https://webapperp.ai.kr',
   'https://www.webapperp.ai.kr',
   'https://erp-system-production-3ea2.up.railway.app',
-  // Vercel 배포 URL (자동 생성되는 URL 패턴)
+  // Vercel 배포 URL
+  'https://webapperp.vercel.app',
+  'https://webapperp-bkjnoq76a-blackallstar12-86948-projects.vercel.app',
   'https://erp-frontend.vercel.app',
   'https://erp-frontend-git-main.vercel.app'
 ];

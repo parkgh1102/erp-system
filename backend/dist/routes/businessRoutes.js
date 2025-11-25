@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.businessRoutes = void 0;
 const express_1 = require("express");
@@ -11,8 +14,16 @@ const PaymentController_1 = require("../controllers/PaymentController");
 const DashboardController_1 = require("../controllers/DashboardController");
 const transactionLedgerController_1 = require("../controllers/transactionLedgerController");
 const auth_1 = require("../middleware/auth");
+const multer_1 = __importDefault(require("multer"));
 const router = (0, express_1.Router)();
 exports.businessRoutes = router;
+// Multer 설정 (메모리 스토리지 사용, limits 추가)
+const upload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB
+    }
+});
 // 모든 business 라우트에 인증 미들웨어 적용
 router.use(auth_1.authenticateToken);
 // 사업자 관리 API 라우트
@@ -25,6 +36,7 @@ router.get('/validate/:businessNumber', BusinessController_1.BusinessController.
 // 거래처 관리 API 라우트
 router.post('/:businessId/customers', CustomerController_1.CustomerController.create);
 router.get('/:businessId/customers', CustomerController_1.CustomerController.getAll);
+router.delete('/:businessId/customers/all', CustomerController_1.CustomerController.deleteAll); // 전체 삭제 (개별 삭제보다 먼저)
 router.get('/:businessId/customers/:id', CustomerController_1.CustomerController.getById);
 router.put('/:businessId/customers/:id', CustomerController_1.CustomerController.update);
 router.delete('/:businessId/customers/:id', CustomerController_1.CustomerController.delete);
@@ -40,6 +52,9 @@ router.get('/:businessId/sales', SalesController_1.SalesController.getAll);
 router.get('/:businessId/sales/:id', SalesController_1.SalesController.getById);
 router.put('/:businessId/sales/:id', SalesController_1.SalesController.update);
 router.delete('/:businessId/sales/:id', SalesController_1.SalesController.delete);
+router.post('/:businessId/sales/:id/sign', SalesController_1.SalesController.signSales);
+router.post('/:businessId/sales/:id/upload-statement', upload.single('image'), SalesController_1.SalesController.uploadStatement);
+router.post('/:businessId/sales/:id/send-alimtalk', SalesController_1.SalesController.sendAlimtalk);
 // 매입 관리 API 라우트
 router.post('/:businessId/purchases', PurchaseController_1.PurchaseController.create);
 router.get('/:businessId/purchases', PurchaseController_1.PurchaseController.getAll);
@@ -61,4 +76,5 @@ router.get('/:businessId/dashboard/recent-transactions', DashboardController_1.D
 router.get('/:businessId/dashboard/sales-chart', DashboardController_1.DashboardController.getSalesChart);
 router.get('/:businessId/dashboard/category-data', DashboardController_1.DashboardController.getCategoryData);
 router.get('/:businessId/dashboard/monthly-trend', DashboardController_1.DashboardController.getMonthlyTrend);
+router.get('/:businessId/dashboard/all-transactions', DashboardController_1.DashboardController.getAllTransactions);
 //# sourceMappingURL=businessRoutes.js.map

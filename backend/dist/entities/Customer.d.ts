@@ -15,7 +15,11 @@ export declare class Customer {
     representative?: string;
     address?: string;
     phone?: string;
+    fax?: string;
     email?: string;
+    managerContact?: string;
+    businessType?: string;
+    businessItem?: string;
     customerType: CustomerType;
     isActive: boolean;
     createdAt: Date;

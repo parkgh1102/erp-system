@@ -9,7 +9,9 @@ export declare class Product {
     name: string;
     productCode: string;
     spec?: string;
+    specification?: string;
     unit?: string;
+    currentStock?: number;
     buyPrice?: number;
     sellPrice?: number;
     category?: string;

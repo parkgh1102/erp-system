@@ -14,6 +14,7 @@ const typeorm_1 = require("typeorm");
 const Business_1 = require("./Business");
 const Customer_1 = require("./Customer");
 const SalesItem_1 = require("./SalesItem");
+const User_1 = require("./User");
 let Sales = class Sales {
 };
 exports.Sales = Sales;
@@ -59,6 +60,23 @@ __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Sales.prototype, "memo", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => User_1.User, { nullable: true }),
+    (0, typeorm_1.JoinColumn)({ name: 'signed_by' }),
+    __metadata("design:type", User_1.User)
+], Sales.prototype, "signedByUser", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'signed_by', nullable: true }),
+    __metadata("design:type", Number)
+], Sales.prototype, "signedBy", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'signed_at', nullable: true }),
+    __metadata("design:type", Date)
+], Sales.prototype, "signedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'signature_image', type: 'text', nullable: true }),
+    __metadata("design:type", String)
+], Sales.prototype, "signatureImage", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => SalesItem_1.SalesItem, item => item.sales),
     __metadata("design:type", Array)

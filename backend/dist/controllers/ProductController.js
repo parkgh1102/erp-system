@@ -24,8 +24,10 @@ const productSchema = joi_1.default.object({
 exports.ProductController = {
     async create(req, res) {
         try {
+            console.log('Product create request body:', req.body);
             const { error, value } = productSchema.validate(req.body);
             if (error) {
+                console.error('Product validation error:', error.details);
                 return res.status(400).json({
                     success: false,
                     message: '입력 정보를 확인해주세요.',

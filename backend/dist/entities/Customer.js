@@ -56,9 +56,25 @@ __decorate([
     __metadata("design:type", String)
 ], Customer.prototype, "phone", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ length: 20, nullable: true, comment: '팩스번호' }),
+    __metadata("design:type", String)
+], Customer.prototype, "fax", void 0);
+__decorate([
     (0, typeorm_1.Column)({ length: 100, nullable: true, comment: '이메일' }),
     __metadata("design:type", String)
 ], Customer.prototype, "email", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 20, nullable: true, comment: '담당자 연락처' }),
+    __metadata("design:type", String)
+], Customer.prototype, "managerContact", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 100, nullable: true, comment: '업태' }),
+    __metadata("design:type", String)
+], Customer.prototype, "businessType", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ length: 100, nullable: true, comment: '종목' }),
+    __metadata("design:type", String)
+], Customer.prototype, "businessItem", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: 'varchar', length: 20, default: CustomerType.OTHER }),
     __metadata("design:type", String)

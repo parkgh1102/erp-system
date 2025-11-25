@@ -22,6 +22,12 @@ const authenticateToken = (req, res, next) => {
     try {
         const env = (0, envValidator_1.getValidatedEnv)();
         const decoded = jsonwebtoken_1.default.verify(token, env.JWT_SECRET);
+        console.log('🔓 JWT 디코딩 결과:', {
+            userId: decoded.userId,
+            email: decoded.email,
+            businessId: decoded.businessId,
+            tokenSource: authHeader ? 'Authorization header' : 'Cookie'
+        });
         req.user = {
             userId: decoded.userId,
             email: decoded.email,

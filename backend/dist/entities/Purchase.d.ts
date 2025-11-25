@@ -9,6 +9,8 @@ export declare class Purchase {
     customerId?: number;
     items: PurchaseItem[];
     purchaseDate: Date;
+    get transactionDate(): Date;
+    set transactionDate(value: Date);
     totalAmount: number;
     vatAmount: number;
     memo?: string;

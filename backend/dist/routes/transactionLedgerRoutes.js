@@ -17,6 +17,6 @@ router.get('/:businessId/ledger/details', businessAccessMiddleware_1.businessAcc
 // 거래원장 요약 정보 조회
 router.get('/:businessId/ledger/summary', businessAccessMiddleware_1.businessAccessMiddleware, transactionLedgerController_1.transactionLedgerController.getLedgerSummary);
 // 거래처별 잔액 조회
-router.get('/:businessId/ledger/balance/:customerId', businessAccessMiddleware_1.businessAccessMiddleware, transactionLedgerController_1.transactionLedgerController.getCustomerBalance);
+router.get('/:businessId/customer/:customerId/balance', businessAccessMiddleware_1.businessAccessMiddleware, transactionLedgerController_1.transactionLedgerController.getCustomerBalance);
 exports.default = router;
 //# sourceMappingURL=transactionLedgerRoutes.js.map

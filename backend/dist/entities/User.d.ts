@@ -4,8 +4,10 @@ export declare class User {
     email: string;
     password: string;
     name: string;
-    phone?: string;
+    phone: string;
     avatar?: string;
+    role: string;
+    businessId?: number;
     isActive: boolean;
     businesses: Business[];
     createdAt: Date;
