@@ -772,35 +772,31 @@ const CustomerManagement: React.FC = () => {
                   전체 삭제
                 </Button>
               </Popconfirm>
+              <Button
+                onClick={() => handleExport('excel')}
+                icon={<FileExcelOutlined />}
+                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
+                size={window.innerWidth <= 768 ? "small" : "middle"}
+              >
+                엑셀
+              </Button>
+              <Button
+                onClick={() => handleExport('pdf')}
+                icon={<FilePdfOutlined />}
+                style={{ backgroundColor: '#fa541c', borderColor: '#fa541c', color: 'white' }}
+                size={window.innerWidth <= 768 ? "small" : "middle"}
+              >
+                PDF
+              </Button>
+              <Button
+                onClick={() => setPrintModalVisible(true)}
+                icon={<PrinterOutlined />}
+                style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
+                size={window.innerWidth <= 768 ? "small" : "middle"}
+              >
+                인쇄
+              </Button>
             </Space>
-            {window.innerWidth > 768 && (
-              <Space wrap size={8}>
-                <Button
-                  onClick={() => handleExport('excel')}
-                  icon={<FileExcelOutlined />}
-                  style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
-                  size="middle"
-                >
-                  엑셀
-                </Button>
-                <Button
-                  onClick={() => handleExport('pdf')}
-                  icon={<FilePdfOutlined />}
-                  style={{ backgroundColor: '#fa541c', borderColor: '#fa541c', color: 'white' }}
-                  size="middle"
-                >
-                  PDF
-                </Button>
-                <Button
-                  onClick={() => setPrintModalVisible(true)}
-                  icon={<PrinterOutlined />}
-                  style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
-                  size="middle"
-                >
-                  인쇄
-                </Button>
-              </Space>
-            )}
           </Space>
         </Col>
       </Row>
