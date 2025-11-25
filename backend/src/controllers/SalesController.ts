@@ -9,7 +9,7 @@ import { Notification } from '../entities/Notification';
 // import { Product } from '../entities/Product';
 import Joi from 'joi';
 import { AlimtalkService } from '../services/AlimtalkService';
-import { ImgbbService } from '../services/ImgbbService';
+import { CloudinaryService } from '../services/CloudinaryService';
 
 const salesRepository = AppDataSource.getRepository(Sales);
 const businessRepository = AppDataSource.getRepository(Business);
@@ -761,18 +761,18 @@ export class SalesController {
         return res.status(404).json({ success: false, message: '매출 정보를 찾을 수 없습니다.' });
       }
 
-      // ImgBB에 이미지 업로드
+      // Cloudinary에 이미지 업로드
       const fileName = `statement_${businessId}_${id}_${Date.now()}`;
-      const imageUrl = await ImgbbService.uploadImage(req.file.buffer, fileName);
+      const imageUrl = await CloudinaryService.uploadImage(req.file.buffer, fileName);
 
       if (!imageUrl) {
         return res.status(500).json({
           success: false,
-          message: 'ImgBB 이미지 업로드에 실패했습니다. IMGBB_API_KEY를 확인하세요.'
+          message: 'Cloudinary 이미지 업로드에 실패했습니다. 환경변수를 확인하세요.'
         });
       }
 
-      console.log('✅ ImgBB 업로드 완료:', { imageUrl, fileName });
+      console.log('✅ Cloudinary 업로드 완료:', { imageUrl, fileName });
 
       res.json({
         success: true,
