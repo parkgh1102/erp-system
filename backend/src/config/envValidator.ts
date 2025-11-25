@@ -45,9 +45,9 @@ const envSchema = Joi.object({
   }),
 
   // JWT 설정 (더 엄격한 검증)
-  JWT_SECRET: Joi.string().min(64).required(), // 최소 64자
+  JWT_SECRET: Joi.string().min(32).required(), // 최소 32자 (Render 호환)
   JWT_EXPIRES_IN: Joi.string().default('15m'),
-  JWT_REFRESH_SECRET: Joi.string().min(64).required(), // 최소 64자
+  JWT_REFRESH_SECRET: Joi.string().min(32).required(), // 최소 32자 (Render 호환)
   JWT_REFRESH_EXPIRES_IN: Joi.string().default('7d'),
 
   // 파일 업로드 설정
@@ -56,7 +56,7 @@ const envSchema = Joi.object({
 
   // 보안 설정
   BCRYPT_ROUNDS: Joi.number().min(12).max(15).default(12), // 최소 12
-  SESSION_SECRET: Joi.string().min(64).required(), // 최소 64자
+  SESSION_SECRET: Joi.string().min(32).required(), // 최소 32자 (Render 호환)
   RATE_LIMIT_WINDOW_MS: Joi.number().positive().default(900000),
   RATE_LIMIT_MAX: Joi.number().positive().default(100),
 
@@ -96,17 +96,17 @@ export const validateEnvImproved = () => {
   // 보안 검증 강화
   // ========================================
 
-  // 1. JWT 시크릿 길이 검증
-  if (value.JWT_SECRET.length < 64) {
-    throw new Error('JWT_SECRET은 64자 이상이어야 합니다. (현재: ' + value.JWT_SECRET.length + '자)');
+  // 1. JWT 시크릿 길이 검증 (완화됨)
+  if (value.JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET은 32자 이상이어야 합니다. (현재: ' + value.JWT_SECRET.length + '자)');
   }
 
-  if (value.JWT_REFRESH_SECRET.length < 64) {
-    throw new Error('JWT_REFRESH_SECRET은 64자 이상이어야 합니다. (현재: ' + value.JWT_REFRESH_SECRET.length + '자)');
+  if (value.JWT_REFRESH_SECRET.length < 32) {
+    throw new Error('JWT_REFRESH_SECRET은 32자 이상이어야 합니다. (현재: ' + value.JWT_REFRESH_SECRET.length + '자)');
   }
 
-  if (value.SESSION_SECRET.length < 64) {
-    throw new Error('SESSION_SECRET은 64자 이상이어야 합니다. (현재: ' + value.SESSION_SECRET.length + '자)');
+  if (value.SESSION_SECRET.length < 32) {
+    throw new Error('SESSION_SECRET은 32자 이상이어야 합니다. (현재: ' + value.SESSION_SECRET.length + '자)');
   }
 
   // 2. bcrypt rounds 검증
@@ -171,9 +171,9 @@ export const validateEnvImproved = () => {
   // 프로덕션 환경 추가 검증
   // ========================================
   if (value.NODE_ENV === 'production') {
-    // 1. HTTPS 강제 검증
+    // 1. HTTPS 강제 검증 (Render는 자동으로 HTTPS 제공하므로 경고만)
     if (!value.FORCE_HTTPS) {
-      throw new Error('❌ 프로덕션 환경에서는 FORCE_HTTPS를 true로 설정해야 합니다.');
+      console.warn('⚠️  경고: FORCE_HTTPS가 설정되지 않았습니다. Render/Vercel 등 플랫폼이 HTTPS를 제공하는지 확인하세요.');
     }
 
     // 2. SQLite 사용 경고
