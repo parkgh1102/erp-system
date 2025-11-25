@@ -4,9 +4,19 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self';
+                   script-src 'self' 'unsafe-eval' 'unsafe-inline';
+                   style-src 'self' 'unsafe-inline';
+                   img-src 'self' data: https:;
+                   font-src 'self' data:;
+                   connect-src 'self' http://localhost:3001 https://erp-backend-p8eh.onrender.com ws://localhost:*;">
     <title>ERP 통합 시스템</title>
-    <script type="module" crossorigin src="/assets/index-6kAfL8lG.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-D3eAc2-y.css">
+    <script type="module" crossorigin src="/assets/js/index-_CmT_KIJ.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/js/react-vendor-_VckSL_6.js">
+    <link rel="modulepreload" crossorigin href="/assets/js/utils-vendor-BVhp1GUS.js">
+    <link rel="modulepreload" crossorigin href="/assets/js/antd-vendor-CRznqgwP.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-bBO7iZIu.css">
   </head>
   <body>
     <div id="root"></div>
