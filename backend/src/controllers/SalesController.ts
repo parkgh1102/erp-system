@@ -780,8 +780,17 @@ export class SalesController {
         savedSize: (await fs.stat(filePath)).size
       });
 
-      // URL 생성
-      const imageUrl = `${req.protocol}://${req.get('host')}/uploads/statements/${fileName}`;
+      // URL 생성 (프로덕션에서는 HTTPS 강제)
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : req.protocol;
+      const host = req.get('host');
+      const imageUrl = `${protocol}://${host}/uploads/statements/${fileName}`;
+
+      console.log('🔗 생성된 이미지 URL:', {
+        protocol,
+        host,
+        imageUrl,
+        uploadsDir
+      });
 
       res.json({
         success: true,
