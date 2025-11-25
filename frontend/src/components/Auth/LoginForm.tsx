@@ -19,12 +19,14 @@ const LoginFormContent: React.FC = () => {
 
     try {
       // OTP 전송
-      await api.post('/otp/send', { email: values.email });
+      const response = await api.post('/otp/send', { email: values.email });
+      console.log('OTP 전송 성공:', response.data);
 
       // OTP 입력 페이지로 이동 (로그인 정보를 state로 전달)
       navigate('/otp', { state: { credentials: values } });
     } catch (error: unknown) {
       const axiosError = error as AxiosErrorResponse;
+      console.error('OTP 전송 실패:', axiosError.response?.data, axiosError.message);
       const errorMessage = axiosError.response?.data?.message || 'OTP 전송에 실패했습니다.';
       setError(errorMessage);
     } finally {
