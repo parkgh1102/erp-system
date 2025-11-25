@@ -22,7 +22,7 @@ export class AlimtalkService {
   private static API_KEY = 'FVLKIK16YSJ0513';
   private static OTP_TEMPLATE_CODE = 'SJT_123168'; // OTP 템플릿
   private static WELCOME_TEMPLATE_CODE = 'SJT_123166'; // 회원가입 환영 템플릿
-  private static ESIGNATURE_TEMPLATE_CODE = 'SJT_079884'; // 전자서명 거래명세표 템플릿
+  private static ESIGNATURE_TEMPLATE_CODE = 'SJT_125142'; // 전자서명 완료 안내 템플릿 (변경됨)
   private static SENDER_KEY = 'ebb6785f05eeae3c22142d465bb46603ff1eeb32';
   private static CALLBACK = '01040167148'; // 발신번호
 
@@ -132,11 +132,18 @@ export class AlimtalkService {
   }
 
   /**
-   * 전자서명 거래명세표 알림톡 전송
+   * 전자서명 완료 안내 알림톡 전송
+   * 템플릿: SJT_125142
+   * [전자서명완료안내]
+   * #{회사명}님!
+   * 전자서명이 완료되었습니다.
+   * 아래 링크를 클릭하시면 이미지를 보실 수 있습니다.
+   * #{URL}
+   *
    * @param phone 수신자 전화번호
    * @param companyName 회사명
    * @param imageUrl 거래명세표 이미지 URL
-   * @param mainCompanyName 메인 아이디 회사명
+   * @param mainCompanyName 메인 아이디 회사명 (사용 안함)
    */
   static async sendESignatureStatement(
     phone: string,
@@ -148,27 +155,18 @@ export class AlimtalkService {
       // 전화번호 정제: 숫자만 추출
       const cleanPhone = phone.replace(/\D/g, '');
 
-      // 현재 날짜 (YYYY.MM.DD 형식)
-      const today = new Date();
-      const dateStr = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
-
       // 템플릿 변수 구성 (| 로 구분)
-      // 순서: #{업무명}|#{직원명}|#{업무내용본문}|#{URL}|#{날짜}|#{부서명}
+      // 새 템플릿 변수: #{회사명}|#{URL}
       const variables = [
-        '전자서명 거래명세표 전송',  // 업무명
-        mainCompanyName,                // 직원명 (보내는 사람 회사명 - 인사말에 표시)
-        '거래명세표 전자서명이 완료되었습니다.', // 업무내용본문
-        imageUrl,                       // URL
-        dateStr,                        // 날짜
-        mainCompanyName                 // 부서명 (보내는 사람 회사명)
+        companyName,  // #{회사명}
+        imageUrl      // #{URL}
       ].join('|');
 
-      console.log('전자서명 거래명세표 알림톡 전송 시도:', {
+      console.log('전자서명 완료 안내 알림톡 전송 시도:', {
         phone,
         cleanPhone,
         companyName,
         imageUrl,
-        mainCompanyName,
         variables
       });
 
@@ -192,18 +190,18 @@ export class AlimtalkService {
         }
       );
 
-      console.log('전자서명 거래명세표 알림톡 응답:', response.data);
+      console.log('전자서명 완료 안내 알림톡 응답:', response.data);
 
       const resultCode = response.data.result || response.data.code;
       if (resultCode === '100' || resultCode === 100) {
-        console.log('전자서명 거래명세표 알림톡 전송 성공');
+        console.log('전자서명 완료 안내 알림톡 전송 성공');
         return true;
       } else {
-        console.error('전자서명 거래명세표 알림톡 전송 실패:', response.data);
+        console.error('전자서명 완료 안내 알림톡 전송 실패:', response.data);
         return false;
       }
     } catch (error) {
-      console.error('전자서명 거래명세표 알림톡 전송 중 오류:', error);
+      console.error('전자서명 완료 안내 알림톡 전송 중 오류:', error);
       return false;
     }
   }
