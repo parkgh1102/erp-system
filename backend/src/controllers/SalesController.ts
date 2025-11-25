@@ -840,7 +840,7 @@ export class SalesController {
       // 알림톡 전송
       const sent = await AlimtalkService.sendESignatureStatement(
         sales.customer.phone,
-        business.companyName,
+        sales.customer.name,
         imageUrl,
         business.companyName
       );

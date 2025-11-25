@@ -751,7 +751,7 @@ class SalesController {
                 return res.status(400).json({ success: false, message: '거래처 전화번호가 등록되어 있지 않습니다.' });
             }
             // 알림톡 전송
-            const sent = await AlimtalkService_1.AlimtalkService.sendESignatureStatement(sales.customer.phone, business.companyName, imageUrl, business.companyName);
+            const sent = await AlimtalkService_1.AlimtalkService.sendESignatureStatement(sales.customer.phone, sales.customer.name, imageUrl, business.companyName);
             if (sent) {
                 res.json({
                     success: true,
