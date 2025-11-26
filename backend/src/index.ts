@@ -31,6 +31,10 @@ const validatedEnv = getValidatedEnv();
 const app = express();
 const PORT = validatedEnv.PORT;
 
+// Render/Vercel 등 프록시 뒤에서 실행될 때 필요한 설정
+// X-Forwarded-For 헤더를 신뢰하여 클라이언트 IP를 올바르게 인식
+app.set('trust proxy', 1);
+
 app.use(httpsRedirect);
 app.use(secureHeaders);
 
