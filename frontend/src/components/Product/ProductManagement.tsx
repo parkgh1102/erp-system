@@ -532,7 +532,7 @@ const ProductManagement: React.FC = () => {
       dataIndex: 'buyPrice',
       key: 'buyPrice',
       align: 'center' as const,
-      render: (price: number) => (price ? price.toLocaleString() : '0') + '원',
+      render: (price: number) => (price ? Math.round(price).toLocaleString() : '0') + '원',
       sorter: (a: Product, b: Product) => (a.buyPrice || 0) - (b.buyPrice || 0),
     },
     {
@@ -540,7 +540,7 @@ const ProductManagement: React.FC = () => {
       dataIndex: 'sellPrice',
       key: 'sellPrice',
       align: 'center' as const,
-      render: (price: number) => (price ? price.toLocaleString() : '0') + '원',
+      render: (price: number) => (price ? Math.round(price).toLocaleString() : '0') + '원',
       sorter: (a: Product, b: Product) => (a.sellPrice || 0) - (b.sellPrice || 0),
     },
     {
