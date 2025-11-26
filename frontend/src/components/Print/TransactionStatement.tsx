@@ -65,13 +65,14 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
   const renderSingleStatement = (isSupplier: boolean) => (
     <div style={{
       width: '100%',
-      height: printMode === 'full' ? 'calc(148.5mm - 6mm)' : 'auto',
+      minHeight: printMode === 'full' ? 'calc(148.5mm - 6mm)' : 'auto',
       fontFamily: 'Malgun Gothic, sans-serif',
       fontSize: printMode === 'full' ? '10pt' : '9pt', // 단독 인쇄는 폰트 작게
       lineHeight: '1.3',
       color: '#000',
       padding: printMode === 'full' ? '3mm' : '0', // 단독 인쇄는 패딩 없음
-      boxSizing: 'border-box'
+      boxSizing: 'border-box',
+      overflow: 'visible'
     }}>
       {/* 헤더 */}
       <div style={{
@@ -551,11 +552,12 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
         className={printMode !== 'full' ? 'single-print-wrapper' : ''}
         style={{
           width: '210mm',
-          minHeight: printMode === 'full' ? '297mm' : '297mm',
+          minHeight: printMode === 'full' ? '297mm' : 'auto',
           margin: '0 auto',
           backgroundColor: 'white',
           position: 'relative',
-          padding: printMode !== 'full' ? '10mm 15mm' : '0'
+          padding: printMode !== 'full' ? '10mm 15mm' : '0',
+          overflow: 'visible'
         }}>
       {(printMode === 'full' || printMode === 'receiver') && (
         <div style={{ position: 'relative' }}>

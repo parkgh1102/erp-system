@@ -249,11 +249,27 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
     }
 
     try {
-      const canvas = await html2canvas(printRef.current, {
+      // 캡처 전에 요소의 실제 크기 계산
+      const element = printRef.current;
+      const rect = element.getBoundingClientRect();
+
+      // 스크롤 높이와 실제 높이 중 큰 값 사용
+      const captureHeight = Math.max(element.scrollHeight, element.offsetHeight, rect.height);
+      const captureWidth = Math.max(element.scrollWidth, element.offsetWidth, rect.width);
+
+      const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        width: captureWidth,
+        height: captureHeight,
+        windowWidth: captureWidth,
+        windowHeight: captureHeight,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0
       });
       return canvas;
     } catch (error) {
@@ -521,7 +537,10 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
             backgroundColor: 'white',
             boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
             border: '1px solid #ddd',
-            position: 'relative'
+            position: 'relative',
+            width: '210mm',
+            minHeight: 'auto',
+            overflow: 'visible'
           }}
         >
           {/* 서명 네모칸 오버레이 */}
