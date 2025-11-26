@@ -10,6 +10,7 @@ import {
   BellOutlined,
   WarningOutlined,
   InfoCircleOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { useNotificationStore, Notification } from '../../stores/notificationStore';
 import { useNavigate } from 'react-router-dom';
@@ -152,6 +153,15 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
               </Button>
             </>
           )}
+          <Button
+            type="text"
+            size="small"
+            icon={<CloseOutlined />}
+            onClick={() => setOpen(false)}
+            style={{ fontSize: isMobile ? '12px' : '14px' }}
+          >
+            닫기
+          </Button>
         </Space>
       </div>
 

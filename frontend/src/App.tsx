@@ -82,15 +82,24 @@ const ThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   );
 };
 
-const App: React.FC = () => {
+// 라우터 내부에서 사용하는 컴포넌트 (useNavigate 사용 가능)
+const AppContent: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
 
   return (
+    <>
+      <TokenExpirationNotifier />
+      {/* 로그인된 사용자에게만 챗봇 표시 */}
+      {isAuthenticated && <ChatbotWidget />}
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ThemeWrapper>
-        <TokenExpirationNotifier />
-        {/* 로그인된 사용자에게만 챗봇 표시 */}
-        {isAuthenticated && <ChatbotWidget />}
+        <AppContent />
         <Routes>
           {/* 공개 라우트 */}
           <Route
