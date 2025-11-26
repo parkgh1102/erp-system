@@ -186,18 +186,47 @@
 /* 모바일 반응형 */
 @media (max-width: 768px) {
   .chatbot-window {
-    width: 100%;
-    height: 100%;
-    bottom: 0;
-    right: 0;
-    border-radius: 0;
+    width: calc(100vw - 16px);
+    height: calc(100vh - 100px);
+    max-height: calc(100vh - 100px);
+    bottom: 80px;
+    right: 8px;
+    left: 8px;
+    border-radius: 12px;
   }
 
   .chatbot-button {
-    bottom: 20px;
-    right: 20px;
-    width: 56px;
-    height: 56px;
+    bottom: 16px;
+    right: 16px;
+    width: 50px;
+    height: 50px;
+    z-index: 1001;
+  }
+
+  .chatbot-button .anticon {
+    font-size: 20px !important;
+  }
+
+  .chatbot-messages {
+    padding: 12px;
+  }
+
+  .message-content {
+    max-width: 85%;
+    padding: 10px 12px;
+  }
+
+  .suggested-questions {
+    padding: 12px;
+  }
+
+  .suggested-questions .ant-btn {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .chatbot-input {
+    padding: 12px;
   }
 }
 

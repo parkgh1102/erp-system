@@ -102,22 +102,33 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
     await deleteAllNotifications();
   };
 
+  // 모바일 여부 확인
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+
   const content = (
-    <div style={{ width: '400px', maxHeight: '600px', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      width: isMobile ? 'calc(100vw - 32px)' : '400px',
+      maxWidth: '400px',
+      maxHeight: isMobile ? 'calc(100vh - 120px)' : '600px',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
       {/* 헤더 */}
       <div
         style={{
-          padding: '16px',
+          padding: isMobile ? '12px' : '16px',
           borderBottom: '1px solid #f0f0f0',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '8px'
         }}
       >
-        <Title level={5} style={{ margin: 0 }}>
+        <Title level={5} style={{ margin: 0, fontSize: isMobile ? '14px' : '16px' }}>
           알림
         </Title>
-        <Space size="small">
+        <Space size="small" wrap>
           {notifications.length > 0 && (
             <>
               <Button
@@ -125,6 +136,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
                 size="small"
                 icon={<CheckOutlined />}
                 onClick={handleMarkAllAsRead}
+                style={{ fontSize: isMobile ? '12px' : '14px' }}
               >
                 모두 읽음
               </Button>
@@ -134,6 +146,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
                 danger
                 icon={<DeleteOutlined />}
                 onClick={handleDeleteAll}
+                style={{ fontSize: isMobile ? '12px' : '14px' }}
               >
                 모두 삭제
               </Button>
@@ -242,7 +255,14 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
       placement="bottomRight"
       open={open}
       onOpenChange={setOpen}
-      overlayStyle={{ padding: 0 }}
+      overlayStyle={{
+        padding: 0,
+        maxWidth: isMobile ? 'calc(100vw - 16px)' : undefined,
+        right: isMobile ? '8px' : undefined
+      }}
+      overlayInnerStyle={{
+        maxWidth: '100%'
+      }}
     >
       {children}
     </Popover>
