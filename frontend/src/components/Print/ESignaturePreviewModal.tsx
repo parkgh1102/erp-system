@@ -249,13 +249,29 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
     }
 
     try {
-      // 캡처 전에 요소의 실제 크기 계산
       const element = printRef.current;
-      const rect = element.getBoundingClientRect();
 
-      // 스크롤 높이와 실제 높이 중 큰 값 사용
-      const captureHeight = Math.max(element.scrollHeight, element.offsetHeight, rect.height);
-      const captureWidth = Math.max(element.scrollWidth, element.offsetWidth, rect.width);
+      // 캡처 전 원본 스타일 저장
+      const originalStyle = element.style.cssText;
+      const parentElement = element.parentElement;
+      const originalParentStyle = parentElement?.style.cssText || '';
+
+      // 캡처를 위해 임시로 스타일 변경 (전체 콘텐츠가 보이도록)
+      element.style.overflow = 'visible';
+      element.style.width = '794px'; // A4 width at 96dpi
+      element.style.minWidth = '794px';
+      element.style.maxWidth = 'none';
+
+      if (parentElement) {
+        parentElement.style.overflow = 'visible';
+      }
+
+      // 스타일 적용 대기
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 실제 크기 계산
+      const captureWidth = element.scrollWidth || 794;
+      const captureHeight = element.scrollHeight || 1123;
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -264,13 +280,28 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
         backgroundColor: '#ffffff',
         width: captureWidth,
         height: captureHeight,
-        windowWidth: captureWidth,
-        windowHeight: captureHeight,
+        windowWidth: captureWidth + 100,
+        windowHeight: captureHeight + 100,
         scrollX: 0,
         scrollY: 0,
         x: 0,
-        y: 0
+        y: 0,
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.querySelector('.print-content') as HTMLElement;
+          if (clonedElement) {
+            clonedElement.style.overflow = 'visible';
+            clonedElement.style.width = '794px';
+            clonedElement.style.transform = 'none';
+          }
+        }
       });
+
+      // 원본 스타일 복원
+      element.style.cssText = originalStyle;
+      if (parentElement) {
+        parentElement.style.cssText = originalParentStyle;
+      }
+
       return canvas;
     } catch (error) {
       console.error('Canvas 변환 오류:', error);
