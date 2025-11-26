@@ -166,7 +166,10 @@ export const transactionLedgerController = {
       // 매출 항목 추가
       sales.forEach((sale) => {
         // Sale의 totalAmount를 직접 사용 (이미 계산되어 저장된 값)
-        const totalAmount = sale.totalAmount + sale.vatAmount;
+        // null/undefined 방어 처리
+        const supplyAmount = sale.totalAmount || 0;
+        const vatAmount = sale.vatAmount || 0;
+        const totalAmount = supplyAmount + vatAmount;
 
         runningBalance += totalAmount;
 
@@ -179,10 +182,10 @@ export const transactionLedgerController = {
           type: 'sales',
           description: '매출',
           customerName: customer.name,
-          amount: sale.totalAmount,
-          supplyAmount: sale.totalAmount,  // Sale의 totalAmount가 공급가액
-          vatAmount: sale.vatAmount,        // Sale의 vatAmount
-          totalAmount: totalAmount,         // 공급가액 + 세액
+          amount: supplyAmount,
+          supplyAmount: supplyAmount,  // Sale의 totalAmount가 공급가액
+          vatAmount: vatAmount,        // Sale의 vatAmount
+          totalAmount: totalAmount,    // 공급가액 + 세액
           balance: runningBalance,
           memo: sale.memo || sale.description || '',
           itemCount: itemCount,  // 품목 개수 추가
@@ -200,9 +203,10 @@ export const transactionLedgerController = {
       // 매입 항목 추가
       purchases.forEach((purchase) => {
         // Purchase의 totalAmount는 공급가액, vatAmount는 세액
-        const supplyAmount = purchase.totalAmount;  // 공급가액
-        const vatAmount = purchase.vatAmount;       // 세액
-        const totalAmount = supplyAmount + vatAmount;  // 합계 (공급가액 + 세액)
+        // null/undefined 방어 처리
+        const supplyAmount = purchase.totalAmount || 0;  // 공급가액
+        const vatAmount = purchase.vatAmount || 0;       // 세액
+        const totalAmount = supplyAmount + vatAmount;    // 합계 (공급가액 + 세액)
 
         runningBalance -= totalAmount;
 
@@ -235,12 +239,15 @@ export const transactionLedgerController = {
 
       // 수금/입금 항목 추가
       payments.forEach((payment) => {
+        // null/undefined 방어 처리
+        const paymentAmount = payment.amount || 0;
+
         // 수금과 입금 모두 거래처로부터 돈을 받는 것으로 처리
         const isReceipt = payment.paymentType === '수금' || payment.paymentType === '입금';
         if (isReceipt) {
-          runningBalance -= payment.amount;
+          runningBalance -= paymentAmount;
         } else {
-          runningBalance += payment.amount;
+          runningBalance += paymentAmount;
         }
 
         entries.push({
@@ -249,10 +256,10 @@ export const transactionLedgerController = {
           type: isReceipt ? 'receipt' : 'payment',
           description: payment.paymentType,  // 실제 paymentType 값 표시
           customerName: customer.name,
-          amount: payment.amount,
-          supplyAmount: payment.amount,  // 수금/입금은 세액 없이 전체 금액
+          amount: paymentAmount,
+          supplyAmount: paymentAmount,  // 수금/입금은 세액 없이 전체 금액
           vatAmount: 0,
-          totalAmount: payment.amount,
+          totalAmount: paymentAmount,
           balance: runningBalance,
           memo: payment.memo || ''
         });
