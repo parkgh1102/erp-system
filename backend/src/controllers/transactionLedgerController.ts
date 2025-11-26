@@ -165,23 +165,16 @@ export const transactionLedgerController = {
 
       // 매출 항목 추가
       sales.forEach((sale) => {
-        // Sale의 totalAmount를 직접 사용 (이미 계산되어 저장된 값)
-        // null/undefined 방어 처리
-        console.log(`📊 매출 데이터 확인 - ID: ${sale.id}, totalAmount: ${sale.totalAmount}, vatAmount: ${sale.vatAmount}, items:`, sale.items?.length);
+        // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
+        let supplyAmount = Number(sale.totalAmount) || 0;
+        let vatAmount = Number(sale.vatAmount) || 0;
 
-        // items에서 합계 계산 (totalAmount가 없는 경우 대비)
-        let supplyAmount = sale.totalAmount;
-        let vatAmount = sale.vatAmount;
-
-        // totalAmount가 없거나 0이면 items에서 계산
-        if (!supplyAmount && sale.items && sale.items.length > 0) {
+        // totalAmount가 0이면 items에서 계산
+        if (supplyAmount === 0 && sale.items && sale.items.length > 0) {
           supplyAmount = sale.items.reduce((sum, item) => sum + (Number(item.supplyAmount) || 0), 0);
           vatAmount = sale.items.reduce((sum, item) => sum + (Number(item.taxAmount) || 0), 0);
-          console.log(`  → items에서 재계산: supplyAmount=${supplyAmount}, vatAmount=${vatAmount}`);
         }
 
-        supplyAmount = supplyAmount || 0;
-        vatAmount = vatAmount || 0;
         const totalAmount = supplyAmount + vatAmount;
 
         runningBalance += totalAmount;
@@ -206,9 +199,9 @@ export const transactionLedgerController = {
             itemCode: sale.items[0].productId?.toString() || '',
             itemName: sale.items[0].itemName || '',
             spec: sale.items[0].specification || '',
-            quantity: sale.items[0].quantity || 0,
-            unitPrice: sale.items[0].unitPrice || 0,
-            amount: sale.items[0].supplyAmount || 0
+            quantity: Number(sale.items[0].quantity) || 0,
+            unitPrice: Number(sale.items[0].unitPrice) || 0,
+            amount: Number(sale.items[0].supplyAmount) || 0
           } : undefined
         });
       });
@@ -216,9 +209,9 @@ export const transactionLedgerController = {
       // 매입 항목 추가
       purchases.forEach((purchase) => {
         // Purchase의 totalAmount는 공급가액, vatAmount는 세액
-        // null/undefined 방어 처리
-        const supplyAmount = purchase.totalAmount || 0;  // 공급가액
-        const vatAmount = purchase.vatAmount || 0;       // 세액
+        // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
+        const supplyAmount = Number(purchase.totalAmount) || 0;  // 공급가액
+        const vatAmount = Number(purchase.vatAmount) || 0;       // 세액
         const totalAmount = supplyAmount + vatAmount;    // 합계 (공급가액 + 세액)
 
         runningBalance -= totalAmount;
@@ -232,7 +225,7 @@ export const transactionLedgerController = {
           type: 'purchase',
           description: '매입',
           customerName: customer.name,
-          amount: purchase.totalAmount,
+          amount: supplyAmount,
           supplyAmount: supplyAmount,
           vatAmount: vatAmount,
           totalAmount: totalAmount,
@@ -243,17 +236,17 @@ export const transactionLedgerController = {
             itemCode: purchase.items[0].productId?.toString() || '',
             itemName: purchase.items[0].productName || '',
             spec: purchase.items[0].spec || '',
-            quantity: purchase.items[0].quantity || 0,
-            unitPrice: purchase.items[0].unitPrice || 0,
-            amount: purchase.items[0].amount || 0
+            quantity: Number(purchase.items[0].quantity) || 0,
+            unitPrice: Number(purchase.items[0].unitPrice) || 0,
+            amount: Number(purchase.items[0].amount) || 0
           } : undefined
         });
       });
 
       // 수금/입금 항목 추가
       payments.forEach((payment) => {
-        // null/undefined 방어 처리
-        const paymentAmount = payment.amount || 0;
+        // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
+        const paymentAmount = Number(payment.amount) || 0;
 
         // 수금과 입금 모두 거래처로부터 돈을 받는 것으로 처리
         const isReceipt = payment.paymentType === '수금' || payment.paymentType === '입금';
@@ -296,12 +289,12 @@ export const transactionLedgerController = {
         entry.balance = recalculatedBalance;
       });
 
-      // 집계 계산
-      const totalSales = entries.filter(e => e.type === 'sales').reduce((sum, e) => sum + e.amount, 0);
-      const totalPurchase = entries.filter(e => e.type === 'purchase').reduce((sum, e) => sum + e.amount, 0);
-      const totalReceipt = entries.filter(e => e.type === 'receipt').reduce((sum, e) => sum + e.amount, 0);
-      const totalPayment = entries.filter(e => e.type === 'payment').reduce((sum, e) => sum + e.amount, 0);
-      const finalBalance = totalSales - totalPurchase - totalReceipt + totalPayment;
+      // 집계 계산 - NaN 방어를 위해 || 0 추가
+      const totalSales = entries.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.amount || 0), 0);
+      const totalPurchase = entries.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.amount || 0), 0);
+      const totalReceipt = entries.filter(e => e.type === 'receipt').reduce((sum, e) => sum + (e.amount || 0), 0);
+      const totalPayment = entries.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.amount || 0), 0);
+      const finalBalance = (totalSales || 0) - (totalPurchase || 0) - (totalReceipt || 0) + (totalPayment || 0);
       const totalQuantity = entries.reduce((sum, e) => sum + (e.itemInfo?.quantity || 0), 0);
 
       const ledgerData: LedgerData = {
@@ -480,10 +473,11 @@ export const transactionLedgerController = {
       });
 
       // 매출 합산 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
       sales.forEach(sale => {
         const saleDate = dayjs(sale.transactionDate);
         if (saleDate.isBefore(endDate, 'day')) {
-          const totalAmount = (sale.totalAmount || 0) + (sale.vatAmount || 0);
+          const totalAmount = (Number(sale.totalAmount) || 0) + (Number(sale.vatAmount) || 0);
           balance += totalAmount; // 매출은 +
           console.log(`매출 추가: 날짜=${saleDate.format('YYYY-MM-DD')}, 공급가액=${sale.totalAmount}, 세액=${sale.vatAmount}, 합계=${totalAmount}, 누적잔액=${balance}`);
           if (!lastTransactionDate || saleDate.isAfter(dayjs(lastTransactionDate))) {
@@ -493,11 +487,12 @@ export const transactionLedgerController = {
       });
 
       // 매입 차감 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
       purchases.forEach(purchase => {
         const purchaseDate = dayjs(purchase.transactionDate || purchase.purchaseDate);
         if (purchaseDate.isBefore(endDate, 'day')) {
           // 매입의 totalAmount는 이미 공급가액이고, vatAmount는 세액
-          const totalAmount = (purchase.totalAmount || 0) + (purchase.vatAmount || 0);
+          const totalAmount = (Number(purchase.totalAmount) || 0) + (Number(purchase.vatAmount) || 0);
           balance -= totalAmount; // 매입은 -
           console.log(`매입 차감: 날짜=${purchaseDate.format('YYYY-MM-DD')}, 공급가액=${purchase.totalAmount}, 세액=${purchase.vatAmount}, 합계=${totalAmount}, 누적잔액=${balance}`);
           if (!lastTransactionDate || purchaseDate.isAfter(dayjs(lastTransactionDate))) {
@@ -507,13 +502,15 @@ export const transactionLedgerController = {
       });
 
       // 수금/입금 처리 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
       payments.forEach(payment => {
         const paymentDate = dayjs(payment.paymentDate);
         if (paymentDate.isBefore(endDate, 'day')) {
           // 수금과 입금 모두 거래처로부터 돈을 받는 것이므로 받을 돈(balance) 감소
+          const paymentAmount = Number(payment.amount) || 0;
           if (payment.paymentType === '수금' || payment.paymentType === '입금') {
-            balance -= payment.amount;
-            console.log(`${payment.paymentType} 차감: 날짜=${paymentDate.format('YYYY-MM-DD')}, 금액=${payment.amount}, 누적잔액=${balance}`);
+            balance -= paymentAmount;
+            console.log(`${payment.paymentType} 차감: 날짜=${paymentDate.format('YYYY-MM-DD')}, 금액=${paymentAmount}, 누적잔액=${balance}`);
           }
           if (!lastTransactionDate || paymentDate.isAfter(dayjs(lastTransactionDate))) {
             lastTransactionDate = paymentDate.format('YYYY-MM-DD');
