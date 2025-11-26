@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Modal, Button, Input, Form, Space, Row, Col, Upload, message, Tabs } from 'antd';
-import { SaveOutlined, ClearOutlined, UploadOutlined, EditOutlined } from '@ant-design/icons';
+import { SaveOutlined, ClearOutlined, UploadOutlined } from '@ant-design/icons';
 
 interface SignatureEditModalProps {
   open: boolean;
@@ -26,9 +26,40 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureType, setSignatureType] = useState<'text' | 'image' | 'handwritten'>('text');
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [canvasSize, setCanvasSize] = useState({ width: 400, height: 200 });
+  const [hasDrawn, setHasDrawn] = useState(false);
+
+  // 모바일 감지
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // 캔버스 크기 조정
+  const updateCanvasSize = useCallback(() => {
+    if (!canvasContainerRef.current) return;
+    const containerWidth = canvasContainerRef.current.clientWidth - 16;
+    const width = Math.min(400, containerWidth);
+    const height = isMobile ? Math.min(250, window.innerHeight * 0.3) : 200;
+    setCanvasSize({ width, height });
+  }, [isMobile]);
+
+  useEffect(() => {
+    if (open && signatureType === 'handwritten') {
+      setTimeout(updateCanvasSize, 100);
+      window.addEventListener('resize', updateCanvasSize);
+      return () => window.removeEventListener('resize', updateCanvasSize);
+    }
+  }, [open, signatureType, updateCanvasSize]);
 
   useEffect(() => {
     if (initialData) {
@@ -37,7 +68,6 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
       if (initialData.signatureType === 'image') {
         setImageUrl(initialData.signatureData);
       } else if (initialData.signatureType === 'handwritten') {
-        // 캔버스에 기존 서명 로드
         loadCanvasSignature(initialData.signatureData);
       }
     }
@@ -50,6 +80,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
       const img = new Image();
       img.onload = () => {
         ctx?.drawImage(img, 0, 0);
+        setHasDrawn(true);
       };
       img.src = dataUrl;
     }
@@ -65,14 +96,12 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
     const scaleY = canvas.height / rect.height;
 
     if ('touches' in e) {
-      // 터치 이벤트
       const touch = e.touches[0] || e.changedTouches[0];
       return {
         x: (touch.clientX - rect.left) * scaleX,
         y: (touch.clientY - rect.top) * scaleY
       };
     } else {
-      // 마우스 이벤트
       return {
         x: (e.clientX - rect.left) * scaleX,
         y: (e.clientY - rect.top) * scaleY
@@ -83,6 +112,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
   const handleCanvasStart = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (signatureType !== 'handwritten') return;
     e.preventDefault();
+    e.stopPropagation();
 
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -101,6 +131,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
   const handleCanvasMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || signatureType !== 'handwritten') return;
     e.preventDefault();
+    e.stopPropagation();
 
     const coords = getCanvasCoordinates(e);
     if (!coords) return;
@@ -111,6 +142,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
       if (ctx) {
         ctx.lineTo(coords.x, coords.y);
         ctx.stroke();
+        setHasDrawn(true);
       }
     }
   };
@@ -125,6 +157,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        setHasDrawn(false);
       }
     }
   };
@@ -172,12 +205,26 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
     }
   };
 
+  // 캔버스 초기화
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas && signatureType === 'handwritten') {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.strokeStyle = '#1890ff';
+        ctx.lineWidth = isMobile ? 3 : 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+      }
+    }
+  }, [signatureType, canvasSize, isMobile]);
+
   const tabItems = [
     {
       key: 'text',
-      label: '텍스트 서명',
+      label: isMobile ? '텍스트' : '텍스트 서명',
       children: (
-        <div style={{ padding: '20px' }}>
+        <div style={{ padding: isMobile ? '12px' : '20px' }}>
           <Form.Item
             label="서명으로 사용할 이름"
             name="name"
@@ -185,22 +232,22 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
           >
             <Input
               placeholder="홍길동"
-              style={{ fontSize: '18px', textAlign: 'center' }}
+              style={{ fontSize: isMobile ? '16px' : '18px', textAlign: 'center' }}
             />
           </Form.Item>
           <div style={{
             border: '2px dashed #d9d9d9',
             borderRadius: '6px',
-            padding: '20px',
+            padding: isMobile ? '12px' : '20px',
             textAlign: 'center',
             backgroundColor: '#fafafa',
-            minHeight: '80px',
+            minHeight: isMobile ? '60px' : '80px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
           }}>
             <div style={{
-              fontSize: '32px',
+              fontSize: isMobile ? '24px' : '32px',
               fontFamily: 'serif',
               color: '#1890ff',
               fontWeight: 'bold'
@@ -213,9 +260,9 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
     },
     {
       key: 'image',
-      label: '이미지 서명',
+      label: isMobile ? '이미지' : '이미지 서명',
       children: (
-        <div style={{ padding: '20px' }}>
+        <div style={{ padding: isMobile ? '12px' : '20px' }}>
           <Upload
             name="signature"
             listType="picture-card"
@@ -230,11 +277,11 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
             ) : (
               <div>
                 <UploadOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
-                <div>서명 이미지 업로드</div>
+                <div>{isMobile ? '업로드' : '서명 이미지 업로드'}</div>
               </div>
             )}
           </Upload>
-          <p style={{ marginTop: '16px', color: '#666', fontSize: '12px' }}>
+          <p style={{ marginTop: '12px', color: '#666', fontSize: '12px' }}>
             PNG, JPG 형식의 투명 배경 이미지를 권장합니다.
           </p>
         </div>
@@ -242,21 +289,31 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
     },
     {
       key: 'handwritten',
-      label: '손글씨 서명',
+      label: isMobile ? '손글씨' : '손글씨 서명',
       children: (
-        <div style={{ padding: '20px' }}>
-          <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+        <div style={{ padding: isMobile ? '12px' : '20px' }}>
+          <div
+            ref={canvasContainerRef}
+            style={{
+              marginBottom: '12px',
+              textAlign: 'center',
+              position: 'relative',
+              width: '100%'
+            }}
+          >
             <canvas
               ref={canvasRef}
-              width={400}
-              height={200}
+              width={canvasSize.width}
+              height={canvasSize.height}
               style={{
-                border: '2px solid #d9d9d9',
-                borderRadius: '6px',
+                border: '2px solid #1890ff',
+                borderRadius: '8px',
                 cursor: 'crosshair',
                 backgroundColor: 'white',
                 touchAction: 'none',
-                maxWidth: '100%'
+                width: '100%',
+                height: 'auto',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
               }}
               onMouseDown={handleCanvasStart}
               onMouseMove={handleCanvasMove}
@@ -267,50 +324,86 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
               onTouchEnd={handleCanvasEnd}
               onTouchCancel={handleCanvasEnd}
             />
+
+            {/* 서명 안내 워터마크 */}
+            {!hasDrawn && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                color: '#d9d9d9',
+                fontSize: isMobile ? 14 : 18,
+                pointerEvents: 'none',
+                userSelect: 'none'
+              }}>
+                여기에 서명하세요
+              </div>
+            )}
           </div>
+
           <div style={{ textAlign: 'center' }}>
             <Button
               icon={<ClearOutlined />}
               onClick={clearCanvas}
+              size={isMobile ? 'large' : 'middle'}
             >
               지우기
             </Button>
           </div>
-          <p style={{ marginTop: '16px', color: '#666', fontSize: '12px', textAlign: 'center' }}>
-            마우스 또는 터치로 서명을 그려주세요.
+          <p style={{
+            marginTop: '12px',
+            color: '#666',
+            fontSize: '12px',
+            textAlign: 'center'
+          }}>
+            {isMobile ? '손가락으로 서명을 그려주세요' : '마우스 또는 터치로 서명을 그려주세요'}
           </p>
         </div>
       )
     }
   ];
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas && signatureType === 'handwritten') {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.strokeStyle = '#1890ff';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-      }
-    }
-  }, [signatureType]);
-
   return (
     <Modal
       title="전자서명 편집"
       open={open}
       onCancel={onCancel}
-      width={600}
-      footer={[
-        <Button key="cancel" onClick={onCancel}>
-          취소
-        </Button>,
-        <Button key="save" type="primary" icon={<SaveOutlined />} onClick={handleSave}>
-          저장
-        </Button>
-      ]}
+      width={isMobile ? '95vw' : 600}
+      style={isMobile ? { top: 20, maxWidth: '100%' } : undefined}
+      styles={{
+        body: { padding: isMobile ? 12 : 24 }
+      }}
+      centered={isMobile}
+      footer={
+        isMobile ? (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button
+              onClick={onCancel}
+              size="large"
+              style={{ flex: 1 }}
+            >
+              취소
+            </Button>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              onClick={handleSave}
+              size="large"
+              style={{ flex: 1 }}
+            >
+              저장
+            </Button>
+          </div>
+        ) : [
+          <Button key="cancel" onClick={onCancel}>
+            취소
+          </Button>,
+          <Button key="save" type="primary" icon={<SaveOutlined />} onClick={handleSave}>
+            저장
+          </Button>
+        ]
+      }
     >
       <Form
         form={form}
@@ -323,42 +416,42 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
           signatureType: 'text'
         }}
       >
-        <Row gutter={16}>
-          <Col span={12}>
+        <Row gutter={isMobile ? 8 : 16}>
+          <Col span={isMobile ? 24 : 12}>
             <Form.Item
               label="이름"
               name="name"
               rules={[{ required: true, message: '이름을 입력해주세요' }]}
             >
-              <Input placeholder="김철수" />
+              <Input placeholder="김철수" size={isMobile ? 'large' : 'middle'} />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={isMobile ? 24 : 12}>
             <Form.Item
               label="직급/직책"
               name="position"
             >
-              <Input placeholder="대표이사" />
+              <Input placeholder="대표이사" size={isMobile ? 'large' : 'middle'} />
             </Form.Item>
           </Col>
         </Row>
 
-        <Row gutter={16}>
-          <Col span={12}>
+        <Row gutter={isMobile ? 8 : 16}>
+          <Col span={isMobile ? 24 : 12}>
             <Form.Item
               label="연락처"
               name="phone"
             >
-              <Input placeholder="02-1234-5678" />
+              <Input placeholder="02-1234-5678" size={isMobile ? 'large' : 'middle'} />
             </Form.Item>
           </Col>
-          <Col span={12}>
+          <Col span={isMobile ? 24 : 12}>
             <Form.Item
               label="이메일"
               name="email"
               rules={[{ type: 'email', message: '올바른 이메일 형식이 아닙니다' }]}
             >
-              <Input placeholder="kim@company.com" />
+              <Input placeholder="kim@company.com" size={isMobile ? 'large' : 'middle'} />
             </Form.Item>
           </Col>
         </Row>
@@ -368,6 +461,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
             activeKey={signatureType}
             onChange={(key) => setSignatureType(key as any)}
             items={tabItems}
+            size={isMobile ? 'small' : 'middle'}
           />
         </Form.Item>
       </Form>
