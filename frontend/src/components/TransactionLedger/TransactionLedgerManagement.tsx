@@ -569,16 +569,16 @@ const TransactionLedgerManagement: React.FC = () => {
             summary={(pageData) => {
               if (pageData.length === 0) return null;
 
-              const totalSalesSupply = pageData.filter(e => e.type === 'sales').reduce((sum, e) => sum + e.supplyAmount, 0);
-              const totalSalesVat = pageData.filter(e => e.type === 'sales').reduce((sum, e) => sum + e.vatAmount, 0);
-              const totalSales = pageData.filter(e => e.type === 'sales').reduce((sum, e) => sum + e.totalAmount, 0);
+              const totalSalesSupply = pageData.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.supplyAmount || 0), 0);
+              const totalSalesVat = pageData.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.vatAmount || 0), 0);
+              const totalSales = pageData.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
 
-              const totalPurchaseSupply = pageData.filter(e => e.type === 'purchase').reduce((sum, e) => sum + e.supplyAmount, 0);
-              const totalPurchaseVat = pageData.filter(e => e.type === 'purchase').reduce((sum, e) => sum + e.vatAmount, 0);
-              const totalPurchase = pageData.filter(e => e.type === 'purchase').reduce((sum, e) => sum + e.totalAmount, 0);
+              const totalPurchaseSupply = pageData.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.supplyAmount || 0), 0);
+              const totalPurchaseVat = pageData.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.vatAmount || 0), 0);
+              const totalPurchase = pageData.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
 
-              const totalReceipt = pageData.filter(e => e.type === 'receipt').reduce((sum, e) => sum + e.totalAmount, 0);
-              const totalPayment = pageData.filter(e => e.type === 'payment').reduce((sum, e) => sum + e.totalAmount, 0);
+              const totalReceipt = pageData.filter(e => e.type === 'receipt').reduce((sum, e) => sum + (e.totalAmount || e.amount || 0), 0);
+              const totalPayment = pageData.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.totalAmount || e.amount || 0), 0);
 
               const finalBalance = totalSales - totalPurchase - totalReceipt + totalPayment;
 

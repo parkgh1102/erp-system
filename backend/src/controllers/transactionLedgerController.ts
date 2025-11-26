@@ -261,6 +261,21 @@ export const transactionLedgerController = {
       // 날짜순 정렬
       entries.sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
 
+      // 정렬 후 잔액 재계산 (runningBalance)
+      let recalculatedBalance = 0;
+      entries.forEach(entry => {
+        if (entry.type === 'sales') {
+          recalculatedBalance += entry.totalAmount;
+        } else if (entry.type === 'purchase') {
+          recalculatedBalance -= entry.totalAmount;
+        } else if (entry.type === 'receipt') {
+          recalculatedBalance -= entry.totalAmount;
+        } else if (entry.type === 'payment') {
+          recalculatedBalance += entry.totalAmount;
+        }
+        entry.balance = recalculatedBalance;
+      });
+
       // 집계 계산
       const totalSales = entries.filter(e => e.type === 'sales').reduce((sum, e) => sum + e.amount, 0);
       const totalPurchase = entries.filter(e => e.type === 'purchase').reduce((sum, e) => sum + e.amount, 0);
