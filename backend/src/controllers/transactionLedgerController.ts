@@ -167,8 +167,21 @@ export const transactionLedgerController = {
       sales.forEach((sale) => {
         // Sale의 totalAmount를 직접 사용 (이미 계산되어 저장된 값)
         // null/undefined 방어 처리
-        const supplyAmount = sale.totalAmount || 0;
-        const vatAmount = sale.vatAmount || 0;
+        console.log(`📊 매출 데이터 확인 - ID: ${sale.id}, totalAmount: ${sale.totalAmount}, vatAmount: ${sale.vatAmount}, items:`, sale.items?.length);
+
+        // items에서 합계 계산 (totalAmount가 없는 경우 대비)
+        let supplyAmount = sale.totalAmount;
+        let vatAmount = sale.vatAmount;
+
+        // totalAmount가 없거나 0이면 items에서 계산
+        if (!supplyAmount && sale.items && sale.items.length > 0) {
+          supplyAmount = sale.items.reduce((sum, item) => sum + (item.supplyAmount || item.amount || 0), 0);
+          vatAmount = sale.items.reduce((sum, item) => sum + (item.vatAmount || 0), 0);
+          console.log(`  → items에서 재계산: supplyAmount=${supplyAmount}, vatAmount=${vatAmount}`);
+        }
+
+        supplyAmount = supplyAmount || 0;
+        vatAmount = vatAmount || 0;
         const totalAmount = supplyAmount + vatAmount;
 
         runningBalance += totalAmount;
