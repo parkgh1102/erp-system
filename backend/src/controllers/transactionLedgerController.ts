@@ -175,8 +175,8 @@ export const transactionLedgerController = {
 
         // totalAmount가 없거나 0이면 items에서 계산
         if (!supplyAmount && sale.items && sale.items.length > 0) {
-          supplyAmount = sale.items.reduce((sum, item) => sum + (item.supplyAmount || item.amount || 0), 0);
-          vatAmount = sale.items.reduce((sum, item) => sum + (item.vatAmount || 0), 0);
+          supplyAmount = sale.items.reduce((sum, item) => sum + (Number(item.supplyAmount) || 0), 0);
+          vatAmount = sale.items.reduce((sum, item) => sum + (Number(item.taxAmount) || 0), 0);
           console.log(`  → items에서 재계산: supplyAmount=${supplyAmount}, vatAmount=${vatAmount}`);
         }
 
