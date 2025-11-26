@@ -55,34 +55,67 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
     }
   };
 
-  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // 좌표 계산 헬퍼 함수
+  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    if ('touches' in e) {
+      // 터치 이벤트
+      const touch = e.touches[0] || e.changedTouches[0];
+      return {
+        x: (touch.clientX - rect.left) * scaleX,
+        y: (touch.clientY - rect.top) * scaleY
+      };
+    } else {
+      // 마우스 이벤트
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+  };
+
+  const handleCanvasStart = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (signatureType !== 'handwritten') return;
+    e.preventDefault();
+
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
     setIsDrawing(true);
     const canvas = canvasRef.current;
     if (canvas) {
-      const rect = canvas.getBoundingClientRect();
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.beginPath();
-        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.moveTo(coords.x, coords.y);
       }
     }
   };
 
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasMove = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || signatureType !== 'handwritten') return;
+    e.preventDefault();
+
+    const coords = getCanvasCoordinates(e);
+    if (!coords) return;
+
     const canvas = canvasRef.current;
     if (canvas) {
-      const rect = canvas.getBoundingClientRect();
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.lineTo(coords.x, coords.y);
         ctx.stroke();
       }
     }
   };
 
-  const handleCanvasMouseUp = () => {
+  const handleCanvasEnd = () => {
     setIsDrawing(false);
   };
 
@@ -221,12 +254,18 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
                 border: '2px solid #d9d9d9',
                 borderRadius: '6px',
                 cursor: 'crosshair',
-                backgroundColor: 'white'
+                backgroundColor: 'white',
+                touchAction: 'none',
+                maxWidth: '100%'
               }}
-              onMouseDown={handleCanvasMouseDown}
-              onMouseMove={handleCanvasMouseMove}
-              onMouseUp={handleCanvasMouseUp}
-              onMouseLeave={handleCanvasMouseUp}
+              onMouseDown={handleCanvasStart}
+              onMouseMove={handleCanvasMove}
+              onMouseUp={handleCanvasEnd}
+              onMouseLeave={handleCanvasEnd}
+              onTouchStart={handleCanvasStart}
+              onTouchMove={handleCanvasMove}
+              onTouchEnd={handleCanvasEnd}
+              onTouchCancel={handleCanvasEnd}
             />
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -238,7 +277,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
             </Button>
           </div>
           <p style={{ marginTop: '16px', color: '#666', fontSize: '12px', textAlign: 'center' }}>
-            마우스를 드래그하여 서명을 그려주세요.
+            마우스 또는 터치로 서명을 그려주세요.
           </p>
         </div>
       )

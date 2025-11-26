@@ -30,30 +30,61 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
     }
   }, [open]);
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // 좌표 계산 헬퍼 함수
+  const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    if ('touches' in e) {
+      // 터치 이벤트
+      const touch = e.touches[0] || e.changedTouches[0];
+      return {
+        x: (touch.clientX - rect.left) * scaleX,
+        y: (touch.clientY - rect.top) * scaleY
+      };
+    } else {
+      // 마우스 이벤트
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+  };
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
+    const coords = getCoordinates(e);
+    if (!coords) return;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     setIsDrawing(true);
     ctx.beginPath();
-    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.moveTo(coords.x, coords.y);
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
+    e.preventDefault();
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const rect = canvas.getBoundingClientRect();
+    const coords = getCoordinates(e);
+    if (!coords) return;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.lineTo(coords.x, coords.y);
     ctx.stroke();
     setHasSignature(true);
   };
@@ -103,7 +134,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
     >
       <div style={{ textAlign: 'center' }}>
         <p style={{ marginBottom: 16, color: '#666' }}>
-          아래 영역에 마우스로 서명을 입력하세요
+          아래 영역에 마우스 또는 터치로 서명을 입력하세요
         </p>
         <canvas
           ref={canvasRef}
@@ -113,12 +144,18 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
             border: '2px solid #d9d9d9',
             borderRadius: '4px',
             cursor: 'crosshair',
-            backgroundColor: '#fff'
+            backgroundColor: '#fff',
+            touchAction: 'none',
+            maxWidth: '100%'
           }}
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
           onMouseLeave={stopDrawing}
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
+          onTouchCancel={stopDrawing}
         />
         <div style={{ marginTop: 16 }}>
           <Space>
