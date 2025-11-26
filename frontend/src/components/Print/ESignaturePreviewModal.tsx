@@ -574,13 +574,13 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
             overflow: 'visible'
           }}
         >
-          {/* 서명 네모칸 오버레이 */}
+          {/* 서명 네모칸 오버레이 - 우측 상단 */}
           <div
             className="signature-box-overlay"
             style={{
               position: 'absolute',
-              top: '15px',
-              left: '210px',
+              top: '12px',
+              right: '15px',
               zIndex: 10,
               display: 'flex',
               alignItems: 'center',
