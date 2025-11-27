@@ -56,7 +56,9 @@ interface SaleItem {
   productId: number;
   productCode: string;
   productName: string;
+  itemName?: string;     // 백엔드 필드명
   spec?: string;
+  specification?: string; // 백엔드 필드명
   unit?: string;
   taxType?: string;
   quantity: number;
@@ -1112,7 +1114,8 @@ const SalesManagement: React.FC = () => {
       align: 'center' as const,
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
-        return items[0]?.spec || '-';
+        // specification 또는 spec 둘 다 확인
+        return items[0]?.specification || items[0]?.spec || '-';
       },
     },
     {
@@ -1123,7 +1126,8 @@ const SalesManagement: React.FC = () => {
       align: 'right' as const,
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
-        const totalQty = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        // decimal 타입을 Number()로 변환
+        const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
         return Math.round(totalQty).toLocaleString();
       },
     },
