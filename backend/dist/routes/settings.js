@@ -4,7 +4,9 @@ const express_1 = require("express");
 const SettingsController_1 = require("../controllers/SettingsController");
 const auth_1 = require("../middleware/auth");
 const router = (0, express_1.Router)();
-// 모든 라우트에 인증 미들웨어 적용
+// 보안 설정 조회 (로그인 전 - 인증 불필요)
+router.get('/security/:email', SettingsController_1.SettingsController.getSecuritySettingsByEmail);
+// 이후 라우트에 인증 미들웨어 적용
 router.use(auth_1.authenticateToken);
 // 설정 조회
 router.get('/:businessId', SettingsController_1.SettingsController.getSettings);

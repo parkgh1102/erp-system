@@ -105,21 +105,6 @@ export class SalesController {
       const sales = await salesRepository.find({
         where: { businessId: parseInt(businessId) },
         relations: ['customer', 'items', 'items.product', 'signedByUser'],
-        select: {
-          id: true,
-          businessId: true,
-          customerId: true,
-          transactionDate: true,
-          totalAmount: true,
-          vatAmount: true,
-          description: true,
-          memo: true,
-          signedBy: true,
-          signedAt: true,
-          signatureImage: true,  // 명시적으로 포함
-          createdAt: true,
-          updatedAt: true
-        },
         order: { transactionDate: 'DESC', createdAt: 'DESC' }
       });
 
@@ -195,22 +180,7 @@ export class SalesController {
 
       const sales = await salesRepository.findOne({
         where: { id: parseInt(id), businessId: parseInt(businessId) },
-        relations: ['customer', 'items', 'items.product', 'signedByUser'],
-        select: {
-          id: true,
-          businessId: true,
-          customerId: true,
-          transactionDate: true,
-          totalAmount: true,
-          vatAmount: true,
-          description: true,
-          memo: true,
-          signedBy: true,
-          signedAt: true,
-          signatureImage: true,  // 명시적으로 포함
-          createdAt: true,
-          updatedAt: true
-        }
+        relations: ['customer', 'items', 'items.product', 'signedByUser']
       });
 
       if (!sales) {
@@ -326,7 +296,9 @@ export class SalesController {
             quantity: itemData.quantity,
             unitPrice: itemData.unitPrice,
             supplyAmount: supplyAmount,
-            taxAmount: supplyAmount * vatRate
+            taxAmount: supplyAmount * vatRate,
+            specification: itemData.spec || itemData.specification || null,
+            unit: itemData.unit || null
           });
           items.push(item);
         }
@@ -336,22 +308,7 @@ export class SalesController {
       // 생성된 데이터를 다시 조회해서 반환
       const result = await salesRepository.findOne({
         where: { id: savedSales.id },
-        relations: ['customer', 'items', 'items.product', 'signedByUser'],
-        select: {
-          id: true,
-          businessId: true,
-          customerId: true,
-          transactionDate: true,
-          totalAmount: true,
-          vatAmount: true,
-          description: true,
-          memo: true,
-          signedBy: true,
-          signedAt: true,
-          signatureImage: true,
-          createdAt: true,
-          updatedAt: true
-        }
+        relations: ['customer', 'items', 'items.product', 'signedByUser']
       });
 
       res.status(201).json({
@@ -463,7 +420,9 @@ export class SalesController {
             quantity: itemData.quantity,
             unitPrice: itemData.unitPrice,
             supplyAmount: supplyAmount,
-            taxAmount: supplyAmount * vatRate
+            taxAmount: supplyAmount * vatRate,
+            specification: itemData.spec || itemData.specification || null,
+            unit: itemData.unit || null
           });
           items.push(item);
         }
@@ -472,22 +431,7 @@ export class SalesController {
 
       const result = await salesRepository.findOne({
         where: { id: parseInt(id) },
-        relations: ['customer', 'items', 'items.product', 'signedByUser'],
-        select: {
-          id: true,
-          businessId: true,
-          customerId: true,
-          transactionDate: true,
-          totalAmount: true,
-          vatAmount: true,
-          description: true,
-          memo: true,
-          signedBy: true,
-          signedAt: true,
-          signatureImage: true,
-          createdAt: true,
-          updatedAt: true
-        }
+        relations: ['customer', 'items', 'items.product', 'signedByUser']
       });
 
       res.json({

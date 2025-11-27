@@ -33,6 +33,9 @@ dotenv_1.default.config({ path: path_1.default.join(__dirname, '../.env') });
 const validatedEnv = (0, envValidator_1.getValidatedEnv)();
 const app = (0, express_1.default)();
 const PORT = validatedEnv.PORT;
+// Render/Vercel 등 프록시 뒤에서 실행될 때 필요한 설정
+// X-Forwarded-For 헤더를 신뢰하여 클라이언트 IP를 올바르게 인식
+app.set('trust proxy', 1);
 app.use(httpsRedirect_1.httpsRedirect);
 app.use(httpsRedirect_1.secureHeaders);
 app.use((req, res, next) => {

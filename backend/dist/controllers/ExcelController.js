@@ -310,18 +310,19 @@ const uploadCustomers = async (req, res) => {
         const results = { success: 0, failed: 0, errors: [] };
         for (const row of data) {
             try {
+                // 디버깅: 컬럼명 확인
+                console.log('업로드 row 키:', Object.keys(row));
                 // 거래처구분 매핑
                 let customerType = Customer_1.CustomerType.OTHER;
                 if (row['거래처구분'] === '매출처')
                     customerType = Customer_1.CustomerType.SALES;
                 else if (row['거래처구분'] === '매입처')
                     customerType = Customer_1.CustomerType.PURCHASE;
-                // 거래처 코드 형식 정규화 (C001 -> C0001)
-                let customerCode = row['거래처코드'];
-                if (customerCode && /^C\d{1,3}$/.test(customerCode)) {
-                    const number = customerCode.substring(1);
-                    customerCode = `C${number.padStart(4, '0')}`;
-                }
+                // 거래처 코드 - 엑셀에 입력된 값 그대로 사용
+                const customerCode = String(row['거래처코드'] || '').trim();
+                // 담당자 연락처 - 여러 가지 컬럼명 시도
+                const managerContact = row['담당자 연락처'] || row['담당자연락처'] || row['담당자 휴대폰'] || row['담당자휴대폰'] || row['휴대폰'] || row['핸드폰'] || null;
+                console.log('담당자 연락처 값:', managerContact, '| row 담당자 연락처:', row['담당자 연락처']);
                 // 기존 거래처 코드가 있는지 확인
                 let customer = await customerRepo.findOne({
                     where: { businessId, customerCode }
@@ -337,7 +338,7 @@ const uploadCustomers = async (req, res) => {
                     customer.phone = row['전화번호'] || null;
                     customer.fax = row['팩스번호'] || null;
                     customer.email = row['이메일'] || null;
-                    customer.managerContact = row['담당자 연락처'] || null;
+                    customer.managerContact = managerContact;
                     customer.customerType = customerType;
                     customer.isActive = row['활성여부'] === 'Y';
                 }
@@ -355,7 +356,7 @@ const uploadCustomers = async (req, res) => {
                         phone: row['전화번호'] || null,
                         fax: row['팩스번호'] || null,
                         email: row['이메일'] || null,
-                        managerContact: row['담당자 연락처'] || null,
+                        managerContact: managerContact,
                         customerType,
                         isActive: row['활성여부'] === 'Y'
                     });
@@ -394,6 +395,18 @@ const uploadProducts = async (req, res) => {
         const results = { success: 0, failed: 0, errors: [] };
         for (const row of data) {
             try {
+                // 세금구분 매핑 (한글 -> 영문 코드)
+                let taxType = 'tax_separate'; // 기본값: 과세(별도)
+                const rawTaxType = row['세금구분'] || '';
+                if (rawTaxType === '면세' || rawTaxType === 'tax_free') {
+                    taxType = 'tax_free';
+                }
+                else if (rawTaxType === '과세(포함)' || rawTaxType === '포함' || rawTaxType === 'tax_inclusive') {
+                    taxType = 'tax_inclusive';
+                }
+                else if (rawTaxType === '과세(별도)' || rawTaxType === '별도' || rawTaxType === '과세' || rawTaxType === 'tax_separate') {
+                    taxType = 'tax_separate';
+                }
                 const product = productRepo.create({
                     businessId,
                     productCode: row['품목코드'],
@@ -404,7 +417,7 @@ const uploadProducts = async (req, res) => {
                     buyPrice: parseFloat(row['매입단가']) || 0,
                     sellPrice: parseFloat(row['매출단가']) || 0,
                     category: row['분류'] || null,
-                    taxType: row['세금구분'] || 'tax_separate',
+                    taxType: taxType,
                     memo: row['비고'] || null,
                     isActive: row['활성여부'] === 'Y'
                 });

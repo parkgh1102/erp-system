@@ -10,6 +10,8 @@ const Customer_1 = require("../entities/Customer");
 const Product_1 = require("../entities/Product");
 const Sales_1 = require("../entities/Sales");
 const Purchase_1 = require("../entities/Purchase");
+const User_1 = require("../entities/User");
+const Business_1 = require("../entities/Business");
 const logger_1 = require("../utils/logger");
 const exceljs_1 = __importDefault(require("exceljs"));
 const settingsRepository = database_1.AppDataSource.getRepository(CompanySettings_1.CompanySettings);
@@ -17,7 +19,66 @@ const customerRepository = database_1.AppDataSource.getRepository(Customer_1.Cus
 const productRepository = database_1.AppDataSource.getRepository(Product_1.Product);
 const salesRepository = database_1.AppDataSource.getRepository(Sales_1.Sales);
 const purchaseRepository = database_1.AppDataSource.getRepository(Purchase_1.Purchase);
+const userRepository = database_1.AppDataSource.getRepository(User_1.User);
+const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
 exports.SettingsController = {
+    // 이메일로 보안 설정 조회 (로그인 전 - 인증 불필요)
+    async getSecuritySettingsByEmail(req, res) {
+        try {
+            const { email } = req.params;
+            // 사용자 찾기
+            const user = await userRepository.findOne({
+                where: { email },
+                relations: ['businesses']
+            });
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: '사용자를 찾을 수 없습니다.'
+                });
+            }
+            // sales_viewer인 경우 businessId로 비즈니스 정보 조회
+            let businessId;
+            if (user.role === 'sales_viewer' && user.businessId) {
+                businessId = user.businessId;
+            }
+            else if (user.businesses && user.businesses.length > 0) {
+                businessId = user.businesses[0].id;
+            }
+            if (!businessId) {
+                // 비즈니스가 없으면 기본값 반환 (2단계 인증 OFF)
+                return res.json({
+                    success: true,
+                    data: {
+                        twoFactorAuth: false,
+                        sessionTimeout: '8h'
+                    }
+                });
+            }
+            // 보안 설정 조회
+            const settings = await settingsRepository.find({
+                where: { businessId }
+            });
+            const settingsObject = {};
+            settings.forEach(setting => {
+                settingsObject[setting.settingKey] = setting.settingValue;
+            });
+            res.json({
+                success: true,
+                data: {
+                    twoFactorAuth: settingsObject['twoFactorAuth'] === 'true',
+                    sessionTimeout: settingsObject['sessionTimeout'] || '8h'
+                }
+            });
+        }
+        catch (error) {
+            logger_1.logger.error('Get security settings by email error', error instanceof Error ? error : new Error(String(error)));
+            res.status(500).json({
+                success: false,
+                message: '보안 설정 조회 중 오류가 발생했습니다.'
+            });
+        }
+    },
     // 설정 조회
     async getSettings(req, res) {
         try {

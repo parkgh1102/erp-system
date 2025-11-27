@@ -201,12 +201,13 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
               }
               .signature-box-overlay {
                 position: absolute !important;
-                top: 12px !important;
-                left: 15px !important;
+                top: 5px !important;
+                left: 5px !important;
                 z-index: 10 !important;
                 display: flex !important;
+                flex-direction: column !important;
                 align-items: center !important;
-                gap: 8px !important;
+                gap: 2px !important;
               }
               @media print {
                 @page {
@@ -219,8 +220,8 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
                 }
                 .signature-box-overlay {
                   position: absolute !important;
-                  top: 12px !important;
-                  left: 15px !important;
+                  top: 5px !important;
+                  left: 5px !important;
                 }
               }
             </style>
@@ -574,32 +575,33 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
             overflow: 'visible'
           }}
         >
-          {/* 서명 네모칸 오버레이 - 좌측 상단 (제목 왼쪽 빈 공간) */}
+          {/* 서명 네모칸 오버레이 - 좌측 상단 헤더 영역 */}
           <div
             className="signature-box-overlay"
             style={{
               position: 'absolute',
-              top: '12px',
-              left: '15px',
+              top: '5px',
+              left: '5px',
               zIndex: 10,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              gap: '8px'
+              gap: '2px'
             }}
           >
             <span style={{
-              fontSize: '12px',
+              fontSize: '10px',
               fontWeight: 'bold',
               color: '#333',
               whiteSpace: 'nowrap'
             }}>
-              서명(확인)자:
+              서명(확인)자
             </span>
             <div
               onClick={handleSignatureBoxClick}
               style={{
-                width: '100px',
-                height: '60px',
+                width: '80px',
+                height: '50px',
                 border: signatureDataUrl ? '1px solid #d9d9d9' : `2px solid ${blinking ? '#1890ff' : '#52c41a'}`,
                 backgroundColor: signatureDataUrl ? '#fff' : (blinking ? 'rgba(24, 144, 255, 0.1)' : 'rgba(82, 196, 26, 0.1)'),
                 cursor: transactionData?.signedBy ? 'default' : 'pointer',
@@ -623,7 +625,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
                 />
               ) : (
                 <span style={{
-                  fontSize: '12px',
+                  fontSize: '10px',
                   color: blinking ? '#1890ff' : '#52c41a',
                   fontWeight: 'bold'
                 }}>
