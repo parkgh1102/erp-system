@@ -40,8 +40,8 @@ class ERPDataHelper {
 
     console.log('📊 조회된 매출 건수:', sales.length);
 
-    const totalSales = sales.reduce((sum, sale) => sum + (sale.totalAmount || 0), 0);
-    const totalVat = sales.reduce((sum, sale) => sum + (sale.vatAmount || 0), 0);
+    const totalSales = sales.reduce((sum, sale) => sum + (Number(sale.totalAmount) || 0), 0);
+    const totalVat = sales.reduce((sum, sale) => sum + (Number(sale.vatAmount) || 0), 0);
 
     console.log('📊 매출 합계:', { totalSales, totalVat, grandTotal: totalSales + totalVat });
 
@@ -72,8 +72,8 @@ class ERPDataHelper {
       relations: ['customer', 'items', 'items.product']
     });
 
-    const totalPurchase = purchases.reduce((sum, purchase) => sum + (purchase.totalAmount || 0), 0);
-    const totalVat = purchases.reduce((sum, purchase) => sum + (purchase.vatAmount || 0), 0);
+    const totalPurchase = purchases.reduce((sum, purchase) => sum + (Number(purchase.totalAmount) || 0), 0);
+    const totalVat = purchases.reduce((sum, purchase) => sum + (Number(purchase.vatAmount) || 0), 0);
 
     return {
       count: purchases.length,
