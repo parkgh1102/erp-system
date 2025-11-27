@@ -632,15 +632,25 @@ ERP 시스템 데이터:${context}
 
 총 매출 건수: [건수]건`;
             console.log('🤖 Gemini API 호출 중...');
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const aiResponse = response.text();
-            console.log('✅ Gemini 응답 받음');
-            return res.json({
-                message: aiResponse,
-                data: data,
-                timestamp: new Date().toISOString()
-            });
+            try {
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const aiResponse = response.text();
+                console.log('✅ Gemini 응답 받음');
+                return res.json({
+                    message: aiResponse,
+                    data: data,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            catch (geminiError) {
+                console.error('❌ Gemini API 에러:', geminiError.message);
+                return res.json({
+                    message: `데이터 조회는 완료되었으나 AI 응답 생성에 실패했습니다.\n\n조회된 데이터:\n${context}`,
+                    data: data,
+                    timestamp: new Date().toISOString()
+                });
+            }
         }
         // 2단계: 거래 등록 의도인 경우 거래 정보 추출
         console.log('🔍 등록 의도 감지 - 거래 정보 추출 중...');
@@ -676,15 +686,25 @@ ERP 시스템 데이터:${context}
 
 총 매출 건수: [건수]건`;
             console.log('🤖 Gemini API 호출 중...');
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const aiResponse = response.text();
-            console.log('✅ Gemini 응답 받음');
-            return res.json({
-                message: aiResponse,
-                data: data,
-                timestamp: new Date().toISOString()
-            });
+            try {
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const aiResponse = response.text();
+                console.log('✅ Gemini 응답 받음');
+                return res.json({
+                    message: aiResponse,
+                    data: data,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            catch (geminiError) {
+                console.error('❌ Gemini API 에러:', geminiError.message);
+                return res.json({
+                    message: `데이터 조회는 완료되었으나 AI 응답 생성에 실패했습니다.\n\n조회된 데이터:\n${context}`,
+                    data: data,
+                    timestamp: new Date().toISOString()
+                });
+            }
         }
         // 다중 거래 처리
         const transactionList = extractedData.isMultiple
@@ -909,10 +929,14 @@ ${transactionInfo.transactionType} ID: #${result?.id}`;
         });
     }
     catch (error) {
-        console.error('Chatbot error:', error);
+        console.error('❌ Chatbot error:', error);
+        console.error('❌ Error stack:', error.stack);
+        console.error('❌ Error name:', error.name);
+        console.error('❌ Error message:', error.message);
         res.status(500).json({
             error: '챗봇 응답 생성 중 오류가 발생했습니다.',
-            details: error.message
+            details: error.message,
+            errorType: error.name
         });
     }
 };
