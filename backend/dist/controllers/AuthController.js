@@ -7,6 +7,7 @@ exports.AuthController = void 0;
 const database_1 = require("../config/database");
 const User_1 = require("../entities/User");
 const Business_1 = require("../entities/Business");
+const CompanySettings_1 = require("../entities/CompanySettings");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const joi_1 = __importDefault(require("joi"));
@@ -20,6 +21,7 @@ const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const userRepository = database_1.AppDataSource.getRepository(User_1.User);
 const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
+const companySettingsRepository = database_1.AppDataSource.getRepository(CompanySettings_1.CompanySettings);
 const signupSchema = joi_1.default.object({
     email: joi_1.default.string().email().required(),
     password: passwordValidator_1.passwordSchema.required(),
@@ -209,21 +211,36 @@ exports.AuthController = {
             // businessId 결정: sales_viewer는 user.businessId, admin은 첫 번째 비즈니스
             const businessId = user.businessId || user.businesses[0]?.id || 0;
             console.log('🔐 JWT 토큰 생성:', { userId: user.id, email: user.email, businessId });
+            // 세션 유지 시간 설정 가져오기
+            let sessionTimeoutHours = 24; // 기본값 24시간
+            if (businessId) {
+                const settings = await companySettingsRepository.findOne({
+                    where: { businessId, settingKey: 'sessionTimeout' }
+                });
+                if (settings?.settingValue) {
+                    const parsed = parseInt(settings.settingValue);
+                    if (!isNaN(parsed) && [1, 4, 8, 24].includes(parsed)) {
+                        sessionTimeoutHours = parsed;
+                    }
+                }
+            }
+            console.log('⏰ 세션 유지 시간:', sessionTimeoutHours, '시간');
             const env = (0, envValidator_1.getValidatedEnv)();
-            const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
-            const refreshToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
+            const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId }, env.JWT_SECRET, { expiresIn: `${sessionTimeoutHours}h` });
+            const refreshToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: `${sessionTimeoutHours * 2}h` });
             // HttpOnly 쿠키로 토큰 설정
+            const cookieMaxAge = sessionTimeoutHours * 60 * 60 * 1000;
             res.cookie('authToken', token, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
                 sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                maxAge: 15 * 60 * 1000 // 15분
+                maxAge: cookieMaxAge
             });
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
                 sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
+                maxAge: cookieMaxAge * 2
             });
             res.json({
                 success: true,

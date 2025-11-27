@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 import { Business } from '../entities/Business';
+import { CompanySettings } from '../entities/CompanySettings';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
@@ -17,6 +18,7 @@ import path from 'path';
 
 const userRepository = AppDataSource.getRepository(User);
 const businessRepository = AppDataSource.getRepository(Business);
+const companySettingsRepository = AppDataSource.getRepository(CompanySettings);
 
 const signupSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -249,32 +251,48 @@ export const AuthController = {
       const businessId = user.businessId || user.businesses[0]?.id || 0;
       console.log('🔐 JWT 토큰 생성:', { userId: user.id, email: user.email, businessId });
 
+      // 세션 유지 시간 설정 가져오기
+      let sessionTimeoutHours = 24; // 기본값 24시간
+      if (businessId) {
+        const settings = await companySettingsRepository.findOne({
+          where: { businessId, settingKey: 'sessionTimeout' }
+        });
+        if (settings?.settingValue) {
+          const parsed = parseInt(settings.settingValue);
+          if (!isNaN(parsed) && [1, 4, 8, 24].includes(parsed)) {
+            sessionTimeoutHours = parsed;
+          }
+        }
+      }
+      console.log('⏰ 세션 유지 시간:', sessionTimeoutHours, '시간');
+
       const env = getValidatedEnv();
       const token = jwt.sign(
         { userId: user.id, email: user.email, businessId },
         env.JWT_SECRET,
-        { expiresIn: env.JWT_EXPIRES_IN }
+        { expiresIn: `${sessionTimeoutHours}h` }
       );
 
       const refreshToken = jwt.sign(
         { userId: user.id, email: user.email, businessId, type: 'refresh' },
         env.JWT_REFRESH_SECRET,
-        { expiresIn: env.JWT_REFRESH_EXPIRES_IN }
+        { expiresIn: `${sessionTimeoutHours * 2}h` }
       );
 
       // HttpOnly 쿠키로 토큰 설정
+      const cookieMaxAge = sessionTimeoutHours * 60 * 60 * 1000;
       res.cookie('authToken', token, {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',
         sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
-        maxAge: 15 * 60 * 1000 // 15분
+        maxAge: cookieMaxAge
       });
 
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: env.NODE_ENV === 'production',
         sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
+        maxAge: cookieMaxAge * 2
       });
 
       res.json({
