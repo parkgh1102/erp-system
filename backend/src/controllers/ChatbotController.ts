@@ -717,6 +717,13 @@ export const sendMessage = async (req: Request, res: Response) => {
       });
     }
 
+    // businessId 확인
+    const businessId = user?.businessId;
+    if (!businessId) {
+      console.error('❌ businessId가 없습니다:', user);
+      return res.status(400).json({ error: '사업자 정보를 찾을 수 없습니다. 다시 로그인해주세요.' });
+    }
+
     // 1단계: 조회 vs 등록 의도 구분
     const messageLower = message.toLowerCase();
     const isQueryIntent =
@@ -735,7 +742,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     if (isQueryIntent) {
       // 조회 의도인 경우 일반 질의응답 처리
       console.log('🔍 조회 의도 감지 - 질의응답 모드');
-      const { context, data } = await analyzeIntentAndFetchData(message, user.businessId);
+      const { context, data } = await analyzeIntentAndFetchData(message, businessId);
       console.log('✅ 데이터 가져오기 완료');
 
       const prompt = `당신은 ERP 시스템의 AI 어시스턴트입니다. 사용자의 질문에 대해 친절하고 정확하게 답변해주세요.
@@ -779,12 +786,12 @@ ERP 시스템 데이터:${context}
 
     // 2단계: 거래 등록 의도인 경우 거래 정보 추출
     console.log('🔍 등록 의도 감지 - 거래 정보 추출 중...');
-    const extractedData = await extractTransactionInfo(message, user.businessId);
+    const extractedData = await extractTransactionInfo(message, businessId);
 
     if (!extractedData) {
       // 거래 정보를 추출하지 못한 경우
       console.log('🔍 사용자 의도 분석 시작...');
-      const { context, data } = await analyzeIntentAndFetchData(message, user.businessId);
+      const { context, data } = await analyzeIntentAndFetchData(message, businessId);
       console.log('✅ 데이터 가져오기 완료');
 
       const prompt = `당신은 ERP 시스템의 AI 어시스턴트입니다. 사용자의 질문에 대해 친절하고 정확하게 답변해주세요.
@@ -1085,7 +1092,7 @@ export const getStatus = async (req: Request, res: Response) => {
     res.json({
       status: 'ok',
       hasApiKey,
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       features: [
         '매출/매입 통계 조회',
         '고객 정보 조회',

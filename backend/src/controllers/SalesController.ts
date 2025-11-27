@@ -536,20 +536,20 @@ export class SalesController {
         return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
       }
 
-      // sales_viewer만 전자서명 가능
-      if (user.role !== 'sales_viewer') {
-        return res.status(403).json({
-          success: false,
-          message: '전자서명은 매출 조회 권한을 가진 사용자만 가능합니다.'
-        });
-      }
-
       // 역할에 따른 business 접근 권한 체크
       let business;
-      if (user.businessId === parseInt(businessId)) {
+      if (user.role === 'admin') {
+        // admin은 자신이 소유한 business에 접근 가능
         business = await businessRepository.findOne({
-          where: { id: parseInt(businessId) }
+          where: { id: parseInt(businessId), userId }
         });
+      } else if (user.role === 'sales_viewer') {
+        // sales_viewer는 할당된 business에 접근 가능
+        if (user.businessId === parseInt(businessId)) {
+          business = await businessRepository.findOne({
+            where: { id: parseInt(businessId) }
+          });
+        }
       }
 
       if (!business) {
