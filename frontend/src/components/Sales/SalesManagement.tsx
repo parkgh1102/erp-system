@@ -1494,6 +1494,17 @@ const SalesManagement: React.FC = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
+          onKeyDown={(e) => {
+            // 엔터키 제출 방지
+            if (e.key === 'Enter') {
+              e.preventDefault();
+            }
+            // F5로 저장
+            if (e.key === 'F5') {
+              e.preventDefault();
+              form.submit();
+            }
+          }}
         >
           <Row gutter={16}>
             <Col xs={24} sm={12} md={12} lg={12} xl={12}>
@@ -1735,6 +1746,13 @@ const SalesManagement: React.FC = () => {
                     onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
                     min={0}
                     style={{ width: '100%' }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addItem();
+                      }
+                    }}
                   />
                 </Col>
                 <Col span={2}>
