@@ -1504,6 +1504,13 @@ const SalesManagement: React.FC = () => {
               e.preventDefault();
               form.submit();
             }
+            // F6로 저장 후 초기화
+            if (e.key === 'F6' && !editingSale) {
+              e.preventDefault();
+              form.validateFields().then(values => {
+                handleSubmit(values, true);
+              }).catch(() => {});
+            }
           }}
         >
           <Row gutter={16}>
