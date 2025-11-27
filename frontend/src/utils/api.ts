@@ -240,6 +240,8 @@ export const settingsAPI = {
     api.get(`/settings/${businessId}`),
   updateSettings: (businessId: number, data: Record<string, any>) =>
     api.put(`/settings/${businessId}`, data),
+  getSecuritySettingsByEmail: (email: string) =>
+    api.get(`/settings/security/${encodeURIComponent(email)}`),
   exportCustomers: (businessId: number) =>
     api.get(`/settings/${businessId}/export/customers`, { responseType: 'blob' }),
   exportProducts: (businessId: number) =>

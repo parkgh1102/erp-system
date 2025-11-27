@@ -4,7 +4,10 @@ import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
-// 모든 라우트에 인증 미들웨어 적용
+// 보안 설정 조회 (로그인 전 - 인증 불필요)
+router.get('/security/:email', SettingsController.getSecuritySettingsByEmail);
+
+// 이후 라우트에 인증 미들웨어 적용
 router.use(authenticateToken);
 
 // 설정 조회

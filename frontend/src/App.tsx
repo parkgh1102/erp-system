@@ -23,9 +23,45 @@ import ChatbotWidget from './components/Chatbot/ChatbotWidget';
 import koKR from 'antd/locale/ko_KR';
 import 'dayjs/locale/ko';
 
+// 세션 타임아웃 시간 계산 (밀리초)
+const getSessionTimeoutMs = (): number => {
+  const sessionTimeout = localStorage.getItem('sessionTimeout') || '8h';
+  const timeoutMap: Record<string, number> = {
+    '1h': 1 * 60 * 60 * 1000,
+    '4h': 4 * 60 * 60 * 1000,
+    '8h': 8 * 60 * 60 * 1000,
+    '24h': 24 * 60 * 60 * 1000,
+  };
+  return timeoutMap[sessionTimeout] || 8 * 60 * 60 * 1000;
+};
+
 // 보호된 라우트 컴포넌트
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, loginTime, logout } = useAuthStore();
+
+  // 세션 타임아웃 체크
+  React.useEffect(() => {
+    if (isAuthenticated && loginTime) {
+      const sessionTimeoutMs = getSessionTimeoutMs();
+      const elapsed = Date.now() - loginTime;
+
+      if (elapsed >= sessionTimeoutMs) {
+        // 세션 만료
+        logout();
+        localStorage.removeItem('sessionTimeout');
+        return;
+      }
+
+      // 남은 시간 후 자동 로그아웃 타이머 설정
+      const remainingTime = sessionTimeoutMs - elapsed;
+      const timer = setTimeout(() => {
+        logout();
+        localStorage.removeItem('sessionTimeout');
+      }, remainingTime);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, loginTime, logout]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

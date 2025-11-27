@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Card, Form, Input, Button, Typography, Alert, Divider } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
-import { api } from '../../utils/api';
+import { api, authAPI, settingsAPI } from '../../utils/api';
+import { useAuthStore } from '../../stores/authStore';
 import { AxiosErrorResponse } from '../../types';
 
 const { Title, Text } = Typography;
@@ -12,22 +13,54 @@ const LoginFormContent: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { setAuth } = useAuthStore();
 
   const handleSubmit = async (values: { email: string; password: string }) => {
     setLoading(true);
     setError(null);
 
     try {
-      // OTP 전송
-      const response = await api.post('/otp/send', { email: values.email });
-      console.log('OTP 전송 성공:', response.data);
+      // 1. 먼저 보안 설정 확인 (2단계 인증 여부)
+      let twoFactorEnabled = false;
+      let sessionTimeout = '8h';
 
-      // OTP 입력 페이지로 이동 (로그인 정보를 state로 전달)
-      navigate('/otp', { state: { credentials: values } });
+      try {
+        const securityResponse = await settingsAPI.getSecuritySettingsByEmail(values.email);
+        if (securityResponse.data.success) {
+          twoFactorEnabled = securityResponse.data.data.twoFactorAuth;
+          sessionTimeout = securityResponse.data.data.sessionTimeout || '8h';
+        }
+      } catch (err) {
+        // 보안 설정 조회 실패 시 기본값 사용 (2단계 인증 OFF)
+        console.log('보안 설정 조회 실패, 기본값 사용');
+      }
+
+      if (twoFactorEnabled) {
+        // 2단계 인증 ON: OTP 전송 후 OTP 페이지로 이동
+        const response = await api.post('/otp/send', { email: values.email });
+        console.log('OTP 전송 성공:', response.data);
+        navigate('/otp', { state: { credentials: values, sessionTimeout } });
+      } else {
+        // 2단계 인증 OFF: 바로 로그인 처리
+        const loginResponse = await authAPI.login(values);
+        const { user, token } = loginResponse.data.data;
+
+        // 세션 타임아웃 저장
+        localStorage.setItem('sessionTimeout', sessionTimeout);
+
+        setAuth(user, token);
+
+        // 역할에 따라 다른 페이지로 이동
+        if (user.role === 'admin') {
+          navigate('/dashboard');
+        } else {
+          navigate('/sales');
+        }
+      }
     } catch (error: unknown) {
       const axiosError = error as AxiosErrorResponse;
-      console.error('OTP 전송 실패:', axiosError.response?.data, axiosError.message);
-      const errorMessage = axiosError.response?.data?.message || 'OTP 전송에 실패했습니다.';
+      console.error('로그인 실패:', axiosError.response?.data, axiosError.message);
+      const errorMessage = axiosError.response?.data?.message || '로그인에 실패했습니다.';
       setError(errorMessage);
     } finally {
       setLoading(false);

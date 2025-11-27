@@ -67,7 +67,39 @@ const Settings: React.FC = () => {
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsModalVisible, setLogsModalVisible] = useState(false);
 
-  // localStorage에서 설정 불러오기
+  // 보안 설정 상태
+  const [securitySettings, setSecuritySettings] = useState({
+    twoFactorAuth: false,
+    sessionTimeout: '8h',
+    ipRestriction: false,
+    loginNotification: false,
+  });
+
+  // 서버에서 설정 불러오기
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!currentBusiness) return;
+
+      try {
+        const response = await settingsAPI.getSettings(currentBusiness.id);
+        if (response.data.success) {
+          const data = response.data.data;
+          setSecuritySettings({
+            twoFactorAuth: data.twoFactorAuth === 'true',
+            sessionTimeout: data.sessionTimeout || '8h',
+            ipRestriction: data.ipRestriction === 'true',
+            loginNotification: data.loginNotification === 'true',
+          });
+        }
+      } catch (error) {
+        console.error('설정 조회 실패:', error);
+      }
+    };
+
+    fetchSettings();
+  }, [currentBusiness]);
+
+  // localStorage에서 알림 설정 불러오기
   useEffect(() => {
     const savedNotifications = localStorage.getItem('notifications');
     if (savedNotifications) {
@@ -132,11 +164,26 @@ const Settings: React.FC = () => {
   };
 
   const handleFinish = async (values: any) => {
+    if (!currentBusiness) {
+      showError('사업체 정보를 찾을 수 없습니다.');
+      return;
+    }
+
     setLoading(true);
     try {
-      // 실제로는 서버에 설정 저장
-      localStorage.setItem('userSettings', JSON.stringify(values));
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 보안 설정을 서버에 저장
+      const settingsToSave = {
+        twoFactorAuth: String(securitySettings.twoFactorAuth),
+        sessionTimeout: securitySettings.sessionTimeout,
+        ipRestriction: String(securitySettings.ipRestriction),
+        loginNotification: String(securitySettings.loginNotification),
+      };
+
+      await settingsAPI.updateSettings(currentBusiness.id, settingsToSave);
+
+      // 로컬 스토리지에도 세션 타임아웃 저장 (현재 세션에 적용)
+      localStorage.setItem('sessionTimeout', securitySettings.sessionTimeout);
+
       showSuccess('설정이 성공적으로 저장되었습니다.');
     } catch (error) {
       showError('설정 저장에 실패했습니다.');
@@ -366,18 +413,24 @@ const Settings: React.FC = () => {
           <Row gutter={[24, 24]}>
             <Col xs={24} lg={12}>
               <Card title="보안 설정">
-                <Form layout="vertical" initialValues={{ twoFactorAuth: false, sessionTimeout: '8h', ipRestriction: false, loginNotification: true }}>
-                  <Form.Item label="2단계 인증" name="twoFactorAuth">
+                <Form layout="vertical">
+                  <Form.Item label="2단계 인증">
                     <Space>
-                      <Switch />
+                      <Switch
+                        checked={securitySettings.twoFactorAuth}
+                        onChange={(checked) => setSecuritySettings(prev => ({ ...prev, twoFactorAuth: checked }))}
+                      />
                       <Text type="secondary">
                         로그인 시 추가 인증을 요구합니다
                       </Text>
                     </Space>
                   </Form.Item>
 
-                  <Form.Item label="세션 유지 시간" name="sessionTimeout">
-                    <Radio.Group>
+                  <Form.Item label="세션 유지 시간">
+                    <Radio.Group
+                      value={securitySettings.sessionTimeout}
+                      onChange={(e) => setSecuritySettings(prev => ({ ...prev, sessionTimeout: e.target.value }))}
+                    >
                       <Radio value="1h">1시간</Radio>
                       <Radio value="4h">4시간</Radio>
                       <Radio value="8h">8시간</Radio>
@@ -385,18 +438,24 @@ const Settings: React.FC = () => {
                     </Radio.Group>
                   </Form.Item>
 
-                  <Form.Item label="IP 제한" name="ipRestriction">
+                  <Form.Item label="IP 제한">
                     <Space>
-                      <Switch />
+                      <Switch
+                        checked={securitySettings.ipRestriction}
+                        onChange={(checked) => setSecuritySettings(prev => ({ ...prev, ipRestriction: checked }))}
+                      />
                       <Text type="secondary">
                         특정 IP에서만 접속을 허용합니다
                       </Text>
                     </Space>
                   </Form.Item>
 
-                  <Form.Item label="로그인 알림" name="loginNotification">
+                  <Form.Item label="로그인 알림">
                     <Space>
-                      <Switch />
+                      <Switch
+                        checked={securitySettings.loginNotification}
+                        onChange={(checked) => setSecuritySettings(prev => ({ ...prev, loginNotification: checked }))}
+                      />
                       <Text type="secondary">
                         새로운 기기에서 로그인 시 알림을 받습니다
                       </Text>

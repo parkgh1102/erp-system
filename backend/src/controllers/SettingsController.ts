@@ -5,6 +5,8 @@ import { Customer } from '../entities/Customer';
 import { Product } from '../entities/Product';
 import { Sales } from '../entities/Sales';
 import { Purchase } from '../entities/Purchase';
+import { User } from '../entities/User';
+import { Business } from '../entities/Business';
 import { logger } from '../utils/logger';
 import ExcelJS from 'exceljs';
 
@@ -13,8 +15,73 @@ const customerRepository = AppDataSource.getRepository(Customer);
 const productRepository = AppDataSource.getRepository(Product);
 const salesRepository = AppDataSource.getRepository(Sales);
 const purchaseRepository = AppDataSource.getRepository(Purchase);
+const userRepository = AppDataSource.getRepository(User);
+const businessRepository = AppDataSource.getRepository(Business);
 
 export const SettingsController = {
+  // 이메일로 보안 설정 조회 (로그인 전 - 인증 불필요)
+  async getSecuritySettingsByEmail(req: Request, res: Response) {
+    try {
+      const { email } = req.params;
+
+      // 사용자 찾기
+      const user = await userRepository.findOne({
+        where: { email },
+        relations: ['businesses']
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: '사용자를 찾을 수 없습니다.'
+        });
+      }
+
+      // sales_viewer인 경우 businessId로 비즈니스 정보 조회
+      let businessId: number | undefined;
+      if (user.role === 'sales_viewer' && user.businessId) {
+        businessId = user.businessId;
+      } else if (user.businesses && user.businesses.length > 0) {
+        businessId = user.businesses[0].id;
+      }
+
+      if (!businessId) {
+        // 비즈니스가 없으면 기본값 반환 (2단계 인증 OFF)
+        return res.json({
+          success: true,
+          data: {
+            twoFactorAuth: false,
+            sessionTimeout: '8h'
+          }
+        });
+      }
+
+      // 보안 설정 조회
+      const settings = await settingsRepository.find({
+        where: { businessId }
+      });
+
+      const settingsObject: Record<string, string> = {};
+      settings.forEach(setting => {
+        settingsObject[setting.settingKey] = setting.settingValue;
+      });
+
+      res.json({
+        success: true,
+        data: {
+          twoFactorAuth: settingsObject['twoFactorAuth'] === 'true',
+          sessionTimeout: settingsObject['sessionTimeout'] || '8h'
+        }
+      });
+    } catch (error: unknown) {
+      logger.error('Get security settings by email error', error instanceof Error ? error : new Error(String(error)));
+      res.status(500).json({
+        success: false,
+        message: '보안 설정 조회 중 오류가 발생했습니다.'
+      });
+    }
+  },
+
   // 설정 조회
   async getSettings(req: Request, res: Response) {
     try {
