@@ -12,7 +12,7 @@ import { Between, MoreThanOrEqual, LessThanOrEqual, Like } from 'typeorm';
 
 // Gemini API 초기화
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 /**
  * ERP 데이터를 조회하는 헬퍼 함수들

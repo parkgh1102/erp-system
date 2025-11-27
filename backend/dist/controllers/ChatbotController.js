@@ -13,7 +13,7 @@ const Product_1 = require("../entities/Product");
 const typeorm_1 = require("typeorm");
 // Gemini API 초기화
 const genAI = new generative_ai_1.GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 /**
  * ERP 데이터를 조회하는 헬퍼 함수들
  */
