@@ -500,7 +500,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
         title="전자서명 거래명세표"
         open={open}
         onCancel={handleClose}
-        width="min(95vw, 1200px)"
+        width="min(95vw, 900px)"
         style={{
           top: 'min(40px, 2vh)',
           maxWidth: 'calc(100vw - 32px)',
