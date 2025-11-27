@@ -1499,13 +1499,13 @@ const SalesManagement: React.FC = () => {
             if (e.key === 'Enter') {
               e.preventDefault();
             }
-            // F5로 저장
-            if (e.key === 'F5') {
+            // F6로 저장
+            if (e.key === 'F6') {
               e.preventDefault();
               form.submit();
             }
-            // F6로 저장 후 초기화
-            if (e.key === 'F6' && !editingSale) {
+            // F7로 저장 후 초기화
+            if (e.key === 'F7' && !editingSale) {
               e.preventDefault();
               form.validateFields().then(values => {
                 handleSubmit(values, true);
