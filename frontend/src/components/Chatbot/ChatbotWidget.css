@@ -187,16 +187,16 @@
 @media (max-width: 768px) {
   .chatbot-window {
     width: calc(100vw - 16px);
-    height: calc(100vh - 100px);
-    max-height: calc(100vh - 100px);
-    bottom: 80px;
+    height: calc(100vh - 180px);
+    max-height: 500px;
+    bottom: 100px;
     right: 8px;
     left: 8px;
     border-radius: 12px;
   }
 
   .chatbot-button {
-    bottom: 16px;
+    bottom: 80px;
     right: 16px;
     width: 50px;
     height: 50px;
@@ -209,6 +209,7 @@
 
   .chatbot-messages {
     padding: 12px;
+    max-height: 250px;
   }
 
   .message-content {
@@ -217,16 +218,18 @@
   }
 
   .suggested-questions {
-    padding: 12px;
+    padding: 8px;
+    max-height: 120px;
+    overflow-y: auto;
   }
 
   .suggested-questions .ant-btn {
-    font-size: 12px;
-    padding: 6px 12px;
+    font-size: 11px;
+    padding: 4px 10px;
   }
 
   .chatbot-input {
-    padding: 12px;
+    padding: 10px;
   }
 }
 
