@@ -309,6 +309,9 @@ export const uploadCustomers = async (req: Request, res: Response) => {
 
     for (const row of data as any[]) {
       try {
+        // 디버깅: 컬럼명 확인
+        console.log('업로드 row 키:', Object.keys(row));
+
         // 거래처구분 매핑
         let customerType = CustomerType.OTHER;
         if (row['거래처구분'] === '매출처') customerType = CustomerType.SALES;
@@ -320,6 +323,10 @@ export const uploadCustomers = async (req: Request, res: Response) => {
           const number = customerCode.substring(1);
           customerCode = `C${number.padStart(4, '0')}`;
         }
+
+        // 담당자 연락처 - 여러 가지 컬럼명 시도
+        const managerContact = row['담당자 연락처'] || row['담당자연락처'] || row['담당자 휴대폰'] || row['담당자휴대폰'] || row['휴대폰'] || row['핸드폰'] || null;
+        console.log('담당자 연락처 값:', managerContact, '| row 담당자 연락처:', row['담당자 연락처']);
 
         // 기존 거래처 코드가 있는지 확인
         let customer = await customerRepo.findOne({
@@ -337,7 +344,7 @@ export const uploadCustomers = async (req: Request, res: Response) => {
           customer.phone = row['전화번호'] || null;
           customer.fax = row['팩스번호'] || null;
           customer.email = row['이메일'] || null;
-          customer.managerContact = row['담당자 연락처'] || null;
+          customer.managerContact = managerContact;
           customer.customerType = customerType;
           customer.isActive = row['활성여부'] === 'Y';
         } else {
@@ -354,7 +361,7 @@ export const uploadCustomers = async (req: Request, res: Response) => {
             phone: row['전화번호'] || null,
             fax: row['팩스번호'] || null,
             email: row['이메일'] || null,
-            managerContact: row['담당자 연락처'] || null,
+            managerContact: managerContact,
             customerType,
             isActive: row['활성여부'] === 'Y'
           });
