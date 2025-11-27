@@ -317,12 +317,8 @@ export const uploadCustomers = async (req: Request, res: Response) => {
         if (row['거래처구분'] === '매출처') customerType = CustomerType.SALES;
         else if (row['거래처구분'] === '매입처') customerType = CustomerType.PURCHASE;
 
-        // 거래처 코드 형식 정규화 (C001 -> C0001)
-        let customerCode = row['거래처코드'];
-        if (customerCode && /^C\d{1,3}$/.test(customerCode)) {
-          const number = customerCode.substring(1);
-          customerCode = `C${number.padStart(4, '0')}`;
-        }
+        // 거래처 코드 - 엑셀에 입력된 값 그대로 사용
+        const customerCode = String(row['거래처코드'] || '').trim();
 
         // 담당자 연락처 - 여러 가지 컬럼명 시도
         const managerContact = row['담당자 연락처'] || row['담당자연락처'] || row['담당자 휴대폰'] || row['담당자휴대폰'] || row['휴대폰'] || row['핸드폰'] || null;
