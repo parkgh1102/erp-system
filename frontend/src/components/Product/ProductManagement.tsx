@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconfirm, Radio, Row, Col, AutoComplete, Spin, Dropdown, Select, Tag } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
+import UploadResultModal, { UploadResultItem } from '../Common/UploadResultModal';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import ProductPrintModal from '../Print/ProductPrintModal';
 import { useAuthStore } from '../../stores/authStore';
@@ -41,6 +42,8 @@ const ProductManagement: React.FC = () => {
   const [autoCompleteOptions, setAutoCompleteOptions] = useState<{value: string}[]>([]);
   const [uploadData, setUploadData] = useState<any[]>([]);
   const [excelUploadModalVisible, setExcelUploadModalVisible] = useState(false);
+  const [uploadResultModalVisible, setUploadResultModalVisible] = useState(false);
+  const [uploadResults, setUploadResults] = useState<UploadResultItem[]>([]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [pageSize, setPageSize] = useState<number>(window.innerWidth <= 768 ? 5 : 10);
   const { currentBusiness } = useAuthStore();
@@ -253,20 +256,20 @@ const ProductManagement: React.FC = () => {
     if (!currentBusiness || data.length === 0) return;
 
     setLoading(true);
-    try {
-      let successCount = 0;
-      let failCount = 0;
+    const results: UploadResultItem[] = [];
 
-      for (const row of data) {
+    try {
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
         try {
           // 세금구분 매핑
           let taxType = 'tax_separate';
           const taxTypeValue = row['세금구분']?.toString().toLowerCase();
-          if (taxTypeValue === 'tax_inclusive' || taxTypeValue === '과세') {
+          if (taxTypeValue === 'tax_inclusive' || taxTypeValue === '과세' || taxTypeValue === '포함' || taxTypeValue === '과세(포함)') {
             taxType = 'tax_inclusive';
           } else if (taxTypeValue === 'tax_free' || taxTypeValue === '면세') {
             taxType = 'tax_free';
-          } else if (taxTypeValue === 'tax_separate' || taxTypeValue === '별도') {
+          } else if (taxTypeValue === 'tax_separate' || taxTypeValue === '별도' || taxTypeValue === '과세(별도)') {
             taxType = 'tax_separate';
           }
 
@@ -281,14 +284,36 @@ const ProductManagement: React.FC = () => {
             taxType: taxType,
             memo: row['비고'] || ''
           });
-          successCount++;
-        } catch (error) {
-          failCount++;
+          results.push({
+            rowNumber: i + 2,
+            data: row,
+            success: true
+          });
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류';
+          results.push({
+            rowNumber: i + 2,
+            data: row,
+            success: false,
+            error: errorMessage
+          });
           console.error('Product upload error:', error);
         }
       }
 
-      message.success(`${successCount}건 업로드 완료, ${failCount}건 실패`);
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.filter(r => !r.success).length;
+
+      // 결과 저장 및 모달 표시
+      setUploadResults(results);
+      setUploadResultModalVisible(true);
+
+      if (failCount === 0) {
+        message.success(`${successCount}건 모두 업로드 완료!`);
+      } else {
+        message.warning(`${successCount}건 성공, ${failCount}건 실패 - 상세 내역을 확인하세요.`);
+      }
+
       fetchProducts();
     } catch (error) {
       message.error('엑셀 업로드에 실패했습니다.');
@@ -1085,6 +1110,20 @@ const ProductManagement: React.FC = () => {
             : true
         )}
         title="품목 관리"
+      />
+
+      {/* 업로드 결과 모달 */}
+      <UploadResultModal
+        visible={uploadResultModalVisible}
+        onClose={() => setUploadResultModalVisible(false)}
+        results={uploadResults}
+        title="품목 업로드 결과"
+        columns={[
+          { title: '품목코드', dataIndex: '품목코드' },
+          { title: '품목명', dataIndex: '품목명' },
+          { title: '규격', dataIndex: '규격' },
+          { title: '단위', dataIndex: '단위' },
+        ]}
       />
     </div>
   );

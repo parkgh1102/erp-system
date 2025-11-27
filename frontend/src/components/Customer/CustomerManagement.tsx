@@ -15,6 +15,7 @@ import {
 } from 'antd';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import ExcelBulkUploadModal from '../Common/ExcelBulkUploadModal';
+import UploadResultModal, { UploadResultItem } from '../Common/UploadResultModal';
 import {
   PlusOutlined,
   SearchOutlined,
@@ -75,6 +76,8 @@ const CustomerManagement: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [excelUploadModalVisible, setExcelUploadModalVisible] = useState(false);
   const [printModalVisible, setPrintModalVisible] = useState(false);
+  const [uploadResultModalVisible, setUploadResultModalVisible] = useState(false);
+  const [uploadResults, setUploadResults] = useState<UploadResultItem[]>([]);
 
   useEffect(() => {
     if (currentBusiness) {
@@ -357,35 +360,57 @@ const CustomerManagement: React.FC = () => {
     if (!currentBusiness || data.length === 0) return;
 
     setLoading(true);
-    try {
-      let successCount = 0;
-      let failCount = 0;
+    const results: UploadResultItem[] = [];
 
-      for (const row of data) {
+    try {
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
         try {
           await customerAPI.create(currentBusiness.id, {
             customerCode: row['거래처코드'] || '',
             name: row['거래처명'] || '',
             businessNumber: row['사업자번호']?.toString().replace(/-/g, '') || '',
             representative: row['대표자'] || '',
-            customerType: '기타',
+            customerType: row['거래처구분'] || '기타',
             address: row['주소'] || '',
             phone: row['전화번호'] || '',
             fax: row['팩스번호'] || '',
             email: row['이메일'] || '',
-            managerContact: row['담당자 연락처'] || '',
+            managerContact: row['담당자 연락처'] || row['담당자연락처'] || '',
             businessType: row['업태'] || '',
             businessItem: row['종목'] || '',
             memo: row['비고'] || ''
           });
-          successCount++;
-        } catch (error) {
-          failCount++;
+          results.push({
+            rowNumber: i + 2, // 엑셀 기준 (헤더 제외)
+            data: row,
+            success: true
+          });
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류';
+          results.push({
+            rowNumber: i + 2,
+            data: row,
+            success: false,
+            error: errorMessage
+          });
           logger.error('Customer upload error:', error);
         }
       }
 
-      message.success(`${successCount}건 업로드 완료, ${failCount}건 실패`);
+      const successCount = results.filter(r => r.success).length;
+      const failCount = results.filter(r => !r.success).length;
+
+      // 결과 저장 및 모달 표시
+      setUploadResults(results);
+      setUploadResultModalVisible(true);
+
+      if (failCount === 0) {
+        message.success(`${successCount}건 모두 업로드 완료!`);
+      } else {
+        message.warning(`${successCount}건 성공, ${failCount}건 실패 - 상세 내역을 확인하세요.`);
+      }
+
       loadCustomers();
     } catch (error) {
       message.error('엑셀 업로드에 실패했습니다.');
@@ -1108,6 +1133,20 @@ const CustomerManagement: React.FC = () => {
             : true
         )}
         title="거래처 관리"
+      />
+
+      {/* 업로드 결과 모달 */}
+      <UploadResultModal
+        visible={uploadResultModalVisible}
+        onClose={() => setUploadResultModalVisible(false)}
+        results={uploadResults}
+        title="거래처 업로드 결과"
+        columns={[
+          { title: '거래처코드', dataIndex: '거래처코드' },
+          { title: '거래처명', dataIndex: '거래처명' },
+          { title: '사업자번호', dataIndex: '사업자번호' },
+          { title: '대표자', dataIndex: '대표자' },
+        ]}
       />
     </div>
   );
