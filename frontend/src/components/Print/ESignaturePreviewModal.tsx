@@ -201,8 +201,8 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
               }
               .signature-box-overlay {
                 position: absolute !important;
-                top: 20px !important;
-                left: 50px !important;
+                top: 12px !important;
+                left: 15px !important;
                 z-index: 10 !important;
                 display: flex !important;
                 align-items: center !important;
@@ -219,8 +219,8 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
                 }
                 .signature-box-overlay {
                   position: absolute !important;
-                  top: 20px !important;
-                  left: 50px !important;
+                  top: 12px !important;
+                  left: 15px !important;
                 }
               }
             </style>
@@ -574,13 +574,13 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
             overflow: 'visible'
           }}
         >
-          {/* 서명 네모칸 오버레이 - 우측 상단 */}
+          {/* 서명 네모칸 오버레이 - 좌측 상단 (제목 왼쪽 빈 공간) */}
           <div
             className="signature-box-overlay"
             style={{
               position: 'absolute',
               top: '12px',
-              right: '15px',
+              left: '15px',
               zIndex: 10,
               display: 'flex',
               alignItems: 'center',
