@@ -403,6 +403,17 @@ export const uploadProducts = async (req: Request, res: Response) => {
 
     for (const row of data as any[]) {
       try {
+        // 세금구분 매핑 (한글 -> 영문 코드)
+        let taxType = 'tax_separate'; // 기본값: 과세(별도)
+        const rawTaxType = row['세금구분'] || '';
+        if (rawTaxType === '면세' || rawTaxType === 'tax_free') {
+          taxType = 'tax_free';
+        } else if (rawTaxType === '과세(포함)' || rawTaxType === '포함' || rawTaxType === 'tax_inclusive') {
+          taxType = 'tax_inclusive';
+        } else if (rawTaxType === '과세(별도)' || rawTaxType === '별도' || rawTaxType === '과세' || rawTaxType === 'tax_separate') {
+          taxType = 'tax_separate';
+        }
+
         const product = productRepo.create({
           businessId,
           productCode: row['품목코드'],
@@ -413,7 +424,7 @@ export const uploadProducts = async (req: Request, res: Response) => {
           buyPrice: parseFloat(row['매입단가']) || 0,
           sellPrice: parseFloat(row['매출단가']) || 0,
           category: row['분류'] || null,
-          taxType: row['세금구분'] || 'tax_separate',
+          taxType: taxType,
           memo: row['비고'] || null,
           isActive: row['활성여부'] === 'Y'
         });
