@@ -9,7 +9,13 @@ services:
     region: singapore  # 한국에서 가장 가까운 리전
     plan: free
     rootDir: backend
-    buildCommand: npm install && npm run build
+    buildCommand: |
+      echo "📦 Installing dependencies..."
+      npm ci || npm install
+      echo "🔨 Building TypeScript..."
+      npm run build
+      echo "✅ Build complete"
+      ls -la dist/
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
