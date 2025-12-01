@@ -1,5 +1,6 @@
 # Render Blueprint - Backend + Database
 # https://render.com/docs/blueprint-spec
+# Last updated: 2025-12-01 - Fixed startCommand to use direct node execution
 
 services:
   # Backend API Service
