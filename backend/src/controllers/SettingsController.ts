@@ -22,21 +22,6 @@ export const SettingsController = {
   // 이메일로 보안 설정 조회 (로그인 전 - 인증 불필요)
   async getSecuritySettingsByEmail(req: Request, res: Response) {
     try {
-      // DB 연결 상태 확인 및 재시도 (최대 1회)
-      if (!AppDataSource.isInitialized) {
-        console.log('⚠️ DB not initialized in getSecuritySettingsByEmail, attempting to initialize...');
-        try {
-          await AppDataSource.initialize();
-          console.log('✅ DB initialized successfully');
-        } catch (dbError) {
-          console.error('❌ DB initialization failed:', dbError);
-          return res.status(503).json({
-            success: false,
-            message: '서버가 준비 중입니다. 잠시 후 다시 시도해주세요.'
-          });
-        }
-      }
-
       const { email } = req.params;
 
       // 사용자 찾기

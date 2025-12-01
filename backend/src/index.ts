@@ -193,38 +193,54 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
 });
 
 async function bootstrap() {
-  // 1. HTTP 서버를 먼저 시작 (헬스체크가 응답할 수 있도록)
+  // 1. 데이터베이스 먼저 연결 (최대 3회 재시도)
+  let retries = 3;
+  let connected = false;
+
+  while (retries > 0 && !connected) {
+    try {
+      console.log(`⏳ Connecting to database... (attempts remaining: ${retries})`);
+      await AppDataSource.initialize();
+      isDatabaseConnected = true;
+      connected = true;
+      console.log('✅ Database connected successfully');
+    } catch (error) {
+      retries--;
+      console.error(`❌ Database connection failed (attempts remaining: ${retries}):`, error);
+
+      if (retries > 0) {
+        console.log('🔄 Retrying in 3 seconds...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      } else {
+        console.error('⚠️ All database connection attempts failed');
+        if (validatedEnv.NODE_ENV === 'production') {
+          // 프로덕션에서는 치명적 오류로 간주하고 프로세스 종료
+          console.error('💥 Exiting due to database connection failure');
+          process.exit(1);
+        }
+      }
+    }
+  }
+
+  // 2. HTTP 서버 시작
   const server = app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Health: http://localhost:${PORT}/health`);
-    console.log(`⏳ Connecting to database...`);
+    console.log(`✅ Server is ready to accept requests`);
   });
 
-  // 2. 데이터베이스 연결 (비동기)
-  try {
-    await AppDataSource.initialize();
-    isDatabaseConnected = true;
-    console.log('✅ Database connected');
-  } catch (error) {
-    console.error('❌ Database connection failed:', error);
-    // 데이터베이스 연결 실패해도 서버는 유지 (재시도 가능)
-    // 하지만 API 요청은 실패할 것임
-
-    // 프로덕션에서는 일정 시간 후 재시도
-    if (validatedEnv.NODE_ENV === 'production') {
-      console.log('🔄 Retrying database connection in 5 seconds...');
-      setTimeout(async () => {
-        try {
-          await AppDataSource.initialize();
-          isDatabaseConnected = true;
-          console.log('✅ Database connected (retry successful)');
-        } catch (retryError) {
-          console.error('❌ Database connection retry failed:', retryError);
-          console.error('⚠️ Server is running but database is not connected');
-        }
-      }, 5000);
-    }
-  }
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('⏸️ SIGTERM signal received: closing HTTP server');
+    server.close(async () => {
+      console.log('🔌 HTTP server closed');
+      if (AppDataSource.isInitialized) {
+        await AppDataSource.destroy();
+        console.log('🔌 Database connection closed');
+      }
+      process.exit(0);
+    });
+  });
 }
 
 bootstrap();
