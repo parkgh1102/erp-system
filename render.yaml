@@ -14,8 +14,11 @@ services:
       npm ci || npm install
       echo "🔨 Building TypeScript..."
       npm run build
-      echo "✅ Build complete"
+      echo "✅ Build complete - Checking dist folder..."
       ls -la dist/
+      echo "📄 Checking dist/index.js..."
+      ls -lh dist/index.js
+      echo "✅ dist/index.js exists and is ready"
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
