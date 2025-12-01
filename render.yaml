@@ -10,16 +10,27 @@ services:
     plan: free
     rootDir: backend
     buildCommand: |
-      echo "📦 Installing dependencies..."
-      npm ci || npm install
+      echo "📍 Current directory: $(pwd)"
+      echo "📁 Directory contents:"
+      ls -la
+      echo ""
+      echo "📦 Installing dependencies (no workspace)..."
+      npm install --no-workspaces --ignore-scripts
+      echo ""
       echo "🔨 Building TypeScript..."
       npm run build
+      echo ""
       echo "✅ Build complete - Checking dist folder..."
       ls -la dist/
+      echo ""
       echo "📄 Checking dist/index.js..."
       ls -lh dist/index.js
+      echo ""
+      echo "📋 Checking package.json start script..."
+      cat package.json | grep -A1 '"start"'
+      echo ""
       echo "✅ dist/index.js exists and is ready"
-    startCommand: npm start
+    startCommand: node dist/index.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
