@@ -47,7 +47,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Payment.prototype, "transactionId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'decimal', precision: 15, scale: 2, comment: '금액' }),
+    (0, typeorm_1.Column)({ type: 'integer', comment: '금액' }),
     __metadata("design:type", Number)
 ], Payment.prototype, "amount", void 0);
 __decorate([
