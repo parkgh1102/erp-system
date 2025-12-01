@@ -15,8 +15,11 @@ services:
       echo "📁 Directory contents:"
       ls -la
       echo ""
-      echo "📦 Installing dependencies (no workspace)..."
-      npm install --no-workspaces --ignore-scripts
+      echo "📦 Installing dependencies with native modules..."
+      npm install --no-workspaces
+      echo ""
+      echo "🔨 Rebuilding native modules..."
+      npm rebuild bcrypt --build-from-source
       echo ""
       echo "🔨 Building TypeScript..."
       npm run build
@@ -26,9 +29,6 @@ services:
       echo ""
       echo "📄 Checking dist/index.js..."
       ls -lh dist/index.js
-      echo ""
-      echo "📋 Checking package.json start script..."
-      cat package.json | grep -A1 '"start"'
       echo ""
       echo "✅ dist/index.js exists and is ready"
     startCommand: node dist/index.js
