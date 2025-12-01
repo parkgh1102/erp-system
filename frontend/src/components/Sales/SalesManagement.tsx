@@ -423,13 +423,21 @@ const SalesManagement: React.FC = () => {
               }
             }
           );
+          console.log('💰 전잔금 API 응답 (전자서명):', {
+            customerId: selectedSale.customerId,
+            beforeDate: selectedSale.transactionDate || selectedSale.saleDate,
+            response: response.data
+          });
           if (response.data.success) {
             balanceAmount = response.data.data.balance || 0;
+            console.log('✅ 전잔금 설정:', balanceAmount);
           }
         } catch (error) {
-          console.error('전잔금 조회 실패:', error);
+          console.error('❌ 전잔금 조회 실패:', error);
           // 실패해도 0으로 계속 진행
         }
+      } else {
+        console.log('⚠️ 거래처 ID가 없어 전잔금 조회를 건너뜁니다.');
       }
 
       // TransactionData 형식으로 변환
@@ -597,13 +605,21 @@ const SalesManagement: React.FC = () => {
                 }
               }
             );
+            console.log('💰 전잔금 API 응답:', {
+              customerId: sale.customerId,
+              beforeDate: sale.transactionDate || sale.saleDate,
+              response: response.data
+            });
             if (response.data.success) {
               balanceAmount = response.data.data.balance || 0;
+              console.log('✅ 전잔금 설정:', balanceAmount);
             }
           } catch (error) {
-            console.error('전잔금 조회 실패:', error);
+            console.error('❌ 전잔금 조회 실패:', error);
             // 실패해도 0으로 계속 진행
           }
+        } else {
+          console.log('⚠️ 거래처 ID가 없어 전잔금 조회를 건너뜁니다.');
         }
 
         // TransactionData 형식으로 변환
