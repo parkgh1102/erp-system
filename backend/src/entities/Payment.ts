@@ -28,7 +28,7 @@ export class Payment {
   @Column({ nullable: true, comment: '원거래' })
   transactionId?: number;
 
-  @Column({ type: 'decimal', precision: 15, scale: 2, comment: '금액' })
+  @Column({ type: 'integer', comment: '금액' })
   amount!: number;
 
   @Column({ length: 50, nullable: true, comment: '수금/입금방법' })

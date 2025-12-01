@@ -171,17 +171,11 @@ export const AuthController = {
     try {
       // DB 연결 상태 확인
       if (!AppDataSource.isInitialized) {
-        console.log('⚠️ DB not initialized, attempting to initialize...');
-        try {
-          await AppDataSource.initialize();
-          console.log('✅ DB initialized successfully');
-        } catch (dbError) {
-          console.error('❌ DB initialization failed:', dbError);
-          return res.status(503).json({
-            success: false,
-            message: '서버가 준비 중입니다. 잠시 후 다시 시도해주세요.'
-          });
-        }
+        console.error('❌ DB not initialized');
+        return res.status(503).json({
+          success: false,
+          message: '서버가 준비 중입니다. 잠시 후 다시 시도해주세요.'
+        });
       }
 
       const { error, value } = loginSchema.validate(req.body);
