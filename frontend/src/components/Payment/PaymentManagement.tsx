@@ -683,34 +683,30 @@ const PaymentManagement: React.FC = () => {
           <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>수금/지급 관리</h2>
         </Col>
         <Col style={{ marginLeft: '100px' }}>
-          <Space size="middle" wrap>
-            <AutoComplete
-              options={autoCompleteOptions}
-              value={searchText}
-              onChange={handleSearchChange}
-              onSelect={(value) => setSearchText(value)}
-              style={{ width: window.innerWidth <= 768 ? 250 : 300 }}
-            >
-              <Input.Search
-                placeholder="거래처, 수금/지급금액, 메모 등으로 검색 (2글자 이상)"
-                allowClear
-                enterButton={<SearchOutlined />}
-                size="middle"
-                onSearch={handleSearch}
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Space size="middle" wrap>
+              <AutoComplete
+                options={autoCompleteOptions}
+                value={searchText}
+                onChange={handleSearchChange}
+                onSelect={(value) => setSearchText(value)}
+                style={{ width: window.innerWidth <= 768 ? 250 : 300 }}
+              >
+                <Input.Search
+                  placeholder="거래처, 수금/지급금액, 메모 등으로 검색 (2글자 이상)"
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  size="middle"
+                  onSearch={handleSearch}
+                />
+              </AutoComplete>
+              <DatePicker.RangePicker
+                style={{ width: 300 }}
+                value={dateRange}
+                onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+                format="YYYY-MM-DD"
               />
-            </AutoComplete>
-            <DatePicker.RangePicker
-              style={{ width: 300 }}
-              value={dateRange}
-              onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-              format="YYYY-MM-DD"
-            />
-            <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => {
-                setDateRange([dayjs(startDate), dayjs(endDate)]);
-              }}
-            />
-            <Button
+              <Button
               type="primary"
               icon={<MoneyCollectOutlined />}
               onClick={() => handleAdd('receipt')}
@@ -805,6 +801,12 @@ const PaymentManagement: React.FC = () => {
             >
               인쇄
             </Button>
+            </Space>
+            <DateRangeFilter
+              onDateRangeChange={(startDate, endDate) => {
+                setDateRange([dayjs(startDate), dayjs(endDate)]);
+              }}
+            />
           </Space>
         </Col>
       </Row>

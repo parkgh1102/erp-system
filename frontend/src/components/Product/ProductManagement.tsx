@@ -3,6 +3,7 @@ import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconf
 import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import UploadResultModal, { UploadResultItem } from '../Common/UploadResultModal';
+import DateRangeFilter from '../Common/DateRangeFilter';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import ProductPrintModal from '../Print/ProductPrintModal';
 import { useAuthStore } from '../../stores/authStore';
@@ -39,6 +40,10 @@ const ProductManagement: React.FC = () => {
   const [specOptions, setSpecOptions] = useState<string[]>(['box', 'ea', 'pallet', '자루', 'set', 'pack']);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState<string>('');
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
+    dayjs().subtract(7, 'day'),
+    dayjs()
+  ]);
   const [autoCompleteOptions, setAutoCompleteOptions] = useState<{value: string}[]>([]);
   const [uploadData, setUploadData] = useState<any[]>([]);
   const [excelUploadModalVisible, setExcelUploadModalVisible] = useState(false);
@@ -649,112 +654,119 @@ const ProductManagement: React.FC = () => {
           <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>품목 관리</h2>
         </Col>
         <Col style={{ marginLeft: '100px' }}>
-          <Space size="middle" wrap>
-            <AutoComplete
-              options={autoCompleteOptions}
-              value={searchText}
-              onChange={handleSearchChange}
-              onSelect={(value) => setSearchText(value)}
-              style={{ width: 300 }}
-            >
-              <Input.Search
-                placeholder="품목명, 품목코드, 규격, 단위, 분류 등으로 검색 (2글자 이상)"
-                allowClear
-                enterButton={<SearchOutlined />}
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Space size="middle" wrap>
+              <AutoComplete
+                options={autoCompleteOptions}
+                value={searchText}
+                onChange={handleSearchChange}
+                onSelect={(value) => setSearchText(value)}
+                style={{ width: 300 }}
+              >
+                <Input.Search
+                  placeholder="품목명, 품목코드, 규격, 단위, 분류 등으로 검색 (2글자 이상)"
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  size="middle"
+                  onSearch={handleSearch}
+                />
+              </AutoComplete>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+                추가
+              </Button>
+              <Button
+                icon={<ImportOutlined />}
                 size="middle"
-                onSearch={handleSearch}
-              />
-            </AutoComplete>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-              추가
-            </Button>
-            <Button
-              icon={<ImportOutlined />}
-              size="middle"
-              onClick={() => setExcelUploadModalVisible(true)}
-              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
-            >
-              엑셀업로드
-            </Button>
-            <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-              <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
-                파일저장
+                onClick={() => setExcelUploadModalVisible(true)}
+                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+              >
+                엑셀업로드
               </Button>
-            </Dropdown>
-            <Button
-              onClick={handleSelectAll}
-              type="default"
-              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
-            >
-              {selectedRowKeys.length === filteredProducts.length && filteredProducts.length > 0 ? '전체 해제' : '전체 선택'}
-            </Button>
-            <Popconfirm
-              title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
-              onConfirm={handleBulkDelete}
-              okText="예"
-              cancelText="아니오"
-              disabled={selectedRowKeys.length === 0}
-              okButtonProps={{
-                autoFocus: true,
-                size: 'large',
-                style: { minWidth: '80px', height: '40px', fontSize: '16px' }
-              }}
-              cancelButtonProps={{
-                size: 'large',
-                style: { minWidth: '80px', height: '40px', fontSize: '16px' }
-              }}
-              placement="top"
-              overlayStyle={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 9999,
-                pointerEvents: 'auto'
-              }}
-              styles={{
-                body: {
-                  padding: '20px',
-                  fontSize: '18px',
-                  fontWeight: '500',
-                  minWidth: '350px',
-                  textAlign: 'center',
-                  borderRadius: '12px',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
-                }
-              }}
-              transitionName=""
-              mouseEnterDelay={0}
-              mouseLeaveDelay={0}
-            >
-              <Button danger disabled={selectedRowKeys.length === 0}>
-                선택 삭제 ({selectedRowKeys.length})
+              <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
+                <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                  파일저장
+                </Button>
+              </Dropdown>
+              <Button
+                onClick={handleSelectAll}
+                type="default"
+                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+              >
+                {selectedRowKeys.length === filteredProducts.length && filteredProducts.length > 0 ? '전체 해제' : '전체 선택'}
               </Button>
-            </Popconfirm>
-            <Button
-              onClick={() => handleExport('excel')}
-              icon={<FileExcelOutlined />}
-              style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
-              size="middle"
-            >
-              엑셀
-            </Button>
-            <Button
-              onClick={() => handleExport('pdf')}
-              icon={<FilePdfOutlined />}
-              style={{ backgroundColor: '#fa541c', borderColor: '#fa541c', color: 'white' }}
-              size="middle"
-            >
-              PDF
-            </Button>
-            <Button
-              onClick={() => setPrintModalVisible(true)}
-              icon={<PrinterOutlined />}
-              style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
-              size="middle"
-            >
-              인쇄
-            </Button>
+              <Popconfirm
+                title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
+                onConfirm={handleBulkDelete}
+                okText="예"
+                cancelText="아니오"
+                disabled={selectedRowKeys.length === 0}
+                okButtonProps={{
+                  autoFocus: true,
+                  size: 'large',
+                  style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+                }}
+                cancelButtonProps={{
+                  size: 'large',
+                  style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+                }}
+                placement="top"
+                overlayStyle={{
+                  position: 'fixed',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 9999,
+                  pointerEvents: 'auto'
+                }}
+                styles={{
+                  body: {
+                    padding: '20px',
+                    fontSize: '18px',
+                    fontWeight: '500',
+                    minWidth: '350px',
+                    textAlign: 'center',
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
+                  }
+                }}
+                transitionName=""
+                mouseEnterDelay={0}
+                mouseLeaveDelay={0}
+              >
+                <Button danger disabled={selectedRowKeys.length === 0}>
+                  선택 삭제 ({selectedRowKeys.length})
+                </Button>
+              </Popconfirm>
+              <Button
+                onClick={() => handleExport('excel')}
+                icon={<FileExcelOutlined />}
+                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
+                size="middle"
+              >
+                엑셀
+              </Button>
+              <Button
+                onClick={() => handleExport('pdf')}
+                icon={<FilePdfOutlined />}
+                style={{ backgroundColor: '#fa541c', borderColor: '#fa541c', color: 'white' }}
+                size="middle"
+              >
+                PDF
+              </Button>
+              <Button
+                onClick={() => setPrintModalVisible(true)}
+                icon={<PrinterOutlined />}
+                style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
+                size="middle"
+              >
+                인쇄
+              </Button>
+            </Space>
+            <DateRangeFilter
+              onDateRangeChange={(startDate, endDate) => {
+                setDateRange([dayjs(startDate), dayjs(endDate)]);
+              }}
+            />
           </Space>
         </Col>
       </Row>

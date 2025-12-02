@@ -1274,35 +1274,31 @@ const SalesManagement: React.FC = () => {
           <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>매출 관리</h2>
         </Col>
         <Col style={{ marginLeft: '100px' }}>
-          <Space size={window.innerWidth <= 768 ? 4 : 8} wrap>
-            <AutoComplete
-              options={autoCompleteOptions}
-              value={searchText}
-              onChange={handleSearchChange}
-              onSelect={(value) => setSearchText(value)}
-              style={{ width: window.innerWidth <= 768 ? 250 : 300 }}
-            >
-              <Input.Search
-                placeholder="거래처, 품목명, 금액, 메모 등으로 검색 (2글자 이상)"
-                allowClear
-                enterButton={<SearchOutlined />}
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Space size={window.innerWidth <= 768 ? 4 : 8} wrap>
+              <AutoComplete
+                options={autoCompleteOptions}
+                value={searchText}
+                onChange={handleSearchChange}
+                onSelect={(value) => setSearchText(value)}
+                style={{ width: window.innerWidth <= 768 ? 250 : 300 }}
+              >
+                <Input.Search
+                  placeholder="거래처, 품목명, 금액, 메모 등으로 검색 (2글자 이상)"
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  size={window.innerWidth <= 768 ? "small" : "middle"}
+                  onSearch={handleSearch}
+                />
+              </AutoComplete>
+              <RangePicker
+                style={{ width: 300 }}
+                value={dateRange}
+                onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+                format="YYYY-MM-DD"
                 size={window.innerWidth <= 768 ? "small" : "middle"}
-                onSearch={handleSearch}
               />
-            </AutoComplete>
-            <RangePicker
-              style={{ width: 300 }}
-              value={dateRange}
-              onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-              format="YYYY-MM-DD"
-              size={window.innerWidth <= 768 ? "small" : "middle"}
-            />
-            <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => {
-                setDateRange([dayjs(startDate), dayjs(endDate)]);
-              }}
-            />
-            {!isSalesViewer && (
+              {!isSalesViewer && (
               <>
                 <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size={window.innerWidth <= 768 ? "small" : "middle"}>
                   추가
@@ -1450,6 +1446,12 @@ const SalesManagement: React.FC = () => {
             >
               전자서명
             </Button>
+          </Space>
+          <DateRangeFilter
+            onDateRangeChange={(startDate, endDate) => {
+              setDateRange([dayjs(startDate), dayjs(endDate)]);
+            }}
+          />
           </Space>
         </Col>
       </Row>
