@@ -246,18 +246,66 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
           </Col>
         </Row>
 
-        <Form.Item
-          label="주소"
-          name="address"
-          rules={[
-            { max: 500, message: '주소는 500자 이내로 입력해주세요.' }
-          ]}
-        >
-          <Input.TextArea
-            rows={3}
-            placeholder="회사 주소를 입력하세요"
-          />
-        </Form.Item>
+        <Row gutter={16}>
+          <Col span={18}>
+            <Form.Item
+              label="주소"
+              name="address"
+              rules={[
+                { max: 500, message: '주소는 500자 이내로 입력해주세요.' }
+              ]}
+            >
+              <Input.TextArea
+                rows={3}
+                placeholder="주소를 입력하거나 주소찾기 버튼을 클릭하세요"
+              />
+            </Form.Item>
+          </Col>
+          <Col span={6}>
+            <Form.Item label=" " colon={false}>
+              <Button
+                type="primary"
+                onClick={() => {
+                  if (!(window as any).daum) {
+                    alert('주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+                    return;
+                  }
+
+                  new (window as any).daum.Postcode({
+                    oncomplete: function(data: any) {
+                      let addr = '';
+                      let extraAddr = '';
+
+                      if (data.userSelectedType === 'R') {
+                        addr = data.roadAddress;
+                      } else {
+                        addr = data.jibunAddress;
+                      }
+
+                      if (data.userSelectedType === 'R') {
+                        if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
+                          extraAddr += data.bname;
+                        }
+                        if (data.buildingName !== '' && data.apartment === 'Y') {
+                          extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                        }
+                        if (extraAddr !== '') {
+                          extraAddr = ' (' + extraAddr + ')';
+                        }
+                      }
+
+                      const fullAddress = addr + extraAddr;
+                      form.setFieldsValue({ address: fullAddress });
+                    }
+                  }).open();
+                }}
+                style={{ width: '100%' }}
+              >
+                주소찾기
+              </Button>
+            </Form.Item>
+          </Col>
+        </Row>
 
         <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>
           <Space style={{ width: '100%', justifyContent: 'flex-end' }}>

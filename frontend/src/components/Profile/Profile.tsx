@@ -495,10 +495,10 @@ const Profile: React.FC = () => {
                       </div>
                     )}
                   </Col>
-                  <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+                  <Col xs={24} sm={18} md={18} lg={18} xl={18}>
                     {businessEditing ? (
                       <Form.Item label="주소" name="address">
-                        <Input.TextArea rows={2} />
+                        <Input.TextArea rows={2} placeholder="주소를 입력하거나 주소찾기 버튼을 클릭하세요" />
                       </Form.Item>
                     ) : (
                       <div>
@@ -508,6 +508,52 @@ const Profile: React.FC = () => {
                       </div>
                     )}
                   </Col>
+                  {businessEditing && (
+                    <Col xs={24} sm={6} md={6} lg={6} xl={6}>
+                      <Form.Item label=" " colon={false}>
+                        <Button
+                          type="primary"
+                          onClick={() => {
+                            if (!(window as any).daum) {
+                              message.warning('주소 검색 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+                              return;
+                            }
+
+                            new (window as any).daum.Postcode({
+                              oncomplete: function(data: any) {
+                                let addr = '';
+                                let extraAddr = '';
+
+                                if (data.userSelectedType === 'R') {
+                                  addr = data.roadAddress;
+                                } else {
+                                  addr = data.jibunAddress;
+                                }
+
+                                if (data.userSelectedType === 'R') {
+                                  if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
+                                    extraAddr += data.bname;
+                                  }
+                                  if (data.buildingName !== '' && data.apartment === 'Y') {
+                                    extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                                  }
+                                  if (extraAddr !== '') {
+                                    extraAddr = ' (' + extraAddr + ')';
+                                  }
+                                }
+
+                                const fullAddress = addr + extraAddr;
+                                businessForm.setFieldsValue({ address: fullAddress });
+                              }
+                            }).open();
+                          }}
+                          style={{ width: '100%' }}
+                        >
+                          주소찾기
+                        </Button>
+                      </Form.Item>
+                    </Col>
+                  )}
                   <Col xs={24} sm={12} md={12} lg={12} xl={12}>
                     {businessEditing ? (
                       <Form.Item label="팩스" name="fax">
