@@ -6,10 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self';
-                   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://t1.daumcdn.net;
-                   style-src 'self' 'unsafe-inline';
-                   img-src 'self' data: https:;
+                   script-src 'self' 'unsafe-eval' 'unsafe-inline' https://t1.daumcdn.net https://ssl.daumcdn.net;
+                   style-src 'self' 'unsafe-inline' https://t1.daumcdn.net;
+                   img-src 'self' data: https: https://t1.daumcdn.net;
                    font-src 'self' data:;
+                   frame-src https://postcode.map.daum.net;
                    connect-src 'self' http://localhost:3001 https://api.webapperp.ai.kr https://erp-backend-gaee.onrender.com https://erp-backend-p8eh.onrender.com ws://localhost:*;">
     <title>ERP 통합 시스템</title>
     <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
