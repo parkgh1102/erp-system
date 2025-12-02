@@ -3,6 +3,7 @@ import { Card, Row, Col, Select, DatePicker, Button, Table, Space, message, Moda
 import { SearchOutlined, PrinterOutlined, FilePdfOutlined, ExportOutlined, DollarOutlined, UserOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import { useReactToPrint } from 'react-to-print';
 import SignatureEditModal from './SignatureEditModal';
+import DateRangeFilter from '../Common/DateRangeFilter';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -485,6 +486,11 @@ const TransactionLedgerManagement: React.FC = () => {
               onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
               format="YYYY-MM-DD"
               size="middle"
+            />
+            <DateRangeFilter
+              onDateRangeChange={(startDate, endDate) => {
+                setDateRange([dayjs(startDate), dayjs(endDate)]);
+              }}
             />
             <Button
               type="primary"

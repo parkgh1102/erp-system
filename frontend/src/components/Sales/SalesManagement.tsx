@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
+import DateRangeFilter from '../Common/DateRangeFilter';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -1295,6 +1296,11 @@ const SalesManagement: React.FC = () => {
               onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
               format="YYYY-MM-DD"
               size={window.innerWidth <= 768 ? "small" : "middle"}
+            />
+            <DateRangeFilter
+              onDateRangeChange={(startDate, endDate) => {
+                setDateRange([dayjs(startDate), dayjs(endDate)]);
+              }}
             />
             {!isSalesViewer && (
               <>

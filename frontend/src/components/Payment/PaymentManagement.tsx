@@ -6,6 +6,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { paymentAPI, customerAPI } from '../../utils/api';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
+import DateRangeFilter from '../Common/DateRangeFilter';
 import PaymentPrintModal from '../Print/PaymentPrintModal';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -703,6 +704,11 @@ const PaymentManagement: React.FC = () => {
               value={dateRange}
               onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
               format="YYYY-MM-DD"
+            />
+            <DateRangeFilter
+              onDateRangeChange={(startDate, endDate) => {
+                setDateRange([dayjs(startDate), dayjs(endDate)]);
+              }}
             />
             <Button
               type="primary"
