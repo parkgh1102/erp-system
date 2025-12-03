@@ -115,6 +115,83 @@ npm run build
 npm start
 ```
 
+## 🌐 배포
+
+### Azure 배포 (권장 - 한국 리전 지원)
+ERP 시스템을 Microsoft Azure에 배포하는 방법을 제공합니다.
+
+**빠른 시작 가이드:**
+- ⚡ [AZURE_QUICK_START.md](./AZURE_QUICK_START.md) - 10분 만에 배포하기
+- 🔵 [AZURE_DEPLOYMENT_GUIDE.md](./AZURE_DEPLOYMENT_GUIDE.md) - 전체 배포 가이드
+
+**추천 아키텍처:**
+- Frontend: Azure Static Web Apps (무료 SSL + 자동 배포)
+- Backend: Azure App Service (Linux + Node.js 20)
+- Database: Azure Database for PostgreSQL (Flexible Server)
+- Domain: Azure 자동 제공 또는 커스텀 도메인
+
+**원클릭 배포:**
+```powershell
+# PowerShell에서 실행
+.\deploy-azure.ps1
+```
+
+**수동 배포:**
+```bash
+# Azure CLI 로그인
+az login
+
+# 배포 스크립트 실행
+cd backend
+npm run build
+az webapp create --resource-group erp-system-rg --plan erp-plan --name erp-backend --runtime "NODE|20-lts"
+az webapp deployment source config-zip --resource-group erp-system-rg --name erp-backend --src deploy.zip
+```
+
+**월 예상 비용:**
+- Free 티어: ~₩35,000/월 (~$27)
+- 일반 사용: ~₩40,000-50,000/월 (~$30-40)
+
+**장점:**
+- ✅ 한국 리전 지원 (Korea Central)
+- ✅ 낮은 레이턴시
+- ✅ GitHub Actions 자동 배포
+- ✅ 무료 SSL 인증서
+- ✅ 자동 스케일링
+
+### AWS 배포
+ERP 시스템을 AWS에 배포하는 방법을 제공합니다.
+
+**빠른 시작 가이드:**
+- 📘 [AWS_QUICK_START.md](./AWS_QUICK_START.md) - 5분 만에 배포하기
+- 📗 [AWS_DEPLOYMENT_GUIDE.md](./AWS_DEPLOYMENT_GUIDE.md) - 전체 배포 가이드
+- 📊 [AWS_OPTIONS_COMPARISON.md](./AWS_OPTIONS_COMPARISON.md) - 배포 옵션 비교
+
+**추천 아키텍처:**
+- Frontend: AWS Amplify (자동 배포 + SSL)
+- Backend: Elastic Beanstalk (자동 스케일링)
+- Database: RDS PostgreSQL (관리형 DB)
+- Domain: Route 53 (DNS 관리)
+
+**배포 명령어:**
+```bash
+# Backend 배포
+cd backend
+eb init
+eb create erp-backend-prod
+eb deploy
+
+# Frontend는 Amplify에서 GitHub 연동 후 자동 배포
+```
+
+**월 예상 비용:**
+- 프리티어: ~$0.50/월 (첫 12개월)
+- 프리티어 이후: ~$45/월
+
+### 기타 배포 옵션
+- 🟢 [RENDER_DEPLOY_GUIDE.md](./RENDER_DEPLOY_GUIDE.md) - Render + Vercel 배포
+- 🟣 [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Vercel + Render 배포
+
 ## 📁 프로젝트 구조
 
 ```

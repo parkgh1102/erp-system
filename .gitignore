@@ -114,3 +114,38 @@ error.log
 # Docker secrets (if used)
 docker-compose.override.yml
 docker-compose.prod.yml
+
+# AWS Elastic Beanstalk
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+*.zip
+backend-deploy.zip
+*-deploy.zip
+
+# AWS CLI
+.aws/
+
+# Terraform (if used)
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# CDK (if used)
+cdk.out/
+
+# Amplify
+amplify/
+.amplifyrc
+
+# Azure
+.azure/
+*.azurewebsites.net
+azure-pipelines.yml
+.env.azure
+backend-deploy-*.zip
+frontend-deploy-*.zip
+
+# Azure CLI
+.azure-cli/

@@ -120,7 +120,10 @@
       "Bash(\"/c/Program Files/PostgreSQL/18/bin/psql.exe\" -U postgres -d erp_system -c \"SELECT id, \"\"transactionDate\"\", \"\"totalAmount\"\", \"\"vatAmount\"\", \"\"customerId\"\" FROM sales WHERE \"\"customerId\"\" = (SELECT id FROM customers WHERE name = ''박경환'' LIMIT 1) ORDER BY \"\"transactionDate\"\" DESC LIMIT 10;\")",
       "Bash(git reset:*)",
       "Bash(\"/c/Program Files/PostgreSQL/18/bin/psql.exe\" -U postgres -d erp_system -c \"SELECT si.id, si.\"\"itemName\"\", si.specification, si.unit, si.quantity FROM sales_items si LIMIT 5;\")",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(aws:*)",
+      "Bash(eb:*)",
+      "Bash(pip:*)"
     ],
     "deny": [],
     "ask": []

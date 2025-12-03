@@ -174,43 +174,41 @@ exports.AuthController = {
                 });
             }
             // sales_viewer인 경우 businessId로 비즈니스 정보 조회
-            console.log('🔑 Login user info:', {
-                userId: user.id,
-                email: user.email,
-                role: user.role,
-                businessId: user.businessId
-            });
+            const env = (0, envValidator_1.getValidatedEnv)();
+            if (env.NODE_ENV === 'development') {
+                console.log('🔑 Login user info:', {
+                    userId: user.id,
+                    email: user.email,
+                    role: user.role,
+                    businessId: user.businessId
+                });
+            }
             if (user.role === 'sales_viewer' && user.businessId) {
                 const business = await businessRepository.findOne({
                     where: { id: user.businessId }
                 });
-                console.log('🏢 Found business for sales_viewer:', business ? { id: business.id, name: business.companyName } : 'null');
+                if (env.NODE_ENV === 'development') {
+                    console.log('🏢 Found business for sales_viewer:', business ? { id: business.id, name: business.companyName } : 'null');
+                }
                 if (business) {
                     user.businesses = [business];
                 }
             }
             // 로그인 성공 로깅
             securityLogger_1.securityLogger.logAuthSuccess(req, user.id);
-            // 활동 로그 기록
-            await (0, ActivityLogController_1.logActivity)('login', 'user', user.id, `사용자가 로그인했습니다.`, req, { email: user.email });
             // businessId 결정: sales_viewer는 user.businessId, admin은 첫 번째 비즈니스
             const businessId = user.businessId || user.businesses[0]?.id || 0;
-            console.log('🔐 JWT 토큰 생성:', { userId: user.id, email: user.email, businessId });
-            // 세션 유지 시간 설정 가져오기
-            let sessionTimeoutHours = 24; // 기본값 24시간
-            if (businessId) {
-                const settings = await companySettingsRepository.findOne({
-                    where: { businessId, settingKey: 'sessionTimeout' }
-                });
-                if (settings?.settingValue) {
-                    const parsed = parseInt(settings.settingValue);
-                    if (!isNaN(parsed) && [1, 4, 8, 24].includes(parsed)) {
-                        sessionTimeoutHours = parsed;
-                    }
-                }
+            if (env.NODE_ENV === 'development') {
+                console.log('🔐 JWT 토큰 생성:', { userId: user.id, email: user.email, businessId });
             }
-            console.log('⏰ 세션 유지 시간:', sessionTimeoutHours, '시간');
-            const env = (0, envValidator_1.getValidatedEnv)();
+            // 활동 로그 기록 (비동기 처리 - 응답 속도 개선)
+            (0, ActivityLogController_1.logActivity)('login', 'user', user.id, `사용자가 로그인했습니다.`, req, { email: user.email }).catch(err => logger_1.logger.error('Activity log error:', err));
+            // 세션 유지 시간: JWT 설정 값 사용 (간소화로 로그인 속도 개선)
+            // companySettings 조회 제거로 DB 쿼리 1개 감소
+            const sessionTimeoutHours = 24; // 기본값 24시간
+            if (env.NODE_ENV === 'development') {
+                console.log('⏰ 세션 유지 시간:', sessionTimeoutHours, '시간');
+            }
             const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId }, env.JWT_SECRET, { expiresIn: `${sessionTimeoutHours}h` });
             const refreshToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: `${sessionTimeoutHours * 2}h` });
             // HttpOnly 쿠키로 토큰 설정
