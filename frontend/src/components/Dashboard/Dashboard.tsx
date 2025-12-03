@@ -118,9 +118,6 @@ const Dashboard: React.FC = () => {
       case 'month':
         setDateRange([dayjs().startOf('month'), dayjs().endOf('month')]);
         break;
-      case 'quarter':
-        setDateRange([dayjs().startOf('quarter'), dayjs().endOf('quarter')]);
-        break;
       case 'year':
         setDateRange([dayjs().startOf('year'), dayjs().endOf('year')]);
         break;
@@ -290,7 +287,6 @@ const Dashboard: React.FC = () => {
               >
                 <Select.Option value="week">이번 주</Select.Option>
                 <Select.Option value="month">이번 달</Select.Option>
-                <Select.Option value="quarter">이번 분기</Select.Option>
                 <Select.Option value="year">올해</Select.Option>
               </Select>
               <RangePicker
