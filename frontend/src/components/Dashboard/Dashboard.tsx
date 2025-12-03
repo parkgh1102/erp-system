@@ -109,6 +109,24 @@ const Dashboard: React.FC = () => {
     }
   }, [isNewUser, clearNewUserFlag, message]);
 
+  // 기간 선택 시 날짜 범위 자동 업데이트
+  useEffect(() => {
+    switch (selectedPeriod) {
+      case 'week':
+        setDateRange([dayjs().startOf('week'), dayjs().endOf('week')]);
+        break;
+      case 'month':
+        setDateRange([dayjs().startOf('month'), dayjs().endOf('month')]);
+        break;
+      case 'quarter':
+        setDateRange([dayjs().startOf('quarter'), dayjs().endOf('quarter')]);
+        break;
+      case 'year':
+        setDateRange([dayjs().startOf('year'), dayjs().endOf('year')]);
+        break;
+    }
+  }, [selectedPeriod]);
+
   useEffect(() => {
     if (currentBusiness) {
       fetchDashboardData();
