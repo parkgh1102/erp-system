@@ -3,7 +3,6 @@ import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconf
 import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import UploadResultModal, { UploadResultItem } from '../Common/UploadResultModal';
-import DateRangeFilter from '../Common/DateRangeFilter';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import ProductPrintModal from '../Print/ProductPrintModal';
 import { useAuthStore } from '../../stores/authStore';
@@ -40,10 +39,6 @@ const ProductManagement: React.FC = () => {
   const [specOptions, setSpecOptions] = useState<string[]>(['box', 'ea', 'pallet', '자루', 'set', 'pack']);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState<string>('');
-  const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
-    dayjs().subtract(7, 'day'),
-    dayjs()
-  ]);
   const [autoCompleteOptions, setAutoCompleteOptions] = useState<{value: string}[]>([]);
   const [uploadData, setUploadData] = useState<any[]>([]);
   const [excelUploadModalVisible, setExcelUploadModalVisible] = useState(false);
@@ -762,11 +757,6 @@ const ProductManagement: React.FC = () => {
                 인쇄
               </Button>
             </Space>
-            <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => {
-                setDateRange([dayjs(startDate), dayjs(endDate)]);
-              }}
-            />
           </Space>
         </Col>
       </Row>
