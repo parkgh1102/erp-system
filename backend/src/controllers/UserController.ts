@@ -4,12 +4,13 @@ import { User } from '../entities/User';
 import bcrypt from 'bcrypt';
 import Joi from 'joi';
 import { logger } from '../utils/logger';
+import { passwordSchema } from '../utils/passwordValidator';
 
 const userRepository = AppDataSource.getRepository(User);
 
 const createUserSchema = Joi.object({
   email: Joi.string().email().required(),
-  password: Joi.string().min(8).required(),
+  password: passwordSchema.required(),
   name: Joi.string().min(2).required(),
   phone: Joi.string().pattern(/^[0-9-+\s()]+$/).allow(''),
   role: Joi.string().valid('admin', 'sales_viewer').required(),

@@ -75,11 +75,11 @@ services:
       - key: JWT_REFRESH_EXPIRES_IN
         value: 7d
       - key: FORCE_HTTPS
-        value: false
+        value: true
       - key: DB_SYNCHRONIZE
         value: true
       - key: GEMINI_API_KEY
-        value: AIzaSyC9NI03247zgJGPbkcCb_EmsX9hUu7GjKM
+        sync: false  # Render 대시보드에서 수동으로 설정 필요
 
 databases:
   - name: erp-database
