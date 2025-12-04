@@ -194,28 +194,15 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             borderBottom: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
           }}
         >
-          <img
-            src="/logo.png"
-            alt="ERP 통합시스템"
+          <Text
             style={{
-              height: '32px',
-              marginRight: collapsed ? 0 : '12px',
+              fontSize: collapsed ? '16px' : '18px',
+              fontWeight: 'bold',
+              color: isDark ? '#e5e7eb' : '#1890ff',
             }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-          {!collapsed && (
-            <Text
-              style={{
-                fontSize: '18px',
-                fontWeight: 'bold',
-                color: isDark ? '#e5e7eb' : '#1890ff',
-              }}
-            >
-              ERP 통합시스템
-            </Text>
-          )}
+          >
+            {collapsed ? 'ERP' : 'ERP 통합시스템'}
+          </Text>
         </div>
 
         <Menu
