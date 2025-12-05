@@ -279,6 +279,26 @@ export const AuthController = {
         maxAge: cookieMaxAge * 2
       });
 
+      // 보안 설정 조회 (2FA 정보 포함) - 프론트엔드에서 별도 API 호출 제거로 로그인 속도 개선
+      let twoFactorAuth = false;
+      let sessionTimeout = '24h';
+
+      try {
+        const SecuritySettings = (await import('../entities/SecuritySettings')).SecuritySettings;
+        const securitySettingsRepo = AppDataSource.getRepository(SecuritySettings);
+        const settings = await securitySettingsRepo.findOne({
+          where: { userId: user.id }
+        });
+
+        if (settings) {
+          twoFactorAuth = settings.twoFactorAuth;
+          sessionTimeout = settings.sessionTimeout || '24h';
+        }
+      } catch (err) {
+        // 보안 설정 조회 실패 시 기본값 사용
+        logger.error('Security settings query error:', err);
+      }
+
       res.json({
         success: true,
         message: '로그인되었습니다.',
@@ -291,6 +311,10 @@ export const AuthController = {
             phone: user.phone,
             role: user.role,
             businesses: user.businesses
+          },
+          security: {
+            twoFactorAuth,
+            sessionTimeout
           }
         }
       });

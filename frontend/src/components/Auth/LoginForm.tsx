@@ -20,20 +20,13 @@ const LoginFormContent: React.FC = () => {
     setError(null);
 
     try {
-      // 1. 먼저 보안 설정 확인 (2단계 인증 여부)
-      let twoFactorEnabled = false;
-      let sessionTimeout = '8h';
+      // 로그인 API 호출 (보안 설정 정보 포함) - 속도 개선!
+      const loginResponse = await authAPI.login(values);
+      const { user, token, security } = loginResponse.data.data;
 
-      try {
-        const securityResponse = await settingsAPI.getSecuritySettingsByEmail(values.email);
-        if (securityResponse.data.success) {
-          twoFactorEnabled = securityResponse.data.data.twoFactorAuth;
-          sessionTimeout = securityResponse.data.data.sessionTimeout || '8h';
-        }
-      } catch (err) {
-        // 보안 설정 조회 실패 시 기본값 사용 (2단계 인증 OFF)
-        console.log('보안 설정 조회 실패, 기본값 사용');
-      }
+      // 보안 설정에서 2FA 및 세션 타임아웃 정보 가져오기
+      const twoFactorEnabled = security?.twoFactorAuth || false;
+      const sessionTimeout = security?.sessionTimeout || '24h';
 
       if (twoFactorEnabled) {
         // 2단계 인증 ON: OTP 전송 후 OTP 페이지로 이동
@@ -42,9 +35,6 @@ const LoginFormContent: React.FC = () => {
         navigate('/otp', { state: { credentials: values, sessionTimeout } });
       } else {
         // 2단계 인증 OFF: 바로 로그인 처리
-        const loginResponse = await authAPI.login(values);
-        const { user, token } = loginResponse.data.data;
-
         // 세션 타임아웃 저장
         localStorage.setItem('sessionTimeout', sessionTimeout);
 
