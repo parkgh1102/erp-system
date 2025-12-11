@@ -35,7 +35,7 @@ export const authRateLimit = rateLimit({
 
 export const apiRateLimit = rateLimit({
   windowMs: 1 * 60 * 1000, // 1분
-  max: process.env.NODE_ENV === 'development' ? 1000 : 300, // 프로덕션: 분당 300회
+  max: process.env.NODE_ENV === 'development' ? 1000 : 1000, // 프로덕션: 분당 1000회 (대량 데이터 처리용)
   message: {
     success: false,
     message: 'API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요.'
