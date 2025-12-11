@@ -114,7 +114,8 @@ app.use(cors({
 
 app.use(compression());
 app.use(morgan('combined'));
-app.use(generalRateLimit);
+// Rate limiting 임시 비활성화 (429 에러 해결용)
+// app.use(generalRateLimit);
 app.use(cookieParser());
 app.use(session(sessionConfig));
 app.use(express.json({ limit: '10mb' }));
@@ -141,16 +142,17 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api/auth', authRateLimit, authRoutes);
-app.use('/api/otp', authRateLimit, otpRoutes);
-app.use('/api/businesses', apiRateLimit, businessRoutes);
-app.use('/api/businesses', apiRateLimit, userRoutes);
-app.use('/api/transaction-ledger', apiRateLimit, transactionLedgerRoutes);
-app.use('/api/settings', apiRateLimit, settingsRoutes);
-app.use('/api/activity-logs', apiRateLimit, activityLogRoutes);
-app.use('/api/notifications', apiRateLimit, notificationRoutes);
-app.use('/api/chatbot', apiRateLimit, chatbotRoutes);
-app.use('/api/excel', apiRateLimit, excelRoutes);
+// Rate limiting 임시 비활성화 (429 에러 해결용)
+app.use('/api/auth', authRoutes);
+app.use('/api/otp', otpRoutes);
+app.use('/api/businesses', businessRoutes);
+app.use('/api/businesses', userRoutes);
+app.use('/api/transaction-ledger', transactionLedgerRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/activity-logs', activityLogRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/excel', excelRoutes);
 
 // 데이터베이스 연결 상태 추적
 let isDatabaseConnected = false;

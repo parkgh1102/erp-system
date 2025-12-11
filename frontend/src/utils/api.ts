@@ -66,6 +66,9 @@ api.interceptors.request.use(
   }
 );
 
+// 429 에러 방지용 플래그
+let rateLimitErrorShown = false;
+
 api.interceptors.response.use(
   (response) => {
     return response;
@@ -73,6 +76,18 @@ api.interceptors.response.use(
   (error) => {
     // skipErrorHandler가 설정된 요청은 에러 처리를 건너뜀
     if (error.config?.skipErrorHandler) {
+      return Promise.reject(error);
+    }
+
+    // 429 에러 처리 (한 번만 표시)
+    if (error.response?.status === 429) {
+      if (!rateLimitErrorShown) {
+        rateLimitErrorShown = true;
+        console.error('Rate limit exceeded. Please wait...');
+        setTimeout(() => {
+          rateLimitErrorShown = false;
+        }, 5000);
+      }
       return Promise.reject(error);
     }
 

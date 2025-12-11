@@ -147,7 +147,12 @@
       "Bash(ApplicationInsightsAgent_EXTENSION_VERSION=\"~3\")",
       "Bash(az staticwebapp appsettings set:*)",
       "Bash(APPINSIGHTS_INSTRUMENTATIONKEY=40d63631-8dfa-4d12-8239-8ccfb752b499:*)",
-      "Bash(APPLICATIONINSIGHTS_CONNECTION_STRING=\"InstrumentationKey=40d63631-8dfa-4d12-8239-8ccfb752b499;IngestionEndpoint=https://koreacentral-0.in.applicationinsights.azure.com/\":*)"
+      "Bash(APPLICATIONINSIGHTS_CONNECTION_STRING=\"InstrumentationKey=40d63631-8dfa-4d12-8239-8ccfb752b499;IngestionEndpoint=https://koreacentral-0.in.applicationinsights.azure.com/\":*)",
+      "Bash(az webapp config show:*)",
+      "Bash(az webapp log tail:*)",
+      "Bash(az webapp config appsettings list:*)",
+      "Bash(az webapp restart:*)",
+      "Bash(az webapp deployment source show:*)"
     ],
     "deny": [],
     "ask": []
