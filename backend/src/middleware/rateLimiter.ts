@@ -3,7 +3,7 @@ import { securityLogger } from './securityLogger';
 
 export const generalRateLimit = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15분
-  max: process.env.NODE_ENV === 'development' ? 1000 : parseInt(process.env.RATE_LIMIT_MAX || '500'), // 프로덕션: 15분에 500회
+  max: process.env.NODE_ENV === 'development' ? 2000 : parseInt(process.env.RATE_LIMIT_MAX || '2000'), // 프로덕션: 15분에 2000회
   message: {
     success: false,
     message: '너무 많은 요청이 감지되었습니다. 잠시 후 다시 시도해주세요.',
