@@ -395,15 +395,8 @@ const PurchaseManagement: React.FC = () => {
             continue;
           }
 
-          // 품목 찾기 (템플릿에서 '품목명' 사용)
-          const product = products.find(p => p.name === row['품목명']);
-          if (!product) {
-            const errorMsg = `${i + 1}행: 품목 '${row['품목명']}'를 찾을 수 없습니다.`;
-            console.warn(errorMsg);
-            errors.push(errorMsg);
-            failCount++;
-            continue;
-          }
+          // 품목 찾기 (선택사항)
+          const product = row['품목명'] ? products.find(p => p.name === row['품목명']) : null;
 
           // 공급가액과 세액 추출
           const supplyAmount = Number(row['공급가액']) || 0;
@@ -418,11 +411,11 @@ const PurchaseManagement: React.FC = () => {
             vatAmount: vatAmount,
             memo: row['비고'] || '',
             items: [{
-              productId: product.id,
-              productCode: product.productCode,
-              productName: product.name,
-              spec: row['규격'] || product.spec || '',
-              unit: row['단위'] || product.unit || '',
+              productId: product?.id || null,
+              productCode: product?.productCode || '',
+              productName: row['품목명'] || product?.name || '품목 미지정',
+              spec: row['규격'] || product?.spec || '',
+              unit: row['단위'] || product?.unit || '',
               quantity: quantity,
               unitPrice: unitPrice,
               amount: quantity * unitPrice,
@@ -1619,7 +1612,7 @@ const PurchaseManagement: React.FC = () => {
         title="매입 엑셀 업로드"
         templateType="purchase"
         description="매입 정보를 엑셀 파일로 일괄 업로드할 수 있습니다. 먼저 템플릿을 다운로드하여 양식을 확인하세요."
-        requiredFields={['매입일자', '거래처명', '품목명']}
+        requiredFields={['매입일자', '거래처명', '공급가액']}
       />
 
       <PrintPreviewModal
