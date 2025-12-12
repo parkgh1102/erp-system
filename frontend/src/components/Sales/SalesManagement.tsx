@@ -731,21 +731,19 @@ const SalesManagement: React.FC = () => {
           // 품목 찾기 (선택사항)
           const product = row['품목명'] ? products.find(p => p.name === row['품목명']) : null;
 
-          // 공급가액과 세액 추출
-          const supplyAmount = Number(row['공급가액']) || 0;
-          const vatAmount = Number(row['세액']) || 0;
+          // 합계에서 공급가액과 세액 역산
+          const totalPrice = Number(row['합계']) || 0;
+          const supplyAmount = Number(row['공급가액']) || Math.round(totalPrice / 1.1);
+          const vatAmount = Number(row['세액']) || (totalPrice - supplyAmount);
           const quantity = Number(row['수량']) || 1;
           const unitPrice = Number(row['단가']) || 0;
-
-          // 비고와 작업 필드 결합
-          const memo = [row['비고'], row['작업']].filter(v => v).join(' / ');
 
           await salesAPI.create(currentBusiness.id, {
             customerId: customer.id,
             saleDate: row['매출일자'] || dayjs().format('YYYY-MM-DD'),
             totalAmount: supplyAmount,
             vatAmount: vatAmount,
-            memo: memo || '',
+            memo: row['비고'] || '',
             items: [{
               productId: product?.id || null,
               productCode: product?.productCode || '',
@@ -1156,6 +1154,17 @@ const SalesManagement: React.FC = () => {
       },
     },
     {
+      title: '단위',
+      dataIndex: 'items',
+      key: 'unit',
+      width: '6%',
+      align: 'center' as const,
+      render: (items: SaleItem[]) => {
+        if (!items || items.length === 0) return '-';
+        return items[0]?.unit || '-';
+      },
+    },
+    {
       title: '수량',
       dataIndex: 'items',
       key: 'quantity',
@@ -1166,17 +1175,6 @@ const SalesManagement: React.FC = () => {
         // decimal 타입을 Number()로 변환
         const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
         return Math.round(totalQty).toLocaleString();
-      },
-    },
-    {
-      title: '단위',
-      dataIndex: 'items',
-      key: 'unit',
-      width: '6%',
-      align: 'center' as const,
-      render: (items: SaleItem[]) => {
-        if (!items || items.length === 0) return '-';
-        return items[0]?.unit || '-';
       },
     },
     {
@@ -1207,6 +1205,21 @@ const SalesManagement: React.FC = () => {
       align: 'right' as const,
       render: (amount: number) => Math.round(amount || 0).toLocaleString() + '원',
       sorter: (a: Sale, b: Sale) => (a.vatAmount || 0) - (b.vatAmount || 0),
+    },
+    {
+      title: '합계',
+      key: 'total',
+      width: '10%',
+      align: 'right' as const,
+      render: (record: Sale) => {
+        const total = (record.totalAmount || 0) + (record.vatAmount || 0);
+        return Math.round(total).toLocaleString() + '원';
+      },
+      sorter: (a: Sale, b: Sale) => {
+        const totalA = (a.totalAmount || 0) + (a.vatAmount || 0);
+        const totalB = (b.totalAmount || 0) + (b.vatAmount || 0);
+        return totalA - totalB;
+      },
     },
     {
       title: '비고',
@@ -1980,7 +1993,7 @@ const SalesManagement: React.FC = () => {
         title="매출 엑셀 업로드"
         templateType="sales"
         description="매출 정보를 엑셀 파일로 일괄 업로드할 수 있습니다. 먼저 템플릿을 다운로드하여 양식을 확인하세요."
-        requiredFields={['매출일자', '거래처명', '공급가액']}
+        requiredFields={['거래처명', '합계']}
       />
 
       <PrintPreviewModal

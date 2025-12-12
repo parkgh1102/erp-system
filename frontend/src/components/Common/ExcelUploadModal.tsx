@@ -72,9 +72,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
         단가: 15000,
         공급가액: 150000,
         세액: 15000,
-        합계: 165000,
-        비고: '',
-        작업: ''
+        비고: ''
       }
     ],
     purchase: [
@@ -88,9 +86,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
         단가: 10000,
         공급가액: 100000,
         세액: 10000,
-        합계: 110000,
-        비고: '',
-        작업: ''
+        비고: ''
       }
     ],
     receivable: [
@@ -163,8 +159,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
       { title: '공급가액', dataIndex: '공급가액', key: '공급가액', width: 120, render: (val: any) => val?.toLocaleString() },
       { title: '세액', dataIndex: '세액', key: '세액', width: 120, render: (val: any) => val?.toLocaleString() },
       { title: '합계', dataIndex: '합계', key: '합계', width: 120, render: (val: any) => val?.toLocaleString() },
-      { title: '비고', dataIndex: '비고', key: '비고', width: 150 },
-      { title: '작업', dataIndex: '작업', key: '작업', width: 150 }
+      { title: '비고', dataIndex: '비고', key: '비고', width: 150 }
     ],
     purchase: [
       { title: '매입일자', dataIndex: '매입일자', key: '매입일자', width: 120 },
@@ -177,8 +172,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
       { title: '공급가액', dataIndex: '공급가액', key: '공급가액', width: 120, render: (val: any) => val?.toLocaleString() },
       { title: '세액', dataIndex: '세액', key: '세액', width: 120, render: (val: any) => val?.toLocaleString() },
       { title: '합계', dataIndex: '합계', key: '합계', width: 120, render: (val: any) => val?.toLocaleString() },
-      { title: '비고', dataIndex: '비고', key: '비고', width: 150 },
-      { title: '작업', dataIndex: '작업', key: '작업', width: 150 }
+      { title: '비고', dataIndex: '비고', key: '비고', width: 150 }
     ],
     receivable: [
       { title: 'No.', dataIndex: 'No.', key: 'No.', width: 80 },
