@@ -737,12 +737,15 @@ const SalesManagement: React.FC = () => {
           const quantity = Number(row['수량']) || 1;
           const unitPrice = Number(row['단가']) || 0;
 
+          // 비고와 작업 필드 결합
+          const memo = [row['비고'], row['작업']].filter(v => v).join(' / ');
+
           await salesAPI.create(currentBusiness.id, {
             customerId: customer.id,
             saleDate: row['매출일자'] || dayjs().format('YYYY-MM-DD'),
             totalAmount: supplyAmount,
             vatAmount: vatAmount,
-            memo: row['비고'] || '',
+            memo: memo || '',
             items: [{
               productId: product?.id || null,
               productCode: product?.productCode || '',

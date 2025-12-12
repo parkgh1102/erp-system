@@ -67,12 +67,14 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
         거래처명: '예시거래처',
         품목명: '예시품목',
         규격: 'A4',
-        수량: 10,
         단위: 'EA',
+        수량: 10,
         단가: 15000,
         공급가액: 150000,
         세액: 15000,
-        비고: ''
+        합계: 165000,
+        비고: '',
+        작업: ''
       }
     ],
     purchase: [
@@ -81,12 +83,14 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
         거래처명: '예시거래처',
         품목명: '예시품목',
         규격: 'A4',
-        수량: 10,
         단위: 'EA',
+        수량: 10,
         단가: 10000,
         공급가액: 100000,
         세액: 10000,
-        비고: ''
+        합계: 110000,
+        비고: '',
+        작업: ''
       }
     ],
     receivable: [
@@ -153,24 +157,28 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
       { title: '거래처명', dataIndex: '거래처명', key: '거래처명', width: 150 },
       { title: '품목명', dataIndex: '품목명', key: '품목명', width: 150 },
       { title: '규격', dataIndex: '규격', key: '규격', width: 100 },
-      { title: '수량', dataIndex: '수량', key: '수량', width: 80 },
       { title: '단위', dataIndex: '단위', key: '단위', width: 80 },
+      { title: '수량', dataIndex: '수량', key: '수량', width: 80 },
       { title: '단가', dataIndex: '단가', key: '단가', width: 120, render: (val: any) => val?.toLocaleString() },
       { title: '공급가액', dataIndex: '공급가액', key: '공급가액', width: 120, render: (val: any) => val?.toLocaleString() },
       { title: '세액', dataIndex: '세액', key: '세액', width: 120, render: (val: any) => val?.toLocaleString() },
-      { title: '비고', dataIndex: '비고', key: '비고', width: 150 }
+      { title: '합계', dataIndex: '합계', key: '합계', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '비고', dataIndex: '비고', key: '비고', width: 150 },
+      { title: '작업', dataIndex: '작업', key: '작업', width: 150 }
     ],
     purchase: [
       { title: '매입일자', dataIndex: '매입일자', key: '매입일자', width: 120 },
       { title: '거래처명', dataIndex: '거래처명', key: '거래처명', width: 150 },
       { title: '품목명', dataIndex: '품목명', key: '품목명', width: 150 },
       { title: '규격', dataIndex: '규격', key: '규격', width: 100 },
-      { title: '수량', dataIndex: '수량', key: '수량', width: 80 },
       { title: '단위', dataIndex: '단위', key: '단위', width: 80 },
+      { title: '수량', dataIndex: '수량', key: '수량', width: 80 },
       { title: '단가', dataIndex: '단가', key: '단가', width: 120, render: (val: any) => val?.toLocaleString() },
       { title: '공급가액', dataIndex: '공급가액', key: '공급가액', width: 120, render: (val: any) => val?.toLocaleString() },
       { title: '세액', dataIndex: '세액', key: '세액', width: 120, render: (val: any) => val?.toLocaleString() },
-      { title: '비고', dataIndex: '비고', key: '비고', width: 150 }
+      { title: '합계', dataIndex: '합계', key: '합계', width: 120, render: (val: any) => val?.toLocaleString() },
+      { title: '비고', dataIndex: '비고', key: '비고', width: 150 },
+      { title: '작업', dataIndex: '작업', key: '작업', width: 150 }
     ],
     receivable: [
       { title: 'No.', dataIndex: 'No.', key: 'No.', width: 80 },

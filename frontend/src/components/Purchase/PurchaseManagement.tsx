@@ -404,12 +404,15 @@ const PurchaseManagement: React.FC = () => {
           const quantity = Number(row['수량']) || 1;
           const unitPrice = Number(row['단가']) || 0;
 
+          // 비고와 작업 필드 결합
+          const memo = [row['비고'], row['작업']].filter(v => v).join(' / ');
+
           await purchaseAPI.create(currentBusiness.id, {
             customerId: customer.id,
             purchaseDate: row['매입일자'] || dayjs().format('YYYY-MM-DD'),
             totalAmount: supplyAmount,
             vatAmount: vatAmount,
-            memo: row['비고'] || '',
+            memo: memo || '',
             items: [{
               productId: product?.id || null,
               productCode: product?.productCode || '',
