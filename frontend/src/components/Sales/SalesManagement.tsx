@@ -713,51 +713,75 @@ const SalesManagement: React.FC = () => {
     try {
       let successCount = 0;
       let failCount = 0;
+      const errors: string[] = [];
 
-      for (const row of data) {
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
         try {
           // 거래처 찾기
           const customer = customers.find(c => c.name === row['거래처명']);
           if (!customer) {
-            logger.warn(`거래처 '${row['거래처명']}'를 찾을 수 없습니다.`);
+            const errorMsg = `${i + 1}행: 거래처 '${row['거래처명']}'를 찾을 수 없습니다.`;
+            logger.warn(errorMsg);
+            errors.push(errorMsg);
             failCount++;
             continue;
           }
 
-          // 상품 찾기
-          const product = products.find(p => p.name === row['상품명']);
+          // 품목 찾기 (템플릿에서 '품목명' 사용)
+          const product = products.find(p => p.name === row['품목명']);
           if (!product) {
-            logger.warn(`상품 '${row['상품명']}'를 찾을 수 없습니다.`);
+            const errorMsg = `${i + 1}행: 품목 '${row['품목명']}'를 찾을 수 없습니다.`;
+            logger.warn(errorMsg);
+            errors.push(errorMsg);
             failCount++;
             continue;
           }
+
+          // 공급가액과 세액 추출
+          const supplyAmount = Number(row['공급가액']) || 0;
+          const vatAmount = Number(row['세액']) || 0;
+          const quantity = Number(row['수량']) || 1;
+          const unitPrice = Number(row['단가']) || 0;
 
           await salesAPI.create(currentBusiness.id, {
             customerId: customer.id,
-            salesDate: row['매출일자'] || dayjs().format('YYYY-MM-DD'),
-            totalAmount: Number(row['금액']) || 0,
-            vatAmount: Math.round((Number(row['금액']) || 0) * 0.1),
+            saleDate: row['매출일자'] || dayjs().format('YYYY-MM-DD'),
+            totalAmount: supplyAmount,
+            vatAmount: vatAmount,
             memo: row['비고'] || '',
             items: [{
               productId: product.id,
               productCode: product.productCode,
               productName: product.name,
-              spec: product.spec || '',
-              unit: product.unit || '',
-              quantity: Number(row['수량']) || 1,
-              unitPrice: Number(row['단가']) || 0,
-              amount: Number(row['금액']) || 0
+              spec: row['규격'] || product.spec || '',
+              unit: row['단위'] || product.unit || '',
+              quantity: quantity,
+              unitPrice: unitPrice,
+              amount: quantity * unitPrice,
+              supplyAmount: supplyAmount,
+              vatAmount: vatAmount,
+              totalAmount: supplyAmount + vatAmount
             }]
           });
           successCount++;
-        } catch (error) {
+        } catch (error: any) {
+          const errorMsg = `${i + 1}행: ${error.response?.data?.message || error.message || '업로드 실패'}`;
+          errors.push(errorMsg);
           failCount++;
           logger.error('Sales upload error:', error);
         }
       }
 
       fetchData();
-      message.success(`${successCount}건 업로드 완료, ${failCount}건 실패`, 2);
+
+      if (failCount > 0) {
+        const errorSummary = errors.slice(0, 3).join('\n');
+        const moreErrors = errors.length > 3 ? `\n... 외 ${errors.length - 3}건` : '';
+        message.warning(`${successCount}건 성공, ${failCount}건 실패\n\n${errorSummary}${moreErrors}`, 5);
+      } else {
+        message.success(`${successCount}건 업로드 완료`, 2);
+      }
     } catch (error) {
       message.error('엑셀 업로드에 실패했습니다.', 2);
     } finally {
