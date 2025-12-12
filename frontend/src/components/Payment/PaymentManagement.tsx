@@ -356,40 +356,61 @@ const PaymentManagement: React.FC = () => {
     try {
       let successCount = 0;
       let failCount = 0;
+      const errors: string[] = [];
 
-      for (const row of data) {
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
         try {
-          // 거래처명으로 거래처 찾기
-          const customer = customers.find(c => c.name === row['거래처명']);
+          // 거래처 찾기 (템플릿에서 '거래처' 사용)
+          const customer = customers.find(c => c.name === row['거래처']);
           if (!customer) {
+            const errorMsg = `${i + 1}행: 거래처 '${row['거래처']}'를 찾을 수 없습니다.`;
+            console.error(errorMsg);
+            errors.push(errorMsg);
             failCount++;
-            console.error(`거래처를 찾을 수 없습니다: ${row['거래처명']}`);
             continue;
           }
 
-          // 유형 처리 (수금/지급)
-          let type = 'receipt';
-          if (row['유형'] === '지급' || row['유형'] === 'payment') {
-            type = 'payment';
-          }
+          // activeTab에 따라 유형 결정
+          const type = activeTab === 'receipt' ? 'receipt' : 'payment';
+
+          // activeTab에 따라 필드명 다르게 읽기
+          const paymentDate = activeTab === 'receipt'
+            ? (row['수금일자'] || dayjs().format('YYYY-MM-DD'))
+            : (row['지급일자'] || dayjs().format('YYYY-MM-DD'));
+
+          const amount = activeTab === 'receipt'
+            ? (Number(row['수금금액']) || 0)
+            : (Number(row['지급금액']) || 0);
+
+          const memo = row['메모'] || '';
 
           await paymentAPI.create(currentBusiness.id, {
-            paymentDate: row['결제일자'] || row['결제일'] || dayjs().format('YYYY-MM-DD'),
+            paymentDate: paymentDate,
             customerId: customer.id,
             type: type,
-            amount: Number(row['금액']) || 0,
-            memo: (row['결제방법'] || '') + (row['비고'] ? ' ' + row['비고'] : ''),
+            amount: amount,
+            memo: memo,
             businessId: currentBusiness.id
           });
           successCount++;
-        } catch (error) {
+        } catch (error: any) {
+          const errorMsg = `${i + 1}행: ${error.response?.data?.message || error.message || '업로드 실패'}`;
+          errors.push(errorMsg);
           failCount++;
           console.error('Payment upload error:', error);
         }
       }
 
-      message.success(`${successCount}건 업로드 완료, ${failCount}건 실패`);
       fetchData();
+
+      if (failCount > 0) {
+        const errorSummary = errors.slice(0, 3).join('\n');
+        const moreErrors = errors.length > 3 ? `\n... 외 ${errors.length - 3}건` : '';
+        message.warning(`${successCount}건 성공, ${failCount}건 실패\n\n${errorSummary}${moreErrors}`, 5);
+      } else {
+        message.success(`${successCount}건 업로드 완료`, 2);
+      }
     } catch (error) {
       message.error('엑셀 업로드에 실패했습니다.');
     } finally {
