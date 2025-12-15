@@ -72,6 +72,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
         단가: 15000,
         공급가액: 150000,
         세액: 15000,
+        합계: 165000,
         비고: ''
       }
     ],
@@ -86,6 +87,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
         단가: 10000,
         공급가액: 100000,
         세액: 10000,
+        합계: 110000,
         비고: ''
       }
     ],
