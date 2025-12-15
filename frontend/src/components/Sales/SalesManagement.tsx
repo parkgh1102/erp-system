@@ -1185,7 +1185,7 @@ const SalesManagement: React.FC = () => {
       align: 'right' as const,
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
-        return Math.round(items[0]?.unitPrice || 0).toLocaleString() + '원';
+        return Math.round(Number(items[0]?.unitPrice) || 0).toLocaleString() + '원';
       },
     },
     {
@@ -1194,8 +1194,8 @@ const SalesManagement: React.FC = () => {
       key: 'totalAmount',
       width: '10%',
       align: 'right' as const,
-      render: (amount: number) => Math.round(amount || 0).toLocaleString() + '원',
-      sorter: (a: Sale, b: Sale) => (a.totalAmount || 0) - (b.totalAmount || 0),
+      render: (amount: number) => Math.round(Number(amount) || 0).toLocaleString() + '원',
+      sorter: (a: Sale, b: Sale) => (Number(a.totalAmount) || 0) - (Number(b.totalAmount) || 0),
     },
     {
       title: '세액',
@@ -1203,8 +1203,8 @@ const SalesManagement: React.FC = () => {
       key: 'vatAmount',
       width: '9%',
       align: 'right' as const,
-      render: (amount: number) => Math.round(amount || 0).toLocaleString() + '원',
-      sorter: (a: Sale, b: Sale) => (a.vatAmount || 0) - (b.vatAmount || 0),
+      render: (amount: number) => Math.round(Number(amount) || 0).toLocaleString() + '원',
+      sorter: (a: Sale, b: Sale) => (Number(a.vatAmount) || 0) - (Number(b.vatAmount) || 0),
     },
     {
       title: '합계',
@@ -1212,12 +1212,12 @@ const SalesManagement: React.FC = () => {
       width: '10%',
       align: 'right' as const,
       render: (record: Sale) => {
-        const total = (record.totalAmount || 0) + (record.vatAmount || 0);
+        const total = (Number(record.totalAmount) || 0) + (Number(record.vatAmount) || 0);
         return Math.round(total).toLocaleString() + '원';
       },
       sorter: (a: Sale, b: Sale) => {
-        const totalA = (a.totalAmount || 0) + (a.vatAmount || 0);
-        const totalB = (b.totalAmount || 0) + (b.vatAmount || 0);
+        const totalA = (Number(a.totalAmount) || 0) + (Number(a.vatAmount) || 0);
+        const totalB = (Number(b.totalAmount) || 0) + (Number(b.vatAmount) || 0);
         return totalA - totalB;
       },
     },
