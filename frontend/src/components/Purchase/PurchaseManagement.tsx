@@ -876,8 +876,9 @@ const PurchaseManagement: React.FC = () => {
       align: 'right' as const,
       render: (items: PurchaseItem[]) => {
         if (!items || items.length === 0) return '-';
-        const totalQty = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        return totalQty.toLocaleString();
+        // decimal 타입을 Number()로 변환
+        const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+        return Math.round(totalQty).toLocaleString();
       },
     },
     {
@@ -888,7 +889,7 @@ const PurchaseManagement: React.FC = () => {
       align: 'right' as const,
       render: (items: PurchaseItem[]) => {
         if (!items || items.length === 0) return '-';
-        return (items[0]?.unitPrice || 0).toLocaleString() + '원';
+        return Math.round(items[0]?.unitPrice || 0).toLocaleString() + '원';
       },
     },
     {
@@ -897,7 +898,7 @@ const PurchaseManagement: React.FC = () => {
       key: 'totalAmount',
       width: '10%',
       align: 'right' as const,
-      render: (amount: number) => (amount || 0).toLocaleString() + '원',
+      render: (amount: number) => Math.round(amount || 0).toLocaleString() + '원',
       sorter: (a: Purchase, b: Purchase) => (a.totalAmount || 0) - (b.totalAmount || 0),
     },
     {
@@ -906,7 +907,7 @@ const PurchaseManagement: React.FC = () => {
       key: 'vatAmount',
       width: '9%',
       align: 'right' as const,
-      render: (amount: number) => (amount || 0).toLocaleString() + '원',
+      render: (amount: number) => Math.round(amount || 0).toLocaleString() + '원',
       sorter: (a: Purchase, b: Purchase) => (a.vatAmount || 0) - (b.vatAmount || 0),
     },
     {
@@ -916,7 +917,7 @@ const PurchaseManagement: React.FC = () => {
       align: 'right' as const,
       render: (record: Purchase) => {
         const total = (record.totalAmount || 0) + (record.vatAmount || 0);
-        return total.toLocaleString() + '원';
+        return Math.round(total).toLocaleString() + '원';
       },
       sorter: (a: Purchase, b: Purchase) => {
         const totalA = (a.totalAmount || 0) + (a.vatAmount || 0);
