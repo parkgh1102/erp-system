@@ -102,6 +102,11 @@ const PurchaseManagement: React.FC = () => {
   ]);
   const [autoCompleteOptions, setAutoCompleteOptions] = useState<{value: string}[]>([]);
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
   const [uploadData, setUploadData] = useState<any[]>([]);
   const [excelUploadModalVisible, setExcelUploadModalVisible] = useState(false);
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
@@ -370,6 +375,15 @@ const PurchaseManagement: React.FC = () => {
     } catch (error) {
       message.error('매입 삭제에 실패했습니다.', 2);
     }
+  };
+
+  // 테이블 변경 핸들러 (페이지네이션, 정렬 등)
+  const handleTableChange = (paginationConfig: any, filters: any, sorter: any) => {
+    setPagination(prev => ({
+      ...prev,
+      current: paginationConfig.current,
+      pageSize: paginationConfig.pageSize,
+    }));
   };
 
   // 엑셀 업로드 처리
@@ -1174,11 +1188,14 @@ const PurchaseManagement: React.FC = () => {
         })}
         scroll={{ x: 1200 }}
         size={window.innerWidth <= 768 ? "small" : "middle"}
+        onChange={handleTableChange}
         pagination={{
-          pageSize: window.innerWidth <= 768 ? 5 : 10,
+          ...pagination,
+          pageSize: window.innerWidth <= 768 ? 5 : pagination.pageSize,
           pageSizeOptions: ['5', '10', '20', '50'],
           showSizeChanger: true,
           showQuickJumper: window.innerWidth > 768,
+          total: filteredPurchases.length,
           showTotal: (total, range) => {
             const searchInfo = searchText ? ` (전체 ${purchases.length}건 중 검색결과)` : '';
             return window.innerWidth <= 768
