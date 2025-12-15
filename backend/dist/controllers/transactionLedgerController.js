@@ -45,6 +45,62 @@ exports.transactionLedgerController = {
                 startDate: start.format('YYYY-MM-DD'),
                 endDate: end.format('YYYY-MM-DD')
             });
+            // 전잔금 계산 (조회 시작일 이전의 잔액)
+            let previousBalance = 0;
+            // 모든 매출 데이터 조회 (전잔금 계산용)
+            const allSalesForBalance = await salesRepository.find({
+                where: {
+                    customerId: Number(customerId),
+                    businessId: Number(businessId),
+                },
+                relations: ['items']
+            });
+            // 모든 매입 데이터 조회 (전잔금 계산용)
+            const allPurchasesForBalance = await purchaseRepository.find({
+                where: {
+                    customerId: Number(customerId),
+                    businessId: Number(businessId),
+                },
+                relations: ['items']
+            });
+            // 모든 수금/지급 데이터 조회 (전잔금 계산용)
+            const allPaymentsForBalance = await paymentRepository.find({
+                where: {
+                    customerId: Number(customerId),
+                    businessId: Number(businessId),
+                }
+            });
+            // 전잔금 계산: 시작일 이전 거래만 집계
+            allSalesForBalance.forEach(sale => {
+                const saleDate = (0, dayjs_1.default)(sale.transactionDate);
+                if (saleDate.isBefore(start, 'day')) {
+                    const totalAmount = (Number(sale.totalAmount) || 0) + (Number(sale.vatAmount) || 0);
+                    previousBalance += totalAmount;
+                }
+            });
+            allPurchasesForBalance.forEach(purchase => {
+                const purchaseDate = (0, dayjs_1.default)(purchase.purchaseDate);
+                if (purchaseDate.isBefore(start, 'day')) {
+                    const totalAmount = (Number(purchase.totalAmount) || 0) + (Number(purchase.vatAmount) || 0);
+                    previousBalance -= totalAmount;
+                }
+            });
+            allPaymentsForBalance.forEach(payment => {
+                const paymentDate = (0, dayjs_1.default)(payment.paymentDate);
+                if (paymentDate.isBefore(start, 'day')) {
+                    const paymentAmount = Number(payment.amount) || 0;
+                    if (payment.paymentType === '수금' || payment.paymentType === '입금') {
+                        previousBalance -= paymentAmount;
+                    }
+                    else {
+                        previousBalance += paymentAmount;
+                    }
+                }
+            });
+            console.log('💰 전잔금 계산 완료:', {
+                previousBalance,
+                beforeDate: start.subtract(1, 'day').format('YYYY-MM-DD')
+            });
             // 매출 데이터 조회 (날짜 범위 포함)
             const allSales = await salesRepository.find({
                 where: {
@@ -89,7 +145,7 @@ exports.transactionLedgerController = {
             console.log(`📊 수금/지급 데이터: 전체 ${allPayments.length}건, 필터링 후 ${payments.length}건`);
             // 거래원장 엔트리 생성
             const entries = [];
-            let runningBalance = 0;
+            let runningBalance = previousBalance; // 전잔금으로 시작
             // 매출 항목 추가
             sales.forEach((sale) => {
                 // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
@@ -188,8 +244,8 @@ exports.transactionLedgerController = {
             });
             // 날짜순 정렬
             entries.sort((a, b) => (0, dayjs_1.default)(a.date).valueOf() - (0, dayjs_1.default)(b.date).valueOf());
-            // 정렬 후 잔액 재계산 (runningBalance)
-            let recalculatedBalance = 0;
+            // 정렬 후 잔액 재계산 (runningBalance) - 전잔금 포함
+            let recalculatedBalance = previousBalance; // 전잔금부터 시작
             entries.forEach(entry => {
                 if (entry.type === 'sales') {
                     recalculatedBalance += entry.totalAmount;
@@ -210,7 +266,7 @@ exports.transactionLedgerController = {
             const totalPurchase = entries.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.amount || 0), 0);
             const totalReceipt = entries.filter(e => e.type === 'receipt').reduce((sum, e) => sum + (e.amount || 0), 0);
             const totalPayment = entries.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.amount || 0), 0);
-            const finalBalance = (totalSales || 0) - (totalPurchase || 0) - (totalReceipt || 0) + (totalPayment || 0);
+            const finalBalance = previousBalance + (totalSales || 0) - (totalPurchase || 0) - (totalReceipt || 0) + (totalPayment || 0);
             const totalQuantity = entries.reduce((sum, e) => sum + (e.itemInfo?.quantity || 0), 0);
             const ledgerData = {
                 companyName: customer.name,
@@ -236,7 +292,7 @@ exports.transactionLedgerController = {
                     start: start.format('YYYY-MM-DD'),
                     end: end.format('YYYY-MM-DD')
                 },
-                previousBalance: 0,
+                previousBalance: previousBalance,
                 entries,
                 totalPurchase,
                 totalPayment,

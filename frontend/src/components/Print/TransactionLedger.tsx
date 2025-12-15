@@ -85,7 +85,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
   const totalReceiptAmount = data.entries.filter(e => e.type === 'receipt').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
   const totalPaymentAmount = data.entries.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
 
-  const finalBalance = totalSalesAmount - totalPurchaseAmount - totalReceiptAmount + totalPaymentAmount;
+  const finalBalance = data.previousBalance + totalSalesAmount - totalPurchaseAmount - totalReceiptAmount + totalPaymentAmount;
 
   return (
     <div style={{
@@ -208,6 +208,80 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
           </tr>
         </thead>
         <tbody>
+          {/* 전잔금 표시 */}
+          {data.previousBalance !== 0 && (
+            <tr style={{ backgroundColor: '#fff9e6' }}>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'center',
+                fontWeight: 'bold'
+              }}>
+                {dayjs(data.period.start).subtract(1, 'day').format('YYYY-MM-DD')}
+              </td>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'center',
+                fontWeight: 'bold'
+              }}>
+                {data.toCompany?.name || data.companyName}
+              </td>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'center',
+                fontWeight: 'bold',
+                color: '#fa8c16'
+              }}>
+                전잔금
+              </td>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'center'
+              }}>
+                -
+              </td>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'right'
+              }}>
+              </td>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'right'
+              }}>
+              </td>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'right',
+                fontWeight: 'bold'
+              }}>
+              </td>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'right',
+                fontWeight: 'bold',
+                color: data.previousBalance >= 0 ? '#1890ff' : '#ff4d4f',
+                fontSize: '10pt'
+              }}>
+                {data.previousBalance.toLocaleString()}원
+              </td>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'center'
+              }}>
+                조회기간 이전 잔액
+              </td>
+            </tr>
+          )}
+
           {/* 거래 내역 */}
           {data.entries.map((entry, index) => {
             // 품목명 표시 로직
