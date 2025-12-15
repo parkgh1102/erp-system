@@ -8,7 +8,7 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const securityLogger_1 = require("./securityLogger");
 exports.generalRateLimit = (0, express_rate_limit_1.default)({
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15분
-    max: process.env.NODE_ENV === 'development' ? 1000 : parseInt(process.env.RATE_LIMIT_MAX || '500'), // 프로덕션: 15분에 500회
+    max: process.env.NODE_ENV === 'development' ? 2000 : parseInt(process.env.RATE_LIMIT_MAX || '2000'), // 프로덕션: 15분에 2000회
     message: {
         success: false,
         message: '너무 많은 요청이 감지되었습니다. 잠시 후 다시 시도해주세요.',
@@ -38,7 +38,7 @@ exports.authRateLimit = (0, express_rate_limit_1.default)({
 });
 exports.apiRateLimit = (0, express_rate_limit_1.default)({
     windowMs: 1 * 60 * 1000, // 1분
-    max: process.env.NODE_ENV === 'development' ? 1000 : 300, // 프로덕션: 분당 300회
+    max: process.env.NODE_ENV === 'development' ? 1000 : 1000, // 프로덕션: 분당 1000회 (대량 데이터 처리용)
     message: {
         success: false,
         message: 'API 호출 한도를 초과했습니다. 잠시 후 다시 시도해주세요.'

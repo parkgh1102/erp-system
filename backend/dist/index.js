@@ -15,7 +15,6 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const envValidator_1 = require("./config/envValidator");
 const database_1 = require("./config/database");
-const rateLimiter_1 = require("./middleware/rateLimiter");
 const securityLogger_1 = require("./middleware/securityLogger");
 const httpsRedirect_1 = require("./middleware/httpsRedirect");
 const sessionConfig_1 = require("./config/sessionConfig");
@@ -110,7 +109,8 @@ app.use((0, cors_1.default)({
 }));
 app.use((0, compression_1.default)());
 app.use((0, morgan_1.default)('combined'));
-app.use(rateLimiter_1.generalRateLimit);
+// Rate limiting 임시 비활성화 (429 에러 해결용)
+// app.use(generalRateLimit);
 app.use((0, cookie_parser_1.default)());
 app.use((0, express_session_1.default)(sessionConfig_1.sessionConfig));
 app.use(express_1.default.json({ limit: '10mb' }));
@@ -135,16 +135,17 @@ app.use((req, res, next) => {
     }
     next();
 });
-app.use('/api/auth', rateLimiter_1.authRateLimit, authRoutes_1.default);
-app.use('/api/otp', rateLimiter_1.authRateLimit, otpRoutes_1.default);
-app.use('/api/businesses', rateLimiter_1.apiRateLimit, businessRoutes_1.businessRoutes);
-app.use('/api/businesses', rateLimiter_1.apiRateLimit, userRoutes_1.default);
-app.use('/api/transaction-ledger', rateLimiter_1.apiRateLimit, transactionLedgerRoutes_1.default);
-app.use('/api/settings', rateLimiter_1.apiRateLimit, settings_1.default);
-app.use('/api/activity-logs', rateLimiter_1.apiRateLimit, activityLogRoutes_1.default);
-app.use('/api/notifications', rateLimiter_1.apiRateLimit, notificationRoutes_1.default);
-app.use('/api/chatbot', rateLimiter_1.apiRateLimit, chatbotRoutes_1.default);
-app.use('/api/excel', rateLimiter_1.apiRateLimit, excelRoutes_1.default);
+// Rate limiting 임시 비활성화 (429 에러 해결용)
+app.use('/api/auth', authRoutes_1.default);
+app.use('/api/otp', otpRoutes_1.default);
+app.use('/api/businesses', businessRoutes_1.businessRoutes);
+app.use('/api/businesses', userRoutes_1.default);
+app.use('/api/transaction-ledger', transactionLedgerRoutes_1.default);
+app.use('/api/settings', settings_1.default);
+app.use('/api/activity-logs', activityLogRoutes_1.default);
+app.use('/api/notifications', notificationRoutes_1.default);
+app.use('/api/chatbot', chatbotRoutes_1.default);
+app.use('/api/excel', excelRoutes_1.default);
 // 데이터베이스 연결 상태 추적
 let isDatabaseConnected = false;
 // Health check endpoints - 서버가 먼저 시작되어야 함

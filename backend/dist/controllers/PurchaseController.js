@@ -32,12 +32,12 @@ const purchaseSchema = joi_1.default.object({
         spec: joi_1.default.string().allow('', null).optional(),
         unit: joi_1.default.string().allow('', null).optional(),
         taxType: joi_1.default.string().allow('', null).optional(),
-        quantity: joi_1.default.number().min(0.01).required(),
-        unitPrice: joi_1.default.number().min(0).required(),
-        amount: joi_1.default.number().min(0).required(),
-        supplyAmount: joi_1.default.number().min(0).optional(),
-        vatAmount: joi_1.default.number().min(0).optional(),
-        totalAmount: joi_1.default.number().min(0).optional()
+        quantity: joi_1.default.number().required(),
+        unitPrice: joi_1.default.number().required(),
+        amount: joi_1.default.number().required(),
+        supplyAmount: joi_1.default.number().optional(),
+        vatAmount: joi_1.default.number().optional(),
+        totalAmount: joi_1.default.number().optional()
     })).default([])
 });
 class PurchaseController {

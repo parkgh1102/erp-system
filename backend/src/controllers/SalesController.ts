@@ -40,12 +40,12 @@ const salesSchema = Joi.object({
       spec: Joi.string().allow('', null).optional(),
       unit: Joi.string().allow('', null).optional(),
       taxType: Joi.string().allow('', null).optional(),
-      quantity: Joi.number().min(0.01).required(),
-      unitPrice: Joi.number().min(0).required(),
-      amount: Joi.number().min(0).required(),
-      supplyAmount: Joi.number().min(0).optional(),
-      vatAmount: Joi.number().min(0).optional(),
-      totalAmount: Joi.number().min(0).optional(),
+      quantity: Joi.number().required(),
+      unitPrice: Joi.number().required(),
+      amount: Joi.number().required(),
+      supplyAmount: Joi.number().optional(),
+      vatAmount: Joi.number().optional(),
+      totalAmount: Joi.number().optional(),
       vatRate: Joi.number().min(0).max(1).default(0.1).optional()
     })
   ).default([])
