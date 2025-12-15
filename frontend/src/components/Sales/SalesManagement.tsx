@@ -455,6 +455,28 @@ const SalesManagement: React.FC = () => {
           const isTaxFree = taxType === 'tax_free';
           const isTaxInclusive = taxType === 'tax_inclusive';
 
+          // 기본 금액 계산
+          const baseAmount = Number(item.amount) || (Number(item.quantity) * Number(item.unitPrice)) || 0;
+
+          // supplyAmount, vatAmount, totalAmount 계산
+          let calculatedSupplyAmount: number;
+          let calculatedVatAmount: number;
+          let calculatedTotalAmount: number;
+
+          if (isTaxFree) {
+            calculatedSupplyAmount = baseAmount;
+            calculatedVatAmount = 0;
+            calculatedTotalAmount = baseAmount;
+          } else if (isTaxInclusive) {
+            calculatedTotalAmount = baseAmount;
+            calculatedSupplyAmount = Math.round(baseAmount / 1.1);
+            calculatedVatAmount = calculatedTotalAmount - calculatedSupplyAmount;
+          } else {
+            calculatedSupplyAmount = baseAmount;
+            calculatedVatAmount = Math.round(baseAmount * 0.1);
+            calculatedTotalAmount = calculatedSupplyAmount + calculatedVatAmount;
+          }
+
           return {
             itemName: item.itemName || item.productName || item.product?.name || '',
             specification: item.spec || item.specification || item.product?.spec || '',
@@ -462,10 +484,10 @@ const SalesManagement: React.FC = () => {
             unit: item.unit || item.product?.unit || 'EA',
             quantity: Number(item.quantity) || 0,
             unitPrice: Number(item.unitPrice) || 0,
-            amount: Number(item.amount) || (Number(item.quantity) * Number(item.unitPrice)) || 0,
-            supplyAmount: Number(item.supplyAmount) || 0,
-            vatAmount: Number(item.vatAmount) || 0,
-            totalAmount: Number(item.totalAmount) || 0,
+            amount: baseAmount,
+            supplyAmount: Number(item.supplyAmount) || calculatedSupplyAmount,
+            vatAmount: Number(item.vatAmount) || calculatedVatAmount,
+            totalAmount: Number(item.totalAmount) || calculatedTotalAmount,
             taxExempt: isTaxFree,
             taxType: taxType,
             taxInclusive: isTaxInclusive
@@ -545,6 +567,28 @@ const SalesManagement: React.FC = () => {
           const isTaxFree = taxType === 'tax_free';
           const isTaxInclusive = taxType === 'tax_inclusive';
 
+          // 기본 금액 계산
+          const baseAmount = Number(item.amount) || (Number(item.quantity) * Number(item.unitPrice)) || 0;
+
+          // supplyAmount, vatAmount, totalAmount 계산
+          let calculatedSupplyAmount: number;
+          let calculatedVatAmount: number;
+          let calculatedTotalAmount: number;
+
+          if (isTaxFree) {
+            calculatedSupplyAmount = baseAmount;
+            calculatedVatAmount = 0;
+            calculatedTotalAmount = baseAmount;
+          } else if (isTaxInclusive) {
+            calculatedTotalAmount = baseAmount;
+            calculatedSupplyAmount = Math.round(baseAmount / 1.1);
+            calculatedVatAmount = calculatedTotalAmount - calculatedSupplyAmount;
+          } else {
+            calculatedSupplyAmount = baseAmount;
+            calculatedVatAmount = Math.round(baseAmount * 0.1);
+            calculatedTotalAmount = calculatedSupplyAmount + calculatedVatAmount;
+          }
+
           return {
             itemName: item.itemName || item.productName || item.product?.name || '',
             specification: item.spec || item.specification || item.product?.spec || '',
@@ -552,10 +596,10 @@ const SalesManagement: React.FC = () => {
             unit: item.unit || item.product?.unit || 'EA',
             quantity: Number(item.quantity) || 0,
             unitPrice: Number(item.unitPrice) || 0,
-            amount: Number(item.amount) || (Number(item.quantity) * Number(item.unitPrice)) || 0,
-            supplyAmount: Number(item.supplyAmount) || 0,
-            vatAmount: Number(item.vatAmount) || 0,
-            totalAmount: Number(item.totalAmount) || 0,
+            amount: baseAmount,
+            supplyAmount: Number(item.supplyAmount) || calculatedSupplyAmount,
+            vatAmount: Number(item.vatAmount) || calculatedVatAmount,
+            totalAmount: Number(item.totalAmount) || calculatedTotalAmount,
             taxExempt: isTaxFree,
             taxType: taxType,
             taxInclusive: isTaxInclusive
@@ -637,6 +681,28 @@ const SalesManagement: React.FC = () => {
             const isTaxFree = taxType === 'tax_free';
             const isTaxInclusive = taxType === 'tax_inclusive';
 
+            // 기본 금액 계산
+            const baseAmount = Number(item.amount) || (Number(item.quantity) * Number(item.unitPrice)) || 0;
+
+            // supplyAmount, vatAmount, totalAmount 계산
+            let calculatedSupplyAmount: number;
+            let calculatedVatAmount: number;
+            let calculatedTotalAmount: number;
+
+            if (isTaxFree) {
+              calculatedSupplyAmount = baseAmount;
+              calculatedVatAmount = 0;
+              calculatedTotalAmount = baseAmount;
+            } else if (isTaxInclusive) {
+              calculatedTotalAmount = baseAmount;
+              calculatedSupplyAmount = Math.round(baseAmount / 1.1);
+              calculatedVatAmount = calculatedTotalAmount - calculatedSupplyAmount;
+            } else {
+              calculatedSupplyAmount = baseAmount;
+              calculatedVatAmount = Math.round(baseAmount * 0.1);
+              calculatedTotalAmount = calculatedSupplyAmount + calculatedVatAmount;
+            }
+
             return {
               itemName: item.itemName || item.productName || item.product?.name || '',
               specification: item.spec || item.specification || item.product?.spec || '',
@@ -644,10 +710,10 @@ const SalesManagement: React.FC = () => {
               unit: item.unit || item.product?.unit || 'EA',
               quantity: Number(item.quantity) || 0,
               unitPrice: Number(item.unitPrice) || 0,
-              amount: Number(item.amount) || (Number(item.quantity) * Number(item.unitPrice)) || 0,
-              supplyAmount: Number(item.supplyAmount) || 0,
-              vatAmount: Number(item.vatAmount) || 0,
-              totalAmount: Number(item.totalAmount) || 0,
+              amount: baseAmount,
+              supplyAmount: Number(item.supplyAmount) || calculatedSupplyAmount,
+              vatAmount: Number(item.vatAmount) || calculatedVatAmount,
+              totalAmount: Number(item.totalAmount) || calculatedTotalAmount,
               taxExempt: isTaxFree,
               taxType: taxType,
               taxInclusive: isTaxInclusive
