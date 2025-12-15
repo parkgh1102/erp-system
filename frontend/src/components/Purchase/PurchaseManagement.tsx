@@ -1456,7 +1456,6 @@ const PurchaseManagement: React.FC = () => {
                     placeholder="수량"
                     value={item.quantity}
                     onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
-                    min={0}
                     style={{ width: '100%' }}
                   />
                 </Col>
@@ -1465,7 +1464,6 @@ const PurchaseManagement: React.FC = () => {
                     placeholder="단가"
                     value={item.unitPrice}
                     onChange={(value) => handleItemChange(index, 'unitPrice', value || 0)}
-                    min={0}
                     style={{ width: '100%' }}
                     formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                     parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
