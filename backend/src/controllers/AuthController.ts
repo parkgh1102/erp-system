@@ -243,9 +243,26 @@ export const AuthController = {
         { email: user.email }
       ).catch(err => logger.error('Activity log error:', err));
 
-      // 세션 유지 시간: JWT 설정 값 사용 (간소화로 로그인 속도 개선)
-      // companySettings 조회 제거로 DB 쿼리 1개 감소
-      const sessionTimeoutHours = 24; // 기본값 24시간
+      // 세션 유지 시간: CompanySettings에서 조회
+      let sessionTimeoutHours = 8; // 기본값 8시간
+
+      try {
+        const settingsRepository = AppDataSource.getRepository(CompanySettings);
+        const settings = await settingsRepository.findOne({
+          where: { businessId, settingKey: 'sessionTimeout' }
+        });
+
+        if (settings && settings.settingValue) {
+          // '1h', '4h', '8h', '24h' 형식을 시간 숫자로 변환
+          const timeoutValue = settings.settingValue;
+          const hours = parseInt(timeoutValue.replace('h', ''));
+          if (!isNaN(hours) && hours > 0) {
+            sessionTimeoutHours = hours;
+          }
+        }
+      } catch (err) {
+        logger.error('Session timeout settings query error:', err);
+      }
 
       if (env.NODE_ENV === 'development') {
         console.log('⏰ 세션 유지 시간:', sessionTimeoutHours, '시간');
