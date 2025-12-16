@@ -397,10 +397,13 @@ export class SalesController {
         await salesItemRepository.remove(sales.items);
       }
 
+      // 날짜 처리 (saleDate가 있으면 사용, 없으면 transactionDate 사용)
+      const transactionDate = value.saleDate || value.transactionDate;
+
       // 매출 정보 업데이트
       await salesRepository.update(parseInt(id), {
         customerId: value.customerId || null,
-        transactionDate: value.transactionDate,
+        transactionDate: transactionDate,
         totalAmount: value.totalAmount,
         vatAmount: value.vatAmount,
         description: value.description || null,

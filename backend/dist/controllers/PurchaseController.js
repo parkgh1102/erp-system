@@ -21,8 +21,8 @@ const purchaseSchema = joi_1.default.object({
         name: joi_1.default.string().required()
     }).allow(null),
     purchaseDate: joi_1.default.string().isoDate().required(),
-    totalAmount: joi_1.default.number().min(0).required(),
-    vatAmount: joi_1.default.number().min(0).default(0),
+    totalAmount: joi_1.default.number().required(),
+    vatAmount: joi_1.default.number().default(0),
     memo: joi_1.default.string().allow('', null).optional(),
     businessId: joi_1.default.number().integer().min(1).optional(),
     items: joi_1.default.array().items(joi_1.default.object({

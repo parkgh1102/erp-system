@@ -30,8 +30,8 @@ const salesSchema = joi_1.default.object({
     }).allow(null),
     saleDate: joi_1.default.string().isoDate().optional(),
     transactionDate: joi_1.default.string().isoDate().optional(),
-    totalAmount: joi_1.default.number().min(0).required(),
-    vatAmount: joi_1.default.number().min(0).default(0),
+    totalAmount: joi_1.default.number().required(),
+    vatAmount: joi_1.default.number().default(0),
     description: joi_1.default.string().allow('', null).optional(),
     memo: joi_1.default.string().allow('', null).optional(),
     businessId: joi_1.default.number().integer().min(1).optional(),
@@ -360,10 +360,12 @@ class SalesController {
             if (sales.items) {
                 await salesItemRepository.remove(sales.items);
             }
+            // 날짜 처리 (saleDate가 있으면 사용, 없으면 transactionDate 사용)
+            const transactionDate = value.saleDate || value.transactionDate;
             // 매출 정보 업데이트
             await salesRepository.update(parseInt(id), {
                 customerId: value.customerId || null,
-                transactionDate: value.transactionDate,
+                transactionDate: transactionDate,
                 totalAmount: value.totalAmount,
                 vatAmount: value.vatAmount,
                 description: value.description || null,
