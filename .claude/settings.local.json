@@ -152,7 +152,17 @@
       "Bash(az webapp log tail:*)",
       "Bash(az webapp config appsettings list:*)",
       "Bash(az webapp restart:*)",
-      "Bash(az webapp deployment source show:*)"
+      "Bash(az webapp deployment source show:*)",
+      "Bash(az webapp deployment list-publishing-credentials:*)",
+      "Bash(for i in {1..10})",
+      "Bash(do echo \"Request $i:\")",
+      "Bash(done)",
+      "Bash(PORT=5175 npm run dev:*)",
+      "Bash(az account:*)",
+      "Bash(swa --version:*)",
+      "Bash(PORT=5176 npm run dev:*)",
+      "Bash(swa deploy:*)",
+      "Bash(az staticwebapp secrets list:*)"
     ],
     "deny": [],
     "ask": []

@@ -588,7 +588,8 @@ const TransactionLedgerManagement: React.FC = () => {
               const totalReceipt = pageData.filter(e => e.type === 'receipt').reduce((sum, e) => sum + (e.totalAmount || e.amount || 0), 0);
               const totalPayment = pageData.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.totalAmount || e.amount || 0), 0);
 
-              const finalBalance = totalSales - totalPurchase - totalReceipt + totalPayment;
+              // 합계 잔액은 전체 거래의 마지막 잔액을 표시
+              const finalBalance = ledgerEntries.length > 0 ? ledgerEntries[ledgerEntries.length - 1].balance : 0;
 
               return (
                 <>
