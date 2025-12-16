@@ -74,7 +74,8 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
   const totalReceiptAmount = ledgerEntries.filter(e => e.type === 'receipt').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
   const totalPaymentAmount = ledgerEntries.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
 
-  const finalBalance = totalSalesAmount - totalPurchaseAmount - totalReceiptAmount + totalPaymentAmount;
+  // 합계 잔액은 전체 거래의 마지막 잔액을 표시
+  const finalBalance = ledgerEntries.length > 0 ? ledgerEntries[ledgerEntries.length - 1].balance : 0;
 
   return (
     <Modal
