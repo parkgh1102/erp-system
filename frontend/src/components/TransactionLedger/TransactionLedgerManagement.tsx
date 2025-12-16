@@ -722,6 +722,7 @@ const TransactionLedgerManagement: React.FC = () => {
         customer={customers.find(c => c.id === selectedCustomer) || null}
         dateRange={dateRange}
         title="거래원장"
+        previousBalance={ledgerData?.previousBalance || 0}
       />
     </div>
   );

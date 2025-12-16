@@ -45,6 +45,7 @@ interface TransactionLedgerPrintModalProps {
   customer?: Customer | null;
   dateRange?: [dayjs.Dayjs, dayjs.Dayjs];
   title: string;
+  previousBalance?: number;
 }
 
 export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalProps> = ({
@@ -53,7 +54,8 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
   ledgerEntries,
   customer,
   dateRange,
-  title
+  title,
+  previousBalance = 0
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -241,6 +243,70 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
             </tr>
           </thead>
           <tbody>
+            {/* 이월잔액 행 */}
+            {previousBalance !== 0 && dateRange && dateRange[0] && (
+              <tr style={{ backgroundColor: '#fffbe6' }}>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'center'
+                }}>
+                  {dateRange[0].subtract(1, 'day').format('YYYY-MM-DD')}
+                </td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'center'
+                }}>
+                  {customer?.name}
+                </td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'center',
+                  color: '#faad14'
+                }}>
+                  이월
+                </td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'center'
+                }}>
+                  이월잔액
+                </td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'center'
+                }}></td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'center'
+                }}></td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'center'
+                }}></td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'right',
+                  fontWeight: 'bold',
+                  color: previousBalance >= 0 ? '#1890ff' : '#ff4d4f'
+                }}>
+                  {previousBalance.toLocaleString()}원
+                </td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'center'
+                }}>-</td>
+              </tr>
+            )}
+
             {/* 거래 내역 */}
             {ledgerEntries.map((entry, index) => {
               // 품목명 표시 로직
