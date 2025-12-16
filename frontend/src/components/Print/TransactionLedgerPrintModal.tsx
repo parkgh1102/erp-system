@@ -100,12 +100,12 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
         </div>
       }
     >
-      {/* 인쇄 방향 설정 */}
+      {/* 인쇄 방향 설정 - 가로 */}
       <style>
         {`
           @media print {
             @page {
-              size: A4 portrait;
+              size: A4 landscape;
               margin: 10mm;
             }
             body {
