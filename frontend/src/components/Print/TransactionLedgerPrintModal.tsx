@@ -100,6 +100,22 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
         </div>
       }
     >
+      {/* 인쇄 방향 설정 */}
+      <style>
+        {`
+          @media print {
+            @page {
+              size: A4 portrait;
+              margin: 10mm;
+            }
+            body {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+          }
+        `}
+      </style>
+
       <div
         ref={printRef}
         style={{
