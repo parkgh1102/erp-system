@@ -298,7 +298,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
                   border: '1px solid #000',
                   padding: '1mm',
                   textAlign: 'right'
-                }}>{Math.round(item.quantity).toLocaleString()}</td>
+                }}>{Number(item.quantity).toLocaleString('ko-KR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
                 <td style={{
                   border: '1px solid #000',
                   padding: '1mm',
