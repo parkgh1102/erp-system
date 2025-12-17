@@ -534,16 +534,74 @@ export const getCommonColumns = () => ({
   ] as ExportColumn[],
 });
 
-// 메뉴 아이템 생성 함수
-export const createExportMenuItems = (handleExport: (type: 'excel' | 'pdf') => void) => [
-  {
-    key: 'excel',
-    label: '엑셀로 내보내기',
-    onClick: () => handleExport('excel'),
-  },
-  {
-    key: 'pdf',
-    label: 'PDF로 내보내기',
-    onClick: () => handleExport('pdf'),
-  },
-];
+// 메뉴 아이템 생성 함수 (오버로드 지원)
+export const createExportMenuItems = (
+  dataOrHandler: any[] | ((type: 'excel' | 'pdf') => void),
+  columns?: any[],
+  filename?: string,
+  _tableId?: string
+) => {
+  // 콜백 함수 형태로 호출된 경우 (레거시 지원)
+  if (typeof dataOrHandler === 'function') {
+    const handleExport = dataOrHandler;
+    return [
+      {
+        key: 'excel',
+        label: '엑셀로 내보내기',
+        onClick: () => handleExport('excel'),
+      },
+      {
+        key: 'pdf',
+        label: 'PDF로 내보내기',
+        onClick: () => handleExport('pdf'),
+      },
+    ];
+  }
+
+  // 데이터, 컬럼, 파일명을 직접 받는 경우
+  const data = dataOrHandler;
+  const exportColumns: ExportColumn[] = (columns || []).map((col: any) => ({
+    key: col.key || col.dataIndex || '',
+    title: col.title || '',
+    dataIndex: col.dataIndex || col.key || '',
+    render: col.render ? (value: any, record: any) => {
+      try {
+        const result = col.render(value, record);
+        // React 엘리먼트인 경우 텍스트로 변환
+        if (result && typeof result === 'object' && result.props) {
+          return result.props.children || String(result);
+        }
+        return String(result || '');
+      } catch {
+        return String(value || '');
+      }
+    } : undefined,
+  }));
+
+  return [
+    {
+      key: 'excel',
+      label: '엑셀로 내보내기',
+      onClick: () => {
+        exportToExcel({
+          filename: filename || 'export',
+          title: filename || '데이터 목록',
+          columns: exportColumns,
+          data: data,
+        });
+      },
+    },
+    {
+      key: 'pdf',
+      label: 'PDF로 내보내기',
+      onClick: () => {
+        exportToPDF({
+          filename: filename || 'export',
+          title: filename || '데이터 목록',
+          columns: exportColumns,
+          data: data,
+        });
+      },
+    },
+  ];
+};
