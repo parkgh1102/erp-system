@@ -10,6 +10,7 @@ const Customer_1 = require("../entities/Customer");
 const Product_1 = require("../entities/Product");
 const Sales_1 = require("../entities/Sales");
 const Purchase_1 = require("../entities/Purchase");
+const Payment_1 = require("../entities/Payment");
 const User_1 = require("../entities/User");
 const Business_1 = require("../entities/Business");
 const logger_1 = require("../utils/logger");
@@ -19,6 +20,7 @@ const customerRepository = database_1.AppDataSource.getRepository(Customer_1.Cus
 const productRepository = database_1.AppDataSource.getRepository(Product_1.Product);
 const salesRepository = database_1.AppDataSource.getRepository(Sales_1.Sales);
 const purchaseRepository = database_1.AppDataSource.getRepository(Purchase_1.Purchase);
+const paymentRepository = database_1.AppDataSource.getRepository(Payment_1.Payment);
 const userRepository = database_1.AppDataSource.getRepository(User_1.User);
 const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
 exports.SettingsController = {
@@ -457,9 +459,11 @@ exports.SettingsController = {
                 where: { businessId },
                 relations: ['customer', 'items']
             });
-            // Payment 엔티티도 추가
-            const paymentRepository = database_1.AppDataSource.getRepository('Payment');
-            const payments = await paymentRepository.find({ where: { businessId } });
+            // Payment 조회
+            const payments = await paymentRepository.find({
+                where: { businessId },
+                relations: ['customer']
+            });
             const backupData = {
                 version: '1.0',
                 createdAt: new Date().toISOString(),

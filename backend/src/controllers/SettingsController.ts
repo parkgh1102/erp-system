@@ -5,6 +5,7 @@ import { Customer } from '../entities/Customer';
 import { Product } from '../entities/Product';
 import { Sales } from '../entities/Sales';
 import { Purchase } from '../entities/Purchase';
+import { Payment } from '../entities/Payment';
 import { User } from '../entities/User';
 import { Business } from '../entities/Business';
 import { logger } from '../utils/logger';
@@ -15,6 +16,7 @@ const customerRepository = AppDataSource.getRepository(Customer);
 const productRepository = AppDataSource.getRepository(Product);
 const salesRepository = AppDataSource.getRepository(Sales);
 const purchaseRepository = AppDataSource.getRepository(Purchase);
+const paymentRepository = AppDataSource.getRepository(Payment);
 const userRepository = AppDataSource.getRepository(User);
 const businessRepository = AppDataSource.getRepository(Business);
 
@@ -521,9 +523,11 @@ export const SettingsController = {
         relations: ['customer', 'items']
       });
 
-      // Payment 엔티티도 추가
-      const paymentRepository = AppDataSource.getRepository('Payment');
-      const payments = await paymentRepository.find({ where: { businessId } });
+      // Payment 조회
+      const payments = await paymentRepository.find({
+        where: { businessId },
+        relations: ['customer']
+      });
 
       const backupData = {
         version: '1.0',
@@ -590,7 +594,7 @@ export const SettingsController = {
               amount: item.amount
             }))
           })),
-          payments: (payments as any[]).map(p => ({
+          payments: payments.map(p => ({
             paymentDate: p.paymentDate,
             customerName: p.customer?.name,
             paymentType: p.paymentType,
