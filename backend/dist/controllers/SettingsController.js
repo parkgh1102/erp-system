@@ -443,6 +443,206 @@ exports.SettingsController = {
             });
         }
     },
+    // 데이터 백업 (JSON 다운로드)
+    async backupData(req, res) {
+        try {
+            const businessId = parseInt(req.params.businessId);
+            const customers = await customerRepository.find({ where: { businessId } });
+            const products = await productRepository.find({ where: { businessId } });
+            const sales = await salesRepository.find({
+                where: { businessId },
+                relations: ['customer', 'items']
+            });
+            const purchases = await purchaseRepository.find({
+                where: { businessId },
+                relations: ['customer', 'items']
+            });
+            // Payment 엔티티도 추가
+            const paymentRepository = database_1.AppDataSource.getRepository('Payment');
+            const payments = await paymentRepository.find({ where: { businessId } });
+            const backupData = {
+                version: '1.0',
+                createdAt: new Date().toISOString(),
+                businessId,
+                data: {
+                    customers: customers.map(c => ({
+                        customerCode: c.customerCode,
+                        name: c.name,
+                        businessNumber: c.businessNumber,
+                        representative: c.representative,
+                        phone: c.phone,
+                        address: c.address,
+                        email: c.email,
+                        fax: c.fax,
+                        managerContact: c.managerContact,
+                        businessType: c.businessType,
+                        businessItem: c.businessItem,
+                        customerType: c.customerType
+                    })),
+                    products: products.map(p => ({
+                        productCode: p.productCode,
+                        name: p.name,
+                        spec: p.spec,
+                        specification: p.specification,
+                        unit: p.unit,
+                        buyPrice: p.buyPrice,
+                        sellPrice: p.sellPrice,
+                        taxType: p.taxType,
+                        category: p.category,
+                        memo: p.memo,
+                        currentStock: p.currentStock
+                    })),
+                    sales: sales.map(s => ({
+                        transactionDate: s.transactionDate,
+                        customerName: s.customer?.name,
+                        totalAmount: s.totalAmount,
+                        vatAmount: s.vatAmount,
+                        memo: s.memo,
+                        items: s.items?.map(item => ({
+                            itemName: item.itemName,
+                            specification: item.specification,
+                            unit: item.unit,
+                            quantity: item.quantity,
+                            unitPrice: item.unitPrice,
+                            supplyAmount: item.supplyAmount,
+                            taxAmount: item.taxAmount,
+                            remark: item.remark
+                        }))
+                    })),
+                    purchases: purchases.map(p => ({
+                        purchaseDate: p.purchaseDate,
+                        customerName: p.customer?.name,
+                        totalAmount: p.totalAmount,
+                        vatAmount: p.vatAmount,
+                        memo: p.memo,
+                        items: p.items?.map(item => ({
+                            productCode: item.productCode,
+                            productName: item.productName,
+                            spec: item.spec,
+                            unit: item.unit,
+                            quantity: item.quantity,
+                            unitPrice: item.unitPrice,
+                            amount: item.amount
+                        }))
+                    })),
+                    payments: payments.map(p => ({
+                        paymentDate: p.paymentDate,
+                        customerName: p.customer?.name,
+                        paymentType: p.paymentType,
+                        amount: p.amount,
+                        memo: p.memo
+                    }))
+                }
+            };
+            const filename = `backup_${businessId}_${new Date().toISOString().split('T')[0]}.json`;
+            res.setHeader('Content-Type', 'application/json');
+            res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+            res.send(JSON.stringify(backupData, null, 2));
+        }
+        catch (error) {
+            logger_1.logger.error('Backup data error', error instanceof Error ? error : new Error(String(error)));
+            res.status(500).json({
+                success: false,
+                message: '데이터 백업 중 오류가 발생했습니다.'
+            });
+        }
+    },
+    // 데이터 복원 (JSON 업로드)
+    async restoreData(req, res) {
+        try {
+            const businessId = parseInt(req.params.businessId);
+            const backupData = req.body;
+            // 백업 데이터 검증
+            if (!backupData || !backupData.version || !backupData.data) {
+                return res.status(400).json({
+                    success: false,
+                    message: '유효하지 않은 백업 파일입니다.'
+                });
+            }
+            // 트랜잭션으로 복원 처리
+            await database_1.AppDataSource.transaction(async (transactionalEntityManager) => {
+                // 1. 기존 데이터 삭제 (역순으로)
+                await transactionalEntityManager.query(`DELETE FROM sales_items WHERE "salesId" IN (SELECT id FROM sales WHERE "businessId" = $1)`, [businessId]);
+                await transactionalEntityManager.query(`DELETE FROM purchase_items WHERE "purchaseId" IN (SELECT id FROM purchases WHERE "businessId" = $1)`, [businessId]);
+                await transactionalEntityManager.query(`DELETE FROM sales WHERE "businessId" = $1`, [businessId]);
+                await transactionalEntityManager.query(`DELETE FROM purchases WHERE "businessId" = $1`, [businessId]);
+                await transactionalEntityManager.query(`DELETE FROM payments WHERE "businessId" = $1`, [businessId]);
+                await transactionalEntityManager.query(`DELETE FROM customers WHERE "businessId" = $1`, [businessId]);
+                await transactionalEntityManager.query(`DELETE FROM products WHERE "businessId" = $1`, [businessId]);
+                // 2. 거래처 복원
+                const customerMap = new Map(); // customerName -> customerId
+                for (const customer of backupData.data.customers || []) {
+                    const result = await transactionalEntityManager.query(`INSERT INTO customers ("businessId", "customerCode", name, "businessNumber", representative, phone, address, email, fax, "managerContact", "businessType", "businessItem", "customerType", "createdAt", "updatedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()) RETURNING id`, [businessId, customer.customerCode, customer.name, customer.businessNumber, customer.representative, customer.phone, customer.address, customer.email, customer.fax, customer.managerContact, customer.businessType, customer.businessItem, customer.customerType || '기타']);
+                    if (result[0]?.id) {
+                        customerMap.set(customer.name, result[0].id);
+                    }
+                }
+                // 3. 품목 복원
+                for (const product of backupData.data.products || []) {
+                    await transactionalEntityManager.query(`INSERT INTO products ("businessId", "productCode", name, spec, specification, unit, "buyPrice", "sellPrice", "taxType", category, memo, "currentStock", "createdAt", "updatedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())`, [businessId, product.productCode, product.name, product.spec, product.specification, product.unit, product.buyPrice, product.sellPrice, product.taxType, product.category, product.memo, product.currentStock || 0]);
+                }
+                // 4. 매출 복원
+                for (const sale of backupData.data.sales || []) {
+                    const customerId = customerMap.get(sale.customerName);
+                    if (!customerId)
+                        continue;
+                    const saleResult = await transactionalEntityManager.query(`INSERT INTO sales ("businessId", "customerId", "transactionDate", "totalAmount", "vatAmount", memo, "createdAt", "updatedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) RETURNING id`, [businessId, customerId, sale.transactionDate, sale.totalAmount, sale.vatAmount, sale.memo]);
+                    const salesId = saleResult[0]?.id;
+                    if (salesId && sale.items) {
+                        for (const item of sale.items) {
+                            await transactionalEntityManager.query(`INSERT INTO sales_items ("salesId", "itemName", specification, unit, quantity, "unitPrice", "supplyAmount", "taxAmount", remark, "createdAt")
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`, [salesId, item.itemName, item.specification, item.unit, item.quantity, item.unitPrice, item.supplyAmount, item.taxAmount || 0, item.remark]);
+                        }
+                    }
+                }
+                // 5. 매입 복원
+                for (const purchase of backupData.data.purchases || []) {
+                    const customerId = customerMap.get(purchase.customerName);
+                    if (!customerId)
+                        continue;
+                    const purchaseResult = await transactionalEntityManager.query(`INSERT INTO purchases ("businessId", "customerId", "purchaseDate", "totalAmount", "vatAmount", memo, "createdAt", "updatedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) RETURNING id`, [businessId, customerId, purchase.purchaseDate, purchase.totalAmount, purchase.vatAmount, purchase.memo]);
+                    const purchaseId = purchaseResult[0]?.id;
+                    if (purchaseId && purchase.items) {
+                        for (const item of purchase.items) {
+                            await transactionalEntityManager.query(`INSERT INTO purchase_items ("purchaseId", "productCode", "productName", spec, unit, quantity, "unitPrice", amount, "createdAt")
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`, [purchaseId, item.productCode, item.productName, item.spec, item.unit, item.quantity, item.unitPrice, item.amount]);
+                        }
+                    }
+                }
+                // 6. 수금 복원
+                for (const payment of backupData.data.payments || []) {
+                    const customerId = customerMap.get(payment.customerName);
+                    if (!customerId)
+                        continue;
+                    await transactionalEntityManager.query(`INSERT INTO payments ("businessId", "customerId", "paymentDate", "paymentType", amount, memo, "createdAt", "updatedAt")
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())`, [businessId, customerId, payment.paymentDate, payment.paymentType, payment.amount, payment.memo]);
+                }
+            });
+            logger_1.logger.info(`Data restored for businessId: ${businessId}`);
+            res.json({
+                success: true,
+                message: '데이터가 성공적으로 복원되었습니다.',
+                summary: {
+                    customers: backupData.data.customers?.length || 0,
+                    products: backupData.data.products?.length || 0,
+                    sales: backupData.data.sales?.length || 0,
+                    purchases: backupData.data.purchases?.length || 0,
+                    payments: backupData.data.payments?.length || 0
+                }
+            });
+        }
+        catch (error) {
+            logger_1.logger.error('Restore data error', error instanceof Error ? error : new Error(String(error)));
+            res.status(500).json({
+                success: false,
+                message: '데이터 복원 중 오류가 발생했습니다.'
+            });
+        }
+    },
     // 계정 삭제
     async deleteAccount(req, res) {
         try {

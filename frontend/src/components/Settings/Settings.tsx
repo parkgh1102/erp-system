@@ -19,6 +19,7 @@ import {
   Tabs,
   Modal,
   Spin,
+  Upload,
 } from 'antd';
 import {
   SettingOutlined,
@@ -28,6 +29,8 @@ import {
   DatabaseOutlined,
   ExclamationCircleOutlined,
   UserOutlined,
+  CloudDownloadOutlined,
+  CloudUploadOutlined,
 } from '@ant-design/icons';
 import { useThemeStore } from '../../stores/themeStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -335,6 +338,92 @@ const Settings: React.FC = () => {
     });
   };
 
+  // 데이터 백업
+  const handleBackup = async () => {
+    if (!currentBusiness) {
+      showError('사업체 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await settingsAPI.backupData(currentBusiness.id);
+
+      const blob = new Blob([response.data], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const date = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `backup_${date}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      showSuccess('백업 파일이 다운로드되었습니다.');
+    } catch (error) {
+      showError('백업에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 데이터 복원
+  const handleRestore = async (file: File) => {
+    if (!currentBusiness) {
+      showError('사업체 정보를 찾을 수 없습니다.');
+      return false;
+    }
+
+    return new Promise<boolean>((resolve) => {
+      Modal.confirm({
+        title: '데이터 복원',
+        icon: <ExclamationCircleOutlined />,
+        content: (
+          <div>
+            <p style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
+              경고: 기존 데이터가 모두 삭제되고 백업 데이터로 대체됩니다!
+            </p>
+            <p>선택한 파일: {file.name}</p>
+            <p>계속하시겠습니까?</p>
+          </div>
+        ),
+        okText: '복원',
+        okType: 'danger',
+        cancelText: '취소',
+        async onOk() {
+          try {
+            setLoading(true);
+
+            const text = await file.text();
+            const backupData = JSON.parse(text);
+
+            const response = await settingsAPI.restoreData(currentBusiness.id, backupData);
+
+            if (response.data.success) {
+              const summary = response.data.summary;
+              showSuccess(
+                `복원 완료! 거래처 ${summary.customers}건, 품목 ${summary.products}건, 매출 ${summary.sales}건, 매입 ${summary.purchases}건, 수금 ${summary.payments}건`
+              );
+              resolve(true);
+            } else {
+              showError(response.data.message || '복원에 실패했습니다.');
+              resolve(false);
+            }
+          } catch (error) {
+            showError('백업 파일을 읽는 중 오류가 발생했습니다.');
+            resolve(false);
+          } finally {
+            setLoading(false);
+          }
+        },
+        onCancel() {
+          resolve(false);
+        }
+      });
+    });
+  };
+
   // role에 따른 탭 필터링
   const getTabItems = () => {
     const allTabs = [
@@ -387,38 +476,59 @@ const Settings: React.FC = () => {
                 </Form>
               </Card>
 
-              <Card title="데이터 설정" style={{ marginTop: '16px' }}>
-                <Form layout="vertical" initialValues={{ pageSize: 20, autoSaveInterval: 5, backupEnabled: true }}>
-                  <Form.Item label="페이지당 항목 수" name="pageSize">
-                    <Slider
-                      min={10}
-                      max={100}
-                      step={10}
-                      marks={{
-                        10: '10',
-                        50: '50',
-                        100: '100',
-                      }}
-                    />
-                  </Form.Item>
-
-                  <Form.Item label="자동 저장 간격 (분)" name="autoSaveInterval">
-                    <InputNumber
-                      min={1}
-                      max={60}
-                      style={{ width: '100%' }}
-                    />
-                  </Form.Item>
-
-                  <Form.Item label="데이터 백업" name="backupEnabled">
-                    <Space>
-                      <Switch />
-                      <Text type="secondary">
-                        매일 자동으로 데이터를 백업합니다
+              <Card title="데이터 백업 및 복원" style={{ marginTop: '16px' }}>
+                <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                  <div>
+                    <Text strong>데이터 백업</Text>
+                    <div style={{ marginTop: 8 }}>
+                      <Button
+                        type="primary"
+                        icon={<CloudDownloadOutlined />}
+                        onClick={handleBackup}
+                        loading={loading}
+                      >
+                        백업 파일 다운로드
+                      </Button>
+                      <Text type="secondary" style={{ marginLeft: 12 }}>
+                        모든 데이터를 JSON 파일로 저장합니다
                       </Text>
-                    </Space>
-                  </Form.Item>
-                </Form>
+                    </div>
+                  </div>
+
+                  <Divider style={{ margin: '12px 0' }} />
+
+                  <div>
+                    <Text strong>데이터 복원</Text>
+                    <div style={{ marginTop: 8 }}>
+                      <Upload
+                        accept=".json"
+                        showUploadList={false}
+                        beforeUpload={(file) => {
+                          handleRestore(file);
+                          return false;
+                        }}
+                      >
+                        <Button
+                          danger
+                          icon={<CloudUploadOutlined />}
+                          loading={loading}
+                        >
+                          백업 파일에서 복원
+                        </Button>
+                      </Upload>
+                      <Text type="secondary" style={{ marginLeft: 12 }}>
+                        기존 데이터가 백업 데이터로 대체됩니다
+                      </Text>
+                    </div>
+                  </div>
+
+                  <Alert
+                    message="백업 안내"
+                    description="중요한 데이터 변경 전에 백업을 권장합니다. 복원 시 기존 데이터는 삭제됩니다."
+                    type="info"
+                    showIcon
+                  />
+                </Space>
               </Card>
             </Col>
 

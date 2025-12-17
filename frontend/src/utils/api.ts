@@ -272,6 +272,10 @@ export const settingsAPI = {
     api.post(`/settings/${businessId}/reset-data`, { confirmText }),
   deleteAccount: (businessId: number, confirmText: string) =>
     api.post(`/settings/${businessId}/delete-account`, { confirmText }),
+  backupData: (businessId: number) =>
+    api.get(`/settings/${businessId}/backup`, { responseType: 'blob' }),
+  restoreData: (businessId: number, backupData: any) =>
+    api.post(`/settings/${businessId}/restore`, backupData),
 };
 
 export const activityLogAPI = {

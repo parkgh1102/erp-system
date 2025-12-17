@@ -17,6 +17,9 @@ router.get('/:businessId/export/customers', SettingsController_1.SettingsControl
 router.get('/:businessId/export/products', SettingsController_1.SettingsController.exportProducts);
 router.get('/:businessId/export/transactions', SettingsController_1.SettingsController.exportTransactions);
 router.get('/:businessId/export/all', SettingsController_1.SettingsController.exportAll);
+// 백업 및 복원
+router.get('/:businessId/backup', SettingsController_1.SettingsController.backupData);
+router.post('/:businessId/restore', SettingsController_1.SettingsController.restoreData);
 // 위험한 작업
 router.post('/:businessId/reset-data', SettingsController_1.SettingsController.resetAllData);
 router.post('/:businessId/delete-account', SettingsController_1.SettingsController.deleteAccount);
