@@ -101,7 +101,10 @@ api.interceptors.response.use(
 
 export const authAPI = {
   login: (data: { email: string; password: string }) =>
-    api.post('/auth/login', data),
+    api.post('/auth/login', data, {
+      // 로그인 실패(401)는 예상되는 응답이므로 인터셉터에서 리다이렉트하지 않도록 함
+      skipErrorHandler: true
+    } as any),
   signup: (data: UserCreateData & { businessInfo: BusinessCreateData }) =>
     api.post('/auth/signup', data),
   checkEmailAvailability: (email: string) =>
