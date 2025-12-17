@@ -114,8 +114,7 @@ app.use(cors({
 
 app.use(compression());
 app.use(morgan('combined'));
-// Rate limiting 임시 비활성화 (429 에러 해결용)
-// app.use(generalRateLimit);
+app.use(generalRateLimit);
 app.use(cookieParser());
 app.use(session(sessionConfig));
 app.use(express.json({ limit: '10mb' }));
@@ -142,8 +141,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Rate limiting 임시 비활성화 (429 에러 해결용)
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRateLimit, authRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api/businesses', userRoutes);
