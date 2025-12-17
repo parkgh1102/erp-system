@@ -192,21 +192,7 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleDeleteAccount = () => {
-    Modal.confirm({
-      title: '계정 삭제',
-      icon: <ExclamationCircleOutlined />,
-      content: '정말로 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
-      okText: '삭제',
-      okType: 'danger',
-      cancelText: '취소',
-      onOk() {
-        showSuccess('계정 삭제가 예약되었습니다. 7일 후에 완전히 삭제됩니다.');
-      },
-    });
-  };
-
-  const handleExport = async (type: 'customers' | 'products' | 'transactions') => {
+  const handleExport = async (type: 'customers' | 'products' | 'transactions' | 'all') => {
     if (!currentBusiness) {
       showError('사업체 정보를 찾을 수 없습니다.');
       return;
@@ -230,6 +216,10 @@ const Settings: React.FC = () => {
           response = await settingsAPI.exportTransactions(currentBusiness.id);
           filename = '매출매입.xlsx';
           break;
+        case 'all':
+          response = await settingsAPI.exportAll(currentBusiness.id);
+          filename = '전체데이터.xlsx';
+          break;
       }
 
       // Blob 다운로드
@@ -248,6 +238,101 @@ const Settings: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetData = () => {
+    if (!currentBusiness) {
+      showError('사업체 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    Modal.confirm({
+      title: '모든 데이터 초기화',
+      icon: <ExclamationCircleOutlined />,
+      content: (
+        <div>
+          <p style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
+            경고: 이 작업은 되돌릴 수 없습니다!
+          </p>
+          <p>모든 거래처, 품목, 매출, 매입, 수금 데이터가 삭제됩니다.</p>
+          <p>계속하시려면 아래에 "데이터 초기화"를 입력하세요.</p>
+          <Input
+            id="reset-confirm-input"
+            placeholder="데이터 초기화"
+            style={{ marginTop: 8 }}
+          />
+        </div>
+      ),
+      okText: '초기화',
+      okType: 'danger',
+      cancelText: '취소',
+      async onOk() {
+        const inputValue = (document.getElementById('reset-confirm-input') as HTMLInputElement)?.value;
+        if (inputValue !== '데이터 초기화') {
+          showError('확인 텍스트가 일치하지 않습니다.');
+          return Promise.reject();
+        }
+        try {
+          setLoading(true);
+          await settingsAPI.resetAllData(currentBusiness.id, inputValue);
+          showSuccess('모든 데이터가 초기화되었습니다.');
+        } catch (error) {
+          showError('데이터 초기화에 실패했습니다.');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
+  };
+
+  const handleDeleteAccountConfirm = () => {
+    if (!currentBusiness) {
+      showError('사업체 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    Modal.confirm({
+      title: '계정 삭제',
+      icon: <ExclamationCircleOutlined />,
+      content: (
+        <div>
+          <p style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
+            경고: 이 작업은 되돌릴 수 없습니다!
+          </p>
+          <p>계정과 모든 데이터(거래처, 품목, 매출, 매입 등)가 영구적으로 삭제됩니다.</p>
+          <p>계속하시려면 아래에 "계정 삭제"를 입력하세요.</p>
+          <Input
+            id="delete-confirm-input"
+            placeholder="계정 삭제"
+            style={{ marginTop: 8 }}
+          />
+        </div>
+      ),
+      okText: '삭제',
+      okType: 'danger',
+      cancelText: '취소',
+      async onOk() {
+        const inputValue = (document.getElementById('delete-confirm-input') as HTMLInputElement)?.value;
+        if (inputValue !== '계정 삭제') {
+          showError('확인 텍스트가 일치하지 않습니다.');
+          return Promise.reject();
+        }
+        try {
+          setLoading(true);
+          await settingsAPI.deleteAccount(currentBusiness.id, inputValue);
+          showSuccess('계정이 삭제되었습니다. 잠시 후 로그인 페이지로 이동합니다.');
+          // 로그아웃 처리
+          setTimeout(() => {
+            localStorage.clear();
+            window.location.href = '/login';
+          }, 2000);
+        } catch (error) {
+          showError('계정 삭제에 실패했습니다.');
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   // role에 따른 탭 필터링
@@ -564,13 +649,18 @@ const Settings: React.FC = () => {
                   >
                     매출/매입 데이터 내보내기
                   </Button>
-                  <Button type="primary" block disabled>
-                    전체 데이터 내보내기 (준비 중)
+                  <Button
+                    type="primary"
+                    block
+                    onClick={() => handleExport('all')}
+                    loading={loading}
+                  >
+                    전체 데이터 내보내기
                   </Button>
                 </Space>
                 <Alert
                   message="데이터 내보내기"
-                  description="내보낸 데이터는 Excel 또는 CSV 형식으로 다운로드됩니다."
+                  description="내보낸 데이터는 Excel 형식으로 다운로드됩니다."
                   type="info"
                   showIcon
                   style={{ marginTop: '16px' }}
@@ -581,10 +671,10 @@ const Settings: React.FC = () => {
             <Col xs={24} lg={12}>
               <Card title="위험한 작업">
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <Button danger block>
+                  <Button danger block onClick={handleResetData} loading={loading}>
                     모든 데이터 초기화
                   </Button>
-                  <Button danger block onClick={handleDeleteAccount}>
+                  <Button danger block onClick={handleDeleteAccountConfirm} loading={loading}>
                     계정 삭제
                   </Button>
                 </Space>

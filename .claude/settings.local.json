@@ -162,7 +162,20 @@
       "Bash(swa --version:*)",
       "Bash(PORT=5176 npm run dev:*)",
       "Bash(swa deploy:*)",
-      "Bash(az staticwebapp secrets list:*)"
+      "Bash(az staticwebapp secrets list:*)",
+      "Bash(gradlew.bat assembleDebug:*)",
+      "Bash(gradle:*)",
+      "Bash(ls:*)",
+      "Bash(magick:*)",
+      "Bash(convert:*)",
+      "Bash(python -c:*)",
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(\"C:/Users/black/Desktop/erp1216-1/erp-android/gradlew.bat\" assembleDebug)",
+      "Bash(export JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\")",
+      "Bash(./gradlew.bat assembleDebug)",
+      "Bash(start https://www.webapperp.ai.kr/login)",
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew.bat:*)",
+      "Bash(start https://www.webapperp.ai.kr/sales)"
     ],
     "deny": [],
     "ask": []

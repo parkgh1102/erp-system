@@ -287,6 +287,215 @@ exports.SettingsController = {
                 message: '매출/매입 데이터 내보내기 중 오류가 발생했습니다.'
             });
         }
+    },
+    // 전체 데이터 내보내기
+    async exportAll(req, res) {
+        try {
+            const businessId = parseInt(req.params.businessId);
+            const customers = await customerRepository.find({ where: { businessId } });
+            const products = await productRepository.find({ where: { businessId } });
+            const sales = await salesRepository.find({
+                where: { businessId },
+                relations: ['customer', 'items']
+            });
+            const purchases = await purchaseRepository.find({
+                where: { businessId },
+                relations: ['customer', 'items']
+            });
+            const workbook = new exceljs_1.default.Workbook();
+            // 거래처 시트
+            const customersSheet = workbook.addWorksheet('거래처');
+            customersSheet.columns = [
+                { header: '거래처코드', key: 'customerCode', width: 15 },
+                { header: '거래처명', key: 'name', width: 20 },
+                { header: '사업자번호', key: 'businessNumber', width: 15 },
+                { header: '대표자', key: 'representative', width: 15 },
+                { header: '전화번호', key: 'phone', width: 15 },
+                { header: '주소', key: 'address', width: 30 },
+                { header: '이메일', key: 'email', width: 25 },
+            ];
+            customers.forEach(customer => {
+                customersSheet.addRow({
+                    customerCode: customer.customerCode || '',
+                    name: customer.name,
+                    businessNumber: customer.businessNumber || '',
+                    representative: customer.representative || '',
+                    phone: customer.phone || '',
+                    address: customer.address || '',
+                    email: customer.email || '',
+                });
+            });
+            // 품목 시트
+            const productsSheet = workbook.addWorksheet('품목');
+            productsSheet.columns = [
+                { header: '품목코드', key: 'productCode', width: 15 },
+                { header: '품목명', key: 'name', width: 20 },
+                { header: '규격', key: 'specification', width: 15 },
+                { header: '단위', key: 'unit', width: 10 },
+                { header: '매입가', key: 'buyPrice', width: 12 },
+                { header: '판매가', key: 'sellPrice', width: 12 },
+                { header: '과세구분', key: 'taxType', width: 10 },
+            ];
+            products.forEach(product => {
+                productsSheet.addRow({
+                    productCode: product.productCode || '',
+                    name: product.name,
+                    specification: product.specification || '',
+                    unit: product.unit || '',
+                    buyPrice: product.buyPrice || 0,
+                    sellPrice: product.sellPrice || 0,
+                    taxType: product.taxType || '',
+                });
+            });
+            // 매출 시트
+            const salesSheet = workbook.addWorksheet('매출');
+            salesSheet.columns = [
+                { header: '날짜', key: 'date', width: 12 },
+                { header: '거래처', key: 'customer', width: 20 },
+                { header: '공급가액', key: 'supplyAmount', width: 15 },
+                { header: '부가세', key: 'taxAmount', width: 12 },
+                { header: '합계', key: 'totalAmount', width: 15 },
+                { header: '비고', key: 'memo', width: 30 },
+            ];
+            sales.forEach(sale => {
+                salesSheet.addRow({
+                    date: sale.transactionDate,
+                    customer: sale.customer?.name || '',
+                    supplyAmount: sale.totalAmount,
+                    taxAmount: sale.vatAmount,
+                    totalAmount: (sale.totalAmount || 0) + (sale.vatAmount || 0),
+                    memo: sale.memo || '',
+                });
+            });
+            // 매입 시트
+            const purchasesSheet = workbook.addWorksheet('매입');
+            purchasesSheet.columns = [
+                { header: '날짜', key: 'date', width: 12 },
+                { header: '거래처', key: 'customer', width: 20 },
+                { header: '공급가액', key: 'supplyAmount', width: 15 },
+                { header: '부가세', key: 'taxAmount', width: 12 },
+                { header: '합계', key: 'totalAmount', width: 15 },
+                { header: '비고', key: 'memo', width: 30 },
+            ];
+            purchases.forEach(purchase => {
+                purchasesSheet.addRow({
+                    date: purchase.purchaseDate,
+                    customer: purchase.customer?.name || '',
+                    supplyAmount: purchase.totalAmount,
+                    taxAmount: purchase.vatAmount,
+                    totalAmount: (purchase.totalAmount || 0) + (purchase.vatAmount || 0),
+                    memo: purchase.memo || '',
+                });
+            });
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', 'attachment; filename=all_data.xlsx');
+            await workbook.xlsx.write(res);
+            res.end();
+        }
+        catch (error) {
+            logger_1.logger.error('Export all data error', error instanceof Error ? error : new Error(String(error)));
+            res.status(500).json({
+                success: false,
+                message: '전체 데이터 내보내기 중 오류가 발생했습니다.'
+            });
+        }
+    },
+    // 모든 데이터 초기화
+    async resetAllData(req, res) {
+        try {
+            const businessId = parseInt(req.params.businessId);
+            const { confirmText } = req.body;
+            // 확인 텍스트 검증
+            if (confirmText !== '데이터 초기화') {
+                return res.status(400).json({
+                    success: false,
+                    message: '확인 텍스트가 일치하지 않습니다.'
+                });
+            }
+            // 트랜잭션으로 모든 데이터 삭제
+            await database_1.AppDataSource.transaction(async (transactionalEntityManager) => {
+                // 매출 품목 삭제
+                await transactionalEntityManager.query(`DELETE FROM sales_items WHERE "salesId" IN (SELECT id FROM sales WHERE "businessId" = $1)`, [businessId]);
+                // 매입 품목 삭제
+                await transactionalEntityManager.query(`DELETE FROM purchase_items WHERE "purchaseId" IN (SELECT id FROM purchases WHERE "businessId" = $1)`, [businessId]);
+                // 매출 삭제
+                await transactionalEntityManager.query(`DELETE FROM sales WHERE "businessId" = $1`, [businessId]);
+                // 매입 삭제
+                await transactionalEntityManager.query(`DELETE FROM purchases WHERE "businessId" = $1`, [businessId]);
+                // 수금 삭제
+                await transactionalEntityManager.query(`DELETE FROM payments WHERE "businessId" = $1`, [businessId]);
+                // 거래처 삭제
+                await transactionalEntityManager.query(`DELETE FROM customers WHERE "businessId" = $1`, [businessId]);
+                // 품목 삭제
+                await transactionalEntityManager.query(`DELETE FROM products WHERE "businessId" = $1`, [businessId]);
+            });
+            logger_1.logger.info(`All data reset for businessId: ${businessId}`);
+            res.json({
+                success: true,
+                message: '모든 데이터가 초기화되었습니다.'
+            });
+        }
+        catch (error) {
+            logger_1.logger.error('Reset all data error', error instanceof Error ? error : new Error(String(error)));
+            res.status(500).json({
+                success: false,
+                message: '데이터 초기화 중 오류가 발생했습니다.'
+            });
+        }
+    },
+    // 계정 삭제
+    async deleteAccount(req, res) {
+        try {
+            const businessId = parseInt(req.params.businessId);
+            const userId = req.user?.id;
+            const { confirmText } = req.body;
+            // 확인 텍스트 검증
+            if (confirmText !== '계정 삭제') {
+                return res.status(400).json({
+                    success: false,
+                    message: '확인 텍스트가 일치하지 않습니다.'
+                });
+            }
+            // 트랜잭션으로 모든 데이터 및 계정 삭제
+            await database_1.AppDataSource.transaction(async (transactionalEntityManager) => {
+                // 매출 품목 삭제
+                await transactionalEntityManager.query(`DELETE FROM sales_items WHERE "salesId" IN (SELECT id FROM sales WHERE "businessId" = $1)`, [businessId]);
+                // 매입 품목 삭제
+                await transactionalEntityManager.query(`DELETE FROM purchase_items WHERE "purchaseId" IN (SELECT id FROM purchases WHERE "businessId" = $1)`, [businessId]);
+                // 매출 삭제
+                await transactionalEntityManager.query(`DELETE FROM sales WHERE "businessId" = $1`, [businessId]);
+                // 매입 삭제
+                await transactionalEntityManager.query(`DELETE FROM purchases WHERE "businessId" = $1`, [businessId]);
+                // 수금 삭제
+                await transactionalEntityManager.query(`DELETE FROM payments WHERE "businessId" = $1`, [businessId]);
+                // 거래처 삭제
+                await transactionalEntityManager.query(`DELETE FROM customers WHERE "businessId" = $1`, [businessId]);
+                // 품목 삭제
+                await transactionalEntityManager.query(`DELETE FROM products WHERE "businessId" = $1`, [businessId]);
+                // 설정 삭제
+                await transactionalEntityManager.query(`DELETE FROM company_settings WHERE "businessId" = $1`, [businessId]);
+                // 활동 로그 삭제
+                await transactionalEntityManager.query(`DELETE FROM activity_logs WHERE "businessId" = $1`, [businessId]);
+                // 사업체 삭제
+                await transactionalEntityManager.query(`DELETE FROM businesses WHERE id = $1`, [businessId]);
+                // 사용자 삭제 (관리자 계정)
+                if (userId) {
+                    await transactionalEntityManager.query(`DELETE FROM users WHERE id = $1`, [userId]);
+                }
+            });
+            logger_1.logger.info(`Account deleted for businessId: ${businessId}, userId: ${userId}`);
+            res.json({
+                success: true,
+                message: '계정이 삭제되었습니다.'
+            });
+        }
+        catch (error) {
+            logger_1.logger.error('Delete account error', error instanceof Error ? error : new Error(String(error)));
+            res.status(500).json({
+                success: false,
+                message: '계정 삭제 중 오류가 발생했습니다.'
+            });
+        }
     }
 };
 //# sourceMappingURL=SettingsController.js.map

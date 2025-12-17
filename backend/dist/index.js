@@ -15,6 +15,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const envValidator_1 = require("./config/envValidator");
 const database_1 = require("./config/database");
+const rateLimiter_1 = require("./middleware/rateLimiter");
 const securityLogger_1 = require("./middleware/securityLogger");
 const httpsRedirect_1 = require("./middleware/httpsRedirect");
 const sessionConfig_1 = require("./config/sessionConfig");
@@ -109,8 +110,7 @@ app.use((0, cors_1.default)({
 }));
 app.use((0, compression_1.default)());
 app.use((0, morgan_1.default)('combined'));
-// Rate limiting 임시 비활성화 (429 에러 해결용)
-// app.use(generalRateLimit);
+app.use(rateLimiter_1.generalRateLimit);
 app.use((0, cookie_parser_1.default)());
 app.use((0, express_session_1.default)(sessionConfig_1.sessionConfig));
 app.use(express_1.default.json({ limit: '10mb' }));
@@ -135,8 +135,7 @@ app.use((req, res, next) => {
     }
     next();
 });
-// Rate limiting 임시 비활성화 (429 에러 해결용)
-app.use('/api/auth', authRoutes_1.default);
+app.use('/api/auth', rateLimiter_1.authRateLimit, authRoutes_1.default);
 app.use('/api/otp', otpRoutes_1.default);
 app.use('/api/businesses', businessRoutes_1.businessRoutes);
 app.use('/api/businesses', userRoutes_1.default);

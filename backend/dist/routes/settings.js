@@ -16,5 +16,9 @@ router.put('/:businessId', SettingsController_1.SettingsController.updateSetting
 router.get('/:businessId/export/customers', SettingsController_1.SettingsController.exportCustomers);
 router.get('/:businessId/export/products', SettingsController_1.SettingsController.exportProducts);
 router.get('/:businessId/export/transactions', SettingsController_1.SettingsController.exportTransactions);
+router.get('/:businessId/export/all', SettingsController_1.SettingsController.exportAll);
+// 위험한 작업
+router.post('/:businessId/reset-data', SettingsController_1.SettingsController.resetAllData);
+router.post('/:businessId/delete-account', SettingsController_1.SettingsController.deleteAccount);
 exports.default = router;
 //# sourceMappingURL=settings.js.map

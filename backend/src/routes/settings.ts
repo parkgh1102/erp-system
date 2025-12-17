@@ -20,5 +20,10 @@ router.put('/:businessId', SettingsController.updateSettings);
 router.get('/:businessId/export/customers', SettingsController.exportCustomers);
 router.get('/:businessId/export/products', SettingsController.exportProducts);
 router.get('/:businessId/export/transactions', SettingsController.exportTransactions);
+router.get('/:businessId/export/all', SettingsController.exportAll);
+
+// 위험한 작업
+router.post('/:businessId/reset-data', SettingsController.resetAllData);
+router.post('/:businessId/delete-account', SettingsController.deleteAccount);
 
 export default router;

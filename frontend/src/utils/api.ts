@@ -266,6 +266,12 @@ export const settingsAPI = {
     api.get(`/settings/${businessId}/export/products`, { responseType: 'blob' }),
   exportTransactions: (businessId: number) =>
     api.get(`/settings/${businessId}/export/transactions`, { responseType: 'blob' }),
+  exportAll: (businessId: number) =>
+    api.get(`/settings/${businessId}/export/all`, { responseType: 'blob' }),
+  resetAllData: (businessId: number, confirmText: string) =>
+    api.post(`/settings/${businessId}/reset-data`, { confirmText }),
+  deleteAccount: (businessId: number, confirmText: string) =>
+    api.post(`/settings/${businessId}/delete-account`, { confirmText }),
 };
 
 export const activityLogAPI = {
