@@ -112,7 +112,16 @@ const PurchaseManagement: React.FC = () => {
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   const [printMode, setPrintMode] = useState<'full' | 'receiver' | 'supplier'>('full');
   const [selectedPurchaseForStatement, setSelectedPurchaseForStatement] = useState<Purchase | null>(null);
-  const [specOptions, setSpecOptions] = useState<string[]>(['box', 'ea', 'pallet', '자루', 'set', 'pack']);
+  const [specOptions, setSpecOptions] = useState<string[]>([
+    // 기본 옵션
+    'box', 'ea', 'pallet', '자루', 'set', 'pack',
+    // 1~200 box
+    ...Array.from({ length: 200 }, (_, i) => `${i + 1}box`),
+    // 1~100 pallet
+    ...Array.from({ length: 100 }, (_, i) => `${i + 1}pallet`),
+    // 1~200 ea
+    ...Array.from({ length: 200 }, (_, i) => `${i + 1}ea`),
+  ]);
   const [unitOptions, setUnitOptions] = useState<string[]>(['EA', 'BOX', 'KG', 'M', 'SET', 'kg', 'ea', 'box', 'set', 'pcs', '개']);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
