@@ -452,15 +452,19 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
                       backgroundColor: '#f0f0f0',
                       fontWeight: 'bold',
                       textAlign: 'center',
+                      fontSize: '10pt',
                       width: '30mm',
-                      height: '6.5mm'
+                      height: '6.5mm',
+                      whiteSpace: 'nowrap'
                     }}>전잔금</td>
                     <td style={{
                       border: '1px solid #000',
                       padding: '1mm',
                       textAlign: 'right',
                       fontWeight: 'bold',
-                      height: '6.5mm'
+                      fontSize: '10pt',
+                      height: '6.5mm',
+                      whiteSpace: 'nowrap'
                     }}>{Math.round(previousBalance).toLocaleString()}원</td>
                   </tr>
                   <tr style={{ backgroundColor: '#e8f4f8' }}>
