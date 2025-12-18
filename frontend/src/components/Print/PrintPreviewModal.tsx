@@ -220,14 +220,14 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
           @page {
             size: ${finalPaperSize} ${finalOrientation};
-            margin: ${margin}mm;
+            margin: 5mm;
           }
 
           body {
             font-family: 'Malgun Gothic', Arial, sans-serif;
             background: white;
             color: black;
-            padding: 10px;
+            padding: 0;
           }
 
           .print-container {

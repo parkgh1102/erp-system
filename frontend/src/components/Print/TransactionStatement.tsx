@@ -583,7 +583,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
       {printMode === 'full' && (
         <div style={{
           borderTop: '1px dashed #999',
-          margin: '7mm 10mm 0mm 10mm'
+          margin: '3mm 10mm 0mm 10mm'
         }}></div>
       )}
 
