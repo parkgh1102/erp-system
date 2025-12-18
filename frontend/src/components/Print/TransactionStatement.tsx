@@ -544,7 +544,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
         <style>{`
           @media print {
             @page {
-              size: A4 landscape;
+              size: A4 portrait;
               margin: 5mm;
             }
             body {
@@ -552,10 +552,10 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               padding: 0 !important;
             }
             .single-print-wrapper {
-              width: 287mm !important;
-              height: auto !important;
-              max-height: none !important;
-              padding: 5mm 8mm !important;
+              width: 200mm !important;
+              height: 160mm !important;
+              max-height: 160mm !important;
+              padding: 8mm 10mm !important;
               margin: 0 !important;
               overflow: visible !important;
             }
