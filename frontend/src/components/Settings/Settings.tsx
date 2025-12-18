@@ -78,6 +78,20 @@ const Settings: React.FC = () => {
     loginNotification: false,
   });
 
+  // 일반 설정 상태
+  const [generalSettings, setGeneralSettings] = useState({
+    language: 'ko',
+    timezone: 'Asia/Seoul',
+    currency: 'KRW',
+  });
+
+  // 알림 채널 설정 상태
+  const [notificationChannels, setNotificationChannels] = useState({
+    emailNotifications: true,
+    browserNotifications: true,
+    smsNotifications: false,
+  });
+
   // 서버에서 설정 불러오기
   useEffect(() => {
     const fetchSettings = async () => {
@@ -87,11 +101,24 @@ const Settings: React.FC = () => {
         const response = await settingsAPI.getSettings(currentBusiness.id);
         if (response.data.success) {
           const data = response.data.data;
+          // 보안 설정
           setSecuritySettings({
             twoFactorAuth: data.twoFactorAuth === 'true',
             sessionTimeout: data.sessionTimeout || '8h',
             ipRestriction: data.ipRestriction === 'true',
             loginNotification: data.loginNotification === 'true',
+          });
+          // 일반 설정
+          setGeneralSettings({
+            language: data.language || 'ko',
+            timezone: data.timezone || 'Asia/Seoul',
+            currency: data.currency || 'KRW',
+          });
+          // 알림 채널 설정
+          setNotificationChannels({
+            emailNotifications: data.emailNotifications !== 'false',
+            browserNotifications: data.browserNotifications !== 'false',
+            smsNotifications: data.smsNotifications === 'true',
           });
         }
       } catch (error) {
@@ -174,18 +201,31 @@ const Settings: React.FC = () => {
 
     setLoading(true);
     try {
-      // 보안 설정을 서버에 저장
+      // 모든 설정을 서버에 저장
       const settingsToSave = {
+        // 보안 설정
         twoFactorAuth: String(securitySettings.twoFactorAuth),
         sessionTimeout: securitySettings.sessionTimeout,
         ipRestriction: String(securitySettings.ipRestriction),
         loginNotification: String(securitySettings.loginNotification),
+        // 일반 설정
+        language: generalSettings.language,
+        timezone: generalSettings.timezone,
+        currency: generalSettings.currency,
+        // 알림 채널 설정
+        emailNotifications: String(notificationChannels.emailNotifications),
+        browserNotifications: String(notificationChannels.browserNotifications),
+        smsNotifications: String(notificationChannels.smsNotifications),
       };
 
       await settingsAPI.updateSettings(currentBusiness.id, settingsToSave);
 
       // 로컬 스토리지에도 세션 타임아웃 저장 (현재 세션에 적용)
       localStorage.setItem('sessionTimeout', securitySettings.sessionTimeout);
+      // 일반 설정도 로컬 스토리지에 저장 (즉시 적용)
+      localStorage.setItem('language', generalSettings.language);
+      localStorage.setItem('timezone', generalSettings.timezone);
+      localStorage.setItem('currency', generalSettings.currency);
 
       showSuccess('설정이 성공적으로 저장되었습니다.');
     } catch (error) {
@@ -436,7 +476,7 @@ const Settings: React.FC = () => {
           <Row gutter={[24, 24]}>
             <Col xs={24} lg={12}>
               <Card title="화면 설정">
-                <Form layout="vertical" initialValues={{ theme: isDark, language: 'ko', timezone: 'Asia/Seoul', currency: 'KRW' }}>
+                <Form layout="vertical">
                   <Form.Item label="테마 설정">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <Text>라이트 모드</Text>
@@ -450,24 +490,36 @@ const Settings: React.FC = () => {
                     </div>
                   </Form.Item>
 
-                  <Form.Item label="언어 설정" name="language">
-                    <Select style={{ width: '100%' }}>
+                  <Form.Item label="언어 설정">
+                    <Select
+                      style={{ width: '100%' }}
+                      value={generalSettings.language}
+                      onChange={(value) => setGeneralSettings(prev => ({ ...prev, language: value }))}
+                    >
                       <Select.Option value="ko">한국어</Select.Option>
                       <Select.Option value="en">English</Select.Option>
                       <Select.Option value="ja">日本語</Select.Option>
                     </Select>
                   </Form.Item>
 
-                  <Form.Item label="시간대" name="timezone">
-                    <Select style={{ width: '100%' }}>
+                  <Form.Item label="시간대">
+                    <Select
+                      style={{ width: '100%' }}
+                      value={generalSettings.timezone}
+                      onChange={(value) => setGeneralSettings(prev => ({ ...prev, timezone: value }))}
+                    >
                       <Select.Option value="Asia/Seoul">서울 (GMT+9)</Select.Option>
                       <Select.Option value="America/New_York">뉴욕 (GMT-5)</Select.Option>
                       <Select.Option value="Europe/London">런던 (GMT+0)</Select.Option>
                     </Select>
                   </Form.Item>
 
-                  <Form.Item label="화폐 단위" name="currency">
-                    <Select style={{ width: '100%' }}>
+                  <Form.Item label="화폐 단위">
+                    <Select
+                      style={{ width: '100%' }}
+                      value={generalSettings.currency}
+                      onChange={(value) => setGeneralSettings(prev => ({ ...prev, currency: value }))}
+                    >
                       <Select.Option value="KRW">원 (₩)</Select.Option>
                       <Select.Option value="USD">달러 ($)</Select.Option>
                       <Select.Option value="EUR">유로 (€)</Select.Option>
@@ -534,28 +586,37 @@ const Settings: React.FC = () => {
 
             <Col xs={24} lg={12}>
               <Card title="알림 설정" icon={<BellOutlined />}>
-                <Form layout="vertical" initialValues={{ emailNotifications: true, browserNotifications: true, smsNotifications: false }}>
-                  <Form.Item label="이메일 알림" name="emailNotifications">
+                <Form layout="vertical">
+                  <Form.Item label="이메일 알림">
                     <Space>
-                      <Switch />
+                      <Switch
+                        checked={notificationChannels.emailNotifications}
+                        onChange={(checked) => setNotificationChannels(prev => ({ ...prev, emailNotifications: checked }))}
+                      />
                       <Text type="secondary">
                         중요한 업데이트를 이메일로 받습니다
                       </Text>
                     </Space>
                   </Form.Item>
 
-                  <Form.Item label="브라우저 알림" name="browserNotifications">
+                  <Form.Item label="브라우저 알림">
                     <Space>
-                      <Switch />
+                      <Switch
+                        checked={notificationChannels.browserNotifications}
+                        onChange={(checked) => setNotificationChannels(prev => ({ ...prev, browserNotifications: checked }))}
+                      />
                       <Text type="secondary">
                         브라우저 푸시 알림을 받습니다
                       </Text>
                     </Space>
                   </Form.Item>
 
-                  <Form.Item label="SMS 알림" name="smsNotifications">
+                  <Form.Item label="SMS 알림">
                     <Space>
-                      <Switch />
+                      <Switch
+                        checked={notificationChannels.smsNotifications}
+                        onChange={(checked) => setNotificationChannels(prev => ({ ...prev, smsNotifications: checked }))}
+                      />
                       <Text type="secondary">
                         중요한 알림을 SMS로 받습니다
                       </Text>
