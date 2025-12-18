@@ -638,6 +638,13 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
           <TransactionStatement
             data={transactionData}
             type={type}
+            supplierInfo={currentBusiness ? {
+              companyName: currentBusiness.companyName,
+              businessNumber: currentBusiness.businessNumber,
+              representative: currentBusiness.representative,
+              address: currentBusiness.address,
+              phone: currentBusiness.phone
+            } : undefined}
             printMode="receiver"
             printOptions={{ hideBalance: false, hideAmounts: false, hideStorageLabel: true }}
             showActions={false}

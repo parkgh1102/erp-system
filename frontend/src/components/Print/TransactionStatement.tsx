@@ -33,9 +33,18 @@ interface TransactionData {
   notice?: string;
 }
 
+interface SupplierInfo {
+  companyName: string;
+  businessNumber: string;
+  representative: string;
+  address?: string;
+  phone?: string;
+}
+
 interface TransactionStatementProps {
   data: TransactionData;
   type: 'purchase' | 'sales';
+  supplierInfo?: SupplierInfo;  // 공급자(우리 회사) 정보
   printOptions?: {
     hideBalance?: boolean;
     hideAmounts?: boolean;
@@ -49,6 +58,7 @@ interface TransactionStatementProps {
 export const TransactionStatement: React.FC<TransactionStatementProps> = ({
   data,
   type,
+  supplierInfo,
   printOptions: _printOptions = {},
   printMode = 'full',
   showActions: _showActions = true,
@@ -132,23 +142,23 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           <tbody>
             <tr>
               <td style={{ width: '12%', fontWeight: 'normal', padding: '1mm', border: 'none' }}>공급자명:</td>
-              <td style={{ width: '25%', fontWeight: 'normal', padding: '1mm', border: 'none' }}>{data?.companyName || ''}</td>
+              <td style={{ width: '25%', fontWeight: 'normal', padding: '1mm', border: 'none' }}>{supplierInfo?.companyName || '-'}</td>
               <td style={{ width: '10%', fontWeight: 'normal', padding: '1mm', border: 'none' }}>거래일자:</td>
               <td style={{ width: '20%', fontWeight: 'normal', padding: '1mm', border: 'none' }}>{data?.date ? dayjs(data.date).format('YYYY.MM.DD') : ''}</td>
               <td style={{ width: '13%', fontWeight: 'normal', padding: '1mm', border: 'none' }}>사업자번호:</td>
               <td style={{ width: '20%', fontWeight: 'normal', padding: '1mm', border: 'none' }}>
-                {data?.companyRegistrationNumber
-                  ? data.companyRegistrationNumber.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3')
+                {supplierInfo?.businessNumber
+                  ? supplierInfo.businessNumber.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3')
                   : '-'}
               </td>
             </tr>
             <tr>
               <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>공급자주소:</td>
-              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{data?.companyAddress || '-'}</td>
+              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{supplierInfo?.address || '-'}</td>
               <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>공급자전화:</td>
-              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{data?.companyPhone || '-'}</td>
+              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{supplierInfo?.phone || '-'}</td>
               <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>대표자명:</td>
-              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{data?.ceoName || '-'}</td>
+              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{supplierInfo?.representative || '-'}</td>
             </tr>
           </tbody>
         </table>

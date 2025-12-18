@@ -7,12 +7,21 @@ import logger from '../../utils/logger';
 
 const { TextArea } = Input;
 
+interface SupplierInfo {
+  companyName: string;
+  businessNumber: string;
+  representative: string;
+  address?: string;
+  phone?: string;
+}
+
 interface PrintPreviewModalProps {
   open: boolean;
   onClose: () => void;
   transactionData: any | any[]; // 단일 또는 배열
   type: 'purchase' | 'sales';
   printMode: 'full' | 'receiver' | 'supplier';
+  supplierInfo?: SupplierInfo;  // 공급자(우리 회사) 정보
 }
 
 export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
@@ -20,7 +29,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   onClose,
   transactionData,
   type,
-  printMode
+  printMode,
+  supplierInfo
 }) => {
   // transactionData를 배열로 정규화
   const transactionDataArray = Array.isArray(transactionData)
@@ -686,6 +696,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                   notice: showNotice ? noticeText : null
                 }}
                 type={type}
+                supplierInfo={supplierInfo}
                 printMode={printMode}
                 printOptions={{ hideBalance: false, hideAmounts: false }}
                 showActions={false}

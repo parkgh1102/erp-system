@@ -2092,6 +2092,13 @@ const SalesManagement: React.FC = () => {
         transactionData={transactionDataForPrint}
         type="sales"
         printMode={printMode}
+        supplierInfo={currentBusiness ? {
+          companyName: currentBusiness.companyName,
+          businessNumber: currentBusiness.businessNumber,
+          representative: currentBusiness.representative,
+          address: currentBusiness.address,
+          phone: currentBusiness.phone
+        } : undefined}
       />
 
       <ESignaturePreviewModal
@@ -2125,6 +2132,13 @@ const SalesManagement: React.FC = () => {
             <TransactionStatement
               data={selectedSaleForStatement}
               type="sales"
+              supplierInfo={currentBusiness ? {
+                companyName: currentBusiness.companyName,
+                businessNumber: currentBusiness.businessNumber,
+                representative: currentBusiness.representative,
+                address: currentBusiness.address,
+                phone: currentBusiness.phone
+              } : undefined}
             />
           </div>
         </div>

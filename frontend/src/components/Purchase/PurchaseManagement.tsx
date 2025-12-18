@@ -1697,6 +1697,13 @@ const PurchaseManagement: React.FC = () => {
         } : null}
         type="purchase"
         printMode={printMode}
+        supplierInfo={currentBusiness ? {
+          companyName: currentBusiness.companyName,
+          businessNumber: currentBusiness.businessNumber,
+          representative: currentBusiness.representative,
+          address: currentBusiness.address,
+          phone: currentBusiness.phone
+        } : undefined}
       />
 
     </div>

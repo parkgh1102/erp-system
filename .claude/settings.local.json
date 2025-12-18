@@ -175,7 +175,8 @@
       "Bash(./gradlew.bat assembleDebug)",
       "Bash(start https://www.webapperp.ai.kr/login)",
       "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew.bat:*)",
-      "Bash(start https://www.webapperp.ai.kr/sales)"
+      "Bash(start https://www.webapperp.ai.kr/sales)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix: 거래명세표 인쇄 시 공급자 정보 올바르게 표시\n\n- TransactionStatement에 supplierInfo props 추가\n- 공급자 섹션에 우리 회사\\(currentBusiness\\) 정보 표시\n- 공급받는자 섹션에 거래처 정보 표시\n- PrintPreviewModal, SalesManagement, PurchaseManagement, ESignaturePreviewModal 수정\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ],
     "deny": [],
     "ask": []
