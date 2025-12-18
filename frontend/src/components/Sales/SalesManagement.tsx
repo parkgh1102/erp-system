@@ -1283,7 +1283,10 @@ const SalesManagement: React.FC = () => {
       key: 'totalAmount',
       width: '10%',
       align: 'right' as const,
-      render: (amount: number) => Math.round(Number(amount) || 0).toLocaleString() + '원',
+      render: (amount: number) => {
+        const value = Math.round(Number(amount) || 0);
+        return <span style={{ color: value < 0 ? '#ff4d4f' : 'inherit' }}>{value.toLocaleString()}원</span>;
+      },
       sorter: (a: Sale, b: Sale) => (Number(a.totalAmount) || 0) - (Number(b.totalAmount) || 0),
     },
     {
@@ -1292,7 +1295,10 @@ const SalesManagement: React.FC = () => {
       key: 'vatAmount',
       width: '9%',
       align: 'right' as const,
-      render: (amount: number) => Math.round(Number(amount) || 0).toLocaleString() + '원',
+      render: (amount: number) => {
+        const value = Math.round(Number(amount) || 0);
+        return <span style={{ color: value < 0 ? '#ff4d4f' : 'inherit' }}>{value.toLocaleString()}원</span>;
+      },
       sorter: (a: Sale, b: Sale) => (Number(a.vatAmount) || 0) - (Number(b.vatAmount) || 0),
     },
     {
@@ -1301,8 +1307,8 @@ const SalesManagement: React.FC = () => {
       width: '10%',
       align: 'right' as const,
       render: (record: Sale) => {
-        const total = (Number(record.totalAmount) || 0) + (Number(record.vatAmount) || 0);
-        return Math.round(total).toLocaleString() + '원';
+        const total = Math.round((Number(record.totalAmount) || 0) + (Number(record.vatAmount) || 0));
+        return <span style={{ color: total < 0 ? '#ff4d4f' : 'inherit' }}>{total.toLocaleString()}원</span>;
       },
       sorter: (a: Sale, b: Sale) => {
         const totalA = (Number(a.totalAmount) || 0) + (Number(a.vatAmount) || 0);
