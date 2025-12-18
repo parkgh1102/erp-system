@@ -1263,7 +1263,8 @@ const SalesManagement: React.FC = () => {
         if (!items || items.length === 0) return '-';
         // decimal 타입을 Number()로 변환
         const totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-        return Math.round(totalQty).toLocaleString();
+        // 소숫점이 있으면 소숫점 2자리까지, 없으면 정수로 표시
+        return totalQty % 1 === 0 ? totalQty.toLocaleString() : totalQty.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 });
       },
     },
     {
