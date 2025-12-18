@@ -555,7 +555,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               width: 200mm !important;
               height: 160mm !important;
               max-height: 160mm !important;
-              padding: 4mm 10mm 6mm 10mm !important;
+              padding: 3mm 10mm 3mm 10mm !important;
               margin: 0 !important;
               overflow: visible !important;
             }
@@ -571,7 +571,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           margin: '0 auto',
           backgroundColor: 'white',
           position: 'relative',
-          padding: printMode !== 'full' ? '4mm 15mm 6mm 15mm' : '0',
+          padding: printMode !== 'full' ? '3mm 15mm 3mm 15mm' : '0',
           overflow: 'visible'
         }}>
       {(printMode === 'full' || printMode === 'receiver') && (
