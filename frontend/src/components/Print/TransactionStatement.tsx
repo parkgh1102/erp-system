@@ -553,8 +553,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
             }
             .single-print-wrapper {
               width: 200mm !important;
-              height: 148.5mm !important;
-              max-height: 148.5mm !important;
+              height: 138mm !important;
+              max-height: 138mm !important;
               padding: 3mm 10mm 3mm 10mm !important;
               margin: 0 !important;
               overflow: visible !important;
