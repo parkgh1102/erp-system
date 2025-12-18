@@ -77,7 +77,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
       width: '100%',
       minHeight: printMode === 'full' ? 'calc(148.5mm - 6mm)' : 'auto',
       fontFamily: 'Malgun Gothic, sans-serif',
-      fontSize: printMode === 'full' ? '10pt' : '9pt', // 단독 인쇄는 폰트 작게
+      fontSize: '10pt', // 전체/단독 인쇄 동일
       lineHeight: '1.3',
       color: '#000',
       padding: printMode === 'full' ? '3mm' : '0', // 단독 인쇄는 패딩 없음
