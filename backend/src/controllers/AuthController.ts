@@ -102,6 +102,17 @@ export const AuthController = {
 
       await businessRepository.save(business);
 
+      // 기본 보안 설정 저장 (2단계 인증 기본값: ON)
+      const defaultSettings = [
+        { businessId: business.id, settingKey: 'twoFactorAuth', settingValue: 'true' },
+        { businessId: business.id, settingKey: 'sessionTimeout', settingValue: '8h' }
+      ];
+
+      for (const setting of defaultSettings) {
+        const newSetting = companySettingsRepository.create(setting);
+        await companySettingsRepository.save(newSetting);
+      }
+
       // 회원가입 환영 알림톡 전송 (비동기로 처리하여 응답 지연 방지)
       AlimtalkService.sendWelcome(savedUser.phone, savedUser.name, businessInfo.companyName)
         .then((sent) => {
@@ -297,9 +308,20 @@ export const AuthController = {
       });
 
       // 보안 설정 조회 (2FA 정보 포함) - 프론트엔드에서 별도 API 호출 제거로 로그인 속도 개선
-      // SecuritySettings 엔티티가 없어서 임시로 기본값 사용
-      let twoFactorAuth = false;
-      let sessionTimeout = '24h';
+      // CompanySettings에서 조회, 없으면 기본값 ON 사용
+      let twoFactorAuth = true; // 기본값 ON
+      let sessionTimeout = '8h';
+
+      try {
+        const twoFactorSetting = await companySettingsRepository.findOne({
+          where: { businessId, settingKey: 'twoFactorAuth' }
+        });
+        if (twoFactorSetting) {
+          twoFactorAuth = twoFactorSetting.settingValue === 'true';
+        }
+      } catch (err) {
+        logger.error('2FA setting query error:', err);
+      }
 
       // try {
       //   const SecuritySettings = (await import('../entities/SecuritySettings')).SecuritySettings;

@@ -70,9 +70,9 @@ const Settings: React.FC = () => {
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsModalVisible, setLogsModalVisible] = useState(false);
 
-  // 보안 설정 상태
+  // 보안 설정 상태 (기본값: 2단계 인증 ON)
   const [securitySettings, setSecuritySettings] = useState({
-    twoFactorAuth: false,
+    twoFactorAuth: true,
     sessionTimeout: '8h',
     ipRestriction: false,
     loginNotification: false,
@@ -101,9 +101,9 @@ const Settings: React.FC = () => {
         const response = await settingsAPI.getSettings(currentBusiness.id);
         if (response.data.success) {
           const data = response.data.data;
-          // 보안 설정
+          // 보안 설정 (설정이 없으면 기본값 2단계 인증 ON)
           setSecuritySettings({
-            twoFactorAuth: data.twoFactorAuth === 'true',
+            twoFactorAuth: data.twoFactorAuth === undefined ? true : data.twoFactorAuth === 'true',
             sessionTimeout: data.sessionTimeout || '8h',
             ipRestriction: data.ipRestriction === 'true',
             loginNotification: data.loginNotification === 'true',
@@ -758,6 +758,7 @@ const Settings: React.FC = () => {
                           <br />
                           <Text type="secondary">
                             {new Date(log.createdAt).toLocaleString('ko-KR', {
+                              timeZone: 'Asia/Seoul',
                               year: 'numeric',
                               month: '2-digit',
                               day: '2-digit',
@@ -948,6 +949,7 @@ const Settings: React.FC = () => {
                   <br />
                   <Text type="secondary" style={{ fontSize: '13px' }}>
                     {new Date(log.createdAt).toLocaleString('ko-KR', {
+                      timeZone: 'Asia/Seoul',
                       year: 'numeric',
                       month: '2-digit',
                       day: '2-digit',
