@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Button, Space, message, Dropdown } from 'antd';
-import { PrinterOutlined, DownloadOutlined, SendOutlined, DownOutlined } from '@ant-design/icons';
+import { Modal, Button, Space, message, Dropdown, Input } from 'antd';
+import { PrinterOutlined, DownloadOutlined, SendOutlined, DownOutlined, PhoneOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -30,6 +30,10 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
   const [blinking, setBlinking] = useState(true);
   const [loading, setLoading] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+
+  // 알림톡 확인 모달 관련 state
+  const [alimtalkModalOpen, setAlimtalkModalOpen] = useState(false);
+  const [alimtalkPhoneNumber, setAlimtalkPhoneNumber] = useState('');
 
   // 모달이 열릴 때 서명 이미지 로드
   useEffect(() => {
@@ -100,16 +104,15 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
       if (response.data.success) {
         message.success('전자서명이 저장되었습니다');
 
-        // 알림톡 자동 전송
-        await sendAlimtalkAfterSign();
-
         // 저장 후 콜백 호출 (매출 목록 새로고침)
         if (onSave) {
           onSave();
         }
 
-        // 모달 닫기
-        handleClose();
+        // 알림톡 확인 모달 열기 (거래처 번호 기본값 설정)
+        const customerPhone = transactionData?.companyPhone || '';
+        setAlimtalkPhoneNumber(customerPhone);
+        setAlimtalkModalOpen(true);
       } else {
         message.error(response.data.message || '전자서명 저장에 실패했습니다');
       }
@@ -122,12 +125,22 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
     }
   };
 
-  // 전자서명 후 알림톡 자동 전송
-  const sendAlimtalkAfterSign = async () => {
+  // 알림톡 전송 (전화번호 지정 가능)
+  const sendAlimtalkWithPhone = async (phoneNumber: string) => {
+    if (!phoneNumber) {
+      message.error('전화번호를 입력해주세요');
+      return;
+    }
+
     try {
+      setLoading(true);
+
       // Canvas를 이미지로 변환
       const canvas = await convertToCanvas();
-      if (!canvas) return;
+      if (!canvas) {
+        setLoading(false);
+        return;
+      }
 
       // Canvas를 JPG Blob으로 변환 (PNG 대신 JPG 사용, 품질 95%)
       const blob = await new Promise<Blob | null>((resolve) => {
@@ -152,21 +165,32 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
       if (uploadResponse.data.success) {
         const imageUrl = uploadResponse.data.imageUrl;
 
-        // 알림톡 전송
+        // 알림톡 전송 (전화번호 포함)
         const alimtalkResponse = await api.post(
           `/businesses/${currentBusiness.id}/sales/${transactionData.id}/send-alimtalk`,
-          { imageUrl }
+          { imageUrl, phoneNumber }
         );
 
         if (alimtalkResponse.data.success) {
-          message.success('알림톡 전송이 완료되었습니다');
+          message.success(`알림톡이 ${phoneNumber}로 전송되었습니다`);
+          setAlimtalkModalOpen(false);
+          handleClose();
+        } else {
+          message.error(alimtalkResponse.data.message || '알림톡 전송에 실패했습니다');
         }
       }
-    } catch (error) {
-      console.error('알림톡 자동 전송 오류:', error);
-      // 에러가 발생해도 전자서명 저장은 완료되었으므로 사용자에게 알림만 표시
-      message.warning('전자서명은 저장되었으나 알림톡 전송에 실패했습니다');
+    } catch (error: any) {
+      console.error('알림톡 전송 오류:', error);
+      message.error(error?.response?.data?.message || '알림톡 전송 중 오류가 발생했습니다');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // 알림톡 모달에서 전송 안함 선택
+  const handleSkipAlimtalk = () => {
+    setAlimtalkModalOpen(false);
+    handleClose();
   };
 
   const handleClose = () => {
@@ -201,7 +225,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
               }
               .signature-box-overlay {
                 position: absolute !important;
-                top: 2px !important;
+                top: 1.5px !important;
                 left: 150px !important;
                 z-index: 10 !important;
                 display: flex !important;
@@ -220,7 +244,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
                 }
                 .signature-box-overlay {
                   position: absolute !important;
-                  top: 2px !important;
+                  top: 1.5px !important;
                   left: 80px !important;
                 }
               }
@@ -580,7 +604,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
             className="signature-box-overlay"
             style={{
               position: 'absolute',
-              top: '2px',
+              top: '1.5px',
               left: '150px',
               zIndex: 10,
               display: 'flex',
@@ -657,6 +681,65 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
         onClose={() => setSignatureModalOpen(false)}
         onConfirm={handleSignatureConfirm}
       />
+
+      {/* 알림톡 전송 확인 모달 */}
+      <Modal
+        title="알림톡 전송"
+        open={alimtalkModalOpen}
+        onCancel={handleSkipAlimtalk}
+        footer={null}
+        width={400}
+        centered
+        maskClosable={false}
+      >
+        <div style={{ padding: '10px 0' }}>
+          <p style={{ marginBottom: 16, fontSize: 15 }}>
+            알림톡을 보내시겠습니까?
+          </p>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>
+              <PhoneOutlined /> 수신 번호
+            </label>
+            <Input
+              placeholder="전화번호 입력 (예: 010-1234-5678)"
+              value={alimtalkPhoneNumber}
+              onChange={(e) => setAlimtalkPhoneNumber(e.target.value)}
+              size="large"
+              style={{ fontSize: 16 }}
+            />
+            {transactionData?.companyPhone && (
+              <div style={{ marginTop: 8, color: '#666', fontSize: 13 }}>
+                거래처 등록 번호: {transactionData.companyPhone}
+                {alimtalkPhoneNumber !== transactionData.companyPhone && (
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() => setAlimtalkPhoneNumber(transactionData.companyPhone)}
+                  >
+                    이 번호로 설정
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <Button onClick={handleSkipAlimtalk} disabled={loading}>
+              전송 안함
+            </Button>
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={() => sendAlimtalkWithPhone(alimtalkPhoneNumber)}
+              loading={loading}
+              disabled={!alimtalkPhoneNumber}
+            >
+              전송
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

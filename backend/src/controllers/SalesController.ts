@@ -736,7 +736,7 @@ export class SalesController {
   static async sendAlimtalk(req: Request, res: Response) {
     try {
       const { businessId, id } = req.params;
-      const { imageUrl } = req.body;
+      const { imageUrl, phoneNumber } = req.body;
       const userId = req.user?.userId;
 
       if (!userId) {
@@ -771,13 +771,16 @@ export class SalesController {
         return res.status(400).json({ success: false, message: '거래처 정보를 찾을 수 없습니다.' });
       }
 
-      if (!sales.customer.phone) {
-        return res.status(400).json({ success: false, message: '거래처 전화번호가 등록되어 있지 않습니다.' });
+      // 전화번호: 요청에서 받은 번호 우선, 없으면 거래처 번호 사용
+      const targetPhone = phoneNumber || sales.customer.phone;
+
+      if (!targetPhone) {
+        return res.status(400).json({ success: false, message: '전화번호가 필요합니다.' });
       }
 
       // 알림톡 전송
       const sent = await AlimtalkService.sendESignatureStatement(
-        sales.customer.phone,
+        targetPhone,
         sales.customer.name,
         imageUrl,
         business.companyName
