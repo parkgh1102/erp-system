@@ -213,13 +213,14 @@ const SalesManagement: React.FC = () => {
 
       const salesData = salesRes.data.data.sales || [];
 
-      // 서명 정보가 있는 매출 로그
-      const signedSales = salesData.filter((s: Sale) => s.signatureImage);
-      console.log('📊 매출 데이터 로드 완료:', {
-        전체매출수: salesData.length,
-        서명된매출수: signedSales.length,
-        서명된매출ID들: signedSales.map((s: Sale) => s.id)
-      });
+      // 서명 정보가 있는 매출 로그 (개발 환경에서만)
+      if (process.env.NODE_ENV === 'development') {
+        const signedSales = salesData.filter((s: Sale) => s.signatureImage);
+        console.log('📊 매출 데이터 로드:', {
+          전체매출수: salesData.length,
+          서명된매출수: signedSales.length
+        });
+      }
 
       setSales(salesData);
       setCustomers(customersRes.data.data.customers || []);
@@ -417,13 +418,14 @@ const SalesManagement: React.FC = () => {
         return;
       }
 
-      // 서명 정보 디버깅
-      console.log('📝 전자서명 모달 열기 (선택) - SelectedSale 정보:', {
-        id: selectedSale.id,
-        signatureImage: selectedSale.signatureImage ? `있음 (${selectedSale.signatureImage.substring(0, 50)}...)` : '없음',
-        signedBy: selectedSale.signedBy,
-        signedAt: selectedSale.signedAt
-      });
+      // 서명 정보 디버깅 (개발 환경에서만)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📝 전자서명 모달 열기:', {
+          id: selectedSale.id,
+          hasSignature: !!selectedSale.signatureImage,
+          signedBy: selectedSale.signedBy
+        });
+      }
 
       let balanceAmount = 0;
 
@@ -438,14 +440,8 @@ const SalesManagement: React.FC = () => {
               }
             }
           );
-          console.log('💰 전잔금 API 응답 (전자서명):', {
-            customerId: selectedSale.customerId,
-            beforeDate: selectedSale.transactionDate || selectedSale.saleDate,
-            response: response.data
-          });
           if (response.data.success) {
             balanceAmount = response.data.data.balance || 0;
-            console.log('✅ 전잔금 설정:', balanceAmount);
           }
         } catch (error) {
           console.error('❌ 전잔금 조회 실패:', error);
@@ -558,14 +554,6 @@ const SalesManagement: React.FC = () => {
           // 실패해도 0으로 계속 진행
         }
       }
-
-      // 서명 정보 디버깅
-      console.log('📝 전자서명 모달 열기 - Record 정보:', {
-        id: record.id,
-        signatureImage: record.signatureImage ? `있음 (${record.signatureImage.substring(0, 50)}...)` : '없음',
-        signedBy: record.signedBy,
-        signedAt: record.signedAt
-      });
 
       // TransactionData 형식으로 변환
       const transactionData = {

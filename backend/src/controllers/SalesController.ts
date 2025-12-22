@@ -584,12 +584,13 @@ export class SalesController {
       }
 
       // 전자서명 정보 업데이트
-      console.log('📝 전자서명 저장:', {
-        salesId: parseInt(id),
-        signedBy: userId,
-        signatureImageLength: signatureImage.length,
-        signatureImagePreview: signatureImage.substring(0, 50)
-      });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('📝 전자서명 저장:', {
+          salesId: parseInt(id),
+          signedBy: userId,
+          hasSignatureImage: !!signatureImage
+        });
+      }
 
       await salesRepository.update(parseInt(id), {
         signedBy: userId,
@@ -776,6 +777,16 @@ export class SalesController {
 
       if (!targetPhone) {
         return res.status(400).json({ success: false, message: '전화번호가 필요합니다.' });
+      }
+
+      // 전화번호 형식 검증 (한국 전화번호)
+      const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+      const phoneRegex = /^(01[0-9]|02|0[3-9][0-9])[0-9]{7,8}$/;
+      if (!phoneRegex.test(cleanPhone)) {
+        return res.status(400).json({
+          success: false,
+          message: '올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)'
+        });
       }
 
       // 알림톡 전송

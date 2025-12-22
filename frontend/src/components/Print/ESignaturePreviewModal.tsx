@@ -4,6 +4,7 @@ import { PrinterOutlined, DownloadOutlined, SendOutlined, DownOutlined, PhoneOut
 import type { MenuProps } from 'antd';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import DOMPurify from 'dompurify';
 import { TransactionStatement } from './TransactionStatement';
 import { SignatureModal } from './SignatureModal';
 import { useAuthStore } from '../../stores/authStore';
@@ -40,10 +41,8 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
     if (open) {
       // 모달이 열릴 때 항상 transactionData에서 서명 이미지를 확인
       if (transactionData?.signatureImage) {
-        console.log('서명 이미지 로드:', transactionData.signatureImage.substring(0, 50));
         setSignatureDataUrl(transactionData.signatureImage);
       } else {
-        console.log('서명 이미지 없음');
         setSignatureDataUrl(null);
       }
     } else {
@@ -118,7 +117,18 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
       }
     } catch (error: any) {
       console.error('전자서명 저장 오류:', error);
-      const errorMessage = error?.response?.data?.message || '전자서명 저장 중 오류가 발생했습니다';
+      let errorMessage = '전자서명 저장 중 오류가 발생했습니다';
+
+      if (error?.response?.status === 401) {
+        errorMessage = '로그인이 필요합니다. 다시 로그인해 주세요.';
+      } else if (error?.response?.status === 403) {
+        errorMessage = '권한이 없습니다.';
+      } else if (error?.response?.status === 400) {
+        errorMessage = error?.response?.data?.message || '잘못된 요청입니다.';
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -129,6 +139,14 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
   const sendAlimtalkWithPhone = async (phoneNumber: string) => {
     if (!phoneNumber) {
       message.error('전화번호를 입력해주세요');
+      return;
+    }
+
+    // 전화번호 형식 검증 (한국 전화번호)
+    const cleanPhone = phoneNumber.replace(/[^0-9]/g, '');
+    const phoneRegex = /^(01[0-9]|02|0[3-9][0-9])[0-9]{7,8}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      message.error('올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)');
       return;
     }
 
@@ -181,7 +199,17 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
       }
     } catch (error: any) {
       console.error('알림톡 전송 오류:', error);
-      message.error(error?.response?.data?.message || '알림톡 전송 중 오류가 발생했습니다');
+      let errorMessage = '알림톡 전송 중 오류가 발생했습니다';
+
+      if (error?.response?.status === 401) {
+        errorMessage = '로그인이 필요합니다. 다시 로그인해 주세요.';
+      } else if (error?.response?.status === 400) {
+        errorMessage = error?.response?.data?.message || '잘못된 요청입니다.';
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -201,8 +229,11 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
   const handlePrint = () => {
     if (!printRef.current) return;
 
-    // 인쇄용 HTML 생성
-    const printContent = printRef.current.innerHTML;
+    // 인쇄용 HTML 생성 (XSS 방어를 위해 DOMPurify로 sanitize)
+    const printContent = DOMPurify.sanitize(printRef.current.innerHTML, {
+      ALLOWED_TAGS: ['div', 'span', 'img', 'table', 'tr', 'td', 'th', 'tbody', 'thead', 'style', 'p', 'br', 'strong', 'b'],
+      ALLOWED_ATTR: ['style', 'class', 'src', 'alt', 'width', 'height', 'colspan', 'rowspan']
+    });
     const printWindow = window.open('', '_blank');
 
     if (printWindow) {
@@ -357,6 +388,10 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
     } catch (error) {
       console.error('PDF 다운로드 오류:', error);
       message.error('PDF 다운로드 중 오류가 발생했습니다');
+    } finally {
+      // Canvas 메모리 해제
+      canvas.width = 0;
+      canvas.height = 0;
     }
   };
 
@@ -373,13 +408,23 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
           link.href = url;
           link.download = `거래명세표_${transactionData.companyName}_${new Date().toISOString().split('T')[0]}.jpg`;
           link.click();
-          URL.revokeObjectURL(url);
+          // 메모리 정리
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+            link.remove();
+          }, 100);
           message.success('JPG 다운로드 완료');
         }
+        // Canvas 메모리 해제
+        canvas.width = 0;
+        canvas.height = 0;
       }, 'image/jpeg', 0.95);
     } catch (error) {
       console.error('JPG 다운로드 오류:', error);
       message.error('JPG 다운로드 중 오류가 발생했습니다');
+      // 에러 시에도 Canvas 메모리 해제
+      canvas.width = 0;
+      canvas.height = 0;
     }
   };
 
@@ -396,13 +441,23 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
           link.href = url;
           link.download = `거래명세표_${transactionData.companyName}_${new Date().toISOString().split('T')[0]}.png`;
           link.click();
-          URL.revokeObjectURL(url);
+          // 메모리 정리
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+            link.remove();
+          }, 100);
           message.success('PNG 다운로드 완료');
         }
+        // Canvas 메모리 해제
+        canvas.width = 0;
+        canvas.height = 0;
       }, 'image/png');
     } catch (error) {
       console.error('PNG 다운로드 오류:', error);
       message.error('PNG 다운로드 중 오류가 발생했습니다');
+      // 에러 시에도 Canvas 메모리 해제
+      canvas.width = 0;
+      canvas.height = 0;
     }
   };
 
