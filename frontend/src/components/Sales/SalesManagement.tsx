@@ -489,7 +489,8 @@ const SalesManagement: React.FC = () => {
 
           // 백엔드에서 저장된 값 사용 (백엔드는 taxAmount, 프론트엔드는 vatAmount)
           const savedSupplyAmount = Number(item.supplyAmount) || 0;
-          const savedVatAmount = Number(item.vatAmount) || Number(item.taxAmount) || 0;
+          // 면세인 경우 세액은 무조건 0
+          const savedVatAmount = isTaxFree ? 0 : (Number(item.vatAmount) || Number(item.taxAmount) || 0);
           const savedTotalAmount = savedSupplyAmount + savedVatAmount;
 
           return {
@@ -501,7 +502,7 @@ const SalesManagement: React.FC = () => {
             unitPrice: Number(item.unitPrice) || 0,
             amount: baseAmount,
             supplyAmount: savedSupplyAmount || calculatedSupplyAmount,
-            vatAmount: savedVatAmount || calculatedVatAmount,
+            vatAmount: isTaxFree ? 0 : (savedVatAmount || calculatedVatAmount),
             totalAmount: savedTotalAmount || calculatedTotalAmount,
             taxExempt: isTaxFree,
             taxType: taxType,
@@ -598,7 +599,8 @@ const SalesManagement: React.FC = () => {
 
           // 백엔드에서 저장된 값 사용 (백엔드는 taxAmount, 프론트엔드는 vatAmount)
           const savedSupplyAmount = Number(item.supplyAmount) || 0;
-          const savedVatAmount = Number(item.vatAmount) || Number(item.taxAmount) || 0;
+          // 면세인 경우 세액은 무조건 0
+          const savedVatAmount = isTaxFree ? 0 : (Number(item.vatAmount) || Number(item.taxAmount) || 0);
           const savedTotalAmount = savedSupplyAmount + savedVatAmount;
 
           return {
@@ -610,7 +612,7 @@ const SalesManagement: React.FC = () => {
             unitPrice: Number(item.unitPrice) || 0,
             amount: baseAmount,
             supplyAmount: savedSupplyAmount || calculatedSupplyAmount,
-            vatAmount: savedVatAmount || calculatedVatAmount,
+            vatAmount: isTaxFree ? 0 : (savedVatAmount || calculatedVatAmount),
             totalAmount: savedTotalAmount || calculatedTotalAmount,
             taxExempt: isTaxFree,
             taxType: taxType,
@@ -717,7 +719,8 @@ const SalesManagement: React.FC = () => {
 
             // 백엔드에서 저장된 값 사용 (백엔드는 taxAmount, 프론트엔드는 vatAmount)
             const savedSupplyAmount = Number(item.supplyAmount) || 0;
-            const savedVatAmount = Number(item.vatAmount) || Number(item.taxAmount) || 0;
+            // 면세인 경우 세액은 무조건 0
+            const savedVatAmount = isTaxFree ? 0 : (Number(item.vatAmount) || Number(item.taxAmount) || 0);
             const savedTotalAmount = savedSupplyAmount + savedVatAmount;
 
             return {
@@ -729,7 +732,7 @@ const SalesManagement: React.FC = () => {
               unitPrice: Number(item.unitPrice) || 0,
               amount: baseAmount,
               supplyAmount: savedSupplyAmount || calculatedSupplyAmount,
-              vatAmount: savedVatAmount || calculatedVatAmount,
+              vatAmount: isTaxFree ? 0 : (savedVatAmount || calculatedVatAmount),
               totalAmount: savedTotalAmount || calculatedTotalAmount,
               taxExempt: isTaxFree,
               taxType: taxType,

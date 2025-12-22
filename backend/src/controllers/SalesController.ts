@@ -290,7 +290,11 @@ export class SalesController {
           // 프론트엔드에서 보낸 값이 있으면 사용, 없으면 계산
           const defaultAmount = itemData.quantity * itemData.unitPrice;
           const supplyAmount = itemData.supplyAmount !== undefined ? itemData.supplyAmount : (itemData.amount || defaultAmount);
-          const taxAmount = itemData.vatAmount !== undefined ? itemData.vatAmount : Math.round(supplyAmount * 0.1);
+
+          // 면세 여부 확인
+          const isTaxFree = itemData.taxType === 'tax_free';
+          // 면세인 경우 세액은 0, 아니면 프론트엔드 값 또는 10% 계산
+          const taxAmount = isTaxFree ? 0 : (itemData.vatAmount !== undefined ? itemData.vatAmount : Math.round(supplyAmount * 0.1));
 
           const item = salesItemRepository.create({
             salesId: savedSales.id,
@@ -420,7 +424,11 @@ export class SalesController {
           // 프론트엔드에서 보낸 값이 있으면 사용, 없으면 계산
           const defaultAmount = itemData.quantity * itemData.unitPrice;
           const supplyAmount = itemData.supplyAmount !== undefined ? itemData.supplyAmount : (itemData.amount || defaultAmount);
-          const taxAmount = itemData.vatAmount !== undefined ? itemData.vatAmount : Math.round(supplyAmount * 0.1);
+
+          // 면세 여부 확인
+          const isTaxFree = itemData.taxType === 'tax_free';
+          // 면세인 경우 세액은 0, 아니면 프론트엔드 값 또는 10% 계산
+          const taxAmount = isTaxFree ? 0 : (itemData.vatAmount !== undefined ? itemData.vatAmount : Math.round(supplyAmount * 0.1));
 
           const item = salesItemRepository.create({
             salesId: parseInt(id),
