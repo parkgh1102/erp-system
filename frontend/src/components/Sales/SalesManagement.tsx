@@ -1723,6 +1723,7 @@ const SalesManagement: React.FC = () => {
               <Row key={index} gutter={8} style={{ marginBottom: 8 }}>
                 <Col span={4}>
                   <Select
+                    id={`sale-product-select-${index}`}
                     placeholder="품목 선택"
                     value={item.productId || undefined}
                     onChange={(value) => handleItemChange(index, 'productId', value)}
@@ -1901,6 +1902,10 @@ const SalesManagement: React.FC = () => {
                         e.preventDefault();
                         e.stopPropagation();
                         addItem();
+                        setTimeout(() => {
+                          const nextSelect = document.querySelector(`#sale-product-select-${saleItems.length} .ant-select-selection-search-input`) as HTMLInputElement;
+                          if (nextSelect) nextSelect.focus();
+                        }, 100);
                       }
                     }}
                   />
@@ -1919,27 +1924,41 @@ const SalesManagement: React.FC = () => {
                   <InputNumber
                     placeholder="공급가액"
                     value={item.supplyAmount}
-                    disabled
+                    onChange={(value) => handleItemChange(index, 'supplyAmount', value || 0)}
                     style={{ width: '100%' }}
                     formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
                   />
                 </Col>
                 <Col span={2}>
                   <InputNumber
                     placeholder="세액"
                     value={item.vatAmount}
-                    disabled
+                    onChange={(value) => handleItemChange(index, 'vatAmount', value || 0)}
                     style={{ width: '100%' }}
                     formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
                   />
                 </Col>
                 <Col span={3}>
                   <InputNumber
                     placeholder="합계금액"
                     value={item.totalAmount}
-                    disabled
+                    onChange={(value) => handleItemChange(index, 'totalAmount', value || 0)}
                     style={{ width: '100%' }}
                     formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                    parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addItem();
+                        setTimeout(() => {
+                          const nextSelect = document.querySelector(`#sale-product-select-${saleItems.length} .ant-select-selection-search-input`) as HTMLInputElement;
+                          if (nextSelect) nextSelect.focus();
+                        }, 100);
+                      }
+                    }}
                   />
                 </Col>
                 <Col span={2}>

@@ -91,7 +91,6 @@
       "Bash(git remote set-url:*)",
       "Bash(\"C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe\" -U postgres -h dpg-d3nfrvruibrs738cfh00-a.oregon-postgres.render.com -p 5432 -d erp_system_hcw8 -c \"DELETE FROM transaction_items; DELETE FROM transactions; DELETE FROM sales_items; DELETE FROM sales; DELETE FROM purchase_items; DELETE FROM purchases; DELETE FROM payments; DELETE FROM customers; DELETE FROM products; DELETE FROM accounts; DELETE FROM invoices; DELETE FROM notes;\")",
       "Bash(nslookup:*)",
-      "Bash(sqlite3 erp_system_final.db \"SELECT COUNT(*) as sales_count FROM sales; SELECT COUNT(*) as purchase_count FROM purchases; SELECT COUNT(*) as customer_count FROM customers; SELECT COUNT(*) as product_count FROM products;\")",
       "Bash(npm run dev)",
       "Bash(\"/c/Program Files/PostgreSQL/18/bin/psql.exe\" -U postgres -d erp_system -c \"SELECT s.id, s.\"\"transactionDate\"\", c.name as customer_name, s.\"\"totalAmount\"\", s.\"\"vatAmount\"\", s.\"\"totalAmount\"\" + s.\"\"vatAmount\"\" as grand_total FROM sales s JOIN customers c ON s.\"\"customerId\"\" = c.id WHERE c.name IN (''박경환'', ''123'', ''가나다라'') AND s.\"\"transactionDate\"\"::date = ''2025-10-20'' ORDER BY c.name, s.id;\")",
       "Bash(\"/c/Program Files/PostgreSQL/18/bin/psql.exe\" -U postgres -d erp_system -c \"SELECT p.id, p.\"\"paymentDate\"\", c.name as customer_name, p.\"\"paymentType\"\", p.amount FROM payments p JOIN customers c ON p.\"\"customerId\"\" = c.id WHERE c.name IN (''박경환'', ''123'', ''가나다라'') AND p.\"\"paymentDate\"\"::date = ''2025-10-20'' ORDER BY c.name, p.id;\")",
@@ -180,7 +179,8 @@
       "Bash(gh run:*)",
       "WebFetch(domain:github.com)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nFix: 거래명세표 인쇄 시 하단 잘림 문제 수정\n\n- 인쇄 여백 10mm → 5mm로 축소\n- body padding 제거\n- 구분선 마진 7mm → 3mm로 축소\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Bash(git -C:*)"
     ],
     "deny": [],
     "ask": []

@@ -201,7 +201,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
               }
               .signature-box-overlay {
                 position: absolute !important;
-                top: 8px !important;
+                top: 3px !important;
                 left: 150px !important;
                 z-index: 10 !important;
                 display: flex !important;
@@ -220,7 +220,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
                 }
                 .signature-box-overlay {
                   position: absolute !important;
-                  top: 8px !important;
+                  top: 3px !important;
                   left: 80px !important;
                 }
               }
@@ -580,7 +580,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
             className="signature-box-overlay"
             style={{
               position: 'absolute',
-              top: '8px',
+              top: '3px',
               left: '150px',
               zIndex: 10,
               display: 'flex',
