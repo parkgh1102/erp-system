@@ -481,8 +481,8 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
     }
   };
 
-  // 알림톡 재전송 (전자서명 완료 후)
-  const handleResendAlimtalk = async () => {
+  // 알림톡 재전송 (전자서명 완료 후) - 번호 확인 모달 열기
+  const handleResendAlimtalk = () => {
     if (!currentBusiness) {
       message.error('사업체 정보를 찾을 수 없습니다');
       return;
@@ -493,60 +493,10 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
       return;
     }
 
-    try {
-      setLoading(true);
-
-      // Canvas를 이미지로 변환
-      const canvas = await convertToCanvas();
-      if (!canvas) return;
-
-      // Canvas를 JPG Blob으로 변환 (PNG 대신 JPG 사용, 품질 95%)
-      const blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, 'image/jpeg', 0.95);
-      });
-
-      if (!blob) {
-        throw new Error('이미지 변환에 실패했습니다');
-      }
-
-      // FormData 생성
-      const formData = new FormData();
-      formData.append('image', blob, 'statement.jpg');
-      formData.append('salesId', transactionData.id.toString());
-
-      // FormData를 전송할 때는 Content-Type을 브라우저가 자동으로 설정하도록 함 (boundary 포함)
-      const uploadResponse = await api.post(
-        `/businesses/${currentBusiness.id}/sales/${transactionData.id}/upload-statement`,
-        formData
-      );
-
-      if (uploadResponse.data.success) {
-        const imageUrl = uploadResponse.data.imageUrl;
-
-        // 알림톡 전송
-        const alimtalkResponse = await api.post(
-          `/businesses/${currentBusiness.id}/sales/${transactionData.id}/send-alimtalk`,
-          { imageUrl }
-        );
-
-        if (alimtalkResponse.data.success) {
-          message.success('알림톡이 재전송되었습니다');
-          if (onSave) {
-            onSave();
-          }
-        } else {
-          message.error(alimtalkResponse.data.message || '알림톡 전송에 실패했습니다');
-        }
-      } else {
-        message.error(uploadResponse.data.message || '이미지 업로드에 실패했습니다');
-      }
-    } catch (error: any) {
-      console.error('알림톡 재전송 오류:', error);
-      const errorMessage = error?.response?.data?.message || '알림톡 재전송 중 오류가 발생했습니다';
-      message.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
+    // 알림톡 확인 모달 열기 (거래처 번호 기본값 설정)
+    const customerPhone = transactionData?.companyPhone || '';
+    setAlimtalkPhoneNumber(customerPhone);
+    setAlimtalkModalOpen(true);
   };
 
   // 다운로드 메뉴 아이템
