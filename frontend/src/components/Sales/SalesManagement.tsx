@@ -964,6 +964,50 @@ const SalesManagement: React.FC = () => {
       newItems[index].totalAmount = totalAmount;
     }
 
+    // 합계금액 직접 입력 시 공급가액과 세액 역산
+    if (field === 'totalAmount') {
+      const selectedProduct = products.find(p => p.id === newItems[index].productId);
+      const taxType = selectedProduct?.taxType || newItems[index].taxType || 'tax_separate';
+      const totalAmount = value || 0;
+
+      if (taxType === 'tax_free') {
+        // 면세: 공급가액 = 합계, 세액 = 0
+        newItems[index].supplyAmount = totalAmount;
+        newItems[index].vatAmount = 0;
+      } else {
+        // 과세: 합계에서 공급가액과 세액 역산
+        const supplyAmount = Math.round(totalAmount / 1.1);
+        const vatAmount = totalAmount - supplyAmount;
+        newItems[index].supplyAmount = supplyAmount;
+        newItems[index].vatAmount = vatAmount;
+      }
+    }
+
+    // 공급가액 직접 입력 시 세액과 합계금액 계산
+    if (field === 'supplyAmount') {
+      const selectedProduct = products.find(p => p.id === newItems[index].productId);
+      const taxType = selectedProduct?.taxType || newItems[index].taxType || 'tax_separate';
+      const supplyAmount = value || 0;
+
+      if (taxType === 'tax_free') {
+        // 면세: 세액 = 0, 합계 = 공급가액
+        newItems[index].vatAmount = 0;
+        newItems[index].totalAmount = supplyAmount;
+      } else {
+        // 과세: 세액 = 공급가액 * 0.1, 합계 = 공급가액 + 세액
+        const vatAmount = Math.round(supplyAmount * 0.1);
+        newItems[index].vatAmount = vatAmount;
+        newItems[index].totalAmount = supplyAmount + vatAmount;
+      }
+    }
+
+    // 세액 직접 입력 시 합계금액 계산
+    if (field === 'vatAmount') {
+      const supplyAmount = newItems[index].supplyAmount || 0;
+      const vatAmount = value || 0;
+      newItems[index].totalAmount = supplyAmount + vatAmount;
+    }
+
     setSaleItems(newItems);
   };
 
