@@ -287,8 +287,11 @@ export class SalesController {
       if (value.items && value.items.length > 0) {
         const items = [];
         for (const itemData of value.items) {
-          const supplyAmount = itemData.amount || itemData.totalPrice || (itemData.quantity * itemData.unitPrice);
-          const vatRate = itemData.vatRate || 0.1;
+          // 프론트엔드에서 보낸 값이 있으면 사용, 없으면 계산
+          const defaultAmount = itemData.quantity * itemData.unitPrice;
+          const supplyAmount = itemData.supplyAmount !== undefined ? itemData.supplyAmount : (itemData.amount || defaultAmount);
+          const taxAmount = itemData.vatAmount !== undefined ? itemData.vatAmount : Math.round(supplyAmount * 0.1);
+
           const item = salesItemRepository.create({
             salesId: savedSales.id,
             productId: itemData.productId || null,
@@ -296,7 +299,7 @@ export class SalesController {
             quantity: itemData.quantity,
             unitPrice: itemData.unitPrice,
             supplyAmount: supplyAmount,
-            taxAmount: supplyAmount * vatRate,
+            taxAmount: taxAmount,
             specification: itemData.spec || itemData.specification || null,
             unit: itemData.unit || null
           });
@@ -414,8 +417,11 @@ export class SalesController {
       if (value.items && value.items.length > 0) {
         const items = [];
         for (const itemData of value.items) {
-          const supplyAmount = itemData.amount || itemData.totalPrice || (itemData.quantity * itemData.unitPrice);
-          const vatRate = itemData.vatRate || 0.1;
+          // 프론트엔드에서 보낸 값이 있으면 사용, 없으면 계산
+          const defaultAmount = itemData.quantity * itemData.unitPrice;
+          const supplyAmount = itemData.supplyAmount !== undefined ? itemData.supplyAmount : (itemData.amount || defaultAmount);
+          const taxAmount = itemData.vatAmount !== undefined ? itemData.vatAmount : Math.round(supplyAmount * 0.1);
+
           const item = salesItemRepository.create({
             salesId: parseInt(id),
             productId: itemData.productId || null,
@@ -423,7 +429,7 @@ export class SalesController {
             quantity: itemData.quantity,
             unitPrice: itemData.unitPrice,
             supplyAmount: supplyAmount,
-            taxAmount: supplyAmount * vatRate,
+            taxAmount: taxAmount,
             specification: itemData.spec || itemData.specification || null,
             unit: itemData.unit || null
           });

@@ -263,8 +263,10 @@ class SalesController {
             if (value.items && value.items.length > 0) {
                 const items = [];
                 for (const itemData of value.items) {
-                    const supplyAmount = itemData.amount || itemData.totalPrice || (itemData.quantity * itemData.unitPrice);
-                    const vatRate = itemData.vatRate || 0.1;
+                    // 프론트엔드에서 보낸 값이 있으면 사용, 없으면 계산
+                    const defaultAmount = itemData.quantity * itemData.unitPrice;
+                    const supplyAmount = itemData.supplyAmount !== undefined ? itemData.supplyAmount : (itemData.amount || defaultAmount);
+                    const taxAmount = itemData.vatAmount !== undefined ? itemData.vatAmount : Math.round(supplyAmount * 0.1);
                     const item = salesItemRepository.create({
                         salesId: savedSales.id,
                         productId: itemData.productId || null,
@@ -272,7 +274,7 @@ class SalesController {
                         quantity: itemData.quantity,
                         unitPrice: itemData.unitPrice,
                         supplyAmount: supplyAmount,
-                        taxAmount: supplyAmount * vatRate,
+                        taxAmount: taxAmount,
                         specification: itemData.spec || itemData.specification || null,
                         unit: itemData.unit || null
                     });
@@ -375,8 +377,10 @@ class SalesController {
             if (value.items && value.items.length > 0) {
                 const items = [];
                 for (const itemData of value.items) {
-                    const supplyAmount = itemData.amount || itemData.totalPrice || (itemData.quantity * itemData.unitPrice);
-                    const vatRate = itemData.vatRate || 0.1;
+                    // 프론트엔드에서 보낸 값이 있으면 사용, 없으면 계산
+                    const defaultAmount = itemData.quantity * itemData.unitPrice;
+                    const supplyAmount = itemData.supplyAmount !== undefined ? itemData.supplyAmount : (itemData.amount || defaultAmount);
+                    const taxAmount = itemData.vatAmount !== undefined ? itemData.vatAmount : Math.round(supplyAmount * 0.1);
                     const item = salesItemRepository.create({
                         salesId: parseInt(id),
                         productId: itemData.productId || null,
@@ -384,7 +388,7 @@ class SalesController {
                         quantity: itemData.quantity,
                         unitPrice: itemData.unitPrice,
                         supplyAmount: supplyAmount,
-                        taxAmount: supplyAmount * vatRate,
+                        taxAmount: taxAmount,
                         specification: itemData.spec || itemData.specification || null,
                         unit: itemData.unit || null
                     });
@@ -527,12 +531,13 @@ class SalesController {
                 });
             }
             // 전자서명 정보 업데이트
-            console.log('📝 전자서명 저장:', {
-                salesId: parseInt(id),
-                signedBy: userId,
-                signatureImageLength: signatureImage.length,
-                signatureImagePreview: signatureImage.substring(0, 50)
-            });
+            if (process.env.NODE_ENV !== 'production') {
+                console.log('📝 전자서명 저장:', {
+                    salesId: parseInt(id),
+                    signedBy: userId,
+                    hasSignatureImage: !!signatureImage
+                });
+            }
             await salesRepository.update(parseInt(id), {
                 signedBy: userId,
                 signedAt: new Date(),
@@ -661,7 +666,7 @@ class SalesController {
     static async sendAlimtalk(req, res) {
         try {
             const { businessId, id } = req.params;
-            const { imageUrl } = req.body;
+            const { imageUrl, phoneNumber } = req.body;
             const userId = req.user?.userId;
             if (!userId) {
                 return res.status(401).json({ success: false, message: '인증이 필요합니다.' });
@@ -688,11 +693,22 @@ class SalesController {
             if (!sales.customer) {
                 return res.status(400).json({ success: false, message: '거래처 정보를 찾을 수 없습니다.' });
             }
-            if (!sales.customer.phone) {
-                return res.status(400).json({ success: false, message: '거래처 전화번호가 등록되어 있지 않습니다.' });
+            // 전화번호: 요청에서 받은 번호 우선, 없으면 거래처 번호 사용
+            const targetPhone = phoneNumber || sales.customer.phone;
+            if (!targetPhone) {
+                return res.status(400).json({ success: false, message: '전화번호가 필요합니다.' });
+            }
+            // 전화번호 형식 검증 (한국 전화번호)
+            const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+            const phoneRegex = /^(01[0-9]|02|0[3-9][0-9])[0-9]{7,8}$/;
+            if (!phoneRegex.test(cleanPhone)) {
+                return res.status(400).json({
+                    success: false,
+                    message: '올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)'
+                });
             }
             // 알림톡 전송
-            const sent = await AlimtalkService_1.AlimtalkService.sendESignatureStatement(sales.customer.phone, sales.customer.name, imageUrl, business.companyName);
+            const sent = await AlimtalkService_1.AlimtalkService.sendESignatureStatement(targetPhone, sales.customer.name, imageUrl, business.companyName);
             if (sent) {
                 res.json({
                     success: true,

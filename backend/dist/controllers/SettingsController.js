@@ -48,11 +48,11 @@ exports.SettingsController = {
                 businessId = user.businesses[0].id;
             }
             if (!businessId) {
-                // 비즈니스가 없으면 기본값 반환 (2단계 인증 OFF)
+                // 비즈니스가 없으면 기본값 반환 (2단계 인증 ON)
                 return res.json({
                     success: true,
                     data: {
-                        twoFactorAuth: false,
+                        twoFactorAuth: true,
                         sessionTimeout: '8h'
                     }
                 });
@@ -68,7 +68,8 @@ exports.SettingsController = {
             res.json({
                 success: true,
                 data: {
-                    twoFactorAuth: settingsObject['twoFactorAuth'] === 'true',
+                    // 설정이 없으면 기본값 ON (true)
+                    twoFactorAuth: settingsObject['twoFactorAuth'] === undefined ? true : settingsObject['twoFactorAuth'] === 'true',
                     sessionTimeout: settingsObject['sessionTimeout'] || '8h'
                 }
             });

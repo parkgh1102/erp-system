@@ -487,6 +487,11 @@ const SalesManagement: React.FC = () => {
             calculatedTotalAmount = calculatedSupplyAmount + calculatedVatAmount;
           }
 
+          // 백엔드에서 저장된 값 사용 (백엔드는 taxAmount, 프론트엔드는 vatAmount)
+          const savedSupplyAmount = Number(item.supplyAmount) || 0;
+          const savedVatAmount = Number(item.vatAmount) || Number(item.taxAmount) || 0;
+          const savedTotalAmount = savedSupplyAmount + savedVatAmount;
+
           return {
             itemName: item.itemName || item.productName || item.product?.name || '',
             specification: item.spec || item.specification || item.product?.spec || '',
@@ -495,9 +500,9 @@ const SalesManagement: React.FC = () => {
             quantity: Number(item.quantity) || 0,
             unitPrice: Number(item.unitPrice) || 0,
             amount: baseAmount,
-            supplyAmount: Number(item.supplyAmount) || calculatedSupplyAmount,
-            vatAmount: Number(item.vatAmount) || calculatedVatAmount,
-            totalAmount: Number(item.totalAmount) || calculatedTotalAmount,
+            supplyAmount: savedSupplyAmount || calculatedSupplyAmount,
+            vatAmount: savedVatAmount || calculatedVatAmount,
+            totalAmount: savedTotalAmount || calculatedTotalAmount,
             taxExempt: isTaxFree,
             taxType: taxType,
             taxInclusive: isTaxInclusive
@@ -591,6 +596,11 @@ const SalesManagement: React.FC = () => {
             calculatedTotalAmount = calculatedSupplyAmount + calculatedVatAmount;
           }
 
+          // 백엔드에서 저장된 값 사용 (백엔드는 taxAmount, 프론트엔드는 vatAmount)
+          const savedSupplyAmount = Number(item.supplyAmount) || 0;
+          const savedVatAmount = Number(item.vatAmount) || Number(item.taxAmount) || 0;
+          const savedTotalAmount = savedSupplyAmount + savedVatAmount;
+
           return {
             itemName: item.itemName || item.productName || item.product?.name || '',
             specification: item.spec || item.specification || item.product?.spec || '',
@@ -599,9 +609,9 @@ const SalesManagement: React.FC = () => {
             quantity: Number(item.quantity) || 0,
             unitPrice: Number(item.unitPrice) || 0,
             amount: baseAmount,
-            supplyAmount: Number(item.supplyAmount) || calculatedSupplyAmount,
-            vatAmount: Number(item.vatAmount) || calculatedVatAmount,
-            totalAmount: Number(item.totalAmount) || calculatedTotalAmount,
+            supplyAmount: savedSupplyAmount || calculatedSupplyAmount,
+            vatAmount: savedVatAmount || calculatedVatAmount,
+            totalAmount: savedTotalAmount || calculatedTotalAmount,
             taxExempt: isTaxFree,
             taxType: taxType,
             taxInclusive: isTaxInclusive
@@ -705,6 +715,11 @@ const SalesManagement: React.FC = () => {
               calculatedTotalAmount = calculatedSupplyAmount + calculatedVatAmount;
             }
 
+            // 백엔드에서 저장된 값 사용 (백엔드는 taxAmount, 프론트엔드는 vatAmount)
+            const savedSupplyAmount = Number(item.supplyAmount) || 0;
+            const savedVatAmount = Number(item.vatAmount) || Number(item.taxAmount) || 0;
+            const savedTotalAmount = savedSupplyAmount + savedVatAmount;
+
             return {
               itemName: item.itemName || item.productName || item.product?.name || '',
               specification: item.spec || item.specification || item.product?.spec || '',
@@ -713,9 +728,9 @@ const SalesManagement: React.FC = () => {
               quantity: Number(item.quantity) || 0,
               unitPrice: Number(item.unitPrice) || 0,
               amount: baseAmount,
-              supplyAmount: Number(item.supplyAmount) || calculatedSupplyAmount,
-              vatAmount: Number(item.vatAmount) || calculatedVatAmount,
-              totalAmount: Number(item.totalAmount) || calculatedTotalAmount,
+              supplyAmount: savedSupplyAmount || calculatedSupplyAmount,
+              vatAmount: savedVatAmount || calculatedVatAmount,
+              totalAmount: savedTotalAmount || calculatedTotalAmount,
               taxExempt: isTaxFree,
               taxType: taxType,
               taxInclusive: isTaxInclusive
