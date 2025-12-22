@@ -1901,11 +1901,12 @@ const SalesManagement: React.FC = () => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         e.stopPropagation();
+                        const nextIndex = saleItems.length;
                         addItem();
                         setTimeout(() => {
-                          const nextSelect = document.querySelector(`#sale-product-select-${saleItems.length} .ant-select-selection-search-input`) as HTMLInputElement;
-                          if (nextSelect) nextSelect.focus();
-                        }, 100);
+                          const nextSelect = document.querySelector(`#sale-product-select-${nextIndex}`) as HTMLElement;
+                          if (nextSelect) nextSelect.click();
+                        }, 150);
                       }
                     }}
                   />
@@ -1952,11 +1953,12 @@ const SalesManagement: React.FC = () => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         e.stopPropagation();
+                        const nextIndex = saleItems.length;
                         addItem();
                         setTimeout(() => {
-                          const nextSelect = document.querySelector(`#sale-product-select-${saleItems.length} .ant-select-selection-search-input`) as HTMLInputElement;
-                          if (nextSelect) nextSelect.focus();
-                        }, 100);
+                          const nextSelect = document.querySelector(`#sale-product-select-${nextIndex}`) as HTMLElement;
+                          if (nextSelect) nextSelect.click();
+                        }, 150);
                       }
                     }}
                   />

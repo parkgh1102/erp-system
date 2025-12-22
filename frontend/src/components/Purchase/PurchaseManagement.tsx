@@ -1472,11 +1472,12 @@ const PurchaseManagement: React.FC = () => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         e.stopPropagation();
+                        const nextIndex = purchaseItems.length;
                         addItem();
                         setTimeout(() => {
-                          const nextSelect = document.querySelector(`#purchase-product-select-${purchaseItems.length} .ant-select-selection-search-input`) as HTMLInputElement;
-                          if (nextSelect) nextSelect.focus();
-                        }, 100);
+                          const nextSelect = document.querySelector(`#purchase-product-select-${nextIndex}`) as HTMLElement;
+                          if (nextSelect) nextSelect.click();
+                        }, 150);
                       }
                     }}
                   />
@@ -1523,11 +1524,12 @@ const PurchaseManagement: React.FC = () => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         e.stopPropagation();
+                        const nextIndex = purchaseItems.length;
                         addItem();
                         setTimeout(() => {
-                          const nextSelect = document.querySelector(`#purchase-product-select-${purchaseItems.length} .ant-select-selection-search-input`) as HTMLInputElement;
-                          if (nextSelect) nextSelect.focus();
-                        }, 100);
+                          const nextSelect = document.querySelector(`#purchase-product-select-${nextIndex}`) as HTMLElement;
+                          if (nextSelect) nextSelect.click();
+                        }, 150);
                       }
                     }}
                   />
