@@ -158,9 +158,9 @@ export const transactionLedgerController = {
         const paymentDate = dayjs(payment.paymentDate);
         if (paymentDate.isBefore(start, 'day')) {
           const paymentAmount = Number(payment.amount) || 0;
-          if (payment.paymentType === '수금' || payment.paymentType === '입금') {
+          if (payment.paymentType === '수금') {
             previousBalance -= paymentAmount;
-          } else {
+          } else if (payment.paymentType === '지급') {
             previousBalance += paymentAmount;
           }
         }
@@ -306,16 +306,19 @@ export const transactionLedgerController = {
         });
       });
 
-      // 수금/입금 항목 추가
+      // 수금/지급 항목 추가
       payments.forEach((payment) => {
         // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
         const paymentAmount = Number(payment.amount) || 0;
 
-        // 수금과 입금 모두 거래처로부터 돈을 받는 것으로 처리
-        const isReceipt = payment.paymentType === '수금' || payment.paymentType === '입금';
+        // 수금: 거래처로부터 돈을 받음 (받을 돈 감소)
+        // 지급: 거래처에 돈을 지급 (갚을 돈 감소 = 잔액 증가)
+        const isReceipt = payment.paymentType === '수금';
+        const isPayment = payment.paymentType === '지급';
+
         if (isReceipt) {
           runningBalance -= paymentAmount;
-        } else {
+        } else if (isPayment) {
           runningBalance += paymentAmount;
         }
 
@@ -323,10 +326,10 @@ export const transactionLedgerController = {
           id: payment.id + 20000,
           date: dayjs(payment.paymentDate).format('YYYY-MM-DD'),
           type: isReceipt ? 'receipt' : 'payment',
-          description: payment.paymentType,  // 실제 paymentType 값 표시
+          description: isReceipt ? '수금' : '출금',  // 지급은 '출금'으로 표시
           customerName: customer.name,
           amount: paymentAmount,
-          supplyAmount: paymentAmount,  // 수금/입금은 세액 없이 전체 금액
+          supplyAmount: paymentAmount,  // 수금/지급은 세액 없이 전체 금액
           vatAmount: 0,
           totalAmount: paymentAmount,
           balance: runningBalance,
@@ -564,16 +567,21 @@ export const transactionLedgerController = {
         }
       });
 
-      // 수금/입금 처리 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      // 수금/지급 처리 (날짜가 beforeDate 이전인 것만, 당일 제외)
       // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
       payments.forEach(payment => {
         const paymentDate = dayjs(payment.paymentDate);
         if (paymentDate.isBefore(endDate, 'day')) {
-          // 수금과 입금 모두 거래처로부터 돈을 받는 것이므로 받을 돈(balance) 감소
           const paymentAmount = Number(payment.amount) || 0;
-          if (payment.paymentType === '수금' || payment.paymentType === '입금') {
+          // 수금: 거래처로부터 돈을 받음 (받을 돈 감소)
+          if (payment.paymentType === '수금') {
             balance -= paymentAmount;
-            console.log(`${payment.paymentType} 차감: 날짜=${paymentDate.format('YYYY-MM-DD')}, 금액=${paymentAmount}, 누적잔액=${balance}`);
+            console.log(`수금 차감: 날짜=${paymentDate.format('YYYY-MM-DD')}, 금액=${paymentAmount}, 누적잔액=${balance}`);
+          }
+          // 지급: 거래처에 돈을 지급 (갚을 돈 감소 = 잔액 증가)
+          else if (payment.paymentType === '지급') {
+            balance += paymentAmount;
+            console.log(`지급 추가: 날짜=${paymentDate.format('YYYY-MM-DD')}, 금액=${paymentAmount}, 누적잔액=${balance}`);
           }
           if (!lastTransactionDate || paymentDate.isAfter(dayjs(lastTransactionDate))) {
             lastTransactionDate = paymentDate.format('YYYY-MM-DD');

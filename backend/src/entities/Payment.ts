@@ -5,7 +5,7 @@ import { Transaction } from './Transaction';
 
 export enum PaymentType {
   RECEIPT = '수금',
-  PAYMENT = '입금'
+  PAYMENT = '지급'
 }
 
 @Entity('payments')
