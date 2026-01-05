@@ -1038,7 +1038,7 @@ const PurchaseManagement: React.FC = () => {
   ];
 
   const actionMenuItems = createExportMenuItems(
-    purchases,
+    filteredPurchases,
     columns,
     '매입_목록',
     'purchase-table'

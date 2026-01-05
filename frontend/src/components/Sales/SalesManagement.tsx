@@ -1435,7 +1435,7 @@ const SalesManagement: React.FC = () => {
   const columns = allColumns.filter(col => !col.hidden);
 
   const actionMenuItems = createExportMenuItems(
-    sales,
+    filteredSales,
     columns,
     '매출_목록',
     'sales-table'

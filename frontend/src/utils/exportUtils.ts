@@ -67,7 +67,7 @@ export const exportToExcel = async (options: ExportOptions) => {
         try {
           if (col.render && typeof col.render === 'function') {
             const rendered = col.render(record[col.dataIndex || col.key], record);
-            return String(rendered || '').replace(/원$/, '').replace(/,/g, ''); // 원 단위 및 콤마 제거
+            return String(rendered || '').replace(/원$/, ''); // 원 단위만 제거, 콤마는 유지
           }
 
           const keys = (col.dataIndex || col.key).split('.');
