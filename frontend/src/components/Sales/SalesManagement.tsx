@@ -826,10 +826,25 @@ const SalesManagement: React.FC = () => {
           // 품목 찾기 (선택사항)
           const product = row['품목명'] ? products.find(p => p.name === row['품목명']) : null;
 
+          // 면세 여부 확인 (품목의 taxType 또는 엑셀의 세금구분 컬럼)
+          const excelTaxType = row['세금구분'] || '';
+          const isTaxFree = product?.taxType === 'tax_free' ||
+                           excelTaxType === '면세' ||
+                           excelTaxType === 'tax_free';
+
           // 합계에서 공급가액과 세액 역산
           const totalPrice = Number(row['합계']) || 0;
-          const supplyAmount = Number(row['공급가액']) || Math.round(totalPrice / 1.1);
-          const vatAmount = Number(row['세액']) || (totalPrice - supplyAmount);
+          let supplyAmount, vatAmount;
+
+          if (isTaxFree) {
+            // 면세: 공급가액 = 합계 또는 입력값, 세액 = 0
+            supplyAmount = Number(row['공급가액']) || totalPrice;
+            vatAmount = 0;
+          } else {
+            // 과세: 합계에서 역산
+            supplyAmount = Number(row['공급가액']) || Math.round(totalPrice / 1.1);
+            vatAmount = Number(row['세액']) || (totalPrice - supplyAmount);
+          }
           const quantity = Number(row['수량']) || 1;
           const unitPrice = Number(row['단가']) || 0;
 
@@ -886,7 +901,7 @@ const SalesManagement: React.FC = () => {
     const target = event.target as HTMLElement;
     if (target.tagName === 'INPUT' ||
         target.tagName === 'BUTTON' ||
-        target.className.includes('ant-checkbox') ||
+        (typeof target.className === 'string' && target.className.includes('ant-checkbox')) ||
         target.closest('.ant-checkbox') ||
         target.closest('button') ||
         target.closest('.ant-btn')) {

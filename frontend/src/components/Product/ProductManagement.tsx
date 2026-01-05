@@ -356,7 +356,7 @@ const ProductManagement: React.FC = () => {
     const target = event.target as HTMLElement;
     if (target.tagName === 'INPUT' ||
         target.tagName === 'BUTTON' ||
-        target.className.includes('ant-checkbox') ||
+        (typeof target.className === 'string' && target.className.includes('ant-checkbox')) ||
         target.closest('.ant-checkbox') ||
         target.closest('button') ||
         target.closest('.ant-btn')) {
