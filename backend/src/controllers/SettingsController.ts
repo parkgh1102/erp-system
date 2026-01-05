@@ -481,6 +481,11 @@ export const SettingsController = {
           `DELETE FROM payments WHERE "businessId" = $1`,
           [businessId]
         );
+        // 거래 내역 삭제 (transactions - customers 삭제 전에 필요)
+        await transactionalEntityManager.query(
+          `DELETE FROM transactions WHERE "businessId" = $1`,
+          [businessId]
+        );
         // 거래처 삭제
         await transactionalEntityManager.query(
           `DELETE FROM customers WHERE "businessId" = $1`,
