@@ -415,24 +415,32 @@ exports.SettingsController = {
                     message: '확인 텍스트가 일치하지 않습니다.'
                 });
             }
-            // 트랜잭션으로 모든 데이터 삭제
+            // 트랜잭션으로 모든 데이터 삭제 (FK 관계 순서 중요)
             await database_1.AppDataSource.transaction(async (transactionalEntityManager) => {
-                // 매출 품목 삭제
+                // 1. transaction_items 삭제 (transactions에 의존)
+                await transactionalEntityManager.query(`DELETE FROM transaction_items WHERE "transactionId" IN (SELECT id FROM transactions WHERE "businessId" = $1)`, [businessId]);
+                // 2. invoices 삭제 (transactions에 의존)
+                await transactionalEntityManager.query(`DELETE FROM invoices WHERE "businessId" = $1`, [businessId]);
+                // 3. 매출 품목 삭제
                 await transactionalEntityManager.query(`DELETE FROM sales_items WHERE "salesId" IN (SELECT id FROM sales WHERE "businessId" = $1)`, [businessId]);
-                // 매입 품목 삭제
+                // 4. 매입 품목 삭제
                 await transactionalEntityManager.query(`DELETE FROM purchase_items WHERE "purchaseId" IN (SELECT id FROM purchases WHERE "businessId" = $1)`, [businessId]);
-                // 매출 삭제
-                await transactionalEntityManager.query(`DELETE FROM sales WHERE "businessId" = $1`, [businessId]);
-                // 매입 삭제
-                await transactionalEntityManager.query(`DELETE FROM purchases WHERE "businessId" = $1`, [businessId]);
-                // 수금 삭제
+                // 5. 수금/지급 삭제 (customers, transactions에 의존)
                 await transactionalEntityManager.query(`DELETE FROM payments WHERE "businessId" = $1`, [businessId]);
-                // 거래 내역 삭제 (transactions - customers 삭제 전에 필요)
+                // 6. 거래 내역 삭제 (customers에 의존)
                 await transactionalEntityManager.query(`DELETE FROM transactions WHERE "businessId" = $1`, [businessId]);
-                // 거래처 삭제
+                // 7. 매출 삭제
+                await transactionalEntityManager.query(`DELETE FROM sales WHERE "businessId" = $1`, [businessId]);
+                // 8. 매입 삭제
+                await transactionalEntityManager.query(`DELETE FROM purchases WHERE "businessId" = $1`, [businessId]);
+                // 9. 거래처 삭제
                 await transactionalEntityManager.query(`DELETE FROM customers WHERE "businessId" = $1`, [businessId]);
-                // 품목 삭제
+                // 10. 품목 삭제
                 await transactionalEntityManager.query(`DELETE FROM products WHERE "businessId" = $1`, [businessId]);
+                // 11. 활동 로그 삭제 (선택적)
+                await transactionalEntityManager.query(`DELETE FROM activity_logs WHERE "businessId" = $1`, [businessId]);
+                // 12. 알림 삭제 (선택적)
+                await transactionalEntityManager.query(`DELETE FROM notifications WHERE "businessId" = $1`, [businessId]);
             });
             logger_1.logger.info(`All data reset for businessId: ${businessId}`);
             res.json({
