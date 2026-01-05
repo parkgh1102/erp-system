@@ -697,6 +697,7 @@ const PurchaseManagement: React.FC = () => {
       // 모달 즉시 닫기
       if (resetAfterSave && !editingPurchase) {
         // 저장 후 초기화 - 새로 등록할 때만
+        const currentPurchaseDate = values.purchaseDate; // 기존 날짜 유지
         form.resetFields();
         setPurchaseItems([{
           productId: 0,
@@ -711,9 +712,9 @@ const PurchaseManagement: React.FC = () => {
           vatAmount: 0,
           totalAmount: 0
         }]);
-        // 오늘 날짜로 설정
+        // 기존 날짜 유지
         form.setFieldsValue({
-          purchaseDate: dayjs()
+          purchaseDate: currentPurchaseDate
         });
       } else {
         // 일반 저장

@@ -1111,6 +1111,7 @@ const SalesManagement: React.FC = () => {
       // 모달 즉시 닫기
       if (resetAfterSave && !editingSale) {
         // 저장 후 초기화 - 새로 등록할 때만
+        const currentSaleDate = values.saleDate; // 기존 날짜 유지
         form.resetFields();
         setSaleItems([{
           productId: 0,
@@ -1125,9 +1126,9 @@ const SalesManagement: React.FC = () => {
           vatAmount: 0,
           totalAmount: 0
         }]);
-        // 오늘 날짜로 설정
+        // 기존 날짜 유지
         form.setFieldsValue({
-          saleDate: dayjs()
+          saleDate: currentSaleDate
         });
       } else {
         // 일반 저장
