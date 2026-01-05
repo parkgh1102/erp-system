@@ -560,20 +560,41 @@ export const createExportMenuItems = (
 
   // 데이터, 컬럼, 파일명을 직접 받는 경우
   const data = dataOrHandler;
-  const exportColumns: ExportColumn[] = (columns || []).map((col: any) => ({
+
+  // 작업(action) 컬럼 제외
+  const filteredColumns = (columns || []).filter((col: any) => {
+    const key = (col.key || col.dataIndex || '').toLowerCase();
+    return !['action', 'actions', '작업'].includes(key);
+  });
+
+  const exportColumns: ExportColumn[] = filteredColumns.map((col: any) => ({
     key: col.key || col.dataIndex || '',
     title: col.title || '',
     dataIndex: col.dataIndex || col.key || '',
     render: col.render ? (value: any, record: any) => {
       try {
-        const result = col.render(value, record);
+        // dataIndex가 없으면 record 전체를 첫 번째 인자로 전달 (Ant Design Table 호환)
+        const hasDataIndex = col.dataIndex && col.dataIndex !== col.key;
+        const result = hasDataIndex ? col.render(value, record) : col.render(record, record);
+
         // React 엘리먼트인 경우 텍스트로 변환
-        if (result && typeof result === 'object' && result.props) {
-          return result.props.children || String(result);
+        if (result && typeof result === 'object') {
+          if (result.props) {
+            // React 엘리먼트
+            const children = result.props.children;
+            if (typeof children === 'string') return children;
+            if (typeof children === 'number') return String(children);
+            if (Array.isArray(children)) {
+              return children.filter(c => typeof c === 'string' || typeof c === 'number').join('');
+            }
+            return '';
+          }
+          // 일반 객체인 경우 빈 문자열 반환 (버튼 등)
+          return '';
         }
-        return String(result || '');
+        return String(result ?? '');
       } catch {
-        return String(value || '');
+        return String(value ?? '');
       }
     } : undefined,
   }));
