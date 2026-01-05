@@ -32,7 +32,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Customer.prototype, "businessId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ unique: true, length: 20, comment: '거래처코드' }),
+    (0, typeorm_1.Column)({ length: 20, comment: '거래처코드' }),
     __metadata("design:type", String)
 ], Customer.prototype, "customerCode", void 0);
 __decorate([

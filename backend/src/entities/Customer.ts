@@ -17,7 +17,7 @@ export class Customer {
   @Column()
   businessId!: number;
 
-  @Column({ unique: true, length: 20, comment: '거래처코드' })
+  @Column({ length: 20, comment: '거래처코드' })
   customerCode!: string;
 
   @Column({ length: 200, comment: '거래처명' })
