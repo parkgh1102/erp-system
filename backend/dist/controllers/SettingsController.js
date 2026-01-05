@@ -437,10 +437,22 @@ exports.SettingsController = {
                 await transactionalEntityManager.query(`DELETE FROM customers WHERE "businessId" = $1`, [businessId]);
                 // 10. 품목 삭제
                 await transactionalEntityManager.query(`DELETE FROM products WHERE "businessId" = $1`, [businessId]);
-                // 11. 활동 로그 삭제 (선택적)
-                await transactionalEntityManager.query(`DELETE FROM activity_logs WHERE "businessId" = $1`, [businessId]);
-                // 12. 알림 삭제 (선택적)
-                await transactionalEntityManager.query(`DELETE FROM notifications WHERE "businessId" = $1`, [businessId]);
+                // 11. 활동 로그 삭제 (선택적 - businessId 컬럼이 있는 경우만)
+                try {
+                    await transactionalEntityManager.query(`DELETE FROM activity_logs WHERE "businessId" = $1`, [businessId]);
+                }
+                catch (e) {
+                    // businessId 컬럼이 없는 경우 무시
+                    logger_1.logger.info('activity_logs 테이블에 businessId 컬럼이 없어 스킵합니다.');
+                }
+                // 12. 알림 삭제 (선택적 - businessId 컬럼이 있는 경우만)
+                try {
+                    await transactionalEntityManager.query(`DELETE FROM notifications WHERE "businessId" = $1`, [businessId]);
+                }
+                catch (e) {
+                    // businessId 컬럼이 없는 경우 무시
+                    logger_1.logger.info('notifications 테이블에 businessId 컬럼이 없어 스킵합니다.');
+                }
             });
             logger_1.logger.info(`All data reset for businessId: ${businessId}`);
             res.json({
