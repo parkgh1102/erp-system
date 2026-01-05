@@ -17,7 +17,7 @@ const Transaction_1 = require("./Transaction");
 var PaymentType;
 (function (PaymentType) {
     PaymentType["RECEIPT"] = "\uC218\uAE08";
-    PaymentType["PAYMENT"] = "\uC785\uAE08";
+    PaymentType["PAYMENT"] = "\uC9C0\uAE09";
 })(PaymentType || (exports.PaymentType = PaymentType = {}));
 let Payment = class Payment {
 };

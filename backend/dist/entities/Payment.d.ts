@@ -3,7 +3,7 @@ import { Customer } from './Customer';
 import { Transaction } from './Transaction';
 export declare enum PaymentType {
     RECEIPT = "\uC218\uAE08",
-    PAYMENT = "\uC785\uAE08"
+    PAYMENT = "\uC9C0\uAE09"
 }
 export declare class Payment {
     id: number;
