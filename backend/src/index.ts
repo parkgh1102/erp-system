@@ -229,7 +229,7 @@ async function bootstrap() {
     console.log(`✅ Server is ready to accept requests`);
   });
 
-  // Graceful shutdown
+  // Graceful shutdown - SIGTERM
   process.on('SIGTERM', () => {
     console.log('⏸️ SIGTERM signal received: closing HTTP server');
     server.close(async () => {
@@ -241,6 +241,30 @@ async function bootstrap() {
       process.exit(0);
     });
   });
+
+  // Graceful shutdown - SIGINT (Ctrl+C)
+  process.on('SIGINT', () => {
+    console.log('⏸️ SIGINT signal received: closing HTTP server');
+    server.close(async () => {
+      console.log('🔌 HTTP server closed');
+      if (AppDataSource.isInitialized) {
+        await AppDataSource.destroy();
+        console.log('🔌 Database connection closed');
+      }
+      process.exit(0);
+    });
+  });
 }
+
+// 전역 예외 처리 - 서버 크래시 방지
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  // 로깅 후 프로세스 유지 (Azure가 자동 재시작 관리)
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  // 로깅 후 프로세스 유지
+});
 
 bootstrap();
