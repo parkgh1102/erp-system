@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Input, Space, message, Card, Row, Col, Statistic, Tag } from 'antd';
-import { SearchOutlined, ReloadOutlined, FileExcelOutlined, FilePdfOutlined } from '@ant-design/icons';
+import { Table, Button, Input, Space, message, Card, Row, Col, Statistic, Tag, Dropdown } from 'antd';
+import { SearchOutlined, ReloadOutlined, ExportOutlined } from '@ant-design/icons';
+import { createExportMenuItems } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { productAPI } from '../../utils/api';
-import dayjs from 'dayjs';
 
 interface Product {
   id: number;
@@ -164,34 +164,13 @@ const InventoryManagement: React.FC = () => {
     },
   ];
 
-  const handleExport = async (type: 'excel' | 'pdf') => {
-    const dataToExport = filteredProducts;
-    const { exportToExcel, exportToPDF } = await import('../../utils/exportUtils');
-
-    const exportColumns = [
-      { title: '품목코드', dataIndex: 'productCode' },
-      { title: '품목명', dataIndex: 'name' },
-      { title: '규격', dataIndex: 'spec' },
-      { title: '단위', dataIndex: 'unit' },
-      { title: '현재고', dataIndex: 'currentStock' },
-      { title: '매입단가', dataIndex: 'buyPrice' },
-      { title: '매출단가', dataIndex: 'sellPrice' },
-      { title: '분류', dataIndex: 'category' },
-    ];
-
-    const options = {
-      filename: `재고현황_${dayjs().format('YYYYMMDD')}`,
-      title: '재고 현황',
-      columns: exportColumns,
-      data: dataToExport,
-    };
-
-    if (type === 'excel') {
-      await exportToExcel(options);
-    } else {
-      await exportToPDF(options);
-    }
-  };
+  // 파일저장 드롭다운 메뉴
+  const actionMenuItems = createExportMenuItems(
+    filteredProducts,
+    columns,
+    '재고현황_목록',
+    'inventory-table'
+  );
 
   return (
     <div style={{ padding: window.innerWidth <= 768 ? '12px' : '24px' }}>
@@ -250,24 +229,21 @@ const InventoryManagement: React.FC = () => {
             >
               조회
             </Button>
-            <Button
-              icon={<FileExcelOutlined />}
-              onClick={() => handleExport('excel')}
-            >
-              Excel
-            </Button>
-            <Button
-              icon={<FilePdfOutlined />}
-              onClick={() => handleExport('pdf')}
-            >
-              PDF
-            </Button>
+            <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
+              <Button
+                icon={<ExportOutlined />}
+                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
+              >
+                파일저장
+              </Button>
+            </Dropdown>
           </Space>
         </Col>
       </Row>
 
       {/* 재고 테이블 */}
       <Table
+        id="inventory-table"
         columns={columns}
         dataSource={filteredProducts}
         rowKey="id"
