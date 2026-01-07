@@ -71,9 +71,9 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
     return null;
   }
 
-  // 빈 행 수 계산 (최대 8행까지, 품목 수에 따라 조정)
+  // 빈 행 수 계산 (최대 10행까지, 품목 수에 따라 조정)
   const itemCount = data?.items?.length || 0;
-  const maxEmptyRows = Math.max(0, 8 - itemCount); // 최대 8행까지 빈 행 추가
+  const maxEmptyRows = Math.max(0, 10 - itemCount); // 최대 10행까지 빈 행 추가
 
   // 단일 명세표 컴포넌트 (공급받는자/공급자용)
   const renderSingleStatement = (isSupplier: boolean) => (
@@ -364,17 +364,19 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        gap: '3mm'
+        gap: '3mm',
+        marginTop: '1mm'
       }}>
         {/* 메모 및 공지사항 영역 - 이미지 참고 레이아웃 */}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, marginBottom: '1mm' }}>
           {/* 메모란 */}
           <div style={{
-            border: '1px solid #000',
+            border: '2px solid #000',
             display: 'flex',
             alignItems: 'stretch',
-            height: '10mm',
-            marginBottom: '0'
+            height: '9mm',
+            marginBottom: '0',
+            boxSizing: 'border-box'
           }}>
             <div style={{
               width: '18mm',
@@ -384,7 +386,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               justifyContent: 'center',
               fontSize: '9pt',
               fontWeight: 'normal',
-              backgroundColor: '#fff'
+              backgroundColor: '#fff',
+              boxSizing: 'border-box'
             }}>메모란:</div>
             <div style={{
               flex: 1,
@@ -393,7 +396,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               lineHeight: '1.3',
               overflow: 'hidden',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              boxSizing: 'border-box'
             }}>
               {data?.memo || ''}
             </div>
@@ -401,11 +405,12 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
 
           {/* 공지사항 */}
           <div style={{
-            border: '1px solid #000',
-            borderTop: 'none',
+            border: '2px solid #000',
+            borderTop: '1px solid #000',
             display: 'flex',
             alignItems: 'stretch',
-            height: '10mm'
+            height: '9mm',
+            boxSizing: 'border-box'
           }}>
             <div style={{
               width: '18mm',
@@ -415,7 +420,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               justifyContent: 'center',
               fontSize: '9pt',
               fontWeight: 'normal',
-              backgroundColor: '#fff'
+              backgroundColor: '#fff',
+              boxSizing: 'border-box'
             }}>공지사항:</div>
             <div style={{
               flex: 1,
@@ -424,7 +430,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               lineHeight: '1.3',
               overflow: 'hidden',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              boxSizing: 'border-box'
             }}>
               {data?.notice || data?.notes || ''}
             </div>
