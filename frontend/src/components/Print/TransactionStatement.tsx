@@ -616,7 +616,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
       {printMode === 'full' && (
         <div style={{
           borderTop: '1px dashed #999',
-          margin: '20mm 10mm 2mm 10mm' // 상단 마진 20mm (절취선 A4 중앙으로 이동)
+          margin: '23mm 10mm 2mm 10mm' // 상단 마진 23mm (절취선 A4 중앙 맞춤)
         }}></div>
       )}
 
