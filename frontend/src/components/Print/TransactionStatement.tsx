@@ -79,15 +79,15 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
   const renderSingleStatement = (isSupplier: boolean) => (
     <div style={{
       width: '100%',
-      minHeight: printMode === 'full' ? '125mm' : 'auto', // 페이지 넘김 방지 (절취선 20mm 여유 반영)
-      maxHeight: printMode === 'full' ? '128mm' : 'none', // 최대 높이 제한 (A4 반접기 기준)
+      minHeight: printMode === 'full' ? '130mm' : 'auto', // 페이지 넘김 방지
+      maxHeight: printMode === 'full' ? '135mm' : 'none', // 최대 높이 제한 (A4 반접기 기준, 10행 품목 테이블 수용)
       fontFamily: 'Malgun Gothic, sans-serif',
       fontSize: '10pt', // 전체/단독 인쇄 동일
       lineHeight: '1.3',
       color: '#000',
       padding: printMode === 'full' ? '2mm' : '0', // 패딩 축소
       boxSizing: 'border-box',
-      overflow: 'hidden' // 넘치는 내용 숨김
+      overflow: 'visible' // 내용이 잘리지 않도록 변경
     }}>
       {/* 헤더 */}
       <div style={{
@@ -623,7 +623,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
       {printMode === 'full' && (
         <div style={{
           borderTop: '1px dashed #999',
-          margin: '23mm 10mm 2mm 10mm' // 상단 마진 23mm (절취선 A4 중앙 맞춤)
+          margin: '16mm 10mm 2mm 10mm' // 상단 마진 16mm (10행 테이블 수용 위해 조정)
         }}></div>
       )}
 
