@@ -14,6 +14,7 @@ import CustomerManagement from './components/Customer/CustomerManagement';
 import ProductManagement from './components/Product/ProductManagement';
 import SalesManagement from './components/Sales/SalesManagement';
 import PurchaseManagement from './components/Purchase/PurchaseManagement';
+import InventoryManagement from './components/Inventory/InventoryManagement';
 import PaymentManagement from './components/Payment/PaymentManagement';
 import TransactionLedgerManagement from './components/TransactionLedger/TransactionLedgerManagement';
 import Profile from './components/Profile/Profile';
@@ -219,6 +220,16 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <AppLayout>
                   <PurchaseManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <InventoryManagement />
                 </AppLayout>
               </ProtectedRoute>
             }

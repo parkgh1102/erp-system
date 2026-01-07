@@ -36,7 +36,9 @@ const ProductManagement: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form] = Form.useForm();
   const [unitOptions, setUnitOptions] = useState<string[]>(['kg', 'ea', 'set', '개', 'box', 'pcs']);
-  const [specOptions, setSpecOptions] = useState<string[]>(['box', 'ea', 'pallet', '자루', 'set', 'pack']);
+  // 규격 옵션: 기본 옵션 + 자루 1~200
+  const jaruOptions = Array.from({ length: 200 }, (_, i) => `${i + 1}자루`);
+  const [specOptions, setSpecOptions] = useState<string[]>(['box', 'ea', 'pallet', '자루', 'set', 'pack', ...jaruOptions]);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [autoCompleteOptions, setAutoCompleteOptions] = useState<{value: string}[]>([]);
@@ -871,6 +873,8 @@ const ProductManagement: React.FC = () => {
                   placeholder={window.innerWidth <= 768 ? "규격" : "규격 선택 또는 직접 입력 (예: box, ea, pallet, 자루)"}
                   size={window.innerWidth <= 768 ? 'small' : 'middle'}
                   allowClear
+                  dropdownStyle={{ minWidth: 200 }}
+                  listHeight={300}
                   dropdownRender={(menu) => (
                     <>
                       {menu}
@@ -896,8 +900,8 @@ const ProductManagement: React.FC = () => {
                 >
                   {specOptions.map(spec => (
                     <Select.Option key={spec} value={spec} label={spec}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>{spec}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: 8 }}>{spec}</span>
                         <Button
                           type="text"
                           size="small"
@@ -927,6 +931,7 @@ const ProductManagement: React.FC = () => {
                   placeholder={window.innerWidth <= 768 ? "단위" : "단위 선택 또는 직접 입력 (예: kg, ea, set)"}
                   size={window.innerWidth <= 768 ? 'small' : 'middle'}
                   allowClear
+                  dropdownStyle={{ minWidth: 180 }}
                   dropdownRender={(menu) => (
                     <>
                       {menu}
@@ -952,8 +957,8 @@ const ProductManagement: React.FC = () => {
                 >
                   {unitOptions.map(unit => (
                     <Select.Option key={unit} value={unit} label={unit}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>{unit}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <span style={{ flex: 1, marginRight: 8 }}>{unit}</span>
                         <Button
                           type="text"
                           size="small"

@@ -71,12 +71,16 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
     return null;
   }
 
+  // 빈 행 수 계산 (최대 8행까지, 품목 수에 따라 조정)
+  const itemCount = data?.items?.length || 0;
+  const maxEmptyRows = Math.max(0, 8 - itemCount); // 최대 8행까지 빈 행 추가
+
   // 단일 명세표 컴포넌트 (공급받는자/공급자용)
   const renderSingleStatement = (isSupplier: boolean) => (
     <div style={{
       width: '100%',
-      minHeight: printMode === 'full' ? 'calc(148.5mm - 10mm)' : 'auto', // 페이지 넘김 방지를 위해 여유 공간 확보
-      maxHeight: printMode === 'full' ? 'calc(148.5mm - 8mm)' : 'none', // 최대 높이 제한
+      minHeight: printMode === 'full' ? '135mm' : 'auto', // 페이지 넘김 방지를 위해 여유 공간 확보 (148.5mm - 13.5mm)
+      maxHeight: printMode === 'full' ? '140mm' : 'none', // 최대 높이 제한 (148.5mm - 8.5mm)
       fontFamily: 'Malgun Gothic, sans-serif',
       fontSize: '10pt', // 전체/단독 인쇄 동일
       lineHeight: '1.3',
@@ -338,8 +342,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
             );
           })}
 
-          {/* 빈 행 추가 (10행) */}
-          {[...Array(Math.max(0, 10 - (data?.items?.length || 0)))].map((_, index) => (
+          {/* 빈 행 추가 (최대 8행, 품목 수에 따라 조정) */}
+          {[...Array(maxEmptyRows)].map((_, index) => (
             <tr key={`empty-${index}`}>
               <td style={{ border: '1px solid #000', padding: '1mm', height: '5mm' }}>&nbsp;</td>
               <td style={{ border: '1px solid #000' }}>&nbsp;</td>
@@ -584,7 +588,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
       {printMode === 'full' && (
         <div style={{
           borderTop: '1px dashed #999',
-          margin: '1mm 10mm 0mm 10mm' // 상단 마진 축소
+          margin: '2mm 10mm 2mm 10mm' // 상단/하단 마진 균일
         }}></div>
       )}
 

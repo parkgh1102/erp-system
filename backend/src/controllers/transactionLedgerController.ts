@@ -659,5 +659,95 @@ export const transactionLedgerController = {
         message: '거래처 잔액 조회 중 오류가 발생했습니다.'
       });
     }
+  },
+
+  // 기간 내 거래가 있는 거래처 목록 조회
+  async getCustomersWithTransactions(req: Request, res: Response) {
+    try {
+      const { businessId } = req.params;
+      const { startDate, endDate } = req.query;
+
+      console.log(`📊 기간 내 거래 업체 조회 - businessId: ${businessId}, startDate: ${startDate}, endDate: ${endDate}`);
+
+      const salesRepository = AppDataSource.getRepository(Sales);
+      const purchaseRepository = AppDataSource.getRepository(Purchase);
+      const paymentRepository = AppDataSource.getRepository(Payment);
+      const customerRepository = AppDataSource.getRepository(Customer);
+
+      const start = startDate ? dayjs(startDate as string) : dayjs().startOf('month');
+      const end = endDate ? dayjs(endDate as string) : dayjs().endOf('month');
+
+      // 기간 내 거래가 있는 고객 ID 수집
+      const customerIds = new Set<number>();
+
+      // 매출에서 거래처 ID 수집
+      const sales = await salesRepository.find({
+        where: { businessId: Number(businessId) },
+        select: ['customerId', 'transactionDate']
+      });
+      sales.forEach(sale => {
+        const saleDate = dayjs(sale.transactionDate);
+        if (saleDate.isSameOrAfter(start, 'day') && saleDate.isSameOrBefore(end, 'day')) {
+          if (sale.customerId) customerIds.add(sale.customerId);
+        }
+      });
+
+      // 매입에서 거래처 ID 수집
+      const purchases = await purchaseRepository.find({
+        where: { businessId: Number(businessId) },
+        select: ['customerId', 'transactionDate', 'purchaseDate']
+      });
+      purchases.forEach(purchase => {
+        const purchaseDate = dayjs(purchase.transactionDate || purchase.purchaseDate);
+        if (purchaseDate.isSameOrAfter(start, 'day') && purchaseDate.isSameOrBefore(end, 'day')) {
+          if (purchase.customerId) customerIds.add(purchase.customerId);
+        }
+      });
+
+      // 수금/지급에서 거래처 ID 수집
+      const payments = await paymentRepository.find({
+        where: { businessId: Number(businessId) },
+        select: ['customerId', 'paymentDate']
+      });
+      payments.forEach(payment => {
+        const paymentDate = dayjs(payment.paymentDate);
+        if (paymentDate.isSameOrAfter(start, 'day') && paymentDate.isSameOrBefore(end, 'day')) {
+          if (payment.customerId) customerIds.add(payment.customerId);
+        }
+      });
+
+      // 거래처 정보 조회
+      const customerIdArray = Array.from(customerIds);
+      let customers: Customer[] = [];
+      if (customerIdArray.length > 0) {
+        customers = await customerRepository
+          .createQueryBuilder('customer')
+          .where('customer.id IN (:...ids)', { ids: customerIdArray })
+          .andWhere('customer.businessId = :businessId', { businessId: Number(businessId) })
+          .orderBy('customer.name', 'ASC')
+          .getMany();
+      }
+
+      console.log(`✅ 기간 내 거래 업체 수: ${customers.length}`);
+
+      res.json({
+        success: true,
+        data: {
+          customers: customers.map(c => ({
+            id: c.id,
+            name: c.name,
+            customerCode: c.customerCode,
+            businessNumber: c.businessNumber,
+            representative: c.representative
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('기간 내 거래 업체 조회 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '기간 내 거래 업체 조회 중 오류가 발생했습니다.'
+      });
+    }
   }
 };

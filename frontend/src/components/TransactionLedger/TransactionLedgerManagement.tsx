@@ -56,6 +56,7 @@ const TransactionLedgerManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customersWithTransactions, setCustomersWithTransactions] = useState<Customer[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<number | null>(null);
   const [customerSearchText, setCustomerSearchText] = useState('');
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
@@ -84,22 +85,32 @@ const TransactionLedgerManagement: React.FC = () => {
   useEffect(() => {
     if (currentBusiness) {
       fetchCustomers();
+      fetchCustomersWithTransactions();
     }
   }, [currentBusiness]);
 
-  // 거래처 검색 (2글자 이상)
+  // 기간이 변경되면 거래 있는 거래처 목록 다시 조회
+  useEffect(() => {
+    if (currentBusiness && dateRange) {
+      fetchCustomersWithTransactions();
+    }
+  }, [dateRange, currentBusiness]);
+
+  // 거래처 검색 (2글자 이상) - 기간 내 거래가 있는 거래처만 표시
   useEffect(() => {
     if (customerSearchText.length >= 2) {
-      const filtered = customers.filter(customer =>
+      // 기간 내 거래가 있는 거래처만 필터링
+      const searchSource = customersWithTransactions.length > 0 ? customersWithTransactions : customers;
+      const filtered = searchSource.filter(customer =>
         customer.name.toLowerCase().includes(customerSearchText.toLowerCase()) ||
         customer.customerCode.toLowerCase().includes(customerSearchText.toLowerCase())
       );
-      console.log('🔍 검색어:', customerSearchText, '/ 결과:', filtered.length, '개');
+      console.log('🔍 검색어:', customerSearchText, '/ 기간 내 거래 업체 중 결과:', filtered.length, '개');
       setFilteredCustomers(filtered);
     } else {
       setFilteredCustomers([]);
     }
-  }, [customerSearchText, customers]);
+  }, [customerSearchText, customersWithTransactions, customers]);
 
   // 키보드 단축키를 위한 래퍼 함수들
   const handleAddWrapper = () => {
@@ -160,6 +171,26 @@ const TransactionLedgerManagement: React.FC = () => {
         message.error('거래처 목록을 불러오는데 실패했습니다.');
         console.error('Customer fetch error:', error);
       }
+    }
+  };
+
+  // 기간 내 거래가 있는 거래처 목록 조회
+  const fetchCustomersWithTransactions = async () => {
+    if (!currentBusiness || !dateRange) return;
+
+    try {
+      const [startDate, endDate] = dateRange;
+      const response = await transactionLedgerAPI.getCustomersWithTransactions(currentBusiness.id, {
+        startDate: startDate.format('YYYY-MM-DD'),
+        endDate: endDate.format('YYYY-MM-DD')
+      });
+      const customerList = response.data.data?.customers || [];
+      console.log('📋 기간 내 거래 업체 로드:', customerList.length, '개', `(${startDate.format('YYYY-MM-DD')} ~ ${endDate.format('YYYY-MM-DD')})`);
+      setCustomersWithTransactions(customerList);
+    } catch (error: any) {
+      console.error('기간 내 거래 업체 조회 오류:', error);
+      // 오류 시 전체 거래처로 fallback
+      setCustomersWithTransactions([]);
     }
   };
 
@@ -466,7 +497,7 @@ const TransactionLedgerManagement: React.FC = () => {
                   setSelectedCustomer(option.key);
                   setCustomerSearchText(option.label);
                 }}
-                placeholder="거래처명 입력 (2글자 이상)"
+                placeholder="거래처명 입력 (기간 내 거래 업체)"
                 size="middle"
                 options={filteredCustomers.map(customer => ({
                   key: customer.id,
@@ -477,7 +508,9 @@ const TransactionLedgerManagement: React.FC = () => {
                   customerSearchText.length < 2
                     ? '2글자 이상 입력해주세요'
                     : filteredCustomers.length === 0
-                      ? '검색 결과가 없습니다'
+                      ? customersWithTransactions.length === 0
+                        ? '선택한 기간에 거래 기록이 없습니다'
+                        : '검색 결과가 없습니다'
                       : null
                 }
               />

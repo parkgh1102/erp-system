@@ -117,6 +117,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       roles: ['admin'],
     },
     {
+      key: '/inventory',
+      icon: <FileTextOutlined style={{ color: '#eb2f96' }} />,
+      label: '재고 관리',
+      roles: ['admin'],
+    },
+    {
       key: '/payments',
       icon: <WalletOutlined style={{ color: '#fa8c16' }} />,
       label: '수금/지급',
@@ -453,6 +459,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             { key: '/customers', icon: <TeamOutlined />, label: '거래처', roles: ['admin'] },
             { key: '/sales', icon: <ShoppingCartOutlined />, label: '매출', roles: ['admin', 'sales_viewer'] },
             { key: '/purchases', icon: <FileTextOutlined />, label: '매입', roles: ['admin'] },
+            { key: '/inventory', icon: <FileTextOutlined />, label: '재고', roles: ['admin'] },
             { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
           ].filter(item => item.roles.includes(user?.role || 'admin')).map((item) => {
             const isActive = location.pathname === item.key;

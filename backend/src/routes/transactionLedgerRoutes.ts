@@ -20,4 +20,7 @@ router.get('/:businessId/ledger/summary', businessAccessMiddleware, transactionL
 // 거래처별 잔액 조회
 router.get('/:businessId/customer/:customerId/balance', businessAccessMiddleware, transactionLedgerController.getCustomerBalance);
 
+// 기간 내 거래가 있는 거래처 목록 조회
+router.get('/:businessId/customers-with-transactions', businessAccessMiddleware, transactionLedgerController.getCustomersWithTransactions);
+
 export default router;
