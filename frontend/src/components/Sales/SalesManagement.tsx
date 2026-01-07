@@ -436,7 +436,8 @@ const SalesManagement: React.FC = () => {
             `/transaction-ledger/${currentBusiness.id}/customer/${selectedSale.customerId}/balance`,
             {
               params: {
-                beforeDate: selectedSale.transactionDate || selectedSale.saleDate
+                beforeDate: selectedSale.transactionDate || selectedSale.saleDate,
+                excludeSaleId: selectedSale.id // 현재 거래 제외하여 전잔금 계산
               }
             }
           );
@@ -548,7 +549,8 @@ const SalesManagement: React.FC = () => {
             `/transaction-ledger/${currentBusiness.id}/customer/${record.customerId}/balance`,
             {
               params: {
-                beforeDate: record.transactionDate || record.saleDate
+                beforeDate: record.transactionDate || record.saleDate,
+                excludeSaleId: record.id // 현재 거래 제외하여 전잔금 계산
               }
             }
           );
