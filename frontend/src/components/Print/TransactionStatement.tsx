@@ -79,8 +79,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
   const renderSingleStatement = (isSupplier: boolean) => (
     <div style={{
       width: '100%',
-      minHeight: printMode === 'full' ? '135mm' : 'auto', // 페이지 넘김 방지를 위해 여유 공간 확보 (148.5mm - 13.5mm)
-      maxHeight: printMode === 'full' ? '140mm' : 'none', // 최대 높이 제한 (148.5mm - 8.5mm)
+      minHeight: printMode === 'full' ? '130mm' : 'auto', // 페이지 넘김 방지 (절취선 10mm 여유 반영)
+      maxHeight: printMode === 'full' ? '135mm' : 'none', // 최대 높이 제한 (148.5mm - 13.5mm)
       fontFamily: 'Malgun Gothic, sans-serif',
       fontSize: '10pt', // 전체/단독 인쇄 동일
       lineHeight: '1.3',
@@ -364,40 +364,68 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        gap: '5mm'
+        gap: '3mm'
       }}>
-        {/* 메모 및 공지사항 영역 */}
+        {/* 메모 및 공지사항 영역 - 이미지 참고 레이아웃 */}
         <div style={{ flex: 1 }}>
           {/* 메모란 */}
           <div style={{
-            border: '1px solid #999',
-            padding: '1mm',
-            fontSize: '7pt', // 폰트 축소
-            backgroundColor: '#f9f9f9',
-            height: '8mm', // 높이 축소
-            marginBottom: '0mm',
+            border: '1px solid #000',
             display: 'flex',
-            flexDirection: 'column'
+            alignItems: 'stretch',
+            height: '10mm',
+            marginBottom: '0'
           }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '0.3mm', color: '#333' }}>메모란:</div>
-            <div style={{ flex: 1, lineHeight: '1.2', overflow: 'hidden' }}>
+            <div style={{
+              width: '18mm',
+              borderRight: '1px solid #000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '9pt',
+              fontWeight: 'normal',
+              backgroundColor: '#fff'
+            }}>메모란:</div>
+            <div style={{
+              flex: 1,
+              padding: '1mm 2mm',
+              fontSize: '8pt',
+              lineHeight: '1.3',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
               {data?.memo || ''}
             </div>
           </div>
 
           {/* 공지사항 */}
           <div style={{
-            border: '1px solid #999',
-            padding: '1mm',
-            fontSize: '7pt', // 폰트 축소
-            backgroundColor: '#f0f8ff',
-            height: '8mm', // 높이 축소
-            marginTop: '0mm',
+            border: '1px solid #000',
+            borderTop: 'none',
             display: 'flex',
-            flexDirection: 'column'
+            alignItems: 'stretch',
+            height: '10mm'
           }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '0.3mm', color: '#333' }}>공지사항:</div>
-            <div style={{ flex: 1, lineHeight: '1.2', overflow: 'hidden' }}>
+            <div style={{
+              width: '18mm',
+              borderRight: '1px solid #000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '9pt',
+              fontWeight: 'normal',
+              backgroundColor: '#fff'
+            }}>공지사항:</div>
+            <div style={{
+              flex: 1,
+              padding: '1mm 2mm',
+              fontSize: '8pt',
+              lineHeight: '1.3',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
               {data?.notice || data?.notes || ''}
             </div>
           </div>
@@ -588,7 +616,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
       {printMode === 'full' && (
         <div style={{
           borderTop: '1px dashed #999',
-          margin: '2mm 10mm 2mm 10mm' // 상단/하단 마진 균일
+          margin: '10mm 10mm 2mm 10mm' // 상단 마진 10mm로 증가 (절취선 아래로 이동)
         }}></div>
       )}
 
