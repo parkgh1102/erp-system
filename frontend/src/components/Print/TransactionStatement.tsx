@@ -75,22 +75,23 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
   const renderSingleStatement = (isSupplier: boolean) => (
     <div style={{
       width: '100%',
-      minHeight: printMode === 'full' ? 'calc(148.5mm - 6mm)' : 'auto',
+      minHeight: printMode === 'full' ? 'calc(148.5mm - 10mm)' : 'auto', // 페이지 넘김 방지를 위해 여유 공간 확보
+      maxHeight: printMode === 'full' ? 'calc(148.5mm - 8mm)' : 'none', // 최대 높이 제한
       fontFamily: 'Malgun Gothic, sans-serif',
       fontSize: '10pt', // 전체/단독 인쇄 동일
       lineHeight: '1.3',
       color: '#000',
-      padding: printMode === 'full' ? '3mm' : '0', // 단독 인쇄는 패딩 없음
+      padding: printMode === 'full' ? '2mm' : '0', // 패딩 축소
       boxSizing: 'border-box',
-      overflow: 'visible'
+      overflow: 'hidden' // 넘치는 내용 숨김
     }}>
       {/* 헤더 */}
       <div style={{
         position: 'relative',
         textAlign: 'center',
-        marginBottom: '3mm',
+        marginBottom: '2mm', // 여백 축소
         borderBottom: '1px solid #000',
-        paddingBottom: '2mm'
+        paddingBottom: '1mm' // 패딩 축소
       }}>
         <h1 style={{
           fontSize: '16pt', // 제목 크기 증가
@@ -366,16 +367,16 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           {/* 메모란 */}
           <div style={{
             border: '1px solid #999',
-            padding: '1.5mm',
-            fontSize: '8pt',
+            padding: '1mm',
+            fontSize: '7pt', // 폰트 축소
             backgroundColor: '#f9f9f9',
-            height: '10mm',
+            height: '8mm', // 높이 축소
             marginBottom: '0mm',
             display: 'flex',
             flexDirection: 'column'
           }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '0.5mm', color: '#333' }}>메모란:</div>
-            <div style={{ flex: 1, lineHeight: '1.3', overflow: 'hidden' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '0.3mm', color: '#333' }}>메모란:</div>
+            <div style={{ flex: 1, lineHeight: '1.2', overflow: 'hidden' }}>
               {data?.memo || ''}
             </div>
           </div>
@@ -383,16 +384,16 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           {/* 공지사항 */}
           <div style={{
             border: '1px solid #999',
-            padding: '1.5mm',
-            fontSize: '8pt',
+            padding: '1mm',
+            fontSize: '7pt', // 폰트 축소
             backgroundColor: '#f0f8ff',
-            height: '10mm',
+            height: '8mm', // 높이 축소
             marginTop: '0mm',
             display: 'flex',
             flexDirection: 'column'
           }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '0.5mm', color: '#333' }}>공지사항:</div>
-            <div style={{ flex: 1, lineHeight: '1.3', overflow: 'hidden' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '0.3mm', color: '#333' }}>공지사항:</div>
+            <div style={{ flex: 1, lineHeight: '1.2', overflow: 'hidden' }}>
               {data?.notice || data?.notes || ''}
             </div>
           </div>
@@ -583,7 +584,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
       {printMode === 'full' && (
         <div style={{
           borderTop: '1px dashed #999',
-          margin: '3mm 10mm 0mm 10mm'
+          margin: '1mm 10mm 0mm 10mm' // 상단 마진 축소
         }}></div>
       )}
 

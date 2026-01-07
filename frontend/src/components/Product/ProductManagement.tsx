@@ -262,14 +262,26 @@ const ProductManagement: React.FC = () => {
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
         try {
-          // 세금구분 매핑
+          // 세금구분 매핑 - 기본값은 과세별도(tax_separate)
           let taxType = 'tax_separate';
-          const taxTypeValue = row['세금구분']?.toString().toLowerCase();
-          if (taxTypeValue === 'tax_inclusive' || taxTypeValue === '과세' || taxTypeValue === '포함' || taxTypeValue === '과세(포함)') {
-            taxType = 'tax_inclusive';
-          } else if (taxTypeValue === 'tax_free' || taxTypeValue === '면세') {
+          const taxTypeValue = row['세금구분']?.toString().trim();
+          const taxTypeLower = taxTypeValue?.toLowerCase() || '';
+
+          // 면세 체크 (먼저 체크)
+          if (taxTypeLower === 'tax_free' || taxTypeLower === '면세' || taxTypeLower.includes('면세')) {
             taxType = 'tax_free';
-          } else if (taxTypeValue === 'tax_separate' || taxTypeValue === '별도' || taxTypeValue === '과세(별도)') {
+          }
+          // 과세포함 체크 (포함 키워드가 있는 경우)
+          else if (taxTypeLower === 'tax_inclusive' ||
+                   taxTypeLower === '포함' ||
+                   taxTypeLower === '과세포함' ||
+                   taxTypeLower === '과세(포함)' ||
+                   taxTypeLower === '과세 10%포함' ||
+                   taxTypeLower.includes('포함')) {
+            taxType = 'tax_inclusive';
+          }
+          // 나머지는 모두 과세별도 (기본값) - '과세', '별도', '과세(별도)', '과세 10%별도' 등
+          else {
             taxType = 'tax_separate';
           }
 

@@ -181,8 +181,6 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nFix: 거래명세표 인쇄 시 하단 잘림 문제 수정\n\n- 인쇄 여백 10mm → 5mm로 축소\n- body padding 제거\n- 구분선 마진 7mm → 3mm로 축소\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "WebFetch(domain:api.github.com)",
       "Bash(git -C:*)",
-      "Bash(\"/c/Program Files/PostgreSQL/18/bin/psql.exe\" -U postgres -d erp_system -c \"SELECT \"\"paymentType\"\", COUNT\\(*\\) FROM payments GROUP BY \"\"paymentType\"\";\")",
-      "Bash(\"C:\\\\Program Files\\\\PostgreSQL\\\\18\\\\bin\\\\psql.exe\" -U postgres -d erp_system -c \"SELECT \"\"paymentType\"\", COUNT\\(*\\) FROM payments GROUP BY \"\"paymentType\"\";\")",
       "WebFetch(domain:www.webapperp.ai.kr)",
       "WebFetch(domain:api.webapperp.ai.kr)"
     ],

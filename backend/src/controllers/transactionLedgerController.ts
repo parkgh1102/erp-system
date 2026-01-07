@@ -478,9 +478,9 @@ export const transactionLedgerController = {
   async getCustomerBalance(req: Request, res: Response) {
     try {
       const { businessId, customerId } = req.params;
-      const { beforeDate } = req.query; // 특정 날짜 이전의 잔액 조회용
+      const { beforeDate, excludeSaleId, excludePurchaseId } = req.query; // 특정 날짜 이전의 잔액 조회용 + 제외할 거래 ID
 
-      console.log(`📊 전잔금 조회 - businessId: ${businessId}, customerId: ${customerId}, beforeDate: ${beforeDate}`);
+      console.log(`📊 전잔금 조회 - businessId: ${businessId}, customerId: ${customerId}, beforeDate: ${beforeDate}, excludeSaleId: ${excludeSaleId}, excludePurchaseId: ${excludePurchaseId}`);
 
       const customerRepository = AppDataSource.getRepository(Customer);
       const salesRepository = AppDataSource.getRepository(Sales);
@@ -538,11 +538,47 @@ export const transactionLedgerController = {
         console.log(`  Payment ${idx + 1}: id=${p.id}, date=${p.paymentDate}, type=${p.paymentType}, amount=${p.amount}`);
       });
 
-      // 매출 합산 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      // 매출 합산 (날짜가 beforeDate 이전 또는 같은 날, 현재 거래 제외)
       // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
+      const excludeSaleIdNum = excludeSaleId ? Number(excludeSaleId) : null;
+      const excludePurchaseIdNum = excludePurchaseId ? Number(excludePurchaseId) : null;
+
+      // 현재 거래의 createdAt을 가져와서 같은 날 거래 중 이전 거래만 포함
+      let currentSaleCreatedAt: dayjs.Dayjs | null = null;
+      if (excludeSaleIdNum) {
+        const currentSale = sales.find(s => s.id === excludeSaleIdNum);
+        if (currentSale) {
+          currentSaleCreatedAt = dayjs(currentSale.createdAt);
+        }
+      }
+
+      let currentPurchaseCreatedAt: dayjs.Dayjs | null = null;
+      if (excludePurchaseIdNum) {
+        const currentPurchase = purchases.find(p => p.id === excludePurchaseIdNum);
+        if (currentPurchase) {
+          currentPurchaseCreatedAt = dayjs(currentPurchase.createdAt);
+        }
+      }
+
       sales.forEach(sale => {
+        // 현재 거래는 제외
+        if (excludeSaleIdNum && sale.id === excludeSaleIdNum) {
+          console.log(`매출 제외 (현재 거래): id=${sale.id}`);
+          return;
+        }
+
         const saleDate = dayjs(sale.transactionDate);
-        if (saleDate.isBefore(endDate, 'day')) {
+        const saleCreatedAt = dayjs(sale.createdAt);
+
+        // 같은 날인 경우: 현재 거래보다 먼저 생성된 거래만 포함
+        const isSameDay = saleDate.isSame(endDate, 'day');
+        if (isSameDay && currentSaleCreatedAt && saleCreatedAt.isAfter(currentSaleCreatedAt)) {
+          console.log(`매출 제외 (같은 날 이후 거래): id=${sale.id}, createdAt=${saleCreatedAt.format('YYYY-MM-DD HH:mm:ss')}`);
+          return;
+        }
+
+        // 날짜가 beforeDate 이전이거나 같은 날인 경우 포함
+        if (saleDate.isSameOrBefore(endDate, 'day')) {
           const totalAmount = (Number(sale.totalAmount) || 0) + (Number(sale.vatAmount) || 0);
           balance += totalAmount; // 매출은 +
           console.log(`매출 추가: 날짜=${saleDate.format('YYYY-MM-DD')}, 공급가액=${sale.totalAmount}, 세액=${sale.vatAmount}, 합계=${totalAmount}, 누적잔액=${balance}`);
@@ -552,11 +588,27 @@ export const transactionLedgerController = {
         }
       });
 
-      // 매입 차감 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      // 매입 차감 (날짜가 beforeDate 이전 또는 같은 날, 현재 거래 제외)
       // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
       purchases.forEach(purchase => {
+        // 현재 거래는 제외
+        if (excludePurchaseIdNum && purchase.id === excludePurchaseIdNum) {
+          console.log(`매입 제외 (현재 거래): id=${purchase.id}`);
+          return;
+        }
+
         const purchaseDate = dayjs(purchase.transactionDate || purchase.purchaseDate);
-        if (purchaseDate.isBefore(endDate, 'day')) {
+        const purchaseCreatedAt = dayjs(purchase.createdAt);
+
+        // 같은 날인 경우: 현재 거래보다 먼저 생성된 거래만 포함
+        const isSameDay = purchaseDate.isSame(endDate, 'day');
+        if (isSameDay && currentPurchaseCreatedAt && purchaseCreatedAt.isAfter(currentPurchaseCreatedAt)) {
+          console.log(`매입 제외 (같은 날 이후 거래): id=${purchase.id}, createdAt=${purchaseCreatedAt.format('YYYY-MM-DD HH:mm:ss')}`);
+          return;
+        }
+
+        // 날짜가 beforeDate 이전이거나 같은 날인 경우 포함
+        if (purchaseDate.isSameOrBefore(endDate, 'day')) {
           // 매입의 totalAmount는 이미 공급가액이고, vatAmount는 세액
           const totalAmount = (Number(purchase.totalAmount) || 0) + (Number(purchase.vatAmount) || 0);
           balance -= totalAmount; // 매입은 -
@@ -567,11 +619,11 @@ export const transactionLedgerController = {
         }
       });
 
-      // 수금/지급 처리 (날짜가 beforeDate 이전인 것만, 당일 제외)
+      // 수금/지급 처리 (날짜가 beforeDate 이전 또는 같은 날 포함)
       // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
       payments.forEach(payment => {
         const paymentDate = dayjs(payment.paymentDate);
-        if (paymentDate.isBefore(endDate, 'day')) {
+        if (paymentDate.isSameOrBefore(endDate, 'day')) {
           const paymentAmount = Number(payment.amount) || 0;
           // 수금: 거래처로부터 돈을 받음 (받을 돈 감소)
           if (payment.paymentType === '수금') {

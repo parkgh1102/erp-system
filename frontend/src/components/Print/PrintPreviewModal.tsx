@@ -44,6 +44,27 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   const [showNotice, setShowNotice] = useState(false);
   const [memoText, setMemoText] = useState('');
   const [noticeText, setNoticeText] = useState('');
+
+  // transactionData가 변경될 때 저장된 메모/공지사항을 초기값으로 설정
+  useEffect(() => {
+    if (transactionDataArray.length > 0) {
+      const firstData = transactionDataArray[0];
+      if (firstData?.memo) {
+        setMemoText(firstData.memo);
+        setShowMemo(true);
+      } else {
+        setMemoText('');
+        setShowMemo(false);
+      }
+      if (firstData?.notice) {
+        setNoticeText(firstData.notice);
+        setShowNotice(true);
+      } else {
+        setNoticeText('');
+        setShowNotice(false);
+      }
+    }
+  }, [transactionData]);
   const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
 
   useEffect(() => {

@@ -660,13 +660,15 @@ const SalesManagement: React.FC = () => {
               `/transaction-ledger/${currentBusiness.id}/customer/${sale.customerId}/balance`,
               {
                 params: {
-                  beforeDate: sale.transactionDate || sale.saleDate
+                  beforeDate: sale.transactionDate || sale.saleDate,
+                  excludeSaleId: sale.id // 현재 거래 제외하고 당일 이전 거래까지 합산
                 }
               }
             );
             console.log('💰 전잔금 API 응답:', {
               customerId: sale.customerId,
               beforeDate: sale.transactionDate || sale.saleDate,
+              excludeSaleId: sale.id,
               response: response.data
             });
             if (response.data.success) {
@@ -743,8 +745,8 @@ const SalesManagement: React.FC = () => {
           tax: Number(sale.vatAmount) || 0,
           grandTotal: (Number(sale.totalAmount) || 0) + (Number(sale.vatAmount) || 0),
           balanceAmount: balanceAmount, // 조회한 전잔금
-          memo: '',
-          notice: ''
+          memo: sale.memo || '', // 저장된 메모 반영
+          notice: sale.notice || '' // 저장된 공지사항 반영
         };
       });
 

@@ -786,7 +786,8 @@ const PurchaseManagement: React.FC = () => {
             `/transaction-ledger/${currentBusiness.id}/customer/${purchase.customerId}/balance`,
             {
               params: {
-                beforeDate: purchase.purchaseDate
+                beforeDate: purchase.purchaseDate,
+                excludePurchaseId: purchase.id // 현재 거래 제외하고 당일 이전 거래까지 합산
               }
             }
           );
@@ -1781,8 +1782,8 @@ const PurchaseManagement: React.FC = () => {
           tax: selectedPurchaseForStatement.vatAmount || 0,
           grandTotal: (selectedPurchaseForStatement.totalAmount || 0) + (selectedPurchaseForStatement.vatAmount || 0),
           balanceAmount: (selectedPurchaseForStatement as any).balanceAmount || 0,
-          memo: '',
-          notice: ''
+          memo: (selectedPurchaseForStatement as any).memo || '', // 저장된 메모 반영
+          notice: (selectedPurchaseForStatement as any).notice || '' // 저장된 공지사항 반영
         } : null}
         type="purchase"
         printMode={printMode}
