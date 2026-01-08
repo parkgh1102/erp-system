@@ -20,7 +20,7 @@ export class OTP {
   @Column({ type: 'varchar', length: 6 })
   code!: string;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: 'timestamp' })
   expiresAt!: Date;
 
   @Column({ type: 'boolean', default: false })
@@ -29,13 +29,13 @@ export class OTP {
   @Column({ type: 'int', default: 1 })
   attemptCount!: number;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   lastAttemptAt!: Date | null;
 
   @Column({ type: 'int', default: 1 })
   sendCount!: number;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   blockedUntil!: Date | null;
 
   @CreateDateColumn()
