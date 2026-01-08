@@ -297,7 +297,10 @@ const SalesManagement: React.FC = () => {
     return (
       sale.customer?.name?.toLowerCase().includes(searchLower) ||
       sale.memo?.toLowerCase().includes(searchLower) ||
-      sale.items?.some(item => item.productName?.toLowerCase().includes(searchLower)) ||
+      sale.items?.some(item =>
+        item.productName?.toLowerCase().includes(searchLower) ||
+        (item as any).itemName?.toLowerCase().includes(searchLower)
+      ) ||
       sale.totalAmount?.toString().includes(searchText) ||
       sale.vatAmount?.toString().includes(searchText)
     );
@@ -323,6 +326,11 @@ const SalesManagement: React.FC = () => {
       sale.items?.forEach(item => {
         if (item.productName?.toLowerCase().includes(searchLower)) {
           matches.add(item.productName);
+        }
+        // 전잔금 등 itemName으로 저장된 품목도 검색
+        const itemName = (item as any).itemName;
+        if (itemName?.toLowerCase().includes(searchLower)) {
+          matches.add(itemName);
         }
       });
       if (sale.memo?.toLowerCase().includes(searchLower)) {
@@ -390,9 +398,11 @@ const SalesManagement: React.FC = () => {
       const taxType = selectedProduct?.taxType || 'tax_separate';
 
       // 저장된 금액 값 확인 (전잔금 같은 경우 unitPrice=0이지만 supplyAmount가 있음)
-      const savedSupplyAmount = (item as any).supplyAmount || (item as any).amount || 0;
-      const savedVatAmount = (item as any).vatAmount || 0;
-      const savedTotalAmount = (item as any).totalAmount || (savedSupplyAmount + savedVatAmount);
+      // DB에서 decimal 필드는 문자열로 반환될 수 있으므로 Number()로 변환
+      // 백엔드는 taxAmount, 프론트엔드는 vatAmount 사용
+      const savedSupplyAmount = Number((item as any).supplyAmount) || Number((item as any).amount) || 0;
+      const savedVatAmount = Number((item as any).vatAmount) || Number((item as any).taxAmount) || 0;
+      const savedTotalAmount = Number((item as any).totalAmount) || (savedSupplyAmount + savedVatAmount);
 
       // 수량 * 단가 계산
       const calculatedAmount = item.quantity * item.unitPrice;

@@ -454,6 +454,12 @@ exports.transactionLedgerController = {
                     console.log(`매출 제외 (현재 거래): id=${sale.id}`);
                     return;
                 }
+                // 전잔금 품목은 잔액 계산에서 제외 (이중 계산 방지)
+                const hasPreviousBalanceItem = sale.items?.some(item => item.itemName === '전잔금' || item.itemName?.includes('전잔금'));
+                if (hasPreviousBalanceItem) {
+                    console.log(`매출 제외 (전잔금 품목): id=${sale.id}`);
+                    return;
+                }
                 const saleDate = (0, dayjs_1.default)(sale.transactionDate);
                 const saleCreatedAt = (0, dayjs_1.default)(sale.createdAt);
                 // 같은 날인 경우: 현재 거래보다 먼저 생성된 거래만 포함
