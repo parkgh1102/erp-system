@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { OTPController } from '../controllers/OTPController';
 
-const router = Router();
+const router: Router = Router();
 
 // OTP 전송
 router.post('/send', OTPController.sendOTP);

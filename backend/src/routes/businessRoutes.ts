@@ -10,7 +10,7 @@ import { transactionLedgerController } from '../controllers/transactionLedgerCon
 import { authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 
-const router = Router();
+const router: Router = Router();
 
 // Multer 설정 (메모리 스토리지 사용, limits 추가)
 const upload = multer({

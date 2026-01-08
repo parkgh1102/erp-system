@@ -3,7 +3,7 @@ import { AuthController } from '../controllers/AuthController';
 import { authenticateToken } from '../middleware/auth';
 import { avatarUpload } from '../middleware/upload';
 
-const router = Router();
+const router: Router = Router();
 
 router.post('/signup', AuthController.signup);
 router.post('/login', AuthController.login);

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { ProductController } from '../controllers/ProductController';
 import { authenticateToken } from '../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 router.use(authenticateToken);
 

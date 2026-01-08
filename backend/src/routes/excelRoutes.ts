@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Router } from 'express';
 import multer from 'multer';
 import { authenticateToken } from '../middleware/auth';
 import {
@@ -14,7 +14,7 @@ import {
   uploadPurchases
 } from '../controllers/ExcelController';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // 메모리에 파일 저장
 const storage = multer.memoryStorage();

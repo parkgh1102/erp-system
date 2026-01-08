@@ -1,9 +1,9 @@
-import express from 'express';
+import express, { Router } from 'express';
 import { transactionLedgerController } from '../controllers/transactionLedgerController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { businessAccessMiddleware } from '../middleware/businessAccessMiddleware';
 
-const router = express.Router();
+const router: Router = express.Router();
 
 // 모든 라우트에 인증 미들웨어 적용
 router.use(authMiddleware);

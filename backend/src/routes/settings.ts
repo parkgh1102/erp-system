@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { SettingsController } from '../controllers/SettingsController';
 import { authenticateToken } from '../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 // 보안 설정 조회 (로그인 전 - 인증 불필요)
 router.get('/security/:email', SettingsController.getSecuritySettingsByEmail);

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { ActivityLogController } from '../controllers/ActivityLogController';
 import { authMiddleware } from '../middleware/authMiddleware';
 
-const router = Router();
+const router: Router = Router();
 const controller = new ActivityLogController();
 
 // 모든 라우트에 인증 미들웨어 적용
