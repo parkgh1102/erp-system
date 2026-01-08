@@ -14,6 +14,7 @@ export declare class Purchase {
     totalAmount: number;
     vatAmount: number;
     memo?: string;
+    bankAccount?: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

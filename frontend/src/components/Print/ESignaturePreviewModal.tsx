@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, Button, Space, message, Dropdown, Input } from 'antd';
 import { PrinterOutlined, DownloadOutlined, SendOutlined, DownOutlined, PhoneOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
@@ -35,6 +35,119 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
   // 알림톡 확인 모달 관련 state
   const [alimtalkModalOpen, setAlimtalkModalOpen] = useState(false);
   const [alimtalkPhoneNumber, setAlimtalkPhoneNumber] = useState('');
+
+  // 드래그 관련 state
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [modalSize, setModalSize] = useState({ width: 0, height: 0 });
+  const [resizeDirection, setResizeDirection] = useState<string>('');
+  const dragRef = useRef({ startX: 0, startY: 0, posX: 0, posY: 0 });
+  const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0, startPosX: 0, startPosY: 0 });
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+
+  // 모달 열릴 때 위치/크기 초기화
+  useEffect(() => {
+    if (!open) {
+      setDragPosition({ x: 0, y: 0 });
+      setModalSize({ width: 0, height: 0 });
+    }
+  }, [open]);
+
+  const handleDragMouseDown = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.ant-modal-close') || target.closest('button')) return;
+
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: dragPosition.x,
+      posY: dragPosition.y
+    };
+    e.preventDefault();
+  }, [dragPosition]);
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent, direction: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const modalElement = modalContainerRef.current?.querySelector('.ant-modal') as HTMLElement;
+    if (!modalElement) return;
+
+    const rect = modalElement.getBoundingClientRect();
+
+    setIsResizing(true);
+    setResizeDirection(direction);
+    resizeRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: modalSize.width || rect.width,
+      startHeight: modalSize.height || rect.height,
+      startPosX: dragPosition.x,
+      startPosY: dragPosition.y
+    };
+  }, [modalSize, dragPosition]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const deltaX = e.clientX - dragRef.current.startX;
+        const deltaY = e.clientY - dragRef.current.startY;
+        setDragPosition({
+          x: dragRef.current.posX + deltaX,
+          y: dragRef.current.posY + deltaY
+        });
+      }
+
+      if (isResizing) {
+        const deltaX = e.clientX - resizeRef.current.startX;
+        const deltaY = e.clientY - resizeRef.current.startY;
+        const minWidth = 500;
+        const minHeight = 400;
+
+        let newWidth = resizeRef.current.startWidth;
+        let newHeight = resizeRef.current.startHeight;
+        let newPosX = resizeRef.current.startPosX;
+        let newPosY = resizeRef.current.startPosY;
+
+        if (resizeDirection.includes('e')) {
+          newWidth = Math.max(minWidth, resizeRef.current.startWidth + deltaX);
+        }
+        if (resizeDirection.includes('w')) {
+          const widthDelta = Math.min(deltaX, resizeRef.current.startWidth - minWidth);
+          newWidth = resizeRef.current.startWidth - widthDelta;
+          newPosX = resizeRef.current.startPosX + widthDelta;
+        }
+        if (resizeDirection.includes('s')) {
+          newHeight = Math.max(minHeight, resizeRef.current.startHeight + deltaY);
+        }
+        if (resizeDirection.includes('n')) {
+          const heightDelta = Math.min(deltaY, resizeRef.current.startHeight - minHeight);
+          newHeight = resizeRef.current.startHeight - heightDelta;
+          newPosY = resizeRef.current.startPosY + heightDelta;
+        }
+
+        setModalSize({ width: newWidth, height: newHeight });
+        setDragPosition({ x: newPosX, y: newPosY });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+      setResizeDirection('');
+    };
+
+    if (isDragging || isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, isResizing, resizeDirection]);
 
   // 모달이 열릴 때 서명 이미지 로드
   useEffect(() => {
@@ -256,13 +369,14 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
               }
               .signature-box-overlay {
                 position: absolute !important;
-                top: 1.5px !important;
-                left: 150px !important;
+                top: 8px !important;
+                left: 120px !important;
                 z-index: 10 !important;
                 display: flex !important;
-                flex-direction: column !important;
+                flex-direction: row !important;
                 align-items: center !important;
-                gap: 2px !important;
+                gap: 8px !important;
+                height: 40px !important;
               }
               @media print {
                 @page {
@@ -275,8 +389,10 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
                 }
                 .signature-box-overlay {
                   position: absolute !important;
-                  top: 1.5px !important;
+                  top: 8px !important;
                   left: 80px !important;
+                  flex-direction: row !important;
+                  height: 40px !important;
                 }
               }
             </style>
@@ -526,10 +642,44 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
   return (
     <>
       <Modal
-        title="전자서명 거래명세표"
+        title={
+          <div
+            onMouseDown={handleDragMouseDown}
+            style={{
+              cursor: isDragging ? 'grabbing' : 'grab',
+              userSelect: 'none'
+            }}
+          >
+            전자서명 거래명세표
+          </div>
+        }
         open={open}
         onCancel={handleClose}
-        width="min(95vw, 900px)"
+        width={modalSize.width || "min(95vw, 900px)"}
+        modalRender={(modal) => (
+          <div
+            ref={modalContainerRef}
+            style={{
+              transform: `translate(${dragPosition.x}px, ${dragPosition.y}px)`,
+              position: 'relative'
+            }}
+          >
+            {modal}
+            {/* 리사이즈 핸들 */}
+            {open && (
+              <>
+                <div style={{ position: 'absolute', top: 0, left: 0, width: 12, height: 12, cursor: 'nw-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'nw')} />
+                <div style={{ position: 'absolute', top: 0, right: 0, width: 12, height: 12, cursor: 'ne-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'ne')} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, width: 12, height: 12, cursor: 'sw-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'sw')} />
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, cursor: 'se-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'se')} />
+                <div style={{ position: 'absolute', top: 0, left: 12, right: 12, height: 8, cursor: 'n-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'n')} />
+                <div style={{ position: 'absolute', bottom: 0, left: 12, right: 12, height: 8, cursor: 's-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 's')} />
+                <div style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 8, cursor: 'w-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'w')} />
+                <div style={{ position: 'absolute', right: 0, top: 12, bottom: 12, width: 8, cursor: 'e-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'e')} />
+              </>
+            )}
+          </div>
+        )}
         style={{
           top: 'min(40px, 2vh)',
           maxWidth: 'calc(100vw - 32px)',
@@ -537,7 +687,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
         }}
         styles={{
           body: {
-            height: 'min(70vh, 800px)',
+            height: modalSize.height ? `calc(${modalSize.height}px - 150px)` : 'min(70vh, 800px)',
             maxHeight: 'calc(100vh - 200px)',
             padding: '20px',
             overflow: 'auto'
@@ -604,25 +754,27 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
             overflow: 'visible'
           }}
         >
-          {/* 서명 네모칸 오버레이 - 좌측 상단 */}
+          {/* 서명 네모칸 오버레이 - 좌측 상단 가로 배치 */}
           <div
             className="signature-box-overlay"
             style={{
               position: 'absolute',
-              top: '1.5px',
-              left: '150px',
+              top: '8px',
+              left: '120px',
               zIndex: 10,
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: 'row',
               alignItems: 'center',
-              gap: '2px'
+              gap: '8px',
+              height: '40px'
             }}
           >
             <span style={{
               fontSize: '10px',
               fontWeight: 'bold',
               color: '#333',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              lineHeight: '40px'
             }}>
               서명(확인)자
             </span>
@@ -630,7 +782,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
               onClick={handleSignatureBoxClick}
               style={{
                 width: '80px',
-                height: '50px',
+                height: '40px',
                 border: signatureDataUrl ? '1px solid #d9d9d9' : `2px solid ${blinking ? '#1890ff' : '#52c41a'}`,
                 backgroundColor: signatureDataUrl ? '#fff' : (blinking ? 'rgba(24, 144, 255, 0.1)' : 'rgba(82, 196, 26, 0.1)'),
                 cursor: transactionData?.signedBy ? 'default' : 'pointer',
@@ -638,7 +790,8 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: '4px',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                boxSizing: 'border-box'
               }}
             >
               {signatureDataUrl ? (

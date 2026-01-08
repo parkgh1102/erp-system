@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, Button, Dropdown, message, Checkbox, Input } from 'antd';
 import { PrinterOutlined, DownOutlined } from '@ant-design/icons';
 import { TransactionStatement } from './TransactionStatement';
@@ -42,10 +42,125 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   const [margin] = useState<number>(10);
   const [showMemo, setShowMemo] = useState(false);
   const [showNotice, setShowNotice] = useState(false);
+  const [showBankAccount, setShowBankAccount] = useState(true); // 기본값 체크
   const [memoText, setMemoText] = useState('');
   const [noticeText, setNoticeText] = useState('');
+  const [bankAccountText, setBankAccountText] = useState('');
 
-  // transactionData가 변경될 때 저장된 메모/공지사항을 초기값으로 설정
+  // 드래그 관련 state
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [modalSize, setModalSize] = useState({ width: 0, height: 0 });
+  const [resizeDirection, setResizeDirection] = useState<string>('');
+  const dragRef = useRef({ startX: 0, startY: 0, posX: 0, posY: 0 });
+  const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0, startPosX: 0, startPosY: 0 });
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // 모달 열릴 때 위치/크기 초기화
+  useEffect(() => {
+    if (!open) {
+      setDragPosition({ x: 0, y: 0 });
+      setModalSize({ width: 0, height: 0 });
+    }
+  }, [open]);
+
+  const handleDragMouseDown = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.ant-modal-close') || target.closest('button')) return;
+
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: dragPosition.x,
+      posY: dragPosition.y
+    };
+    e.preventDefault();
+  }, [dragPosition]);
+
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent, direction: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const modalElement = modalRef.current?.querySelector('.ant-modal') as HTMLElement;
+    if (!modalElement) return;
+
+    const rect = modalElement.getBoundingClientRect();
+
+    setIsResizing(true);
+    setResizeDirection(direction);
+    resizeRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: modalSize.width || rect.width,
+      startHeight: modalSize.height || rect.height,
+      startPosX: dragPosition.x,
+      startPosY: dragPosition.y
+    };
+  }, [modalSize, dragPosition]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const deltaX = e.clientX - dragRef.current.startX;
+        const deltaY = e.clientY - dragRef.current.startY;
+        setDragPosition({
+          x: dragRef.current.posX + deltaX,
+          y: dragRef.current.posY + deltaY
+        });
+      }
+
+      if (isResizing) {
+        const deltaX = e.clientX - resizeRef.current.startX;
+        const deltaY = e.clientY - resizeRef.current.startY;
+        const minWidth = 600;
+        const minHeight = 400;
+
+        let newWidth = resizeRef.current.startWidth;
+        let newHeight = resizeRef.current.startHeight;
+        let newPosX = resizeRef.current.startPosX;
+        let newPosY = resizeRef.current.startPosY;
+
+        if (resizeDirection.includes('e')) {
+          newWidth = Math.max(minWidth, resizeRef.current.startWidth + deltaX);
+        }
+        if (resizeDirection.includes('w')) {
+          const widthDelta = Math.min(deltaX, resizeRef.current.startWidth - minWidth);
+          newWidth = resizeRef.current.startWidth - widthDelta;
+          newPosX = resizeRef.current.startPosX + widthDelta;
+        }
+        if (resizeDirection.includes('s')) {
+          newHeight = Math.max(minHeight, resizeRef.current.startHeight + deltaY);
+        }
+        if (resizeDirection.includes('n')) {
+          const heightDelta = Math.min(deltaY, resizeRef.current.startHeight - minHeight);
+          newHeight = resizeRef.current.startHeight - heightDelta;
+          newPosY = resizeRef.current.startPosY + heightDelta;
+        }
+
+        setModalSize({ width: newWidth, height: newHeight });
+        setDragPosition({ x: newPosX, y: newPosY });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+      setResizeDirection('');
+    };
+
+    if (isDragging || isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, isResizing, resizeDirection]);
+
+  // transactionData가 변경될 때 저장된 메모/공지사항/계좌번호를 초기값으로 설정
   useEffect(() => {
     if (transactionDataArray.length > 0) {
       const firstData = transactionDataArray[0];
@@ -62,6 +177,13 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
       } else {
         setNoticeText('');
         setShowNotice(false);
+      }
+      if (firstData?.bankAccount) {
+        setBankAccountText(firstData.bankAccount);
+        setShowBankAccount(true);
+      } else {
+        setBankAccountText('');
+        setShowBankAccount(true); // 기본값은 체크 상태
       }
     }
   }, [transactionData]);
@@ -523,7 +645,16 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   return (
     <Modal
       title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div
+          onMouseDown={handleDragMouseDown}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            cursor: isDragging ? 'grabbing' : 'grab',
+            userSelect: 'none'
+          }}
+        >
           <PrinterOutlined />
           <span>인쇄 미리보기</span>
           <span style={{ fontSize: '12px', color: '#666', marginLeft: '10px' }}>
@@ -539,7 +670,31 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
       maskClosable={true}
       keyboard={true}
       destroyOnHidden={true}
-      width="min(95vw, 1200px)"
+      width={modalSize.width || "min(95vw, 1200px)"}
+      modalRender={(modal) => (
+        <div
+          ref={modalRef}
+          style={{
+            transform: `translate(${dragPosition.x}px, ${dragPosition.y}px)`,
+            position: 'relative'
+          }}
+        >
+          {modal}
+          {/* 리사이즈 핸들 */}
+          {open && (
+            <>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: 12, height: 12, cursor: 'nw-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'nw')} />
+              <div style={{ position: 'absolute', top: 0, right: 0, width: 12, height: 12, cursor: 'ne-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'ne')} />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, width: 12, height: 12, cursor: 'sw-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'sw')} />
+              <div style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, cursor: 'se-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'se')} />
+              <div style={{ position: 'absolute', top: 0, left: 12, right: 12, height: 8, cursor: 'n-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'n')} />
+              <div style={{ position: 'absolute', bottom: 0, left: 12, right: 12, height: 8, cursor: 's-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 's')} />
+              <div style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 8, cursor: 'w-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'w')} />
+              <div style={{ position: 'absolute', right: 0, top: 12, bottom: 12, width: 8, cursor: 'e-resize', zIndex: 10 }} onMouseDown={(e) => handleResizeMouseDown(e, 'e')} />
+            </>
+          )}
+        </div>
+      )}
       style={{
         top: 'min(40px, 2vh)',
         maxWidth: 'calc(100vw - 32px)',
@@ -547,11 +702,12 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
       }}
       styles={{
         body: {
-          height: 'min(70vh, 800px)',
+          height: modalSize.height ? `calc(${modalSize.height}px - 180px)` : 'min(70vh, 800px)',
           maxHeight: 'calc(100vh - 200px)',
           padding: '0',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          overflow: 'auto'
         }
       }}
       footer={
@@ -562,19 +718,18 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           padding: '8px 0',
           fontSize: 'clamp(12px, 1.5vw, 14px)'
         }}>
-          {/* 첫 번째 줄: 메모란, 공지사항 */}
+          {/* 첫 번째 줄: 메모란, 공지사항, 계좌번호 */}
           <div style={{
             display: 'flex',
             flexWrap: 'wrap',
-            gap: '16px',
+            gap: '12px',
             alignItems: 'center'
           }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              flex: 1,
-              minWidth: '300px'
+              minWidth: '280px'
             }}>
               <Checkbox
                 checked={showMemo}
@@ -589,7 +744,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                 value={memoText}
                 onChange={(e) => setMemoText(e.target.value)}
                 style={{
-                  width: 'clamp(200px, 30vw, 350px)',
+                  width: 'clamp(150px, 20vw, 250px)',
                   height: '28px',
                   fontSize: 'clamp(11px, 1.4vw, 13px)'
                 }}
@@ -601,8 +756,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              flex: 1,
-              minWidth: '300px'
+              minWidth: '280px'
             }}>
               <Checkbox
                 checked={showNotice}
@@ -617,7 +771,34 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                 value={noticeText}
                 onChange={(e) => setNoticeText(e.target.value)}
                 style={{
-                  width: 'clamp(200px, 30vw, 350px)',
+                  width: 'clamp(150px, 20vw, 250px)',
+                  height: '28px',
+                  fontSize: 'clamp(11px, 1.4vw, 13px)'
+                }}
+                autoSize={{ minRows: 1, maxRows: 4 }}
+              />
+            </div>
+
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              minWidth: '280px'
+            }}>
+              <Checkbox
+                checked={showBankAccount}
+                onChange={(e) => setShowBankAccount(e.target.checked)}
+                style={{ fontSize: 'clamp(12px, 1.5vw, 14px)' }}
+              >
+                계좌번호
+              </Checkbox>
+              <TextArea
+                placeholder="계좌번호를 입력하세요"
+                disabled={!showBankAccount}
+                value={bankAccountText}
+                onChange={(e) => setBankAccountText(e.target.value)}
+                style={{
+                  width: 'clamp(150px, 20vw, 250px)',
                   height: '28px',
                   fontSize: 'clamp(11px, 1.4vw, 13px)'
                 }}
@@ -714,7 +895,8 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                 data={{
                   ...data,
                   memo: showMemo ? memoText : null,
-                  notice: showNotice ? noticeText : null
+                  notice: showNotice ? noticeText : null,
+                  bankAccount: showBankAccount ? bankAccountText : null
                 }}
                 type={type}
                 supplierInfo={supplierInfo}

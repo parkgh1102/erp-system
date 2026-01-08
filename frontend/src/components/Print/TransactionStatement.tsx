@@ -7,6 +7,7 @@ interface TransactionData {
   companyName: string;
   companyAddress?: string;
   companyPhone?: string;
+  companyFax?: string;
   companyRegistrationNumber?: string;
   ceoName?: string;
   items: Array<{
@@ -31,6 +32,7 @@ interface TransactionData {
   notes?: string;
   memo?: string;
   notice?: string;
+  bankAccount?: string;
 }
 
 interface SupplierInfo {
@@ -128,11 +130,26 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           right: '0',
           top: '50%',
           transform: 'translateY(-50%)',
-          fontSize: '12pt', // 귀중 표시 크기 증가
-          fontWeight: 'bold',
-          color: '#333'
+          textAlign: 'right'
         }}>
-          {data?.companyName || ''} 귀중
+          <div style={{
+            fontSize: '12pt',
+            fontWeight: 'bold',
+            color: '#333'
+          }}>
+            {data?.companyName || ''} 귀중
+          </div>
+          {(data?.companyPhone || data?.companyFax) && (
+            <div style={{
+              fontSize: '8pt',
+              color: '#666',
+              marginTop: '1px'
+            }}>
+              {data?.companyPhone && <span>Tel: {data.companyPhone}</span>}
+              {data?.companyPhone && data?.companyFax && <span> / </span>}
+              {data?.companyFax && <span>Fax: {data.companyFax}</span>}
+            </div>
+          )}
         </div>
       </div>
 
@@ -158,11 +175,11 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               </td>
             </tr>
             <tr>
-              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>공급자주소:</td>
+              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none', whiteSpace: 'nowrap' }}>공급자주소:</td>
               <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{supplierInfo?.address || '-'}</td>
-              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>공급자전화:</td>
-              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{supplierInfo?.phone || '-'}</td>
-              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>대표자명:</td>
+              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none', whiteSpace: 'nowrap' }}>공급자전화:</td>
+              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none', whiteSpace: 'nowrap' }}>{supplierInfo?.phone || '-'}</td>
+              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none', whiteSpace: 'nowrap' }}>대표자명:</td>
               <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{supplierInfo?.representative || '-'}</td>
             </tr>
           </tbody>
@@ -374,7 +391,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
             border: '2px solid #000',
             display: 'flex',
             alignItems: 'stretch',
-            height: '9mm',
+            height: '6.5mm',
             marginBottom: '0',
             boxSizing: 'border-box'
           }}>
@@ -409,7 +426,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
             borderTop: '1px solid #000',
             display: 'flex',
             alignItems: 'stretch',
-            height: '9mm',
+            height: '6.5mm',
             boxSizing: 'border-box'
           }}>
             <div style={{
@@ -434,6 +451,40 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               boxSizing: 'border-box'
             }}>
               {data?.notice || data?.notes || ''}
+            </div>
+          </div>
+
+          {/* 계좌번호 */}
+          <div style={{
+            border: '2px solid #000',
+            borderTop: '1px solid #000',
+            display: 'flex',
+            alignItems: 'stretch',
+            height: '6.5mm',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{
+              width: '18mm',
+              borderRight: '1px solid #000',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '9pt',
+              fontWeight: 'normal',
+              backgroundColor: '#fff',
+              boxSizing: 'border-box'
+            }}>계좌번호:</div>
+            <div style={{
+              flex: 1,
+              padding: '1mm 2mm',
+              fontSize: '8pt',
+              lineHeight: '1.3',
+              overflow: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              boxSizing: 'border-box'
+            }}>
+              {data?.bankAccount || ''}
             </div>
           </div>
         </div>

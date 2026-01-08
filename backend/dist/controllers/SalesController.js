@@ -34,6 +34,7 @@ const salesSchema = joi_1.default.object({
     vatAmount: joi_1.default.number().default(0),
     description: joi_1.default.string().allow('', null).optional(),
     memo: joi_1.default.string().allow('', null).optional(),
+    bankAccount: joi_1.default.string().allow('', null).optional(),
     businessId: joi_1.default.number().integer().min(1).optional(),
     items: joi_1.default.array().items(joi_1.default.object({
         productId: joi_1.default.number().integer().min(1).allow(null).optional(),
@@ -256,7 +257,8 @@ class SalesController {
                 totalAmount: value.totalAmount,
                 vatAmount: value.vatAmount,
                 description: value.description || null,
-                memo: value.memo || null
+                memo: value.memo || null,
+                bankAccount: value.bankAccount || null
             });
             const savedSales = await salesRepository.save(sales);
             // 거래 항목들 생성
@@ -374,7 +376,8 @@ class SalesController {
                 totalAmount: value.totalAmount,
                 vatAmount: value.vatAmount,
                 description: value.description || null,
-                memo: value.memo || null
+                memo: value.memo || null,
+                bankAccount: value.bankAccount || null
             });
             // 새로운 항목들 생성
             if (value.items && value.items.length > 0) {

@@ -270,8 +270,10 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
         maxWidth: isMobile ? 'calc(100vw - 16px)' : undefined,
         right: isMobile ? '8px' : undefined
       }}
-      overlayInnerStyle={{
-        maxWidth: '100%'
+      styles={{
+        body: {
+          maxWidth: '100%'
+        }
       }}
     >
       {children}

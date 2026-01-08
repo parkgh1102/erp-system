@@ -395,18 +395,24 @@ const uploadProducts = async (req, res) => {
         const results = { success: 0, failed: 0, errors: [] };
         for (const row of data) {
             try {
-                // 세금구분 매핑 (한글 -> 영문 코드)
-                let taxType = 'tax_separate'; // 기본값: 과세(별도)
-                const rawTaxType = row['세금구분'] || '';
-                if (rawTaxType === '면세' || rawTaxType === 'tax_free') {
+                // 세금구분 매핑 (한글 -> 영문 코드) - 기본값은 과세별도(tax_separate)
+                let taxType = 'tax_separate';
+                const rawTaxType = (row['세금구분'] || '').toString().trim();
+                const taxTypeLower = rawTaxType.toLowerCase();
+                // 면세 체크 (먼저 체크)
+                if (taxTypeLower === 'tax_free' || taxTypeLower === '면세' || taxTypeLower.includes('면세')) {
                     taxType = 'tax_free';
                 }
-                else if (rawTaxType === '과세(포함)' || rawTaxType === '포함' || rawTaxType === 'tax_inclusive') {
+                // 과세포함 체크 (포함 키워드가 있는 경우)
+                else if (taxTypeLower === 'tax_inclusive' ||
+                    taxTypeLower === '포함' ||
+                    taxTypeLower === '과세포함' ||
+                    taxTypeLower === '과세(포함)' ||
+                    taxTypeLower === '과세 10%포함' ||
+                    taxTypeLower.includes('포함')) {
                     taxType = 'tax_inclusive';
                 }
-                else if (rawTaxType === '과세(별도)' || rawTaxType === '별도' || rawTaxType === '과세' || rawTaxType === 'tax_separate') {
-                    taxType = 'tax_separate';
-                }
+                // 나머지는 모두 과세별도 (기본값)
                 const product = productRepo.create({
                     businessId,
                     productCode: row['품목코드'],

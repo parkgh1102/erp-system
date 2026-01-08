@@ -38,6 +38,9 @@ export class Sales {
   @Column({ nullable: true })
   memo?: string;
 
+  @Column({ name: 'bank_account', nullable: true })
+  bankAccount?: string;
+
   // 전자서명 관련 필드
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'signed_by' })

@@ -785,8 +785,53 @@ ERP 시스템 데이터:${context}
         });
       } catch (geminiError: any) {
         console.error('❌ Gemini API 에러:', geminiError.message);
+        console.error('❌ Gemini API 에러 상세:', geminiError);
+
+        // Gemini API 에러 시 조회된 데이터를 더 읽기 쉽게 포맷팅하여 반환
+        let formattedResponse = '📊 조회 결과:\n';
+
+        if (data.salesStats) {
+          formattedResponse += `\n[매출 현황]\n`;
+          formattedResponse += `• 거래 건수: ${data.salesStats.count}건\n`;
+          formattedResponse += `• 공급가액: ${data.salesStats.totalAmount.toLocaleString()}원\n`;
+          formattedResponse += `• 부가세: ${data.salesStats.totalVat.toLocaleString()}원\n`;
+          formattedResponse += `• 총 매출액: ${data.salesStats.grandTotal.toLocaleString()}원\n`;
+        }
+
+        if (data.purchaseStats) {
+          formattedResponse += `\n[매입 현황]\n`;
+          formattedResponse += `• 거래 건수: ${data.purchaseStats.count}건\n`;
+          formattedResponse += `• 공급가액: ${data.purchaseStats.totalAmount.toLocaleString()}원\n`;
+          formattedResponse += `• 부가세: ${data.purchaseStats.totalVat.toLocaleString()}원\n`;
+          formattedResponse += `• 총 매입액: ${data.purchaseStats.grandTotal.toLocaleString()}원\n`;
+        }
+
+        if (data.dashboardStats) {
+          formattedResponse += `\n[이번 달 현황]\n`;
+          formattedResponse += `• 총 매출액: ${data.dashboardStats.thisMonthSales.grandTotal.toLocaleString()}원\n`;
+          formattedResponse += `• 총 매입액: ${data.dashboardStats.thisMonthPurchase.grandTotal.toLocaleString()}원\n`;
+          formattedResponse += `• 수익: ${data.dashboardStats.profit.toLocaleString()}원\n`;
+          formattedResponse += `• 고객 수: ${data.dashboardStats.totalCustomers}명\n`;
+          formattedResponse += `• 제품 수: ${data.dashboardStats.totalProducts}개\n`;
+        }
+
+        if (data.customerInfo) {
+          formattedResponse += `\n[고객 정보]\n`;
+          formattedResponse += `• 총 고객 수: ${data.customerInfo.count}명\n`;
+        }
+
+        if (data.productInventory) {
+          formattedResponse += `\n[제품 재고]\n`;
+          formattedResponse += `• 총 제품 수: ${data.productInventory.count}개\n`;
+        }
+
+        // 데이터가 없는 경우
+        if (!data.salesStats && !data.purchaseStats && !data.dashboardStats && !data.customerInfo && !data.productInventory) {
+          formattedResponse = context || '조회된 데이터가 없습니다.';
+        }
+
         return res.json({
-          message: `데이터 조회는 완료되었으나 AI 응답 생성에 실패했습니다.\n\n조회된 데이터:\n${context}`,
+          message: formattedResponse,
           data: data,
           timestamp: new Date().toISOString()
         });
@@ -843,8 +888,43 @@ ERP 시스템 데이터:${context}
         });
       } catch (geminiError: any) {
         console.error('❌ Gemini API 에러:', geminiError.message);
+        console.error('❌ Gemini API 에러 상세:', geminiError);
+
+        // Gemini API 에러 시 조회된 데이터를 더 읽기 쉽게 포맷팅하여 반환
+        let formattedResponse = '📊 조회 결과:\n';
+
+        if (data.salesStats) {
+          formattedResponse += `\n[매출 현황]\n`;
+          formattedResponse += `• 거래 건수: ${data.salesStats.count}건\n`;
+          formattedResponse += `• 공급가액: ${data.salesStats.totalAmount.toLocaleString()}원\n`;
+          formattedResponse += `• 부가세: ${data.salesStats.totalVat.toLocaleString()}원\n`;
+          formattedResponse += `• 총 매출액: ${data.salesStats.grandTotal.toLocaleString()}원\n`;
+        }
+
+        if (data.purchaseStats) {
+          formattedResponse += `\n[매입 현황]\n`;
+          formattedResponse += `• 거래 건수: ${data.purchaseStats.count}건\n`;
+          formattedResponse += `• 공급가액: ${data.purchaseStats.totalAmount.toLocaleString()}원\n`;
+          formattedResponse += `• 부가세: ${data.purchaseStats.totalVat.toLocaleString()}원\n`;
+          formattedResponse += `• 총 매입액: ${data.purchaseStats.grandTotal.toLocaleString()}원\n`;
+        }
+
+        if (data.dashboardStats) {
+          formattedResponse += `\n[이번 달 현황]\n`;
+          formattedResponse += `• 총 매출액: ${data.dashboardStats.thisMonthSales.grandTotal.toLocaleString()}원\n`;
+          formattedResponse += `• 총 매입액: ${data.dashboardStats.thisMonthPurchase.grandTotal.toLocaleString()}원\n`;
+          formattedResponse += `• 수익: ${data.dashboardStats.profit.toLocaleString()}원\n`;
+          formattedResponse += `• 고객 수: ${data.dashboardStats.totalCustomers}명\n`;
+          formattedResponse += `• 제품 수: ${data.dashboardStats.totalProducts}개\n`;
+        }
+
+        // 데이터가 없는 경우
+        if (!data.salesStats && !data.purchaseStats && !data.dashboardStats) {
+          formattedResponse = context || '조회된 데이터가 없습니다.';
+        }
+
         return res.json({
-          message: `데이터 조회는 완료되었으나 AI 응답 생성에 실패했습니다.\n\n조회된 데이터:\n${context}`,
+          message: formattedResponse,
           data: data,
           timestamp: new Date().toISOString()
         });

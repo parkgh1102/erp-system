@@ -31,6 +31,7 @@ const salesSchema = Joi.object({
   vatAmount: Joi.number().default(0),
   description: Joi.string().allow('', null).optional(),
   memo: Joi.string().allow('', null).optional(),
+  bankAccount: Joi.string().allow('', null).optional(),
   businessId: Joi.number().integer().min(1).optional(),
   items: Joi.array().items(
     Joi.object({
@@ -278,7 +279,8 @@ export class SalesController {
         totalAmount: value.totalAmount,
         vatAmount: value.vatAmount,
         description: value.description || null,
-        memo: value.memo || null
+        memo: value.memo || null,
+        bankAccount: value.bankAccount || null
       });
 
       const savedSales = await salesRepository.save(sales);
@@ -414,7 +416,8 @@ export class SalesController {
         totalAmount: value.totalAmount,
         vatAmount: value.vatAmount,
         description: value.description || null,
-        memo: value.memo || null
+        memo: value.memo || null,
+        bankAccount: value.bankAccount || null
       });
 
       // 새로운 항목들 생성

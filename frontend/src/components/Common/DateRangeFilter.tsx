@@ -380,13 +380,13 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
         </Button>
       </Dropdown>
 
-      <Dropdown dropdownRender={() => monthMenuContent} trigger={['click']}>
+      <Dropdown popupRender={() => monthMenuContent} trigger={['click']}>
         <Button size="small" style={{ borderColor: '#d9d9d9' }}>
           최근 한달 <DownOutlined />
         </Button>
       </Dropdown>
 
-      <Dropdown dropdownRender={() => quarterMenuContent} trigger={['click']}>
+      <Dropdown popupRender={() => quarterMenuContent} trigger={['click']}>
         <Button size="small" style={{ borderColor: '#d9d9d9' }}>
           이번분기 <DownOutlined />
         </Button>

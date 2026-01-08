@@ -456,15 +456,31 @@ exports.AuthController = {
             }
             // businessId 결정: sales_viewer는 user.businessId, admin은 첫 번째 비즈니스
             const businessId = user.businessId || user.businesses[0]?.id || 0;
-            console.log('🔐 JWT 토큰 생성:', { userId: user.id, email: user.email, businessId });
-            const newToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
+            console.log('🔐 JWT 토큰 갱신:', { userId: user.id, email: user.email, businessId });
+            // 세션 타임아웃 설정 조회
+            let sessionTimeoutHours = 8; // 기본값 8시간
+            if (businessId) {
+                const settingsRepository = database_1.AppDataSource.getRepository(CompanySettings_1.CompanySettings);
+                const settings = await settingsRepository.findOne({
+                    where: { businessId, settingKey: 'sessionTimeout' }
+                });
+                if (settings && settings.settingValue) {
+                    const timeoutValue = settings.settingValue;
+                    const hours = parseInt(timeoutValue.replace('h', ''));
+                    if (!isNaN(hours) && hours > 0) {
+                        sessionTimeoutHours = hours;
+                    }
+                }
+            }
+            console.log(`🕐 세션 타임아웃 설정: ${sessionTimeoutHours}시간`);
+            const newToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId }, env.JWT_SECRET, { expiresIn: `${sessionTimeoutHours}h` });
             const newRefreshToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
-            // HttpOnly 쿠키로 새 토큰 설정
+            // HttpOnly 쿠키로 새 토큰 설정 (세션 타임아웃 반영)
             res.cookie('authToken', newToken, {
                 httpOnly: true,
                 secure: env.NODE_ENV === 'production',
                 sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
-                maxAge: 15 * 60 * 1000 // 15분
+                maxAge: sessionTimeoutHours * 60 * 60 * 1000 // 설정된 시간
             });
             res.cookie('refreshToken', newRefreshToken, {
                 httpOnly: true,

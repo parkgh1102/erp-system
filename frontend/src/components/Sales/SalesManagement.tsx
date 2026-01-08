@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
@@ -147,6 +147,55 @@ const SalesManagement: React.FC = () => {
   const { currentBusiness, user } = useAuthStore();
   const isSalesViewer = user?.role === 'sales_viewer';
   const { isDark } = useThemeStore();
+
+  // 등록 모달 드래그 관련 state
+  const [modalDragPosition, setModalDragPosition] = useState({ x: 0, y: 0 });
+  const [isModalDragging, setIsModalDragging] = useState(false);
+  const modalDragRef = useRef({ startX: 0, startY: 0, posX: 0, posY: 0 });
+
+  // 모달 열릴 때 위치 초기화
+  useEffect(() => {
+    if (!modalVisible) {
+      setModalDragPosition({ x: 0, y: 0 });
+    }
+  }, [modalVisible]);
+
+  const handleModalDragMouseDown = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('.ant-modal-close') || target.closest('button') || target.closest('input') || target.closest('textarea')) return;
+
+    setIsModalDragging(true);
+    modalDragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: modalDragPosition.x,
+      posY: modalDragPosition.y
+    };
+    e.preventDefault();
+  }, [modalDragPosition]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isModalDragging) return;
+      const deltaX = e.clientX - modalDragRef.current.startX;
+      const deltaY = e.clientY - modalDragRef.current.startY;
+      setModalDragPosition({
+        x: modalDragRef.current.posX + deltaX,
+        y: modalDragRef.current.posY + deltaY
+      });
+    };
+
+    const handleMouseUp = () => setIsModalDragging(false);
+
+    if (isModalDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isModalDragging]);
 
   useEffect(() => {
     if (currentBusiness) {
@@ -518,8 +567,9 @@ const SalesManagement: React.FC = () => {
         signedBy: selectedSale.signedBy,
         signedByUser: selectedSale.signedByUser,
         signedAt: selectedSale.signedAt,
-        memo: '',
-        notice: ''
+        memo: selectedSale.memo || '',
+        notice: selectedSale.notice || '',
+        bankAccount: selectedSale.bankAccount || selectedSale.customer?.bankAccount || ''
       };
 
       setESignatureTransactionData(transactionData);
@@ -629,8 +679,9 @@ const SalesManagement: React.FC = () => {
         signedBy: record.signedBy,
         signedByUser: record.signedByUser,
         signedAt: record.signedAt,
-        memo: '',
-        notice: ''
+        memo: record.memo || '',
+        notice: record.notice || '',
+        bankAccount: record.bankAccount || record.customer?.bankAccount || ''
       };
 
       setESignatureTransactionData(transactionData);
@@ -748,7 +799,8 @@ const SalesManagement: React.FC = () => {
           grandTotal: (Number(sale.totalAmount) || 0) + (Number(sale.vatAmount) || 0),
           balanceAmount: balanceAmount, // 조회한 전잔금
           memo: sale.memo || '', // 저장된 메모 반영
-          notice: sale.notice || '' // 저장된 공지사항 반영
+          notice: sale.notice || '', // 저장된 공지사항 반영
+          bankAccount: sale.bankAccount || sale.customer?.bankAccount || '' // 매출 계좌번호 우선, 없으면 거래처 계좌번호
         };
       });
 
@@ -1694,7 +1746,18 @@ const SalesManagement: React.FC = () => {
       />
 
       <Modal
-        title={editingSale ? '매출 수정' : '매출 등록'}
+        title={
+          <div
+            onMouseDown={handleModalDragMouseDown}
+            style={{
+              cursor: isModalDragging ? 'grabbing' : 'grab',
+              userSelect: 'none',
+              width: '100%'
+            }}
+          >
+            {editingSale ? '매출 수정' : '매출 등록'}
+          </div>
+        }
         open={modalVisible}
         onCancel={closeModal}
         closable={true}
@@ -1702,17 +1765,23 @@ const SalesManagement: React.FC = () => {
         keyboard={true}
         destroyOnHidden={true}
         footer={null}
-        width={window.innerWidth <= 768 ? '100%' : 1400}
+        width={window.innerWidth <= 768 ? '100%' : 1600}
+        modalRender={(modal) => (
+          <div style={{ transform: `translate(${modalDragPosition.x}px, ${modalDragPosition.y}px)` }}>
+            {modal}
+          </div>
+        )}
         style={{
           top: window.innerWidth <= 768 ? 0 : 30,
-          maxWidth: window.innerWidth <= 768 ? '100vw' : '1400px',
+          maxWidth: window.innerWidth <= 768 ? '100vw' : '1600px',
           paddingBottom: 0,
           margin: window.innerWidth <= 768 ? 0 : 'auto'
         }}
         styles={{
           body: {
             maxHeight: window.innerWidth <= 768 ? 'calc(100vh - 110px)' : 'calc(100vh - 200px)',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            overflowX: 'hidden'
           }
         }}
       >
@@ -1800,6 +1869,8 @@ const SalesManagement: React.FC = () => {
                     style={{ width: '100%' }}
                     showSearch
                     optionFilterProp="children"
+                    popupMatchSelectWidth={false}
+                    styles={{ popup: { root: { minWidth: 400 } } }}
                     filterOption={(input, option) => {
                       try {
                         const children = option?.children;
@@ -1827,7 +1898,7 @@ const SalesManagement: React.FC = () => {
                     allowClear
                     showSearch
                     style={{ width: '100%' }}
-                    dropdownRender={(menu) => (
+                    popupRender={(menu) => (
                       <>
                         {menu}
                         <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
@@ -1874,7 +1945,7 @@ const SalesManagement: React.FC = () => {
                     allowClear
                     showSearch
                     style={{ width: '100%' }}
-                    dropdownRender={(menu) => (
+                    popupRender={(menu) => (
                       <>
                         {menu}
                         <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
@@ -2077,7 +2148,14 @@ const SalesManagement: React.FC = () => {
             name="memo"
             label="메모"
           >
-            <TextArea rows={3} placeholder="메모를 입력하세요" />
+            <TextArea rows={3} placeholder="메모를 입력하세요" style={{ resize: 'none' }} />
+          </Form.Item>
+
+          <Form.Item
+            name="bankAccount"
+            label="계좌번호"
+          >
+            <Input placeholder="계좌번호를 입력하세요 (예: 국민은행 123-456-789012)" />
           </Form.Item>
 
           <div style={{ textAlign: 'center', marginBottom: 0, paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>

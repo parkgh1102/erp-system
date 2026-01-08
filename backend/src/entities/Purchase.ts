@@ -46,6 +46,9 @@ export class Purchase {
   @Column({ type: 'text', nullable: true, comment: '메모' })
   memo?: string;
 
+  @Column({ type: 'text', nullable: true, comment: '계좌번호' })
+  bankAccount?: string;
+
   @Column({ default: true, comment: '활성 여부' })
   isActive!: boolean;
 

@@ -24,6 +24,7 @@ const purchaseSchema = joi_1.default.object({
     totalAmount: joi_1.default.number().required(),
     vatAmount: joi_1.default.number().default(0),
     memo: joi_1.default.string().allow('', null).optional(),
+    bankAccount: joi_1.default.string().allow('', null).optional(),
     businessId: joi_1.default.number().integer().min(1).optional(),
     items: joi_1.default.array().items(joi_1.default.object({
         productId: joi_1.default.number().integer().min(1).allow(null).optional(),
@@ -166,6 +167,7 @@ class PurchaseController {
                 totalAmount: value.totalAmount,
                 vatAmount: value.vatAmount || 0,
                 memo: value.memo || null,
+                bankAccount: value.bankAccount || null,
                 isActive: true
             });
             const savedPurchase = await purchaseRepository.save(purchase);
@@ -251,6 +253,7 @@ class PurchaseController {
             purchase.totalAmount = value.totalAmount;
             purchase.vatAmount = value.vatAmount || 0;
             purchase.memo = value.memo || null;
+            purchase.bankAccount = value.bankAccount || null;
             await purchaseRepository.save(purchase);
             if (purchase.items && purchase.items.length > 0) {
                 await purchaseItemRepository.delete({ purchaseId: purchase.id });

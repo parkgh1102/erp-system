@@ -149,21 +149,34 @@ app.use('/api/excel', excelRoutes_1.default);
 let isDatabaseConnected = false;
 // Health check endpoints - 서버가 먼저 시작되어야 함
 app.get('/health', (req, res) => {
+    const memoryUsage = process.memoryUsage();
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
         environment: validatedEnv.NODE_ENV,
-        database: isDatabaseConnected ? 'connected' : 'connecting'
+        database: isDatabaseConnected ? 'connected' : 'connecting',
+        uptime: Math.floor(process.uptime()),
+        memory: {
+            heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+            heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB',
+            rss: Math.round(memoryUsage.rss / 1024 / 1024) + 'MB'
+        }
     });
 });
 app.get('/api/health', (req, res) => {
     // Render 헬스체크용 - 서버가 살아있으면 OK 응답
+    const memoryUsage = process.memoryUsage();
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
         environment: validatedEnv.NODE_ENV,
         service: 'erp-backend',
-        database: isDatabaseConnected ? 'connected' : 'connecting'
+        database: isDatabaseConnected ? 'connected' : 'connecting',
+        uptime: Math.floor(process.uptime()),
+        memory: {
+            heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+            heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB'
+        }
     });
 });
 app.use('*', (req, res) => {
@@ -213,7 +226,11 @@ async function bootstrap() {
         console.log(`📊 Health: http://localhost:${PORT}/health`);
         console.log(`✅ Server is ready to accept requests`);
     });
-    // Graceful shutdown
+    // 서버 타임아웃 설정 (3분)
+    server.timeout = 180000;
+    server.keepAliveTimeout = 65000; // Azure/AWS ALB 기본값보다 큰 값
+    server.headersTimeout = 66000; // keepAliveTimeout보다 약간 큰 값
+    // Graceful shutdown - SIGTERM
     process.on('SIGTERM', () => {
         console.log('⏸️ SIGTERM signal received: closing HTTP server');
         server.close(async () => {
@@ -225,6 +242,27 @@ async function bootstrap() {
             process.exit(0);
         });
     });
+    // Graceful shutdown - SIGINT (Ctrl+C)
+    process.on('SIGINT', () => {
+        console.log('⏸️ SIGINT signal received: closing HTTP server');
+        server.close(async () => {
+            console.log('🔌 HTTP server closed');
+            if (database_1.AppDataSource.isInitialized) {
+                await database_1.AppDataSource.destroy();
+                console.log('🔌 Database connection closed');
+            }
+            process.exit(0);
+        });
+    });
 }
+// 전역 예외 처리 - 서버 크래시 방지
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught Exception:', error);
+    // 로깅 후 프로세스 유지 (Azure가 자동 재시작 관리)
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    // 로깅 후 프로세스 유지
+});
 bootstrap();
 //# sourceMappingURL=index.js.map

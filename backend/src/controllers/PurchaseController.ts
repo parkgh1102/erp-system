@@ -21,6 +21,7 @@ const purchaseSchema = Joi.object({
   totalAmount: Joi.number().required(),
   vatAmount: Joi.number().default(0),
   memo: Joi.string().allow('', null).optional(),
+  bankAccount: Joi.string().allow('', null).optional(),
   businessId: Joi.number().integer().min(1).optional(),
   items: Joi.array().items(
     Joi.object({
@@ -183,6 +184,7 @@ export class PurchaseController {
         totalAmount: value.totalAmount,
         vatAmount: value.vatAmount || 0,
         memo: value.memo || null,
+        bankAccount: value.bankAccount || null,
         isActive: true
       });
 
@@ -283,6 +285,7 @@ export class PurchaseController {
       purchase.totalAmount = value.totalAmount;
       purchase.vatAmount = value.vatAmount || 0;
       purchase.memo = value.memo || null;
+      purchase.bankAccount = value.bankAccount || null;
 
       await purchaseRepository.save(purchase);
 

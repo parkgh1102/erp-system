@@ -13,6 +13,7 @@ export declare class Sales {
     vatAmount: number;
     description?: string;
     memo?: string;
+    bankAccount?: string;
     signedByUser?: User;
     signedBy?: number;
     signedAt?: Date;

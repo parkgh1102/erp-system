@@ -61,6 +61,10 @@ __decorate([
     __metadata("design:type", String)
 ], Sales.prototype, "memo", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'bank_account', nullable: true }),
+    __metadata("design:type", String)
+], Sales.prototype, "bankAccount", void 0);
+__decorate([
     (0, typeorm_1.ManyToOne)(() => User_1.User, { nullable: true }),
     (0, typeorm_1.JoinColumn)({ name: 'signed_by' }),
     __metadata("design:type", User_1.User)

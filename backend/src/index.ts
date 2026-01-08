@@ -157,22 +157,35 @@ let isDatabaseConnected = false;
 
 // Health check endpoints - 서버가 먼저 시작되어야 함
 app.get('/health', (req, res) => {
+  const memoryUsage = process.memoryUsage();
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
     environment: validatedEnv.NODE_ENV,
-    database: isDatabaseConnected ? 'connected' : 'connecting'
+    database: isDatabaseConnected ? 'connected' : 'connecting',
+    uptime: Math.floor(process.uptime()),
+    memory: {
+      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB',
+      rss: Math.round(memoryUsage.rss / 1024 / 1024) + 'MB'
+    }
   });
 });
 
 app.get('/api/health', (req, res) => {
   // Render 헬스체크용 - 서버가 살아있으면 OK 응답
+  const memoryUsage = process.memoryUsage();
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
     environment: validatedEnv.NODE_ENV,
     service: 'erp-backend',
-    database: isDatabaseConnected ? 'connected' : 'connecting'
+    database: isDatabaseConnected ? 'connected' : 'connecting',
+    uptime: Math.floor(process.uptime()),
+    memory: {
+      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB'
+    }
   });
 });
 
@@ -228,6 +241,11 @@ async function bootstrap() {
     console.log(`📊 Health: http://localhost:${PORT}/health`);
     console.log(`✅ Server is ready to accept requests`);
   });
+
+  // 서버 타임아웃 설정 (3분)
+  server.timeout = 180000;
+  server.keepAliveTimeout = 65000; // Azure/AWS ALB 기본값보다 큰 값
+  server.headersTimeout = 66000; // keepAliveTimeout보다 약간 큰 값
 
   // Graceful shutdown - SIGTERM
   process.on('SIGTERM', () => {

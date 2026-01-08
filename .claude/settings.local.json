@@ -182,7 +182,8 @@
       "WebFetch(domain:api.github.com)",
       "Bash(git -C:*)",
       "WebFetch(domain:www.webapperp.ai.kr)",
-      "WebFetch(domain:api.webapperp.ai.kr)"
+      "WebFetch(domain:api.webapperp.ai.kr)",
+      "Bash(cmdkey /list:*)"
     ],
     "deny": [],
     "ask": []

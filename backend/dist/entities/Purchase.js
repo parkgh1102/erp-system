@@ -67,6 +67,10 @@ __decorate([
     __metadata("design:type", String)
 ], Purchase.prototype, "memo", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'text', nullable: true, comment: '계좌번호' }),
+    __metadata("design:type", String)
+], Purchase.prototype, "bankAccount", void 0);
+__decorate([
     (0, typeorm_1.Column)({ default: true, comment: '활성 여부' }),
     __metadata("design:type", Boolean)
 ], Purchase.prototype, "isActive", void 0);
