@@ -1,1 +1,0 @@
-2025-12-04T13:22:58  Startup Request, url: /api/settings, method: GET, type: request, pid: 836,1,17, ScmType: GitHubAction

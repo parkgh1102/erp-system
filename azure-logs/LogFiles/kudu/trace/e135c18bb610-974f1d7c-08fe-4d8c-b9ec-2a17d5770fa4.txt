@@ -1,1 +1,0 @@
-2025-12-04T13:33:40  Startup Request, url: /api/deployments/temp-07c179d2/log/33fc5ca8-95c6-4dad-84fd-b7d827d67823, method: GET, type: request, pid: 839,1,15, ScmType: GitHubAction
