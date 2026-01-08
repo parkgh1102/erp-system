@@ -36,6 +36,61 @@ const PORT = validatedEnv.PORT;
 // Render/Vercel 등 프록시 뒤에서 실행될 때 필요한 설정
 // X-Forwarded-For 헤더를 신뢰하여 클라이언트 IP를 올바르게 인식
 app.set('trust proxy', 1);
+// =============================================
+// CORS 설정 - 반드시 다른 미들웨어보다 먼저 적용
+// =============================================
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+    'http://localhost:5176',
+    'http://localhost:5177',
+    'http://localhost:5178',
+    'http://localhost:5179',
+    'http://localhost:5180',
+    'http://192.168.0.140:5173',
+    'https://webapperp.ai.kr',
+    'https://www.webapperp.ai.kr',
+    'https://api.webapperp.ai.kr',
+    'https://erp-system-production-3ea2.up.railway.app',
+    // Vercel 배포 URL
+    'https://webapperp.vercel.app',
+    'https://webapperp-bkjnoq76a-blackallstar12-86948-projects.vercel.app',
+    'https://erp-frontend.vercel.app',
+    'https://erp-frontend-git-main.vercel.app'
+];
+if (validatedEnv.FRONTEND_URL && !allowedOrigins.includes(validatedEnv.FRONTEND_URL)) {
+    allowedOrigins.push(validatedEnv.FRONTEND_URL);
+}
+// CORS 미들웨어 설정
+const corsOptions = {
+    origin: (origin, callback) => {
+        // origin이 없는 경우 (서버간 요청, Postman 등) 허용
+        if (!origin)
+            return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            console.warn(`CORS blocked: ${origin}`);
+            callback(null, false);
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['Authorization'],
+    maxAge: 86400, // preflight 캐시 24시간
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+};
+// CORS 미들웨어 적용
+app.use((0, cors_1.default)(corsOptions));
+// OPTIONS preflight 요청 명시적 처리 (모든 경로)
+app.options('*', (0, cors_1.default)(corsOptions));
+// =============================================
+// 보안 미들웨어
+// =============================================
 app.use(httpsRedirect_1.httpsRedirect);
 app.use(httpsRedirect_1.secureHeaders);
 app.use((req, res, next) => {
@@ -69,45 +124,6 @@ app.use((req, res, next) => {
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=()');
     next();
 });
-const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-    'http://localhost:5176',
-    'http://localhost:5177',
-    'http://localhost:5178',
-    'http://localhost:5179',
-    'http://localhost:5180',
-    'http://192.168.0.140:5173',
-    'https://webapperp.ai.kr',
-    'https://www.webapperp.ai.kr',
-    'https://erp-system-production-3ea2.up.railway.app',
-    // Vercel 배포 URL
-    'https://webapperp.vercel.app',
-    'https://webapperp-bkjnoq76a-blackallstar12-86948-projects.vercel.app',
-    'https://erp-frontend.vercel.app',
-    'https://erp-frontend-git-main.vercel.app'
-];
-if (validatedEnv.FRONTEND_URL && !allowedOrigins.includes(validatedEnv.FRONTEND_URL)) {
-    allowedOrigins.push(validatedEnv.FRONTEND_URL);
-}
-app.use((0, cors_1.default)({
-    origin: (origin, callback) => {
-        if (!origin)
-            return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        }
-        else {
-            console.warn(`CORS blocked: ${origin}`);
-            callback(null, false);
-        }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['Authorization']
-}));
 app.use((0, compression_1.default)());
 app.use((0, morgan_1.default)('combined'));
 app.use(rateLimiter_1.generalRateLimit);

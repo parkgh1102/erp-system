@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 
 export const httpsRedirect = (req: Request, res: Response, next: NextFunction) => {
+  // OPTIONS preflight 요청은 리다이렉트하지 않음 (CORS 호환성)
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   // 운영환경에서만 HTTPS 강제
   if (process.env.NODE_ENV === 'production' && process.env.FORCE_HTTPS === 'true') {
     // 헤더 체크 (로드밸런서나 프록시 뒤에 있는 경우)
