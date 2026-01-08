@@ -404,14 +404,16 @@ const SalesManagement: React.FC = () => {
       const savedVatAmount = Number((item as any).vatAmount) || Number((item as any).taxAmount) || 0;
       const savedTotalAmount = Number((item as any).totalAmount) || (savedSupplyAmount + savedVatAmount);
 
-      // 수량 * 단가 계산
-      const calculatedAmount = item.quantity * item.unitPrice;
+      // 수량 * 단가 계산 (decimal 필드는 문자열로 반환되므로 Number() 변환)
+      const itemQuantity = Number(item.quantity) || 0;
+      const itemUnitPrice = Number(item.unitPrice) || 0;
+      const calculatedAmount = itemQuantity * itemUnitPrice;
       let supplyAmount = calculatedAmount;
       let vatAmount = 0;
       let totalAmount = calculatedAmount;
 
       // unitPrice가 0이지만 저장된 금액이 있으면 저장된 값 사용 (전잔금 등)
-      if (item.unitPrice === 0 && savedSupplyAmount > 0) {
+      if (itemUnitPrice === 0 && savedSupplyAmount > 0) {
         supplyAmount = savedSupplyAmount;
         vatAmount = savedVatAmount;
         totalAmount = savedTotalAmount || (supplyAmount + vatAmount);
