@@ -389,28 +389,40 @@ const SalesManagement: React.FC = () => {
       const selectedProduct = products.find(p => p.id === productId);
       const taxType = selectedProduct?.taxType || 'tax_separate';
 
-      // 수량 * 단가
-      const amount = item.quantity * item.unitPrice;
-      let supplyAmount = amount;
-      let vatAmount = 0;
-      let totalAmount = amount;
+      // 저장된 금액 값 확인 (전잔금 같은 경우 unitPrice=0이지만 supplyAmount가 있음)
+      const savedSupplyAmount = (item as any).supplyAmount || (item as any).amount || 0;
+      const savedVatAmount = (item as any).vatAmount || 0;
+      const savedTotalAmount = (item as any).totalAmount || (savedSupplyAmount + savedVatAmount);
 
-      // 과세 유형에 따른 계산
-      if (taxType === 'tax_separate') {
-        // 과세별도: 공급가액 = 단가*수량, 세액 = 공급가액*0.1, 합계 = 공급가액+세액
-        supplyAmount = amount;
-        vatAmount = Math.round(amount * 0.1);
-        totalAmount = supplyAmount + vatAmount;
-      } else if (taxType === 'tax_inclusive') {
-        // 과세포함: 합계금액 = 단가*수량, 공급가액 = 합계/1.1, 세액 = 합계-공급가액
-        totalAmount = amount;
-        supplyAmount = Math.round(amount / 1.1);
-        vatAmount = totalAmount - supplyAmount;
+      // 수량 * 단가 계산
+      const calculatedAmount = item.quantity * item.unitPrice;
+      let supplyAmount = calculatedAmount;
+      let vatAmount = 0;
+      let totalAmount = calculatedAmount;
+
+      // unitPrice가 0이지만 저장된 금액이 있으면 저장된 값 사용 (전잔금 등)
+      if (item.unitPrice === 0 && savedSupplyAmount > 0) {
+        supplyAmount = savedSupplyAmount;
+        vatAmount = savedVatAmount;
+        totalAmount = savedTotalAmount || (supplyAmount + vatAmount);
       } else {
-        // 면세: 공급가액 = 단가*수량, 세액 = 0, 합계 = 공급가액
-        supplyAmount = amount;
-        vatAmount = 0;
-        totalAmount = supplyAmount;
+        // 과세 유형에 따른 계산
+        if (taxType === 'tax_separate') {
+          // 과세별도: 공급가액 = 단가*수량, 세액 = 공급가액*0.1, 합계 = 공급가액+세액
+          supplyAmount = calculatedAmount;
+          vatAmount = Math.round(calculatedAmount * 0.1);
+          totalAmount = supplyAmount + vatAmount;
+        } else if (taxType === 'tax_inclusive') {
+          // 과세포함: 합계금액 = 단가*수량, 공급가액 = 합계/1.1, 세액 = 합계-공급가액
+          totalAmount = calculatedAmount;
+          supplyAmount = Math.round(calculatedAmount / 1.1);
+          vatAmount = totalAmount - supplyAmount;
+        } else {
+          // 면세: 공급가액 = 단가*수량, 세액 = 0, 합계 = 공급가액
+          supplyAmount = calculatedAmount;
+          vatAmount = 0;
+          totalAmount = supplyAmount;
+        }
       }
 
       return {
