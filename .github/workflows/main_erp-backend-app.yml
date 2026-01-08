@@ -31,10 +31,6 @@ jobs:
         working-directory: ./backend
         run: npm run build
 
-      - name: Remove dev dependencies
-        working-directory: ./backend
-        run: npm prune --production
-
       - name: Create deployment package
         run: |
           mkdir -p deploy
