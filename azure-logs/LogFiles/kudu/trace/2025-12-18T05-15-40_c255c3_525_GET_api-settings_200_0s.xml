@@ -1,0 +1,6 @@
+<step title="Incoming Request" date="2025-12-18T05:15:40.514" instance="c255c3" url="/api/settings" method="GET" type="request" pid="831,1,39" Host="erp-backend-app.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_6b5ded09d0068c2121ef250b3cb5cdbe2df37a0241f25cb5d3504d9ebf72171a" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Content-Length="0" X-ARR-LOG-ID="02468098-7670-41fd-b371-b6f840d4d93a" CLIENT-IP="132.196.82.130:44032" X-SITE-DEPLOYMENT-ID="erp-backend-app" WAS-DEFAULT-HOSTNAME="erp-backend-app.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/settings" X-Client-IP="132.196.82.130" X-Client-Port="44032" >
+  <step title="Cleanup Xml Logs" date="2025-12-18T05:15:40.517" >
+    <step title="Cleanup Infos" date="2025-12-18T05:15:40.683" totalFiles="1772" totalCleanup="1612" /><!-- duration: 21ms -->
+  </step><!-- duration: 199ms -->
+  <step title="Outgoing response" date="2025-12-18T05:15:40.744" type="response" statusCode="200" statusText="OK" /><!-- duration: 10ms -->
+</step><!-- duration: 252ms -->

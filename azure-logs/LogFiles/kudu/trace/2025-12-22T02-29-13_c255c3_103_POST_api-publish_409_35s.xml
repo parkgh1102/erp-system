@@ -1,0 +1,17 @@
+<step title="Incoming Request" date="2025-12-22T02:29:13.424" instance="c255c3" url="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%2253a664afe323f969533d92c15d0131f9fff99704%22%2C%22repoName%22%3A%22parkgh1102%2Ferp-system%22%2C%22actor%22%3A%22parkgh1102%22%2C%22slotName%22%3A%22Production%22%2C%22commitMessage%22%3A%22Fix%3A%20%EC%97%94%ED%84%B0%ED%82%A4%20%EC%BB%A4%EC%84%9C%20%EC%9D%B4%EB%8F%99%20%EC%88%98%EC%A0%95%20-%20Select%20click%20%EB%B0%A9%EC%8B%9D%EC%9C%BC%EB%A1%9C%20%EB%B3%80%EA%B2%BD%22%7D" method="POST" type="request" pid="831,1,24" Host="erp-backend-app.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_6b5ded09d0068c2121ef250b3cb5cdbe2df37a0241f25cb5d3504d9ebf72171a" Authorization="Bea..." Content-Type="application/octet-stream" Cookie="ARRAffinity=c255c3ea26d3150db49b7a7ac6e829adde8d51979f185f1b97cd2c0eb551c7b8;Path=/;HttpOnly;Secure;Domain=erp-backend-app.scm.azurewebsites.net; ARRAffinitySameSite=c255c3ea26d3150db49b7a7ac6e829adde8d51979f185f1b97cd2c0eb551c7b8;Path=/;HttpOnly;SameSite=None;Secure;Domain=erp-backend-app.scm.azurewebsites.net" Transfer-Encoding="chunked" X-ARR-LOG-ID="97f4b160-1f5c-4a0f-87cd-8c351e09aeb3" CLIENT-IP="52.176.124.185:26624" X-SITE-DEPLOYMENT-ID="erp-backend-app" WAS-DEFAULT-HOSTNAME="erp-backend-app.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%2253a664afe323f969533d92c15d0131f9fff99704%22%2C%22repoName%22%3A%22parkgh1102%2Ferp-system%22%2C%22actor%22%3A%22parkgh1102%22%2C%22slotName%22%3A%22Production%22%2C%22commitMessage%22%3A%22Fix%3A%20%EC%97%94%ED%84%B0%ED%82%A4%20%EC%BB%A4%EC%84%9C%20%EC%9D%B4%EB%8F%99%20%EC%88%98%EC%A0%95%20-%20Select%20click%20%EB%B0%A9%EC%8B%9D%EC%9C%BC%EB%A1%9C%20%EB%B3%80%EA%B2%BD%22%7D" X-Client-IP="52.176.124.185" X-Client-Port="26624" >
+  <step title="Cleanup Xml Logs" date="2025-12-22T02:29:13.428" >
+    <step title="Cleanup Infos" date="2025-12-22T02:29:13.628" totalFiles="2338" totalCleanup="2178" /><!-- duration: 22ms -->
+  </step><!-- duration: 248ms -->
+  <step title="OneDeploy" date="2025-12-22T02:29:13.906" >
+    <step title="Starting PushDeployAsync" date="2025-12-22T02:29:13.937" /><!-- duration: 8ms -->
+    <step title="Writing artifact to /tmp/zipdeploy/b0582afa-a7ef-47f1-a61d-2ecbbb32bb32.zip" date="2025-12-22T02:29:13.984" >
+      <step title="Writing multipart request body to /tmp/zipdeploy/b0582afa-a7ef-47f1-a61d-2ecbbb32bb32.zip" date="2025-12-22T02:29:13.998" /><!-- duration: 9ms -->
+    </step><!-- duration: 32251ms -->
+    <step title="Start deployment in the background" date="2025-12-22T02:29:46.541" >
+      <step title="Acquiring Deployment Lock" date="2025-12-22T02:29:47.205" /><!-- duration: 21ms -->
+      <step title="Cannot Acquire Deployment Lock already held" date="2025-12-22T02:29:47.325" /><!-- duration: 53ms -->
+    </step><!-- duration: 1216ms -->
+    <step title="There is a deployment currently in progress. Please try again when it completes." date="2025-12-22T02:29:47.780" /><!-- duration: 29ms -->
+  </step><!-- duration: 33933ms -->
+  <step title="Outgoing response" date="2025-12-22T02:29:47.900" type="response" statusCode="409" statusText="Conflict" /><!-- duration: 21ms -->
+</step><!-- duration: 34545ms -->

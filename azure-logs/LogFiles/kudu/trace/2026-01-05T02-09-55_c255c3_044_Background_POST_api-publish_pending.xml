@@ -1,0 +1,8 @@
+<step title="BackgroundTrace" date="2026-01-05T02:09:55.367" instance="c255c3" url="/api/publish" method="POST" >
+  <step title="Cleanup Xml Logs" date="2026-01-05T02:09:55.389" >
+    <step title="Cleanup Infos" date="2026-01-05T02:09:55.638" totalFiles="2665" totalCleanup="2505" /><!-- duration: 99ms -->
+  </step><!-- duration: 360ms -->
+  <step title="Creating temporary deployment - FetchDeploymentManager" date="2026-01-05T02:09:55.948" /><!-- duration: 21ms -->
+  <step title="Creating temporary deployment" date="2026-01-05T02:09:56.000" /><!-- duration: 221ms -->
+  <step title="Performing fetch based deployment" date="2026-01-05T02:09:56.482" >
+    <step title="Cleaning up temp folders from previous zip deployments and extracting pushed zip file /tmp/zipdeploy/cb4338b1-6933-4c37-9840-0c20cb33dea8.zip (158.13 MB) to /tmp/zipdeploy/extracted" date="2026-01-05T02:09:58.190" 

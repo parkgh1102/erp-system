@@ -1,0 +1,11 @@
+<step title="Incoming Request" date="2025-12-17T10:29:23.399" instance="c255c3" url="/api/deployments/latest?deployer=OneDeploy&amp;time=2025-12-17_10-20-06Z" method="GET" type="request" pid="831,1,44" Host="erp-backend-app.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_6b5ded09d0068c2121ef250b3cb5cdbe2df37a0241f25cb5d3504d9ebf72171a" Authorization="Bea..." Content-Type="application/json; charset=utf-8" Cookie="ARRAffinity=c255c3ea26d3150db49b7a7ac6e829adde8d51979f185f1b97cd2c0eb551c7b8;Path=/;HttpOnly;Secure;Domain=erp-backend-app.scm.azurewebsites.net; ARRAffinitySameSite=c255c3ea26d3150db49b7a7ac6e829adde8d51979f185f1b97cd2c0eb551c7b8;Path=/;HttpOnly;SameSite=None;Secure;Domain=erp-backend-app.scm.azurewebsites.net" Content-Length="0" X-ARR-LOG-ID="d9d1f505-8a32-4e75-95d0-9159a95b80b8" CLIENT-IP="172.172.87.68:27712" X-SITE-DEPLOYMENT-ID="erp-backend-app" WAS-DEFAULT-HOSTNAME="erp-backend-app.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/deployments/latest?deployer=OneDeploy&amp;time=2025-12-17_10-20-06Z" X-Client-IP="172.172.87.68" X-Client-Port="27712" >
+  <step title="Cleanup Xml Logs" date="2025-12-17T10:29:23.409" >
+    <step title="Cleanup Infos" date="2025-12-17T10:29:23.892" totalFiles="1651" totalCleanup="1491" /><!-- duration: 141ms -->
+  </step><!-- duration: 675ms -->
+  <step title="DeploymentService.GetResult" date="2025-12-17T10:29:24.346" >
+    <step title="DeploymentService.GetLatestDeployment" date="2025-12-17T10:29:24.417" >
+      <step title="DeploymentManager.GetResults" date="2025-12-17T10:29:24.665" /><!-- duration: 3636ms -->
+    </step><!-- duration: 3924ms -->
+  </step><!-- duration: 4042ms -->
+  <step title="Outgoing response" date="2025-12-17T10:29:28.439" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 70ms -->
+</step><!-- duration: 5170ms -->

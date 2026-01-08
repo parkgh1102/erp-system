@@ -1,0 +1,17 @@
+<step title="Incoming Request" date="2025-12-22T04:08:59.182" instance="c255c3" url="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%22b6c80e20f88334528ba2229369531b3bc85866ad%22%2C%22repoName%22%3A%22parkgh1102%2Ferp-system%22%2C%22actor%22%3A%22parkgh1102%22%2C%22slotName%22%3A%22Production%22%2C%22commitMessage%22%3A%22Fix%3A%20%EC%95%8C%EB%A6%BC%ED%86%A1%20%EC%9E%AC%EC%A0%84%EC%86%A1%20%EC%8B%9C%EC%97%90%EB%8F%84%20%EB%B2%88%ED%98%B8%20%ED%99%95%EC%9D%B8%20%EB%AA%A8%EB%8B%AC%20%ED%91%9C%EC%8B%9C%22%7D" method="POST" type="request" pid="831,1,40" Host="erp-backend-app.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_6b5ded09d0068c2121ef250b3cb5cdbe2df37a0241f25cb5d3504d9ebf72171a" Authorization="Bea..." Content-Type="application/octet-stream" Cookie="ARRAffinity=c255c3ea26d3150db49b7a7ac6e829adde8d51979f185f1b97cd2c0eb551c7b8;Path=/;HttpOnly;Secure;Domain=erp-backend-app.scm.azurewebsites.net; ARRAffinitySameSite=c255c3ea26d3150db49b7a7ac6e829adde8d51979f185f1b97cd2c0eb551c7b8;Path=/;HttpOnly;SameSite=None;Secure;Domain=erp-backend-app.scm.azurewebsites.net" Transfer-Encoding="chunked" X-ARR-LOG-ID="0d97ba0d-5546-41c6-bf3f-8c0a153592f9" CLIENT-IP="52.161.74.197:1024" X-SITE-DEPLOYMENT-ID="erp-backend-app" WAS-DEFAULT-HOSTNAME="erp-backend-app.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%22b6c80e20f88334528ba2229369531b3bc85866ad%22%2C%22repoName%22%3A%22parkgh1102%2Ferp-system%22%2C%22actor%22%3A%22parkgh1102%22%2C%22slotName%22%3A%22Production%22%2C%22commitMessage%22%3A%22Fix%3A%20%EC%95%8C%EB%A6%BC%ED%86%A1%20%EC%9E%AC%EC%A0%84%EC%86%A1%20%EC%8B%9C%EC%97%90%EB%8F%84%20%EB%B2%88%ED%98%B8%20%ED%99%95%EC%9D%B8%20%EB%AA%A8%EB%8B%AC%20%ED%91%9C%EC%8B%9C%22%7D" X-Client-IP="52.161.74.197" X-Client-Port="1024" >
+  <step title="Cleanup Xml Logs" date="2025-12-22T04:08:59.193" >
+    <step title="Cleanup Infos" date="2025-12-22T04:08:59.291" totalFiles="2438" totalCleanup="2278" /><!-- duration: 12ms -->
+  </step><!-- duration: 113ms -->
+  <step title="OneDeploy" date="2025-12-22T04:08:59.342" >
+    <step title="Starting PushDeployAsync" date="2025-12-22T04:08:59.356" /><!-- duration: 6ms -->
+    <step title="Removing node_modules symlink" date="2025-12-22T04:08:59.397" >
+      <step title="Writing artifact to /tmp/zipdeploy/1554c363-757b-4cf8-980b-e6a331d4ec98.zip" date="2025-12-22T04:08:59.513" >
+        <step title="Writing multipart request body to /tmp/zipdeploy/1554c363-757b-4cf8-980b-e6a331d4ec98.zip" date="2025-12-22T04:08:59.547" /><!-- duration: 11ms -->
+      </step><!-- duration: 9319ms -->
+      <step title="Start deployment in the background" date="2025-12-22T04:09:08.846" >
+        <step title="Acquiring Deployment Lock" date="2025-12-22T04:09:08.932" /><!-- duration: 4ms -->
+        <step title="Acquired Deployment Lock" date="2025-12-22T04:09:08.964" /><!-- duration: 3ms -->
+      </step><!-- duration: 202ms -->
+    </step><!-- duration: 9656ms -->
+    <step title="Outgoing response" date="2025-12-22T04:09:09.084" type="response" statusCode="202" statusText="Accepted" /><!-- duration: 4ms -->
+  </step><!-- duration: 9749ms -->

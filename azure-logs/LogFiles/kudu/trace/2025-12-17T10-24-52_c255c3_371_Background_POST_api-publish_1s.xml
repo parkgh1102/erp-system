@@ -1,0 +1,6 @@
+<step title="BackgroundTrace" date="2025-12-17T10:24:52.383" instance="c255c3" url="/api/publish" method="POST" >
+  <step title="Cleanup Xml Logs" date="2025-12-17T10:24:52.423" >
+    <step title="Cleanup Infos" date="2025-12-17T10:24:52.664" totalFiles="1622" totalCleanup="1462" /><!-- duration: 62ms -->
+  </step><!-- duration: 321ms -->
+  <step title="Error occurred" date="2025-12-17T10:24:52.893" type="error" text="The &apos;Performing continuous deployment&apos; operation conflicts with the pending &apos;Deployment&apos; operation started at 12/17/2025 10:20:05.  Please retry operation later." stackTrace="   at Kudu.Core.Deployment.FetchDeploymentManager.&lt;&gt;c__DisplayClass22_0.&lt;PerformBackgroundDeployment&gt;b__1()" /><!-- duration: 19ms -->
+</step><!-- duration: 549ms -->

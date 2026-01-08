@@ -1,0 +1,18 @@
+<step title="Incoming Request" date="2026-01-07T04:18:58.571" instance="4ef050" url="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%229ff0a195eeeaf7fbb3aae071f59e336e8d59d64f%22%2C%22repoName%22%3A%22parkgh1102%2Ferp-system%22%2C%22actor%22%3A%22parkgh1102%22%2C%22slotName%22%3A%22Production%22%2C%22commitMessage%22%3A%22Fix%3A%20%EA%B1%B0%EB%9E%98%EB%AA%85%EC%84%B8%ED%91%9C%20%EC%A0%88%EC%B7%A8%EC%84%A0%203mm%20%EC%B6%94%EA%B0%80%20%ED%95%98%ED%96%A5%20(20mm%20%E2%86%92%2023mm)%22%7D" method="POST" type="request" pid="833,1,63" Host="erp-backend-app.scm.azurewebsites.net" User-Agent="GITHUBACTIONS_DeployWebAppToAzure_6b5ded09d0068c2121ef250b3cb5cdbe2df37a0241f25cb5d3504d9ebf72171a" Authorization="Bea..." Content-Type="application/octet-stream" Cookie="ARRAffinity=4ef050dce7fbd11a953832131add284a0ba109f29f131b66c1e6d7650cae09c6;Path=/;HttpOnly;Secure;Domain=erp-backend-app.scm.azurewebsites.net; ARRAffinitySameSite=4ef050dce7fbd11a953832131add284a0ba109f29f131b66c1e6d7650cae09c6;Path=/;HttpOnly;SameSite=None;Secure;Domain=erp-backend-app.scm.azurewebsites.net" Transfer-Encoding="chunked" X-ARR-LOG-ID="22eb104b-eaad-47a0-936f-1bfb245f220f" CLIENT-IP="40.65.61.33:10240" X-SITE-DEPLOYMENT-ID="erp-backend-app" WAS-DEFAULT-HOSTNAME="erp-backend-app.scm.azurewebsites.net" X-Forwarded-Proto="https" X-AppService-Proto="https" X-Forwarded-TlsVersion="1.3" X-WAWS-Unencoded-URL="/api/publish?async=true&amp;deployer=GITHUB_ONE_DEPLOY&amp;type=zip&amp;message=%7B%22type%22%3A%22deployment%22%2C%22sha%22%3A%229ff0a195eeeaf7fbb3aae071f59e336e8d59d64f%22%2C%22repoName%22%3A%22parkgh1102%2Ferp-system%22%2C%22actor%22%3A%22parkgh1102%22%2C%22slotName%22%3A%22Production%22%2C%22commitMessage%22%3A%22Fix%3A%20%EA%B1%B0%EB%9E%98%EB%AA%85%EC%84%B8%ED%91%9C%20%EC%A0%88%EC%B7%A8%EC%84%A0%203mm%20%EC%B6%94%EA%B0%80%20%ED%95%98%ED%96%A5%20(20mm%20%E2%86%92%2023mm)%22%7D" X-Client-IP="40.65.61.33" X-Client-Port="10240" >
+  <step title="Cleanup Xml Logs" date="2026-01-07T04:18:58.598" >
+    <step title="Cleanup Infos" date="2026-01-07T04:19:00.097" totalFiles="4415" totalCleanup="4255" /><!-- duration: 224ms -->
+  </step><!-- duration: 1822ms -->
+  <step title="OneDeploy" date="2026-01-07T04:19:01.104" >
+    <step title="Starting PushDeployAsync" date="2026-01-07T04:19:01.606" /><!-- duration: 20ms -->
+    <step title="Removing node_modules symlink" date="2026-01-07T04:19:01.709" >
+      <step title="Writing artifact to /tmp/zipdeploy/13fdfdd8-5a8f-4bb7-a6b9-5692ded0a645.zip" date="2026-01-07T04:19:04.627" >
+        <step title="Writing multipart request body to /tmp/zipdeploy/13fdfdd8-5a8f-4bb7-a6b9-5692ded0a645.zip" date="2026-01-07T04:19:04.676" /><!-- duration: 20ms -->
+      </step><!-- duration: 13858ms -->
+      <step title="Start deployment in the background" date="2026-01-07T04:19:18.563" >
+        <step title="Acquiring Deployment Lock" date="2026-01-07T04:19:19.165" /><!-- duration: 11ms -->
+        <step title="Cannot Acquire Deployment Lock already held" date="2026-01-07T04:19:19.186" /><!-- duration: 19ms -->
+      </step><!-- duration: 772ms -->
+      <step title="There is a deployment currently in progress. Please try again when it completes." date="2026-01-07T04:19:19.374" /><!-- duration: 22ms -->
+    </step><!-- duration: 17706ms -->
+    <step title="Outgoing response" date="2026-01-07T04:19:19.452" type="response" statusCode="409" statusText="Conflict" /><!-- duration: 18ms -->
+  </step><!-- duration: 18409ms -->

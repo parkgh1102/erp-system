@@ -148,4 +148,5 @@ backend-deploy-*.zip
 frontend-deploy-*.zip
 
 # Azure CLI
-.azure-cli/
+.azure-cli/*.db-shm
+*.db-wal

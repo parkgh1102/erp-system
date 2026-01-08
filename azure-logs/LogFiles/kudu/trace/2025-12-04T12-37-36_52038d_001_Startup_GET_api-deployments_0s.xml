@@ -1,0 +1,3 @@
+<step title="Startup Request" date="2025-12-04T12:37:36.627" instance="52038d" url="/api/deployments/?$orderby=ReceivedTime%20desc&amp;$top=20&amp;api-version=2022-03-01" method="GET" type="request" pid="835,1,15" ScmType="GitHubAction" >
+  <step title="Cleanup Xml Logs" date="2025-12-04T12:37:36.634" /><!-- duration: 4ms -->
+</step><!-- duration: 37ms -->
