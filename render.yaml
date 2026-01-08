@@ -15,11 +15,8 @@ services:
       echo "📁 Directory contents:"
       ls -la
       echo ""
-      echo "📦 Installing dependencies with native modules..."
+      echo "📦 Installing dependencies..."
       npm install --no-workspaces
-      echo ""
-      echo "🔨 Rebuilding native modules..."
-      npm rebuild bcrypt --build-from-source
       echo ""
       echo "🔨 Building TypeScript..."
       npm run build
@@ -29,6 +26,9 @@ services:
       echo ""
       echo "📄 Checking dist/index.js..."
       ls -lh dist/index.js
+      echo ""
+      echo "📦 Checking bcryptjs..."
+      ls -la node_modules/bcryptjs/ || echo "bcryptjs NOT FOUND!"
       echo ""
       echo "✅ dist/index.js exists and is ready"
     startCommand: node dist/index.js
