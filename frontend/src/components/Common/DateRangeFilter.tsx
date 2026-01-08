@@ -343,23 +343,19 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
     </div>
   );
 
-  // 이번년도 메뉴
-  const yearMenu: MenuProps = {
-    items: [
-      { key: '2026', label: '2026년 (올해)', onClick: () => handleYear(2026), disabled: currentYear < 2026 },
-      { key: '2025', label: '2025년 (올해)', onClick: () => handleYear(2025), danger: currentYear === 2025 },
-      { key: '2024', label: '2024년', onClick: () => handleYear(2024) },
-      { key: '2023', label: '2023년', onClick: () => handleYear(2023) },
-      { key: '2022', label: '2022년', onClick: () => handleYear(2022) },
-      { key: '2021', label: '2021년', onClick: () => handleYear(2021) },
-      { key: '2020', label: '2020년', onClick: () => handleYear(2020) },
-      { key: '2019', label: '2019년', onClick: () => handleYear(2019) },
-      { key: '2018', label: '2018년', onClick: () => handleYear(2018) },
-      { key: '2017', label: '2017년', onClick: () => handleYear(2017) },
-      { key: '2016', label: '2016년', onClick: () => handleYear(2016) },
-      { key: '2015', label: '2015년', onClick: () => handleYear(2015) },
-    ],
-  };
+  // 이번년도 메뉴 - 동적으로 생성
+  const yearMenuItems = [];
+  for (let year = currentYear; year >= 2015; year--) {
+    const isCurrentYear = year === currentYear;
+    const isLastYear = year === lastYear;
+    yearMenuItems.push({
+      key: String(year),
+      label: `${year}년${isCurrentYear ? ' (올해)' : isLastYear ? ' (작년)' : ''}`,
+      onClick: () => handleYear(year),
+      danger: isCurrentYear,
+    });
+  }
+  const yearMenu: MenuProps = { items: yearMenuItems };
 
   // 최근자료 메뉴
   const limitMenu: MenuProps = {
