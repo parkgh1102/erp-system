@@ -62,6 +62,17 @@ jobs:
         with:
           name: node-app
 
+      - name: Debug - List files
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Files in current directory:"
+          ls -la
+          echo "Check for node_modules:"
+          ls -la node_modules 2>/dev/null || echo "node_modules not found"
+          echo "Check for dist:"
+          ls -la dist 2>/dev/null || echo "dist not found"
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
