@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const database_1 = require("../config/database");
 const User_1 = require("../entities/User");
-const bcrypt_1 = __importDefault(require("bcrypt"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const joi_1 = __importDefault(require("joi"));
 const logger_1 = require("../utils/logger");
 const passwordValidator_1 = require("../utils/passwordValidator");
@@ -71,7 +71,7 @@ exports.UserController = {
                 });
             }
             // 비밀번호 해싱
-            const hashedPassword = await bcrypt_1.default.hash(password, 12);
+            const hashedPassword = await bcryptjs_1.default.hash(password, 12);
             // 사용자 생성
             const user = userRepository.create({
                 email,

@@ -11,7 +11,7 @@ const Customer_1 = require("../entities/Customer");
 const Product_1 = require("../entities/Product");
 const Transaction_1 = require("../entities/Transaction");
 const TransactionItem_1 = require("../entities/TransactionItem");
-const bcrypt_1 = __importDefault(require("bcrypt"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 async function createSampleData() {
     console.log('🌱 샘플 데이터 생성 시작...');
     try {
@@ -22,7 +22,7 @@ async function createSampleData() {
         const transactionRepository = database_1.AppDataSource.getRepository(Transaction_1.Transaction);
         const transactionItemRepository = database_1.AppDataSource.getRepository(TransactionItem_1.TransactionItem);
         // 1. 샘플 사용자 생성
-        const hashedPassword = await bcrypt_1.default.hash('test123!@#', 12);
+        const hashedPassword = await bcryptjs_1.default.hash('test123!@#', 12);
         const sampleUser = userRepository.create({
             email: 'admin@test.com',
             password: hashedPassword,

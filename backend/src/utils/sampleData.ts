@@ -5,7 +5,7 @@ import { Customer } from '../entities/Customer';
 import { Product } from '../entities/Product';
 import { Transaction } from '../entities/Transaction';
 import { TransactionItem } from '../entities/TransactionItem';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export async function createSampleData() {
   console.log('🌱 샘플 데이터 생성 시작...');

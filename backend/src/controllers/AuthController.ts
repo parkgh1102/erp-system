@@ -3,7 +3,7 @@ import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 import { Business } from '../entities/Business';
 import { CompanySettings } from '../entities/CompanySettings';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
 import { securityLogger } from '../middleware/securityLogger';

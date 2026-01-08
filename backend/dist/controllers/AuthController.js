@@ -8,7 +8,7 @@ const database_1 = require("../config/database");
 const User_1 = require("../entities/User");
 const Business_1 = require("../entities/Business");
 const CompanySettings_1 = require("../entities/CompanySettings");
-const bcrypt_1 = __importDefault(require("bcrypt"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const joi_1 = __importDefault(require("joi"));
 const securityLogger_1 = require("../middleware/securityLogger");
@@ -72,7 +72,7 @@ exports.AuthController = {
                     message: '이미 등록된 사업자번호입니다.'
                 });
             }
-            const hashedPassword = await bcrypt_1.default.hash(password, 12);
+            const hashedPassword = await bcryptjs_1.default.hash(password, 12);
             const user = userRepository.create({
                 email,
                 password: hashedPassword,
@@ -174,7 +174,7 @@ exports.AuthController = {
                     message: '이메일 또는 비밀번호가 틀립니다.'
                 });
             }
-            const isPasswordValid = await bcrypt_1.default.compare(password, user.password);
+            const isPasswordValid = await bcryptjs_1.default.compare(password, user.password);
             if (!isPasswordValid) {
                 securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: Invalid password', { email, userId: user.id });
                 return res.status(401).json({
@@ -404,14 +404,14 @@ exports.AuthController = {
                     message: '사용자를 찾을 수 없습니다.'
                 });
             }
-            const isCurrentPasswordValid = await bcrypt_1.default.compare(currentPassword, user.password);
+            const isCurrentPasswordValid = await bcryptjs_1.default.compare(currentPassword, user.password);
             if (!isCurrentPasswordValid) {
                 return res.status(400).json({
                     success: false,
                     message: '현재 비밀번호가 올바르지 않습니다.'
                 });
             }
-            const hashedNewPassword = await bcrypt_1.default.hash(newPassword, 12);
+            const hashedNewPassword = await bcryptjs_1.default.hash(newPassword, 12);
             user.password = hashedNewPassword;
             await userRepository.save(user);
             res.json({
@@ -782,7 +782,7 @@ exports.AuthController = {
                 });
             }
             // 새 비밀번호 해시화 및 저장
-            const hashedPassword = await bcrypt_1.default.hash(newPassword, 10);
+            const hashedPassword = await bcryptjs_1.default.hash(newPassword, 10);
             user.password = hashedPassword;
             await userRepository.save(user);
             securityLogger_1.securityLogger.logPasswordReset(user.id, user.email);
