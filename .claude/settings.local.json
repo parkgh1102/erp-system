@@ -204,7 +204,8 @@
       "Bash(\"/c/Program Files/PostgreSQL/16/bin/psql.exe\" -h erp-postgres-db.postgres.database.azure.com -U erpadmin -d erp_system -p 5432 -c \"SELECT 1;\")",
       "Bash(az webapp deployment:*)",
       "WebFetch(domain:erp-backend-app.scm.azurewebsites.net)",
-      "Bash(tail:*)"
+      "Bash(tail:*)",
+      "Bash(npm view:*)"
     ],
     "deny": [],
     "ask": []

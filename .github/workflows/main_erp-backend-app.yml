@@ -36,9 +36,20 @@ jobs:
           fi
           npm run build
 
+      - name: Verify node_modules exists
+        working-directory: ./backend
+        run: |
+          echo "Checking node_modules..."
+          ls -la node_modules | head -20
+          echo "Checking bcryptjs..."
+          ls -la node_modules/bcryptjs || echo "bcryptjs NOT FOUND!"
+
       - name: Zip artifact for deployment
         working-directory: ./backend
-        run: zip -r ../release.zip .
+        run: |
+          # node_modules 포함하여 zip
+          zip -r ../release.zip . -x "*.git*"
+          echo "Zip size: $(du -h ../release.zip | cut -f1)"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
