@@ -23,53 +23,29 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Clean install and build backend
+      - name: Install dependencies and build
         working-directory: ./backend
         run: |
-          rm -rf node_modules package-lock.json
-          npm cache clean --force
-          npm install
-          # bcrypt 네이티브 모듈 확인 (있으면 제거)
-          if [ -d "node_modules/bcrypt" ]; then
-            echo "Warning: bcrypt found, removing..."
-            rm -rf node_modules/bcrypt
-          fi
+          npm ci
           npm run build
-
-      - name: Verify node_modules exists
-        working-directory: ./backend
-        run: |
-          echo "Checking node_modules..."
-          ls -la node_modules | head -20
-          echo "Checking bcryptjs..."
-          ls -la node_modules/bcryptjs || echo "bcryptjs NOT FOUND!"
-          echo "Total node_modules size:"
-          du -sh node_modules
+          echo "Build completed successfully"
 
       - name: Prepare deployment package
         working-directory: ./backend
         run: |
-          # 필요한 파일만 포함
+          # Azure Oryx 빌드용 패키지 준비
+          # node_modules는 Azure에서 설치하도록 제외
           mkdir -p ../deploy-package
           cp -r dist ../deploy-package/
-          cp -r node_modules ../deploy-package/
           cp package.json ../deploy-package/
-          cp package-lock.json ../deploy-package/ 2>/dev/null || true
+          cp package-lock.json ../deploy-package/
 
           # 배포 패키지 검증
           echo "=== Deploy package contents ==="
           ls -la ../deploy-package/
           echo ""
-          echo "=== Checking critical modules ==="
-          ls -la ../deploy-package/node_modules/bcryptjs/ || echo "ERROR: bcryptjs NOT FOUND!"
-          ls -la ../deploy-package/node_modules/jsonwebtoken/ || echo "ERROR: jsonwebtoken NOT FOUND!"
-          ls -la ../deploy-package/node_modules/express/ || echo "ERROR: express NOT FOUND!"
-          echo ""
           echo "=== dist folder ==="
           ls -la ../deploy-package/dist/
-          echo ""
-          echo "=== Total size ==="
-          du -sh ../deploy-package/node_modules
 
       - name: Zip artifact for deployment
         run: |
