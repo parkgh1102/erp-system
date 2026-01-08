@@ -9,11 +9,13 @@ const Purchase_1 = require("../entities/Purchase");
 const Business_1 = require("../entities/Business");
 const Customer_1 = require("../entities/Customer");
 const PurchaseItem_1 = require("../entities/PurchaseItem");
+const User_1 = require("../entities/User");
 const joi_1 = __importDefault(require("joi"));
 const purchaseRepository = database_1.AppDataSource.getRepository(Purchase_1.Purchase);
 const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
 const customerRepository = database_1.AppDataSource.getRepository(Customer_1.Customer);
 const purchaseItemRepository = database_1.AppDataSource.getRepository(PurchaseItem_1.PurchaseItem);
+const userRepository = database_1.AppDataSource.getRepository(User_1.User);
 const purchaseSchema = joi_1.default.object({
     customerId: joi_1.default.number().integer().min(1).allow(null),
     customer: joi_1.default.object({
@@ -49,12 +51,30 @@ class PurchaseController {
             if (!userId) {
                 return res.status(401).json({ success: false, message: '인증이 필요합니다.' });
             }
-            const business = await businessRepository.findOne({
-                where: {
-                    id: parseInt(businessId),
-                    userId
+            // 사용자 조회
+            const user = await userRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+            }
+            // 역할에 따른 business 접근 권한 체크
+            let business;
+            if (user.role === 'admin') {
+                // admin은 business 소유자여야 함
+                business = await businessRepository.findOne({
+                    where: {
+                        id: parseInt(businessId),
+                        userId
+                    }
+                });
+            }
+            else if (user.role === 'sales_viewer') {
+                // sales_viewer는 businessId로 할당된 business에 접근 가능
+                if (user.businessId === parseInt(businessId)) {
+                    business = await businessRepository.findOne({
+                        where: { id: parseInt(businessId) }
+                    });
                 }
-            });
+            }
             if (!business) {
                 return res.status(404).json({
                     success: false,
@@ -90,12 +110,28 @@ class PurchaseController {
             if (!userId) {
                 return res.status(401).json({ success: false, message: '인증이 필요합니다.' });
             }
-            const business = await businessRepository.findOne({
-                where: {
-                    id: parseInt(businessId),
-                    userId
+            // 사용자 조회
+            const user = await userRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+            }
+            // 역할에 따른 business 접근 권한 체크
+            let business;
+            if (user.role === 'admin') {
+                business = await businessRepository.findOne({
+                    where: {
+                        id: parseInt(businessId),
+                        userId
+                    }
+                });
+            }
+            else if (user.role === 'sales_viewer') {
+                if (user.businessId === parseInt(businessId)) {
+                    business = await businessRepository.findOne({
+                        where: { id: parseInt(businessId) }
+                    });
                 }
-            });
+            }
             if (!business) {
                 return res.status(404).json({
                     success: false,
@@ -139,12 +175,28 @@ class PurchaseController {
                     message: error.details[0].message
                 });
             }
-            const business = await businessRepository.findOne({
-                where: {
-                    id: parseInt(businessId),
-                    userId
+            // 사용자 조회
+            const user = await userRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+            }
+            // 역할에 따른 business 접근 권한 체크
+            let business;
+            if (user.role === 'admin') {
+                business = await businessRepository.findOne({
+                    where: {
+                        id: parseInt(businessId),
+                        userId
+                    }
+                });
+            }
+            else if (user.role === 'sales_viewer') {
+                if (user.businessId === parseInt(businessId)) {
+                    business = await businessRepository.findOne({
+                        where: { id: parseInt(businessId) }
+                    });
                 }
-            });
+            }
             if (!business) {
                 return res.status(404).json({
                     success: false,
@@ -214,12 +266,28 @@ class PurchaseController {
                     message: error.details[0].message
                 });
             }
-            const business = await businessRepository.findOne({
-                where: {
-                    id: parseInt(businessId),
-                    userId
+            // 사용자 조회
+            const user = await userRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+            }
+            // 역할에 따른 business 접근 권한 체크
+            let business;
+            if (user.role === 'admin') {
+                business = await businessRepository.findOne({
+                    where: {
+                        id: parseInt(businessId),
+                        userId
+                    }
+                });
+            }
+            else if (user.role === 'sales_viewer') {
+                if (user.businessId === parseInt(businessId)) {
+                    business = await businessRepository.findOne({
+                        where: { id: parseInt(businessId) }
+                    });
                 }
-            });
+            }
             if (!business) {
                 return res.status(404).json({
                     success: false,
@@ -294,12 +362,28 @@ class PurchaseController {
             if (!userId) {
                 return res.status(401).json({ success: false, message: '인증이 필요합니다.' });
             }
-            const business = await businessRepository.findOne({
-                where: {
-                    id: parseInt(businessId),
-                    userId
+            // 사용자 조회
+            const user = await userRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+            }
+            // 역할에 따른 business 접근 권한 체크
+            let business;
+            if (user.role === 'admin') {
+                business = await businessRepository.findOne({
+                    where: {
+                        id: parseInt(businessId),
+                        userId
+                    }
+                });
+            }
+            else if (user.role === 'sales_viewer') {
+                if (user.businessId === parseInt(businessId)) {
+                    business = await businessRepository.findOne({
+                        where: { id: parseInt(businessId) }
+                    });
                 }
-            });
+            }
             if (!business) {
                 return res.status(404).json({
                     success: false,

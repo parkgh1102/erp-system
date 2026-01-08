@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip } from 'antd';
+import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip, Checkbox } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
@@ -144,6 +144,7 @@ const SalesManagement: React.FC = () => {
     ...Array.from({ length: 200 }, (_, i) => `${i + 1}ea`),
   ]);
   const [unitOptions, setUnitOptions] = useState<string[]>(['EA', 'BOX', 'KG', 'M', 'SET', 'kg', 'ea', 'box', 'set', 'pcs', '개']);
+  const [showBankAccount, setShowBankAccount] = useState(true); // 계좌번호 입력 체크박스 (기본: 체크)
   const { currentBusiness, user } = useAuthStore();
   const isSalesViewer = user?.role === 'sales_viewer';
   const { isDark } = useThemeStore();
@@ -349,6 +350,7 @@ const SalesManagement: React.FC = () => {
 
   const handleAdd = () => {
     setEditingSale(null);
+    setShowBankAccount(true); // 계좌번호 입력 기본값: 체크
     setSaleItems([{
       productId: 0,
       productCode: '',
@@ -374,6 +376,8 @@ const SalesManagement: React.FC = () => {
   const handleEdit = (sale: Sale) => {
     logger.debug('📝 Editing sale:', sale);
     setEditingSale(sale);
+    // 계좌번호 체크박스 상태 설정 (계좌번호가 있으면 체크, 없으면 기본 체크)
+    setShowBankAccount(true);
     // items 데이터를 프론트엔드 형식에 맞게 매핑
     const mappedItems = sale.items.map(item => {
       logger.debug('📦 Item data:', item);
@@ -2152,10 +2156,28 @@ const SalesManagement: React.FC = () => {
           </Form.Item>
 
           <Form.Item
+            label={
+              <Space>
+                <Checkbox
+                  checked={showBankAccount}
+                  onChange={(e) => {
+                    setShowBankAccount(e.target.checked);
+                    if (!e.target.checked) {
+                      form.setFieldValue('bankAccount', '');
+                    }
+                  }}
+                >
+                  계좌번호 입력
+                </Checkbox>
+              </Space>
+            }
             name="bankAccount"
-            label="계좌번호"
           >
-            <Input placeholder="계좌번호를 입력하세요 (예: 국민은행 123-456-789012)" />
+            <Input
+              placeholder="계좌번호를 입력하세요 (예: 국민은행 123-456-789012)"
+              disabled={!showBankAccount}
+              style={{ opacity: showBankAccount ? 1 : 0.5 }}
+            />
           </Form.Item>
 
           <div style={{ textAlign: 'center', marginBottom: 0, paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>

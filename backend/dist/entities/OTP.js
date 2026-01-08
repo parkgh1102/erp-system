@@ -31,7 +31,7 @@ __decorate([
     __metadata("design:type", String)
 ], OTP.prototype, "code", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'datetime' }),
+    (0, typeorm_1.Column)(),
     __metadata("design:type", Date)
 ], OTP.prototype, "expiresAt", void 0);
 __decorate([
@@ -43,7 +43,7 @@ __decorate([
     __metadata("design:type", Number)
 ], OTP.prototype, "attemptCount", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Date)
 ], OTP.prototype, "lastAttemptAt", void 0);
 __decorate([
@@ -51,7 +51,7 @@ __decorate([
     __metadata("design:type", Number)
 ], OTP.prototype, "sendCount", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'datetime', nullable: true }),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", Date)
 ], OTP.prototype, "blockedUntil", void 0);
 __decorate([
