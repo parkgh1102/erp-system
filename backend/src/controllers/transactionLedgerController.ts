@@ -695,7 +695,7 @@ export const transactionLedgerController = {
       // 매입에서 거래처 ID 수집
       const purchases = await purchaseRepository.find({
         where: { businessId: Number(businessId) },
-        select: ['customerId', 'transactionDate', 'purchaseDate']
+        select: ['customerId', 'purchaseDate']
       });
       purchases.forEach(purchase => {
         const purchaseDate = dayjs(purchase.transactionDate || purchase.purchaseDate);

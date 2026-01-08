@@ -25,7 +25,7 @@ export class Purchase {
   @OneToMany(() => PurchaseItem, item => item.purchase, { cascade: true })
   items!: PurchaseItem[];
 
-  @Column({ type: 'date', comment: '매입일자' })
+  @Column({ comment: '매입일자' })
   purchaseDate!: Date;
 
   // Alias for compatibility with transactionDate references
