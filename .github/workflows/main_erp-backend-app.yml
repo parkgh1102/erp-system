@@ -55,10 +55,21 @@ jobs:
           cp -r node_modules ../deploy-package/
           cp package.json ../deploy-package/
           cp package-lock.json ../deploy-package/ 2>/dev/null || true
-          echo "Deploy package contents:"
+
+          # 배포 패키지 검증
+          echo "=== Deploy package contents ==="
           ls -la ../deploy-package/
-          echo "node_modules in package:"
-          ls ../deploy-package/node_modules | head -20
+          echo ""
+          echo "=== Checking critical modules ==="
+          ls -la ../deploy-package/node_modules/bcryptjs/ || echo "ERROR: bcryptjs NOT FOUND!"
+          ls -la ../deploy-package/node_modules/jsonwebtoken/ || echo "ERROR: jsonwebtoken NOT FOUND!"
+          ls -la ../deploy-package/node_modules/express/ || echo "ERROR: express NOT FOUND!"
+          echo ""
+          echo "=== dist folder ==="
+          ls -la ../deploy-package/dist/
+          echo ""
+          echo "=== Total size ==="
+          du -sh ../deploy-package/node_modules
 
       - name: Zip artifact for deployment
         run: |
