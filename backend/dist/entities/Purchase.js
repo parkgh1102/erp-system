@@ -51,7 +51,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Purchase.prototype, "items", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp', comment: '매입일자' }),
+    (0, typeorm_1.Column)({ type: 'date', comment: '매입일자' }),
     __metadata("design:type", Date)
 ], Purchase.prototype, "purchaseDate", void 0);
 __decorate([
