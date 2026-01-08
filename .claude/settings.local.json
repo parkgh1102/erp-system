@@ -183,7 +183,11 @@
       "Bash(git -C:*)",
       "WebFetch(domain:www.webapperp.ai.kr)",
       "WebFetch(domain:api.webapperp.ai.kr)",
-      "Bash(cmdkey /list:*)"
+      "Bash(cmdkey /list:*)",
+      "Bash(PGPASSWORD='Gaon01513##' psql:*)",
+      "Bash(\"C:/Program Files/PostgreSQL/18/bin/psql.exe\":*)",
+      "Bash(\"/c/Program Files/PostgreSQL/18/bin/psql.exe\" -h erp-postgres-db.postgres.database.azure.com -U erpadmin -d erp_system -p 5432 -c \"ALTER TABLE sales ADD COLUMN IF NOT EXISTS bank_account VARCHAR\\(255\\);\")",
+      "Bash(PGPASSWORD='Gaon01513##' \"/c/Program Files/PostgreSQL/13/bin/psql.exe\":*)"
     ],
     "deny": [],
     "ask": []

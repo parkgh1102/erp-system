@@ -45,8 +45,8 @@ const Notification_1 = require("../entities/Notification");
 const OTP_1 = require("../entities/OTP");
 const env = (0, envValidator_1.getValidatedEnv)();
 const baseConfig = {
-    // ✅ synchronize 설정 - 스키마 자동 동기화 (새 컬럼 추가용)
-    synchronize: true,
+    // ✅ synchronize 설정 (환경 변수로 제어 가능)
+    synchronize: process.env.DB_SYNCHRONIZE === 'true' || env.NODE_ENV === 'development',
     // 개발 환경에서만 쿼리 로깅
     logging: env.NODE_ENV === 'development' && env.LOG_LEVEL === 'debug',
     // 엔티티 목록
