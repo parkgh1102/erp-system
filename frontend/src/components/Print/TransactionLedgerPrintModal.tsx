@@ -156,7 +156,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                 <strong>거래처코드:</strong> {customer.customerCode}
               </div>
               <div style={{ flex: 1 }}>
-                <strong>사업자번호:</strong> {customer.businessNumber || '미등록'}
+                <strong>사업자번호:</strong> {customer.businessNumber ? customer.businessNumber.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3') : '미등록'}
               </div>
               <div style={{ flex: 1 }}>
                 <strong>대표자:</strong> {customer.representative || '미등록'}

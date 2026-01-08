@@ -122,7 +122,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
             <strong>거래처코드:</strong> {data.toCompany?.businessNumber || '-'}
           </div>
           <div style={{ flex: 1 }}>
-            <strong>사업자번호:</strong> {data.toCompany?.businessNumber || '미등록'}
+            <strong>사업자번호:</strong> {data.toCompany?.businessNumber ? data.toCompany.businessNumber.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3') : '미등록'}
           </div>
           <div style={{ flex: 1 }}>
             <strong>대표자:</strong> {data.toCompany?.representative || '미등록'}
