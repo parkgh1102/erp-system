@@ -265,10 +265,14 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
       placement="bottomRight"
       open={open}
       onOpenChange={setOpen}
+      arrow={false}
       overlayStyle={{
         padding: 0,
-        maxWidth: isMobile ? 'calc(100vw - 16px)' : undefined,
-        right: isMobile ? '8px' : undefined
+        maxWidth: isMobile ? 'calc(100vw - 16px)' : '420px',
+        position: 'fixed',
+        top: '60px',
+        right: '16px',
+        left: 'auto'
       }}
       styles={{
         body: {

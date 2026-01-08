@@ -367,8 +367,11 @@ const SalesManagement: React.FC = () => {
     setModalVisible(true);
     setTimeout(() => {
       form.resetFields();
+      // localStorage에서 마지막 사용한 계좌번호 불러오기
+      const lastBankAccount = localStorage.getItem(`lastBankAccount_${currentBusiness?.id}`) || '';
       form.setFieldsValue({
-        saleDate: dayjs()
+        saleDate: dayjs(),
+        bankAccount: lastBankAccount
       });
     }, 0);
   };
@@ -1183,10 +1186,16 @@ const SalesManagement: React.FC = () => {
         await salesAPI.create(currentBusiness.id, saleData);
       }
 
+      // 계좌번호가 있으면 localStorage에 저장 (다음 등록 시 자동 입력용)
+      if (values.bankAccount && showBankAccount) {
+        localStorage.setItem(`lastBankAccount_${currentBusiness.id}`, values.bankAccount);
+      }
+
       // 모달 즉시 닫기
       if (resetAfterSave && !editingSale) {
         // 저장 후 초기화 - 새로 등록할 때만
         const currentSaleDate = values.saleDate; // 기존 날짜 유지
+        const currentBankAccount = values.bankAccount; // 기존 계좌번호 유지
         form.resetFields();
         setSaleItems([{
           productId: 0,
@@ -1201,9 +1210,10 @@ const SalesManagement: React.FC = () => {
           vatAmount: 0,
           totalAmount: 0
         }]);
-        // 기존 날짜 유지
+        // 기존 날짜와 계좌번호 유지
         form.setFieldsValue({
-          saleDate: currentSaleDate
+          saleDate: currentSaleDate,
+          bankAccount: currentBankAccount
         });
       } else {
         // 일반 저장
