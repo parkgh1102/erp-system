@@ -179,8 +179,9 @@ declare module 'express-serve-static-core' {
     user?: {
       userId: number;
       email: string;
-      businessId: number;
+      name?: string;
       role?: string;
+      businessId: number;
     };
   }
 }

@@ -18,10 +18,10 @@ declare global {
       file?: Multer.File;
       files?: Multer.File[] | { [fieldname: string]: Multer.File[] };
       user?: {
-        id: number;
+        userId: number;
         email: string;
-        name: string;
-        role: string;
+        name?: string;
+        role?: string;
         businessId: number;
       };
     }
