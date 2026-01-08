@@ -43,12 +43,27 @@ jobs:
           ls -la node_modules | head -20
           echo "Checking bcryptjs..."
           ls -la node_modules/bcryptjs || echo "bcryptjs NOT FOUND!"
+          echo "Total node_modules size:"
+          du -sh node_modules
 
-      - name: Zip artifact for deployment
+      - name: Prepare deployment package
         working-directory: ./backend
         run: |
-          # node_modules 포함하여 zip
-          zip -r ../release.zip . -x "*.git*"
+          # 필요한 파일만 포함
+          mkdir -p ../deploy-package
+          cp -r dist ../deploy-package/
+          cp -r node_modules ../deploy-package/
+          cp package.json ../deploy-package/
+          cp package-lock.json ../deploy-package/ 2>/dev/null || true
+          echo "Deploy package contents:"
+          ls -la ../deploy-package/
+          echo "node_modules in package:"
+          ls ../deploy-package/node_modules | head -20
+
+      - name: Zip artifact for deployment
+        run: |
+          cd deploy-package
+          zip -r ../release.zip .
           echo "Zip size: $(du -h ../release.zip | cut -f1)"
 
       - name: Upload artifact for deployment job
