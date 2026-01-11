@@ -618,15 +618,6 @@ export const transactionLedgerController = {
           return;
         }
 
-        // 전잔금 품목은 잔액 계산에서 제외 (이중 계산 방지)
-        const hasPreviousBalanceItem = sale.items?.some(item =>
-          item.itemName === '전잔금' || item.itemName?.includes('전잔금')
-        );
-        if (hasPreviousBalanceItem) {
-          console.log(`매출 제외 (전잔금 품목): id=${sale.id}`);
-          return;
-        }
-
         const saleDate = dayjs(sale.transactionDate);
         const saleCreatedAt = dayjs(sale.createdAt);
 
