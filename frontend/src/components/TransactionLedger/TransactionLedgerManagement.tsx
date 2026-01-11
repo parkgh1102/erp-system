@@ -52,6 +52,8 @@ interface ExpandedLedgerEntry extends LedgerEntry {
   isFirstRow: boolean;
   itemIndex: number;
   currentItemInfo?: LedgerItemInfo;
+  cumulativeBalance?: number;  // 품목별 누적 잔액
+  isCarryOver?: boolean;  // 이월잔액 행 여부
 }
 
 interface Customer {
@@ -95,19 +97,53 @@ const TransactionLedgerManagement: React.FC = () => {
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
-  // 품목별로 펼친 엔트리 생성
+  // 품목별로 펼친 엔트리 생성 (이월잔액 및 품목별 누적 잔액 포함)
   const expandedEntries = useMemo((): ExpandedLedgerEntry[] => {
     const result: ExpandedLedgerEntry[] = [];
+    const previousBalance = ledgerData?.previousBalance || 0;
+
+    // 이월잔액 행 추가 (previousBalance가 있고 dateRange가 있을 때)
+    if (previousBalance !== 0 && dateRange && dateRange[0] && selectedCustomerInfo) {
+      result.push({
+        id: -1,
+        date: dateRange[0].subtract(1, 'day').format('YYYY-MM-DD'),
+        type: 'sales' as const,
+        description: '이월',
+        customerName: selectedCustomerInfo.name,
+        amount: 0,
+        supplyAmount: 0,
+        vatAmount: 0,
+        totalAmount: 0,
+        balance: previousBalance,
+        memo: '',
+        rowKey: 'carry-over',
+        isFirstRow: true,
+        itemIndex: 0,
+        currentItemInfo: { itemCode: '', itemName: '이월잔액', quantity: 0, unitPrice: 0, amount: 0 },
+        cumulativeBalance: previousBalance,
+        isCarryOver: true
+      });
+    }
+
+    // 품목별 누적 잔액 계산을 위한 변수
+    let runningBalance = previousBalance;
 
     ledgerEntries.forEach((entry) => {
       // 수금/지급은 품목 없이 그대로 표시
       if (entry.type === 'receipt' || entry.type === 'payment') {
+        // 수금은 잔액 감소, 지급은 잔액 증가
+        const balanceChange = entry.type === 'receipt'
+          ? -(entry.totalAmount || entry.amount || 0)
+          : (entry.totalAmount || entry.amount || 0);
+        runningBalance += balanceChange;
+
         result.push({
           ...entry,
           rowKey: `${entry.id}-0`,
           isFirstRow: true,
           itemIndex: 0,
-          currentItemInfo: undefined
+          currentItemInfo: undefined,
+          cumulativeBalance: runningBalance
         });
         return;
       }
@@ -116,29 +152,40 @@ const TransactionLedgerManagement: React.FC = () => {
       const items = entry.items || [];
       if (items.length === 0) {
         // 품목이 없으면 그대로 표시
+        const balanceChange = entry.type === 'sales'
+          ? (entry.totalAmount || 0)
+          : -(entry.totalAmount || 0);
+        runningBalance += balanceChange;
+
         result.push({
           ...entry,
           rowKey: `${entry.id}-0`,
           isFirstRow: true,
           itemIndex: 0,
-          currentItemInfo: entry.itemInfo
+          currentItemInfo: entry.itemInfo,
+          cumulativeBalance: runningBalance
         });
       } else {
-        // 품목별로 각각 행 생성
+        // 품목별로 각각 행 생성하며 누적 잔액 계산
         items.forEach((item, index) => {
+          const itemTotal = item.totalAmount || item.amount || 0;
+          const balanceChange = entry.type === 'sales' ? itemTotal : -itemTotal;
+          runningBalance += balanceChange;
+
           result.push({
             ...entry,
             rowKey: `${entry.id}-${index}`,
             isFirstRow: index === 0,
             itemIndex: index,
-            currentItemInfo: item
+            currentItemInfo: item,
+            cumulativeBalance: runningBalance
           });
         });
       }
     });
 
     return result;
-  }, [ledgerEntries]);
+  }, [ledgerEntries, ledgerData?.previousBalance, dateRange, selectedCustomerInfo]);
 
   useEffect(() => {
     if (currentBusiness) {
@@ -425,6 +472,10 @@ const TransactionLedgerManagement: React.FC = () => {
       align: 'center' as const,
       render: (type: string, record: ExpandedLedgerEntry) => {
         if (!record.isFirstRow) return null;
+        // 이월잔액 행
+        if (record.isCarryOver) {
+          return <span style={{ color: '#faad14' }}>이월</span>;
+        }
         const typeMap = {
           'sales': '매출',
           'purchase': '매입',
@@ -467,6 +518,8 @@ const TransactionLedgerManagement: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (supplyAmount: number, record: ExpandedLedgerEntry) => {
+        // 이월잔액 행은 공급가액 비움
+        if (record.isCarryOver) return null;
         // 품목별 공급가액 표시
         const displayAmount = record.currentItemInfo?.amount ?? supplyAmount;
         // 음수(반품)는 빨간색, 양수는 타입별 색상
@@ -492,6 +545,8 @@ const TransactionLedgerManagement: React.FC = () => {
       width: 100,
       align: 'right' as const,
       render: (vatAmount: number, record: ExpandedLedgerEntry) => {
+        // 이월잔액 행은 세액 비움
+        if (record.isCarryOver) return null;
         // 품목별 세액 표시
         const displayTax = record.currentItemInfo?.taxAmount ?? vatAmount;
         // 음수(반품)는 빨간색
@@ -511,6 +566,8 @@ const TransactionLedgerManagement: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (totalAmount: number, record: ExpandedLedgerEntry) => {
+        // 이월잔액 행은 합계 비움
+        if (record.isCarryOver) return null;
         // 품목별 합계 표시
         const displayTotal = record.currentItemInfo?.totalAmount ?? totalAmount;
         // 음수(반품)는 빨간색
@@ -530,13 +587,14 @@ const TransactionLedgerManagement: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (balance: number, record: ExpandedLedgerEntry) => {
-        if (!record.isFirstRow) return null;
-        const color = balance >= 0
+        // 품목별 누적 잔액 표시 (cumulativeBalance 사용)
+        const displayBalance = record.cumulativeBalance ?? balance;
+        const color = displayBalance >= 0
           ? (isDark ? '#40a9ff' : '#1890ff')  // 양수: 파랑
           : (isDark ? '#ff7875' : '#ff4d4f'); // 음수: 빨강
         return (
           <span style={{ fontWeight: 'bold', color }}>
-            {Math.round(balance || 0).toLocaleString()}원
+            {Math.round(displayBalance || 0).toLocaleString()}원
           </span>
         );
       },
