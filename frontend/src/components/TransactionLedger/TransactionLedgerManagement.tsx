@@ -76,7 +76,7 @@ const TransactionLedgerManagement: React.FC = () => {
   const [customerSearchText, setCustomerSearchText] = useState('');
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
-    dayjs().startOf('month'),
+    dayjs().subtract(2, 'month').startOf('month'),
     dayjs().endOf('month')
   ]);
   const [ledgerEntries, setLedgerEntries] = useState<LedgerEntry[]>([]);
@@ -663,6 +663,24 @@ const TransactionLedgerManagement: React.FC = () => {
                 format="YYYY-MM-DD"
                 size="middle"
               />
+              <Button
+                size="middle"
+                onClick={() => setDateRange([dayjs().startOf('year'), dayjs().endOf('year')])}
+              >
+                이번년도
+              </Button>
+              <Button
+                size="middle"
+                onClick={() => setDateRange([dayjs().subtract(2, 'month').startOf('month'), dayjs().endOf('month')])}
+              >
+                최근 3달
+              </Button>
+              <Button
+                size="middle"
+                onClick={() => setDateRange([dayjs().subtract(5, 'month').startOf('month'), dayjs().endOf('month')])}
+              >
+                최근 6달
+              </Button>
               <Button
                 type="primary"
                 icon={<SearchOutlined />}
