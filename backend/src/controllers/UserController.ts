@@ -9,10 +9,10 @@ import { passwordSchema } from '../utils/passwordValidator';
 const userRepository = AppDataSource.getRepository(User);
 
 const createUserSchema = Joi.object({
-  email: Joi.string().email().allow('', null).optional(),
-  password: passwordSchema.required(),
+  email: Joi.string().allow('', null).optional(),
+  password: Joi.string().min(8).required(),
   name: Joi.string().min(2).required(),
-  phone: Joi.string().pattern(/^[0-9-+\s()]+$/).allow('', null).optional(),
+  phone: Joi.string().allow('', null).optional(),
   role: Joi.string().valid('admin', 'sales_viewer').required(),
   businessId: Joi.number().optional()
 });
