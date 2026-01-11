@@ -132,7 +132,16 @@ const LoginFormContent: React.FC = () => {
                 setLoginType(value as 'email' | 'phone');
                 form.resetFields(['email', 'phone']);
               }}
-              style={{ width: '100%' }}
+              style={{
+                width: '100%',
+                padding: '4px',
+                backgroundColor: '#f0f5ff',
+                border: '2px solid #1890ff',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: 'bold',
+              }}
+              className="login-segmented"
             />
           </div>
 

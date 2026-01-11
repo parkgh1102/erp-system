@@ -224,3 +224,25 @@ body {
     display: none !important;
   }
 }
+
+/* 로그인 페이지 관리자/사용자 탭 스타일 */
+.login-segmented.ant-segmented {
+  background-color: #e6f4ff !important;
+  border: 2px solid #1890ff !important;
+}
+
+.login-segmented .ant-segmented-item {
+  color: #1890ff !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+}
+
+.login-segmented .ant-segmented-item-selected {
+  background-color: #1890ff !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.4) !important;
+}
+
+.login-segmented .ant-segmented-thumb {
+  background-color: #1890ff !important;
+}
