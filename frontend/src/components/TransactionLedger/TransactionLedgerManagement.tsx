@@ -24,7 +24,9 @@ interface LedgerItemInfo {
   spec?: string;
   quantity: number;
   unitPrice: number;
-  amount: number;
+  amount: number;  // 공급가액
+  taxAmount?: number;  // 세액
+  totalAmount?: number;  // 합계
 }
 
 interface LedgerEntry {
@@ -465,8 +467,8 @@ const TransactionLedgerManagement: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (supplyAmount: number, record: ExpandedLedgerEntry) => {
-        // 품목별 금액 표시 (첫 행이 아니면 개별 품목 금액 표시)
-        const displayAmount = record.isFirstRow ? supplyAmount : (record.currentItemInfo?.amount || 0);
+        // 품목별 공급가액 표시
+        const displayAmount = record.currentItemInfo?.amount ?? supplyAmount;
         const colorMap = {
           'sales': isDark ? '#40a9ff' : '#1890ff',
           'purchase': isDark ? '#d9d9d9' : '#000000',
@@ -487,10 +489,11 @@ const TransactionLedgerManagement: React.FC = () => {
       width: 100,
       align: 'right' as const,
       render: (vatAmount: number, record: ExpandedLedgerEntry) => {
-        if (!record.isFirstRow) return null;
+        // 품목별 세액 표시
+        const displayTax = record.currentItemInfo?.taxAmount ?? vatAmount;
         return (
           <span>
-            {Math.round(vatAmount || 0).toLocaleString()}원
+            {Math.round(displayTax || 0).toLocaleString()}원
           </span>
         );
       },
@@ -502,10 +505,11 @@ const TransactionLedgerManagement: React.FC = () => {
       width: 120,
       align: 'right' as const,
       render: (totalAmount: number, record: ExpandedLedgerEntry) => {
-        if (!record.isFirstRow) return null;
+        // 품목별 합계 표시
+        const displayTotal = record.currentItemInfo?.totalAmount ?? totalAmount;
         return (
           <span style={{ fontWeight: 'bold' }}>
-            {Math.round(totalAmount || 0).toLocaleString()}원
+            {Math.round(displayTotal || 0).toLocaleString()}원
           </span>
         );
       },

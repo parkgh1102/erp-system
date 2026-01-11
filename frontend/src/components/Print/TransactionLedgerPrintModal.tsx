@@ -10,7 +10,9 @@ interface LedgerItemInfo {
   spec?: string;
   quantity: number;
   unitPrice: number;
-  amount: number;
+  amount: number;  // 공급가액
+  taxAmount?: number;  // 세액
+  totalAmount?: number;  // 합계
 }
 
 interface LedgerEntry {
@@ -412,7 +414,10 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     padding: '6px',
                     textAlign: 'right'
                   }}>
-                    {isFirstRow && entry.vatAmount ? `${entry.vatAmount.toLocaleString()}원` : ''}
+                    {(() => {
+                      const displayTax = currentItemInfo?.taxAmount ?? entry.vatAmount;
+                      return displayTax ? `${displayTax.toLocaleString()}원` : '';
+                    })()}
                   </td>
                   <td style={{
                     border: '1px solid #000',
@@ -420,7 +425,10 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     textAlign: 'right',
                     fontWeight: 'bold'
                   }}>
-                    {isFirstRow && entry.totalAmount ? `${entry.totalAmount.toLocaleString()}원` : ''}
+                    {(() => {
+                      const displayTotal = currentItemInfo?.totalAmount ?? entry.totalAmount;
+                      return displayTotal ? `${displayTotal.toLocaleString()}원` : '';
+                    })()}
                   </td>
                   <td style={{
                     border: '1px solid #000',

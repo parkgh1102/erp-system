@@ -160,15 +160,21 @@ exports.transactionLedgerController = {
                 runningBalance += totalAmount;
                 // 품목 개수 계산
                 const itemCount = sale.items?.length || 0;
-                // 전체 품목 배열 생성
-                const allItems = sale.items?.map(item => ({
-                    itemCode: item.productId?.toString() || '',
-                    itemName: item.itemName || '',
-                    spec: item.specification || '',
-                    quantity: Number(item.quantity) || 0,
-                    unitPrice: Number(item.unitPrice) || 0,
-                    amount: Number(item.supplyAmount) || 0
-                })) || [];
+                // 전체 품목 배열 생성 (세액, 합계 포함)
+                const allItems = sale.items?.map(item => {
+                    const itemSupplyAmount = Number(item.supplyAmount) || 0;
+                    const itemTaxAmount = Number(item.taxAmount) || 0;
+                    return {
+                        itemCode: item.productId?.toString() || '',
+                        itemName: item.itemName || '',
+                        spec: item.specification || '',
+                        quantity: Number(item.quantity) || 0,
+                        unitPrice: Number(item.unitPrice) || 0,
+                        amount: itemSupplyAmount,
+                        taxAmount: itemTaxAmount,
+                        totalAmount: itemSupplyAmount + itemTaxAmount
+                    };
+                }) || [];
                 entries.push({
                     id: sale.id,
                     date: (0, dayjs_1.default)(sale.transactionDate).format('YYYY-MM-DD'),
@@ -196,15 +202,26 @@ exports.transactionLedgerController = {
                 runningBalance -= totalAmount;
                 // 품목 개수 계산
                 const itemCount = purchase.items?.length || 0;
-                // 전체 품목 배열 생성
-                const allPurchaseItems = purchase.items?.map(item => ({
-                    itemCode: item.productId?.toString() || '',
-                    itemName: item.productName || '',
-                    spec: item.spec || '',
-                    quantity: Number(item.quantity) || 0,
-                    unitPrice: Number(item.unitPrice) || 0,
-                    amount: Number(item.amount) || 0
-                })) || [];
+                // 전체 품목 배열 생성 (세액, 합계 포함)
+                // 매입 품목의 세액은 전체 세액을 품목별 공급가액 비율로 배분
+                const totalPurchaseVat = Number(purchase.vatAmount) || 0;
+                const allPurchaseItems = purchase.items?.map(item => {
+                    const itemSupplyAmount = Number(item.amount) || 0;
+                    // 세액 배분: 전체 세액 * (해당 품목 공급가액 / 전체 공급가액)
+                    const itemTaxAmount = supplyAmount > 0
+                        ? Math.round(totalPurchaseVat * (itemSupplyAmount / supplyAmount))
+                        : 0;
+                    return {
+                        itemCode: item.productId?.toString() || '',
+                        itemName: item.productName || '',
+                        spec: item.spec || '',
+                        quantity: Number(item.quantity) || 0,
+                        unitPrice: Number(item.unitPrice) || 0,
+                        amount: itemSupplyAmount,
+                        taxAmount: itemTaxAmount,
+                        totalAmount: itemSupplyAmount + itemTaxAmount
+                    };
+                }) || [];
                 entries.push({
                     id: purchase.id + 10000,
                     date: (0, dayjs_1.default)(purchase.purchaseDate).format('YYYY-MM-DD'),
