@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Switch, Typography, Badge, Button } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Switch, Typography, Badge, Button, Select } from 'antd';
 import {
   DashboardOutlined,
   UserOutlined,
@@ -13,6 +13,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   BellOutlined,
+  BankOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -30,7 +31,7 @@ interface AppLayoutProps {
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 992);
-  const { user, currentBusiness, logout } = useAuthStore();
+  const { user, currentBusiness, setCurrentBusiness, logout } = useAuthStore();
   const { isDark, toggleTheme } = useThemeStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
   const navigate = useNavigate();
@@ -374,6 +375,32 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {/* 다중 사업자 선택 (2개 이상일 때만 표시) */}
+            {user?.businesses && user.businesses.length > 1 && (
+              <Select
+                value={currentBusiness?.id}
+                onChange={(businessId) => {
+                  const selected = user.businesses.find(b => b.id === businessId);
+                  if (selected) {
+                    setCurrentBusiness(selected);
+                  }
+                }}
+                style={{
+                  minWidth: window.innerWidth <= 480 ? 120 : 180,
+                }}
+                dropdownStyle={{ minWidth: 200 }}
+                options={user.businesses.map(b => ({
+                  value: b.id,
+                  label: (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <BankOutlined style={{ color: '#1890ff' }} />
+                      {b.companyName}
+                    </span>
+                  ),
+                }))}
+                suffixIcon={<BankOutlined style={{ color: '#1890ff' }} />}
+              />
+            )}
 
             <NotificationPopover>
               <Badge count={unreadCount} overflowCount={99}>

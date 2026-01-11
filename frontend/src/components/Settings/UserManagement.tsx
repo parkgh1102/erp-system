@@ -13,6 +13,7 @@ import {
   Card,
   Typography,
   Alert,
+  Tooltip,
 } from 'antd';
 import {
   PlusOutlined,
@@ -23,13 +24,19 @@ import {
   PhoneOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  BankOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
-import { api } from '../../utils/api';
+import { api, businessAPI } from '../../utils/api';
 import { useMessage } from '../../hooks/useMessage';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title, Text } = Typography;
+
+interface Business {
+  id: number;
+  companyName: string;
+}
 
 interface User {
   id: number;
@@ -40,22 +47,39 @@ interface User {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  businessIds?: number[];
+  businesses?: Business[];
 }
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [allBusinesses, setAllBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>('sales_viewer');
   const [form] = Form.useForm();
   const { currentBusiness } = useAuthStore();
   const { success: showSuccess, error: showError } = useMessage();
+
+  useEffect(() => {
+    fetchBusinesses();
+  }, []);
 
   useEffect(() => {
     if (currentBusiness) {
       fetchUsers();
     }
   }, [currentBusiness]);
+
+  const fetchBusinesses = async () => {
+    try {
+      const response = await businessAPI.getAll();
+      setAllBusinesses(response.data.data || []);
+    } catch (error) {
+      console.error('Fetch businesses error:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     if (!currentBusiness) return;
@@ -74,17 +98,24 @@ const UserManagement: React.FC = () => {
 
   const handleAdd = () => {
     setEditingUser(null);
+    setSelectedRole('sales_viewer');
     form.resetFields();
+    // 현재 사업자를 기본으로 선택
+    if (currentBusiness) {
+      form.setFieldsValue({ businessIds: [currentBusiness.id] });
+    }
     setModalVisible(true);
   };
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
+    setSelectedRole(user.role);
     form.setFieldsValue({
       email: user.email,
       name: user.name,
       phone: user.phone,
       role: user.role,
+      businessIds: user.businessIds || [],
     });
     setModalVisible(true);
   };
@@ -181,6 +212,25 @@ const UserManagement: React.FC = () => {
         };
         const config = roleConfig[role as keyof typeof roleConfig] || { color: 'default', text: role };
         return <Tag color={config.color}>{config.text}</Tag>;
+      },
+    },
+    {
+      title: '접근 사업자',
+      dataIndex: 'businesses',
+      key: 'businesses',
+      render: (businesses: Business[]) => {
+        if (!businesses || businesses.length === 0) return '-';
+        if (businesses.length === 1) {
+          return <Tag icon={<BankOutlined />}>{businesses[0].companyName}</Tag>;
+        }
+        return (
+          <Tooltip title={businesses.map(b => b.companyName).join(', ')}>
+            <Space size={4}>
+              <Tag icon={<BankOutlined />}>{businesses[0].companyName}</Tag>
+              <Tag>+{businesses.length - 1}</Tag>
+            </Space>
+          </Tooltip>
+        );
       },
     },
     {
@@ -317,11 +367,30 @@ const UserManagement: React.FC = () => {
               name="role"
               rules={[{ required: true, message: '권한을 선택해주세요.' }]}
             >
-              <Select>
+              <Select onChange={(value) => setSelectedRole(value)}>
                 <Select.Option value="admin">관리자</Select.Option>
                 <Select.Option value="sales_viewer">매출 조회 (전자서명 전용)</Select.Option>
               </Select>
             </Form.Item>
+
+            {selectedRole === 'sales_viewer' && allBusinesses.length > 1 && (
+              <Form.Item
+                label="접근 가능 사업자"
+                name="businessIds"
+                rules={[{ required: true, message: '최소 1개의 사업자를 선택해주세요.' }]}
+                extra="여러 사업자를 선택하면 해당 사용자가 로그인 시 사업자를 선택할 수 있습니다."
+              >
+                <Select
+                  mode="multiple"
+                  placeholder="접근 가능한 사업자 선택"
+                  optionFilterProp="label"
+                  options={allBusinesses.map(b => ({
+                    value: b.id,
+                    label: b.companyName,
+                  }))}
+                />
+              </Form.Item>
+            )}
 
             {!editingUser && (
               <Alert
