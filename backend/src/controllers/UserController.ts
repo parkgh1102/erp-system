@@ -15,7 +15,7 @@ const createUserSchema = Joi.object({
   phone: Joi.string().pattern(/^[0-9-+\s()]+$/).allow('', null).optional(),
   role: Joi.string().valid('admin', 'sales_viewer').required(),
   businessId: Joi.number().optional()
-}).or('email', 'phone');
+});
 
 const updateUserSchema = Joi.object({
   email: Joi.string().email().optional(),
@@ -66,8 +66,19 @@ export const UserController = {
 
       const { email, password, name, phone, role } = value;
 
+      // 이메일 또는 전화번호 중 하나는 필수
+      const hasEmail = email && email.trim() !== '';
+      const hasPhone = phone && phone.trim() !== '';
+
+      if (!hasEmail && !hasPhone) {
+        return res.status(400).json({
+          success: false,
+          message: '이메일 또는 전화번호 중 하나를 입력해주세요.'
+        });
+      }
+
       // 이메일 또는 전화번호 중복 체크
-      if (email) {
+      if (hasEmail) {
         const existingUser = await userRepository.findOne({ where: { email } });
         if (existingUser) {
           return res.status(409).json({
@@ -77,7 +88,7 @@ export const UserController = {
         }
       }
 
-      if (phone && !email) {
+      if (hasPhone && !hasEmail) {
         // 전화번호로만 가입할 때 전화번호 중복 체크
         const cleanPhone = phone.replace(/[^0-9]/g, '');
         const users = await userRepository.find();
@@ -94,12 +105,12 @@ export const UserController = {
       const hashedPassword = await bcrypt.hash(password, 12);
 
       // 사용자 생성 (이메일이 없으면 전화번호를 이메일로 사용)
-      const userEmail = email || `${phone.replace(/[^0-9]/g, '')}@phone.local`;
+      const userEmail = hasEmail ? email : `${phone.replace(/[^0-9]/g, '')}@phone.local`;
       const user = userRepository.create({
         email: userEmail,
         password: hashedPassword,
         name,
-        phone: phone || '',
+        phone: hasPhone ? phone : '',
         role,
         businessId,
         isActive: true
