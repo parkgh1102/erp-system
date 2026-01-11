@@ -48,6 +48,6 @@ export declare function sessionCleanup(): void;
 /**
  * 세션 보안 체크 미들웨어
  */
-export declare function sessionSecurityCheck(req: any, res: any, next: any): void;
+export declare function sessionSecurityCheck(req: any, res: any, next: any): any;
 export default sessionConfig;
 //# sourceMappingURL=sessionConfig.d.ts.map

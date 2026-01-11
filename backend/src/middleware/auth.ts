@@ -23,16 +23,6 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     const env = getValidatedEnv();
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 
-    // 개발 환경에서만 상세 로깅
-    if (env.NODE_ENV === 'development') {
-      console.log('🔓 JWT 디코딩 결과:', {
-        userId: decoded.userId,
-        email: decoded.email,
-        businessId: decoded.businessId,
-        tokenSource: authHeader ? 'Authorization header' : 'Cookie'
-      });
-    }
-
     req.user = {
       userId: decoded.userId,
       email: decoded.email,

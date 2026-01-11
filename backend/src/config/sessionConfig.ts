@@ -120,15 +120,11 @@ export function sessionSecurityCheck(
     // IP 주소 변경 감지 (세션 하이재킹 방지)
     const currentIP = req.ip || req.connection.remoteAddress;
     if (req.session.ip && req.session.ip !== currentIP) {
-      console.warn('⚠️  세션 IP 변경 감지:', {
-        sessionIP: req.session.ip,
-        currentIP,
-        userId: req.session.userId
+      console.warn('⚠️  세션 IP 변경 감지 - 세션 무효화');
+      req.session.destroy((err: Error) => {
+        if (err) console.error('세션 삭제 오류:', err);
       });
-
-      // 보안 정책에 따라 세션 무효화 또는 경고
-      // req.session.destroy();
-      // return res.status(401).json({ message: '세션이 만료되었습니다.' });
+      return res.status(401).json({ success: false, message: '세션이 만료되었습니다. 다시 로그인해주세요.' });
     }
 
     // User-Agent 변경 감지
