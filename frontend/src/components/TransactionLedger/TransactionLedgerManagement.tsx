@@ -97,8 +97,8 @@ const TransactionLedgerManagement: React.FC = () => {
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
-  // 선택된 거래처 정보 (useMemo보다 먼저 정의)
-  const selectedCustomerInfo = customers.find(c => c.id === selectedCustomer);
+  // 선택된 거래처 정보 (useMemo보다 먼저 정의) - customers 또는 customersWithTransactions에서 찾기
+  const selectedCustomerInfo = customers.find(c => c.id === selectedCustomer) || customersWithTransactions.find(c => c.id === selectedCustomer);
 
   // 품목별로 펼친 엔트리 생성 (이월잔액 및 품목별 누적 잔액 포함)
   const expandedEntries = useMemo((): ExpandedLedgerEntry[] => {
