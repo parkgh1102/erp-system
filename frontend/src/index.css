@@ -232,11 +232,18 @@ body {
   border-radius: 8px !important;
 }
 
+.login-segmented .ant-segmented-group {
+  display: flex !important;
+  width: 100% !important;
+}
+
 .login-segmented .ant-segmented-item {
+  flex: 1 !important;
   color: #1890ff !important;
   font-weight: 600 !important;
   font-size: 15px !important;
   padding: 8px 24px !important;
+  text-align: center !important;
 }
 
 .login-segmented .ant-segmented-item-selected {

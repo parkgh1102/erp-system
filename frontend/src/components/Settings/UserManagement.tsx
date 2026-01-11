@@ -363,12 +363,11 @@ const UserManagement: React.FC = () => {
               rules={[{ required: true, message: '권한을 선택해주세요.' }]}
             >
               <Select onChange={(value) => setSelectedRole(value)}>
-                <Select.Option value="admin">관리자</Select.Option>
                 <Select.Option value="sales_viewer">매출 조회 (전자서명 전용)</Select.Option>
               </Select>
             </Form.Item>
 
-            {selectedRole === 'sales_viewer' && allBusinesses.length > 1 && (
+            {allBusinesses.length > 1 && (
               <Form.Item
                 label="접근 가능 사업자"
                 name="businessIds"

@@ -121,7 +121,10 @@ const InventoryManagement: React.FC = () => {
       key: 'buyPrice',
       width: 120,
       align: 'right' as const,
-      render: (price: number) => price ? `${Math.floor(price).toLocaleString()}원` : '-',
+      render: (price: number | null | undefined) => {
+        if (price === null || price === undefined) return '-';
+        return `${Math.floor(price).toLocaleString()}원`;
+      },
     },
     {
       title: '매출단가',
@@ -129,7 +132,10 @@ const InventoryManagement: React.FC = () => {
       key: 'sellPrice',
       width: 120,
       align: 'right' as const,
-      render: (price: number) => price ? `${Math.floor(price).toLocaleString()}원` : '-',
+      render: (price: number | null | undefined) => {
+        if (price === null || price === undefined) return '-';
+        return `${Math.floor(price).toLocaleString()}원`;
+      },
     },
     {
       title: '재고금액(매입가)',
@@ -137,8 +143,10 @@ const InventoryManagement: React.FC = () => {
       width: 150,
       align: 'right' as const,
       render: (_: any, record: Product) => {
-        const value = (record.currentStock || 0) * (record.buyPrice || 0);
-        return value ? `${Math.floor(value).toLocaleString()}원` : '-';
+        // 매입단가가 null/undefined인 경우 재고금액도 계산 불가
+        if (record.buyPrice === null || record.buyPrice === undefined) return '-';
+        const value = (record.currentStock || 0) * record.buyPrice;
+        return `${Math.floor(value).toLocaleString()}원`;
       },
     },
     {
