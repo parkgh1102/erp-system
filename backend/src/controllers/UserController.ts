@@ -54,7 +54,13 @@ export const UserController = {
   async createUser(req: Request, res: Response) {
     try {
       const businessId = parseInt(req.params.businessId);
-      const { error, value } = createUserSchema.validate(req.body);
+
+      // 빈 문자열을 undefined로 변환
+      const cleanBody = { ...req.body };
+      if (cleanBody.email === '') delete cleanBody.email;
+      if (cleanBody.phone === '') delete cleanBody.phone;
+
+      const { error, value } = createUserSchema.validate(cleanBody);
 
       if (error) {
         return res.status(400).json({
