@@ -631,30 +631,38 @@ const TransactionLedgerManagement: React.FC = () => {
         <Col style={{ marginLeft: '100px' }}>
           <Space direction="vertical" size="small" style={{ width: '100%' }}>
             <Space size="middle" wrap>
-              <AutoComplete
-                style={{ width: 300 }}
-                value={customerSearchText}
-                onChange={(value) => setCustomerSearchText(value)}
-                onSelect={(value, option: any) => {
-                  setSelectedCustomer(option.key);
-                  setCustomerSearchText(option.label);
-                }}
-                placeholder="거래처명 입력 (기간 내 거래 업체)"
+              <Select
+                style={{ width: 350 }}
+                showSearch
+                placeholder="거래처 선택"
                 size="middle"
-                options={filteredCustomers.map(customer => ({
-                  key: customer.id,
-                  value: customer.name,
-                  label: `${customer.name} (${customer.customerCode})`
+                value={selectedCustomer}
+                onChange={(value) => {
+                  setSelectedCustomer(value);
+                  const customer = customersWithTransactions.find(c => c.id === value);
+                  if (customer) {
+                    setCustomerSearchText(customer.name);
+                  }
+                }}
+                filterOption={(input, option) =>
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                  (option?.code ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                options={customersWithTransactions.map(customer => ({
+                  value: customer.id,
+                  label: `${customer.name} (${customer.customerCode})`,
+                  code: customer.customerCode
                 }))}
                 notFoundContent={
-                  customerSearchText.length < 2
-                    ? '2글자 이상 입력해주세요'
-                    : filteredCustomers.length === 0
-                      ? customersWithTransactions.length === 0
-                        ? '선택한 기간에 거래 기록이 없습니다'
-                        : '검색 결과가 없습니다'
-                      : null
+                  customersWithTransactions.length === 0
+                    ? '선택한 기간에 거래 기록이 없습니다'
+                    : '검색 결과가 없습니다'
                 }
+                allowClear
+                onClear={() => {
+                  setSelectedCustomer(null);
+                  setCustomerSearchText('');
+                }}
               />
               <RangePicker
                 style={{ width: 300 }}
