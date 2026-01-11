@@ -897,7 +897,8 @@ const TransactionLedgerManagement: React.FC = () => {
         open={ledgerPrintModalVisible}
         onClose={() => setLedgerPrintModalVisible(false)}
         ledgerEntries={ledgerEntries}
-        customer={customers.find(c => c.id === selectedCustomer) || null}
+        expandedEntries={expandedEntries}
+        customer={customers.find(c => c.id === selectedCustomer) || customersWithTransactions.find(c => c.id === selectedCustomer) || null}
         dateRange={dateRange}
         title="거래원장"
         previousBalance={ledgerData?.previousBalance || 0}

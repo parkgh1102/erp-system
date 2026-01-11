@@ -32,11 +32,13 @@ interface LedgerEntry {
   items?: LedgerItemInfo[];
 }
 
-interface ExpandedPrintEntry {
-  entry: LedgerEntry;
+interface ExpandedLedgerEntry extends LedgerEntry {
+  rowKey: string;
   isFirstRow: boolean;
   itemIndex: number;
   currentItemInfo?: LedgerItemInfo;
+  cumulativeBalance: number;
+  isCarryOver?: boolean;
 }
 
 interface Customer {
@@ -54,6 +56,7 @@ interface TransactionLedgerPrintModalProps {
   open: boolean;
   onClose: () => void;
   ledgerEntries: LedgerEntry[];
+  expandedEntries?: ExpandedLedgerEntry[];  // 조회 화면에서 계산된 품목별 펼침 데이터
   customer?: Customer | null;
   dateRange?: [dayjs.Dayjs, dayjs.Dayjs];
   title: string;
@@ -64,6 +67,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
   open,
   onClose,
   ledgerEntries,
+  expandedEntries,
   customer,
   dateRange,
   title,
@@ -74,39 +78,6 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: '거래원장',
-  });
-
-  // 품목별로 펼친 데이터 생성
-  const expandedPrintEntries: ExpandedPrintEntry[] = [];
-  ledgerEntries.forEach((entry) => {
-    if (entry.type === 'receipt' || entry.type === 'payment') {
-      expandedPrintEntries.push({
-        entry,
-        isFirstRow: true,
-        itemIndex: 0,
-        currentItemInfo: undefined
-      });
-      return;
-    }
-
-    const items = entry.items || [];
-    if (items.length === 0) {
-      expandedPrintEntries.push({
-        entry,
-        isFirstRow: true,
-        itemIndex: 0,
-        currentItemInfo: entry.itemInfo
-      });
-    } else {
-      items.forEach((item, index) => {
-        expandedPrintEntries.push({
-          entry,
-          isFirstRow: index === 0,
-          itemIndex: index,
-          currentItemInfo: item
-        });
-      });
-    }
   });
 
   // 집계 계산
@@ -352,9 +323,9 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
               </tr>
             )}
 
-            {/* 거래 내역 - 품목별 펼침 */}
-            {expandedPrintEntries.map((expandedEntry, index) => {
-              const { entry, isFirstRow, currentItemInfo } = expandedEntry;
+            {/* 거래 내역 - 품목별 펼침 (expandedEntries 사용) */}
+            {(expandedEntries || []).filter(e => !e.isCarryOver).map((entry, index) => {
+              const { isFirstRow, currentItemInfo, cumulativeBalance } = entry;
 
               // 품목명 표시
               const getItemDisplay = () => {
@@ -367,11 +338,11 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                 return entry.description;
               };
 
-              // 공급가액 표시 (첫 행이면 전체 금액, 아니면 개별 품목 금액)
-              const displaySupplyAmount = isFirstRow ? entry.supplyAmount : (currentItemInfo?.amount || 0);
+              // 공급가액 표시: 품목별 금액
+              const displaySupplyAmount = currentItemInfo?.amount ?? (isFirstRow ? entry.supplyAmount : 0);
 
               return (
-                <tr key={index}>
+                <tr key={entry.rowKey || index}>
                   <td style={{
                     border: '1px solid #000',
                     padding: '6px',
@@ -415,7 +386,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     textAlign: 'right'
                   }}>
                     {(() => {
-                      const displayTax = currentItemInfo?.taxAmount ?? entry.vatAmount;
+                      const displayTax = currentItemInfo?.taxAmount ?? (isFirstRow ? entry.vatAmount : 0);
                       const isNegative = displayTax < 0;
                       return displayTax !== undefined ? (
                         <span style={{ color: isNegative ? '#ff4d4f' : undefined }}>
@@ -431,7 +402,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     fontWeight: 'bold'
                   }}>
                     {(() => {
-                      const displayTotal = currentItemInfo?.totalAmount ?? entry.totalAmount;
+                      const displayTotal = currentItemInfo?.totalAmount ?? (isFirstRow ? entry.totalAmount : 0);
                       const isNegative = displayTotal < 0;
                       return displayTotal !== undefined ? (
                         <span style={{ color: isNegative ? '#ff4d4f' : undefined }}>
@@ -445,9 +416,9 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     padding: '6px',
                     textAlign: 'right',
                     fontWeight: 'bold',
-                    color: entry.balance >= 0 ? '#1890ff' : '#ff4d4f'
+                    color: cumulativeBalance >= 0 ? '#1890ff' : '#ff4d4f'
                   }}>
-                    {isFirstRow ? `${entry.balance.toLocaleString()}원` : ''}
+                    {cumulativeBalance.toLocaleString()}원
                   </td>
                   <td style={{
                     border: '1px solid #000',
