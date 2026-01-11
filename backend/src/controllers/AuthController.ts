@@ -200,13 +200,14 @@ export const AuthController = {
           relations: ['businesses']
         });
       } else if (phone) {
-        // 전화번호에서 숫자만 추출하여 검색
+        // 전화번호에서 숫자만 추출하여 검색 (DB 레벨에서 검색)
         const cleanPhone = phone.replace(/[^0-9]/g, '');
-        const users = await userRepository.find({
-          where: { isActive: true },
-          relations: ['businesses']
-        });
-        user = users.find(u => u.phone && u.phone.replace(/[^0-9]/g, '') === cleanPhone);
+        user = await userRepository
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.businesses', 'businesses')
+          .where('user.isActive = :isActive', { isActive: true })
+          .andWhere('REPLACE(REPLACE(REPLACE(user.phone, \'-\', \'\'), \' \', \'\'), \'.\', \'\') = :phone', { phone: cleanPhone })
+          .getOne();
       }
 
       if (!user) {
