@@ -15,6 +15,19 @@ interface SecurityEvent {
   details?: Record<string, unknown>;
 }
 
+// 민감 정보 필터링 함수
+const sanitizeSensitiveData = (data: unknown): unknown => {
+  if (!data || typeof data !== 'object') return data;
+  const sensitiveKeys = ['password', 'token', 'secret', 'authorization', 'cookie', 'session'];
+  const sanitized = { ...data as Record<string, unknown> };
+  for (const key of Object.keys(sanitized)) {
+    if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+      sanitized[key] = '[REDACTED]';
+    }
+  }
+  return sanitized;
+};
+
 class SecurityLogger {
   private logPath: string;
 
@@ -143,8 +156,8 @@ export const securityMiddleware = (req: Request, res: Response, next: NextFuncti
   if (hasSuspiciousPattern) {
     securityLogger.logSuspiciousActivity(req, 'Suspicious pattern detected', {
       url: req.url,
-      body: req.body,
-      query: req.query
+      body: sanitizeSensitiveData(req.body),
+      query: sanitizeSensitiveData(req.query)
     });
   }
 

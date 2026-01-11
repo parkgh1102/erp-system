@@ -6,6 +6,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.securityMiddleware = exports.securityLogger = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+// 민감 정보 필터링 함수
+const sanitizeSensitiveData = (data) => {
+    if (!data || typeof data !== 'object')
+        return data;
+    const sensitiveKeys = ['password', 'token', 'secret', 'authorization', 'cookie', 'session'];
+    const sanitized = { ...data };
+    for (const key of Object.keys(sanitized)) {
+        if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+            sanitized[key] = '[REDACTED]';
+        }
+    }
+    return sanitized;
+};
 class SecurityLogger {
     constructor() {
         this.logPath = path_1.default.join(process.cwd(), 'logs', 'security.log');
@@ -117,8 +130,8 @@ const securityMiddleware = (req, res, next) => {
     if (hasSuspiciousPattern) {
         exports.securityLogger.logSuspiciousActivity(req, 'Suspicious pattern detected', {
             url: req.url,
-            body: req.body,
-            query: req.query
+            body: sanitizeSensitiveData(req.body),
+            query: sanitizeSensitiveData(req.query)
         });
     }
     // 원래 응답 함수들을 감싸기

@@ -6,26 +6,17 @@ import { Business } from '../entities/Business';
 export const businessAccessMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { businessId } = req.params;
-    const userId = process.env.NODE_ENV === 'development' ? 1 : req.user?.userId;
-
-    console.log('🔍 businessAccessMiddleware:', {
-      businessId,
-      userId,
-      NODE_ENV: process.env.NODE_ENV,
-      params: req.params,
-      path: req.path
-    });
+    const userId = req.user?.userId;
 
     if (!businessId) {
-      console.log('❌ businessId 누락');
       return res.status(400).json({
         success: false,
         message: '필수 파라미터가 누락되었습니다.'
       });
     }
 
-    if (!userId && process.env.NODE_ENV !== 'development') {
-      return res.status(400).json({
+    if (!userId) {
+      return res.status(401).json({
         success: false,
         message: '사용자 인증 정보가 필요합니다.'
       });
@@ -35,7 +26,7 @@ export const businessAccessMiddleware = async (req: AuthRequest, res: Response, 
     const business = await businessRepository.findOne({
       where: {
         id: Number(businessId),
-        ...(process.env.NODE_ENV !== 'development' ? { userId } : {}),
+        userId,
         isActive: true
       }
     });
