@@ -13,7 +13,6 @@ import {
   Card,
   Typography,
   Alert,
-  Segmented,
 } from 'antd';
 import {
   PlusOutlined,
@@ -21,7 +20,6 @@ import {
   DeleteOutlined,
   UserOutlined,
   LockOutlined,
-  MailOutlined,
   PhoneOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -49,7 +47,6 @@ const UserManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [userIdType, setUserIdType] = useState<'email' | 'phone'>('email');
   const [form] = Form.useForm();
   const { currentBusiness } = useAuthStore();
   const { success: showSuccess, error: showError } = useMessage();
@@ -77,7 +74,6 @@ const UserManagement: React.FC = () => {
 
   const handleAdd = () => {
     setEditingUser(null);
-    setUserIdType('email');
     form.resetFields();
     setModalVisible(true);
   };
@@ -278,52 +274,19 @@ const UserManagement: React.FC = () => {
             layout="vertical"
             initialValues={{ role: 'sales_viewer' }}
           >
-            {!editingUser && (
-              <div style={{ marginBottom: '16px' }}>
-                <span style={{ marginRight: '8px' }}>로그인 방식:</span>
-                <Segmented
-                  options={[
-                    { label: '이메일', value: 'email' },
-                    { label: '전화번호', value: 'phone' },
-                  ]}
-                  value={userIdType}
-                  onChange={(value) => {
-                    setUserIdType(value as 'email' | 'phone');
-                    form.setFieldsValue({ email: '', phone: '' });
-                  }}
-                />
-              </div>
-            )}
-
-            {(userIdType === 'email' || editingUser) && (
-              <Form.Item
-                label="이메일"
-                name="email"
-                rules={[
-                  { required: userIdType === 'email', message: '이메일을 입력해주세요.' },
-                  { type: 'email', message: '올바른 이메일 형식이 아닙니다.' },
-                ]}
-              >
-                <Input
-                  prefix={<MailOutlined />}
-                  placeholder="example@email.com"
-                  disabled={!!editingUser}
-                />
-              </Form.Item>
-            )}
-
-            {userIdType === 'phone' && !editingUser && (
-              <Form.Item
-                label="전화번호 (로그인 ID)"
-                name="phone"
-                rules={[
-                  { required: true, message: '전화번호를 입력해주세요.' },
-                  { pattern: /^[0-9-]+$/, message: '올바른 전화번호 형식이 아닙니다.' },
-                ]}
-              >
-                <Input prefix={<PhoneOutlined />} placeholder="010-1234-5678" />
-              </Form.Item>
-            )}
+            <Form.Item
+              label="전화번호 (로그인 ID)"
+              name="phone"
+              rules={[
+                { required: true, message: '전화번호를 입력해주세요.' },
+              ]}
+            >
+              <Input
+                prefix={<PhoneOutlined />}
+                placeholder="01012345678"
+                disabled={!!editingUser}
+              />
+            </Form.Item>
 
             {!editingUser && (
               <Form.Item
@@ -331,9 +294,9 @@ const UserManagement: React.FC = () => {
                 name="password"
                 rules={[
                   { required: true, message: '비밀번호를 입력해주세요.' },
-                  { min: 8, message: '비밀번호는 최소 8자 이상이어야 합니다.' },
+                  { min: 4, message: '비밀번호는 최소 4자리 이상이어야 합니다.' },
                 ]}
-                extra="8자 이상"
+                extra="숫자 4자리 이상"
               >
                 <Input.Password prefix={<LockOutlined />} placeholder="비밀번호" />
               </Form.Item>
@@ -344,20 +307,10 @@ const UserManagement: React.FC = () => {
               name="name"
               rules={[
                 { required: true, message: '이름을 입력해주세요.' },
-                { min: 2, message: '이름은 최소 2자 이상이어야 합니다.' },
               ]}
             >
               <Input prefix={<UserOutlined />} placeholder="홍길동" />
             </Form.Item>
-
-            {(userIdType === 'email' || editingUser) && (
-              <Form.Item
-                label="전화번호"
-                name="phone"
-              >
-                <Input prefix={<PhoneOutlined />} placeholder="010-1234-5678" />
-              </Form.Item>
-            )}
 
             <Form.Item
               label="권한"

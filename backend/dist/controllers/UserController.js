@@ -11,10 +11,9 @@ const joi_1 = __importDefault(require("joi"));
 const logger_1 = require("../utils/logger");
 const userRepository = database_1.AppDataSource.getRepository(User_1.User);
 const createUserSchema = joi_1.default.object({
-    email: joi_1.default.string().allow('', null).optional(),
-    password: joi_1.default.string().min(8).required(),
-    name: joi_1.default.string().min(2).required(),
-    phone: joi_1.default.string().allow('', null).optional(),
+    phone: joi_1.default.string().required(),
+    password: joi_1.default.string().min(4).required(),
+    name: joi_1.default.string().min(1).required(),
     role: joi_1.default.string().valid('admin', 'sales_viewer').required(),
     businessId: joi_1.default.number().optional()
 });
@@ -52,13 +51,7 @@ exports.UserController = {
     async createUser(req, res) {
         try {
             const businessId = parseInt(req.params.businessId);
-            // 빈 문자열을 undefined로 변환
-            const cleanBody = { ...req.body };
-            if (cleanBody.email === '')
-                delete cleanBody.email;
-            if (cleanBody.phone === '')
-                delete cleanBody.phone;
-            const { error, value } = createUserSchema.validate(cleanBody);
+            const { error, value } = createUserSchema.validate(req.body);
             if (error) {
                 return res.status(400).json({
                     success: false,
@@ -66,47 +59,25 @@ exports.UserController = {
                     errors: error.details.map(detail => detail.message)
                 });
             }
-            const { email, password, name, phone, role } = value;
-            // 이메일 또는 전화번호 중 하나는 필수
-            const hasEmail = email && email.trim() !== '';
-            const hasPhone = phone && phone.trim() !== '';
-            if (!hasEmail && !hasPhone) {
-                return res.status(400).json({
+            const { password, name, phone, role } = value;
+            // 전화번호 중복 체크
+            const cleanPhone = phone.replace(/[^0-9]/g, '');
+            const users = await userRepository.find();
+            const existingUser = users.find(u => u.phone && u.phone.replace(/[^0-9]/g, '') === cleanPhone);
+            if (existingUser) {
+                return res.status(409).json({
                     success: false,
-                    message: '이메일 또는 전화번호 중 하나를 입력해주세요.'
+                    message: '이미 사용 중인 전화번호입니다.'
                 });
-            }
-            // 이메일 또는 전화번호 중복 체크
-            if (hasEmail) {
-                const existingUser = await userRepository.findOne({ where: { email } });
-                if (existingUser) {
-                    return res.status(409).json({
-                        success: false,
-                        message: '이미 사용 중인 이메일입니다.'
-                    });
-                }
-            }
-            if (hasPhone && !hasEmail) {
-                // 전화번호로만 가입할 때 전화번호 중복 체크
-                const cleanPhone = phone.replace(/[^0-9]/g, '');
-                const users = await userRepository.find();
-                const existingUser = users.find(u => u.phone && u.phone.replace(/[^0-9]/g, '') === cleanPhone);
-                if (existingUser) {
-                    return res.status(409).json({
-                        success: false,
-                        message: '이미 사용 중인 전화번호입니다.'
-                    });
-                }
             }
             // 비밀번호 해싱
             const hashedPassword = await bcryptjs_1.default.hash(password, 12);
-            // 사용자 생성 (이메일이 없으면 전화번호를 이메일로 사용)
-            const userEmail = hasEmail ? email : `${phone.replace(/[^0-9]/g, '')}@phone.local`;
+            // 사용자 생성 (전화번호를 이메일로 사용)
             const user = userRepository.create({
-                email: userEmail,
+                email: `${cleanPhone}@phone.local`,
                 password: hashedPassword,
                 name,
-                phone: hasPhone ? phone : '',
+                phone,
                 role,
                 businessId,
                 isActive: true
