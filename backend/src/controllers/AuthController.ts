@@ -3,6 +3,7 @@ import { AppDataSource } from '../config/database';
 import { User } from '../entities/User';
 import { Business } from '../entities/Business';
 import { CompanySettings } from '../entities/CompanySettings';
+import { UserBusinessAccess } from '../entities/UserBusinessAccess';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
@@ -225,26 +226,27 @@ export const AuthController = {
         });
       }
 
-      // sales_viewer인 경우 businessId로 비즈니스 정보 조회
+      // sales_viewer인 경우 접근 가능한 사업자 목록 조회
       const env = getValidatedEnv();
-      if (env.NODE_ENV === 'development') {
-        console.log('🔑 Login user info:', {
-          userId: user.id,
-          email: user.email,
-          role: user.role,
-          businessId: user.businessId
-        });
-      }
 
-      if (user.role === 'sales_viewer' && user.businessId) {
-        const business = await businessRepository.findOne({
-          where: { id: user.businessId }
+      if (user.role === 'sales_viewer') {
+        // UserBusinessAccess에서 접근 가능한 사업자 조회
+        const accessRepository = AppDataSource.getRepository(UserBusinessAccess);
+        const accessList = await accessRepository.find({
+          where: { userId: user.id },
+          relations: ['business']
         });
-        if (env.NODE_ENV === 'development') {
-          console.log('🏢 Found business for sales_viewer:', business ? { id: business.id, name: business.companyName } : 'null');
-        }
-        if (business) {
-          user.businesses = [business];
+
+        if (accessList.length > 0) {
+          user.businesses = accessList.map(a => a.business).filter(b => b && b.isActive);
+        } else if (user.businessId) {
+          // 기존 방식 하위 호환: businessId가 있으면 사용
+          const business = await businessRepository.findOne({
+            where: { id: user.businessId, isActive: true }
+          });
+          if (business) {
+            user.businesses = [business];
+          }
         }
       }
 

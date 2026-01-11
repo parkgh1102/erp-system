@@ -36,6 +36,7 @@ import { CompanySettings } from '../entities/CompanySettings';
 import { ActivityLog } from '../entities/ActivityLog';
 import { Notification } from '../entities/Notification';
 import { OTP } from '../entities/OTP';
+import { UserBusinessAccess } from '../entities/UserBusinessAccess';
 
 const env = getValidatedEnv();
 
@@ -65,7 +66,8 @@ const baseConfig = {
     CompanySettings,
     ActivityLog,
     Notification,
-    OTP
+    OTP,
+    UserBusinessAccess
   ],
 
   // 마이그레이션 파일 경로

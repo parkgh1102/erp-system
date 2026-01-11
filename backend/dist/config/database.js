@@ -43,6 +43,7 @@ const CompanySettings_1 = require("../entities/CompanySettings");
 const ActivityLog_1 = require("../entities/ActivityLog");
 const Notification_1 = require("../entities/Notification");
 const OTP_1 = require("../entities/OTP");
+const UserBusinessAccess_1 = require("../entities/UserBusinessAccess");
 const env = (0, envValidator_1.getValidatedEnv)();
 const baseConfig = {
     // ✅ synchronize 설정 (환경 변수로 제어 가능)
@@ -68,7 +69,8 @@ const baseConfig = {
         CompanySettings_1.CompanySettings,
         ActivityLog_1.ActivityLog,
         Notification_1.Notification,
-        OTP_1.OTP
+        OTP_1.OTP,
+        UserBusinessAccess_1.UserBusinessAccess
     ],
     // 마이그레이션 파일 경로
     migrations: ['src/migrations/*.ts'],

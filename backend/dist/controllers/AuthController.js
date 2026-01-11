@@ -8,6 +8,7 @@ const database_1 = require("../config/database");
 const User_1 = require("../entities/User");
 const Business_1 = require("../entities/Business");
 const CompanySettings_1 = require("../entities/CompanySettings");
+const UserBusinessAccess_1 = require("../entities/UserBusinessAccess");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const joi_1 = __importDefault(require("joi"));
@@ -196,25 +197,26 @@ exports.AuthController = {
                     message: '아이디 또는 비밀번호가 틀립니다.'
                 });
             }
-            // sales_viewer인 경우 businessId로 비즈니스 정보 조회
+            // sales_viewer인 경우 접근 가능한 사업자 목록 조회
             const env = (0, envValidator_1.getValidatedEnv)();
-            if (env.NODE_ENV === 'development') {
-                console.log('🔑 Login user info:', {
-                    userId: user.id,
-                    email: user.email,
-                    role: user.role,
-                    businessId: user.businessId
+            if (user.role === 'sales_viewer') {
+                // UserBusinessAccess에서 접근 가능한 사업자 조회
+                const accessRepository = database_1.AppDataSource.getRepository(UserBusinessAccess_1.UserBusinessAccess);
+                const accessList = await accessRepository.find({
+                    where: { userId: user.id },
+                    relations: ['business']
                 });
-            }
-            if (user.role === 'sales_viewer' && user.businessId) {
-                const business = await businessRepository.findOne({
-                    where: { id: user.businessId }
-                });
-                if (env.NODE_ENV === 'development') {
-                    console.log('🏢 Found business for sales_viewer:', business ? { id: business.id, name: business.companyName } : 'null');
+                if (accessList.length > 0) {
+                    user.businesses = accessList.map(a => a.business).filter(b => b && b.isActive);
                 }
-                if (business) {
-                    user.businesses = [business];
+                else if (user.businessId) {
+                    // 기존 방식 하위 호환: businessId가 있으면 사용
+                    const business = await businessRepository.findOne({
+                        where: { id: user.businessId, isActive: true }
+                    });
+                    if (business) {
+                        user.businesses = [business];
+                    }
                 }
             }
             // 로그인 성공 로깅

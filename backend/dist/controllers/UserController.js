@@ -6,16 +6,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const database_1 = require("../config/database");
 const User_1 = require("../entities/User");
+const UserBusinessAccess_1 = require("../entities/UserBusinessAccess");
+const Business_1 = require("../entities/Business");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const joi_1 = __importDefault(require("joi"));
 const logger_1 = require("../utils/logger");
 const userRepository = database_1.AppDataSource.getRepository(User_1.User);
+const accessRepository = database_1.AppDataSource.getRepository(UserBusinessAccess_1.UserBusinessAccess);
+const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
 const createUserSchema = joi_1.default.object({
     phone: joi_1.default.string().required(),
     password: joi_1.default.string().min(4).required(),
     name: joi_1.default.string().min(1).required(),
     role: joi_1.default.string().valid('admin', 'sales_viewer').required(),
-    businessId: joi_1.default.number().optional()
+    businessId: joi_1.default.number().optional(),
+    businessIds: joi_1.default.array().items(joi_1.default.number()).optional() // 다중 사업자 접근
 }).unknown(true);
 const updateUserSchema = joi_1.default.object({
     email: joi_1.default.string().email().optional(),
@@ -23,6 +28,7 @@ const updateUserSchema = joi_1.default.object({
     phone: joi_1.default.string().pattern(/^[0-9-+\s()]+$/).allow('').optional(),
     role: joi_1.default.string().valid('admin', 'sales_viewer').optional(),
     businessId: joi_1.default.number().optional(),
+    businessIds: joi_1.default.array().items(joi_1.default.number()).optional(),
     isActive: joi_1.default.boolean().optional()
 });
 exports.UserController = {
@@ -30,13 +36,42 @@ exports.UserController = {
     async getUsers(req, res) {
         try {
             const businessId = parseInt(req.params.businessId);
-            const users = await userRepository.find({
+            // 해당 사업자에 접근 가능한 사용자 조회
+            const accessList = await accessRepository.find({
+                where: { businessId },
+                relations: ['user']
+            });
+            // 기존 방식 (businessId로 직접 연결된 사용자) 도 포함
+            const directUsers = await userRepository.find({
                 where: { businessId },
                 select: ['id', 'email', 'name', 'phone', 'role', 'isActive', 'createdAt', 'updatedAt']
             });
+            // 중복 제거하여 합치기
+            const userMap = new Map();
+            for (const user of directUsers) {
+                userMap.set(user.id, user);
+            }
+            for (const access of accessList) {
+                if (access.user && !userMap.has(access.user.id)) {
+                    const { password, ...userWithoutPassword } = access.user;
+                    userMap.set(access.user.id, userWithoutPassword);
+                }
+            }
+            // 각 사용자의 접근 가능한 사업자 목록 조회
+            const usersWithAccess = await Promise.all(Array.from(userMap.values()).map(async (user) => {
+                const userAccess = await accessRepository.find({
+                    where: { userId: user.id },
+                    relations: ['business']
+                });
+                return {
+                    ...user,
+                    businessIds: userAccess.map(a => a.businessId),
+                    businesses: userAccess.map(a => ({ id: a.business?.id, companyName: a.business?.companyName }))
+                };
+            }));
             res.json({
                 success: true,
-                data: users
+                data: usersWithAccess
             });
         }
         catch (error) {
@@ -60,7 +95,7 @@ exports.UserController = {
                     errors: error.details.map(detail => detail.message)
                 });
             }
-            const { password, name, phone, role } = value;
+            const { password, name, phone, role, businessIds } = value;
             // 전화번호 중복 체크
             const cleanPhone = phone.replace(/[^0-9]/g, '');
             const users = await userRepository.find();
@@ -84,11 +119,20 @@ exports.UserController = {
                 isActive: true
             });
             const savedUser = await userRepository.save(user);
+            // 다중 사업자 접근 권한 설정
+            const accessBusinessIds = businessIds && businessIds.length > 0 ? businessIds : [businessId];
+            for (const bizId of accessBusinessIds) {
+                const access = accessRepository.create({
+                    userId: savedUser.id,
+                    businessId: bizId
+                });
+                await accessRepository.save(access);
+            }
             // 비밀번호 제외하고 반환
             const { password: _, ...userWithoutPassword } = savedUser;
             res.status(201).json({
                 success: true,
-                data: userWithoutPassword,
+                data: { ...userWithoutPassword, businessIds: accessBusinessIds },
                 message: '사용자가 생성되었습니다.'
             });
         }
@@ -129,14 +173,37 @@ exports.UserController = {
                     });
                 }
             }
+            // businessIds가 있으면 접근 권한 업데이트
+            if (value.businessIds) {
+                // 기존 접근 권한 삭제
+                await accessRepository.delete({ userId });
+                // 새 접근 권한 추가
+                for (const bizId of value.businessIds) {
+                    const access = accessRepository.create({
+                        userId,
+                        businessId: bizId
+                    });
+                    await accessRepository.save(access);
+                }
+                delete value.businessIds; // User 엔티티에는 저장하지 않음
+            }
             // 사용자 정보 업데이트
             Object.assign(user, value);
             const updatedUser = await userRepository.save(user);
+            // 접근 가능한 사업자 목록 조회
+            const userAccess = await accessRepository.find({
+                where: { userId },
+                relations: ['business']
+            });
             // 비밀번호 제외하고 반환
             const { password: _, ...userWithoutPassword } = updatedUser;
             res.json({
                 success: true,
-                data: userWithoutPassword,
+                data: {
+                    ...userWithoutPassword,
+                    businessIds: userAccess.map(a => a.businessId),
+                    businesses: userAccess.map(a => ({ id: a.business?.id, companyName: a.business?.companyName }))
+                },
                 message: '사용자 정보가 수정되었습니다.'
             });
         }
