@@ -9,18 +9,13 @@ import { passwordSchema } from '../utils/passwordValidator';
 const userRepository = AppDataSource.getRepository(User);
 
 const createUserSchema = Joi.object({
-  email: Joi.string().email().allow('').optional(),
+  email: Joi.string().email().allow('', null).optional(),
   password: passwordSchema.required(),
   name: Joi.string().min(2).required(),
-  phone: Joi.string().pattern(/^[0-9-+\s()]+$/).allow('').optional(),
+  phone: Joi.string().pattern(/^[0-9-+\s()]+$/).allow('', null).optional(),
   role: Joi.string().valid('admin', 'sales_viewer').required(),
   businessId: Joi.number().optional()
-}).custom((value, helpers) => {
-  if (!value.email && !value.phone) {
-    return helpers.error('any.custom', { message: '이메일 또는 전화번호를 입력해주세요.' });
-  }
-  return value;
-});
+}).or('email', 'phone');
 
 const updateUserSchema = Joi.object({
   email: Joi.string().email().optional(),

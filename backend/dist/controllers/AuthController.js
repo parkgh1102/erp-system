@@ -39,18 +39,10 @@ const signupSchema = joi_1.default.object({
     }).required()
 });
 const loginSchema = joi_1.default.object({
-    email: joi_1.default.string().allow('').optional(),
-    phone: joi_1.default.string().allow('').optional(),
+    email: joi_1.default.string().email().allow('', null).optional(),
+    phone: joi_1.default.string().pattern(/^[0-9-]+$/).allow('', null).optional(),
     password: joi_1.default.string().required()
-}).custom((value, helpers) => {
-    if (!value.email && !value.phone) {
-        return helpers.error('any.custom', { message: '이메일 또는 전화번호를 입력해주세요.' });
-    }
-    if (value.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.email)) {
-        return helpers.error('any.custom', { message: '올바른 이메일 형식이 아닙니다.' });
-    }
-    return value;
-});
+}).or('email', 'phone');
 exports.AuthController = {
     async signup(req, res) {
         try {

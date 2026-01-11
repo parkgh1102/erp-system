@@ -12,18 +12,13 @@ const logger_1 = require("../utils/logger");
 const passwordValidator_1 = require("../utils/passwordValidator");
 const userRepository = database_1.AppDataSource.getRepository(User_1.User);
 const createUserSchema = joi_1.default.object({
-    email: joi_1.default.string().email().allow('').optional(),
+    email: joi_1.default.string().email().allow('', null).optional(),
     password: passwordValidator_1.passwordSchema.required(),
     name: joi_1.default.string().min(2).required(),
-    phone: joi_1.default.string().pattern(/^[0-9-+\s()]+$/).allow('').optional(),
+    phone: joi_1.default.string().pattern(/^[0-9-+\s()]+$/).allow('', null).optional(),
     role: joi_1.default.string().valid('admin', 'sales_viewer').required(),
     businessId: joi_1.default.number().optional()
-}).custom((value, helpers) => {
-    if (!value.email && !value.phone) {
-        return helpers.error('any.custom', { message: '이메일 또는 전화번호를 입력해주세요.' });
-    }
-    return value;
-});
+}).or('email', 'phone');
 const updateUserSchema = joi_1.default.object({
     email: joi_1.default.string().email().optional(),
     name: joi_1.default.string().min(2).optional(),
