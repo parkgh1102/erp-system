@@ -327,22 +327,8 @@ const UserManagement: React.FC = () => {
                 rules={[
                   { required: true, message: '비밀번호를 입력해주세요.' },
                   { min: 8, message: '비밀번호는 최소 8자 이상이어야 합니다.' },
-                  {
-                    validator: (_, value) => {
-                      if (!value) return Promise.resolve();
-                      const errors: string[] = [];
-                      if (!/[A-Z]/.test(value)) errors.push('대문자');
-                      if (!/[a-z]/.test(value)) errors.push('소문자');
-                      if (!/[0-9]/.test(value)) errors.push('숫자');
-                      if (!/[!@#$%^&*(),.?":{}|<>]/.test(value)) errors.push('특수문자');
-                      if (errors.length > 0) {
-                        return Promise.reject(`${errors.join(', ')}를 포함해야 합니다.`);
-                      }
-                      return Promise.resolve();
-                    }
-                  }
                 ]}
-                extra="8자 이상, 대문자/소문자/숫자/특수문자 포함"
+                extra="8자 이상"
               >
                 <Input.Password prefix={<LockOutlined />} placeholder="비밀번호" />
               </Form.Item>

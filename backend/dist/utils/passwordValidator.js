@@ -50,34 +50,9 @@ const isCommonPassword = (password) => {
 };
 const validatePasswordStrength = (password) => {
     const errors = [];
-    // 기본 요구사항 체크
+    // 기본 요구사항 체크 (8자 이상만 체크)
     if (password.length < 8) {
         errors.push('비밀번호는 최소 8자 이상이어야 합니다');
-    }
-    if (!/[A-Z]/.test(password)) {
-        errors.push('대문자를 포함해야 합니다');
-    }
-    if (!/[a-z]/.test(password)) {
-        errors.push('소문자를 포함해야 합니다');
-    }
-    if (!/[0-9]/.test(password)) {
-        errors.push('숫자를 포함해야 합니다');
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-        errors.push('특수문자(!@#$%^&* 등)를 포함해야 합니다');
-    }
-    // 고급 보안 체크
-    if (isCommonPassword(password)) {
-        errors.push('흔한 비밀번호 패턴을 사용할 수 없습니다');
-    }
-    if (hasSequentialChars(password)) {
-        errors.push('4자 이상 연속된 문자(abcd, 1234 등)를 사용할 수 없습니다');
-    }
-    if (hasRepeatingChars(password)) {
-        errors.push('같은 문자를 연속으로 3번 이상 사용할 수 없습니다');
-    }
-    if (hasKeyboardPattern(password)) {
-        errors.push('키보드 패턴(qwer, asdf 등)을 사용할 수 없습니다');
     }
     return {
         isValid: errors.length === 0,
