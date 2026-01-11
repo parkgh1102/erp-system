@@ -205,7 +205,9 @@
       "Bash(az webapp deployment:*)",
       "WebFetch(domain:erp-backend-app.scm.azurewebsites.net)",
       "Bash(tail:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(az webapp deploy:*)",
+      "Bash(for i in 1 2 3 4 5)"
     ],
     "deny": [],
     "ask": []
