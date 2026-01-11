@@ -371,32 +371,32 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
   return (
     <Space size="small" wrap>
       <Dropdown menu={recentDaysMenu} trigger={['click']}>
-        <Button size="small" style={{ borderColor: '#d9d9d9' }}>
+        <Button size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
           최근7일 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown popupRender={() => monthMenuContent} trigger={['click']}>
-        <Button size="small" style={{ borderColor: '#d9d9d9' }}>
+        <Button size="middle" style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}>
           최근 한달 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown popupRender={() => quarterMenuContent} trigger={['click']}>
-        <Button size="small" style={{ borderColor: '#d9d9d9' }}>
+        <Button size="middle" style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16', color: 'white' }}>
           이번분기 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown menu={yearMenu} trigger={['click']}>
-        <Button size="small" style={{ borderColor: '#d9d9d9' }}>
+        <Button size="middle" style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}>
           이번년도 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Button
-        size="small"
-        style={{ borderColor: '#d9d9d9' }}
+        size="middle"
+        style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
         onClick={() => {
           const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
           const startDate = dayjs().subtract(2, 'month').startOf('month').format('YYYY-MM-DD');
@@ -407,8 +407,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
       </Button>
 
       <Button
-        size="small"
-        style={{ borderColor: '#d9d9d9' }}
+        size="middle"
+        style={{ backgroundColor: '#eb2f96', borderColor: '#eb2f96', color: 'white' }}
         onClick={() => {
           const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
           const startDate = dayjs().subtract(5, 'month').startOf('month').format('YYYY-MM-DD');
@@ -420,7 +420,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
 
       {onLimitChange && (
         <Dropdown menu={limitMenu} trigger={['click']}>
-          <Button size="small" style={{ borderColor: '#d9d9d9' }}>
+          <Button size="middle" style={{ backgroundColor: '#595959', borderColor: '#595959', color: 'white' }}>
             최근자료 <DownOutlined />
           </Button>
         </Dropdown>
