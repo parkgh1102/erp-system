@@ -12,6 +12,15 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 
+interface LedgerItemInfo {
+  itemCode: string;
+  itemName: string;
+  spec?: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
 interface LedgerEntry {
   id: number;
   date: string;
@@ -24,15 +33,9 @@ interface LedgerEntry {
   totalAmount: number;   // 합계
   balance: number;
   memo?: string;
-  itemInfo?: {
-    itemCode: string;
-    itemName: string;
-    spec?: string;
-    quantity: number;
-    unitPrice: number;
-    amount: number;
-  };
+  itemInfo?: LedgerItemInfo;
   itemCount?: number;  // 품목 개수
+  items?: LedgerItemInfo[];  // 전체 품목 배열
 }
 
 interface LedgerData {
@@ -245,6 +248,16 @@ export const transactionLedgerController = {
         // 품목 개수 계산
         const itemCount = sale.items?.length || 0;
 
+        // 전체 품목 배열 생성
+        const allItems: LedgerItemInfo[] = sale.items?.map(item => ({
+          itemCode: item.productId?.toString() || '',
+          itemName: item.itemName || '',
+          spec: item.specification || '',
+          quantity: Number(item.quantity) || 0,
+          unitPrice: Number(item.unitPrice) || 0,
+          amount: Number(item.supplyAmount) || 0
+        })) || [];
+
         entries.push({
           id: sale.id,
           date: dayjs(sale.transactionDate).format('YYYY-MM-DD'),
@@ -258,14 +271,8 @@ export const transactionLedgerController = {
           balance: runningBalance,
           memo: sale.memo || sale.description || '',
           itemCount: itemCount,  // 품목 개수 추가
-          itemInfo: sale.items && sale.items[0] ? {
-            itemCode: sale.items[0].productId?.toString() || '',
-            itemName: sale.items[0].itemName || '',
-            spec: sale.items[0].specification || '',
-            quantity: Number(sale.items[0].quantity) || 0,
-            unitPrice: Number(sale.items[0].unitPrice) || 0,
-            amount: Number(sale.items[0].supplyAmount) || 0
-          } : undefined
+          items: allItems,  // 전체 품목 배열
+          itemInfo: allItems[0] || undefined
         });
       });
 
@@ -282,6 +289,16 @@ export const transactionLedgerController = {
         // 품목 개수 계산
         const itemCount = purchase.items?.length || 0;
 
+        // 전체 품목 배열 생성
+        const allPurchaseItems: LedgerItemInfo[] = purchase.items?.map(item => ({
+          itemCode: item.productId?.toString() || '',
+          itemName: item.productName || '',
+          spec: item.spec || '',
+          quantity: Number(item.quantity) || 0,
+          unitPrice: Number(item.unitPrice) || 0,
+          amount: Number(item.amount) || 0
+        })) || [];
+
         entries.push({
           id: purchase.id + 10000,
           date: dayjs(purchase.purchaseDate).format('YYYY-MM-DD'),
@@ -295,14 +312,8 @@ export const transactionLedgerController = {
           balance: runningBalance,
           memo: purchase.memo || '',
           itemCount: itemCount,  // 품목 개수 추가
-          itemInfo: purchase.items && purchase.items[0] ? {
-            itemCode: purchase.items[0].productId?.toString() || '',
-            itemName: purchase.items[0].productName || '',
-            spec: purchase.items[0].spec || '',
-            quantity: Number(purchase.items[0].quantity) || 0,
-            unitPrice: Number(purchase.items[0].unitPrice) || 0,
-            amount: Number(purchase.items[0].amount) || 0
-          } : undefined
+          items: allPurchaseItems,  // 전체 품목 배열
+          itemInfo: allPurchaseItems[0] || undefined
         });
       });
 

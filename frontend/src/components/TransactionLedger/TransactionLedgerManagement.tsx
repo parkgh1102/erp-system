@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, Row, Col, Select, DatePicker, Button, Table, Space, message, Modal, Form, Input, Spin, AutoComplete, Dropdown, Statistic, Alert, Badge, Tabs, Tag, Progress, Divider, List, Avatar, Tooltip } from 'antd';
 import { SearchOutlined, PrinterOutlined, FilePdfOutlined, ExportOutlined, DollarOutlined, UserOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import { useReactToPrint } from 'react-to-print';
@@ -18,6 +18,15 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
 
+interface LedgerItemInfo {
+  itemCode: string;
+  itemName: string;
+  spec?: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
 interface LedgerEntry {
   id: number;
   date: string;
@@ -30,15 +39,17 @@ interface LedgerEntry {
   totalAmount: number;   // 합계
   balance: number;
   memo?: string;
-  itemInfo?: {
-    itemCode: string;
-    itemName: string;
-    spec?: string;
-    quantity: number;
-    unitPrice: number;
-    amount: number;
-  };
+  itemInfo?: LedgerItemInfo;
   itemCount?: number;  // 품목 개수
+  items?: LedgerItemInfo[];  // 전체 품목 배열
+}
+
+// 품목별 펼친 엔트리 (테이블 표시용)
+interface ExpandedLedgerEntry extends LedgerEntry {
+  rowKey: string;
+  isFirstRow: boolean;
+  itemIndex: number;
+  currentItemInfo?: LedgerItemInfo;
 }
 
 interface Customer {
@@ -81,6 +92,51 @@ const TransactionLedgerManagement: React.FC = () => {
 
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
+
+  // 품목별로 펼친 엔트리 생성
+  const expandedEntries = useMemo((): ExpandedLedgerEntry[] => {
+    const result: ExpandedLedgerEntry[] = [];
+
+    ledgerEntries.forEach((entry) => {
+      // 수금/지급은 품목 없이 그대로 표시
+      if (entry.type === 'receipt' || entry.type === 'payment') {
+        result.push({
+          ...entry,
+          rowKey: `${entry.id}-0`,
+          isFirstRow: true,
+          itemIndex: 0,
+          currentItemInfo: undefined
+        });
+        return;
+      }
+
+      // 매출/매입: 품목별로 펼치기
+      const items = entry.items || [];
+      if (items.length === 0) {
+        // 품목이 없으면 그대로 표시
+        result.push({
+          ...entry,
+          rowKey: `${entry.id}-0`,
+          isFirstRow: true,
+          itemIndex: 0,
+          currentItemInfo: entry.itemInfo
+        });
+      } else {
+        // 품목별로 각각 행 생성
+        items.forEach((item, index) => {
+          result.push({
+            ...entry,
+            rowKey: `${entry.id}-${index}`,
+            isFirstRow: index === 0,
+            itemIndex: index,
+            currentItemInfo: item
+          });
+        });
+      }
+    });
+
+    return result;
+  }, [ledgerEntries]);
 
   useEffect(() => {
     if (currentBusiness) {
@@ -343,7 +399,10 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'date',
       width: 120,
       align: 'center' as const,
-      render: (text: string) => dayjs(text).format('YYYY-MM-DD'),
+      render: (text: string, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return null;
+        return dayjs(text).format('YYYY-MM-DD');
+      },
     },
     {
       title: '거래처',
@@ -351,6 +410,10 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'customerName',
       width: 150,
       align: 'center' as const,
+      render: (text: string, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return null;
+        return text;
+      },
     },
     {
       title: '구분',
@@ -358,7 +421,8 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'type',
       width: 80,
       align: 'center' as const,
-      render: (type: string) => {
+      render: (type: string, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return null;
         const typeMap = {
           'sales': '매출',
           'purchase': '매입',
@@ -380,21 +444,15 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'description',
       width: 200,
       align: 'center' as const,
-      render: (description: string, record: LedgerEntry) => {
+      render: (description: string, record: ExpandedLedgerEntry) => {
         // 수금, 지급은 기존 description 표시
         if (record.type === 'receipt' || record.type === 'payment') {
           return description;
         }
 
-        // 매출, 매입: itemCount 체크 후 표시
-        if (record.itemCount && record.itemCount > 1) {
-          const firstItem = record.itemInfo?.itemName || description;
-          return `${firstItem} 외 ${record.itemCount - 1}`;
-        }
-
-        // 품목이 1개만 있을 때
-        if (record.itemInfo) {
-          return record.itemInfo.itemName;
+        // 품목별 개별 행 표시
+        if (record.currentItemInfo) {
+          return record.currentItemInfo.itemName;
         }
 
         return description;
@@ -406,16 +464,18 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'supplyAmount',
       width: 120,
       align: 'right' as const,
-      render: (supplyAmount: number, record: LedgerEntry) => {
+      render: (supplyAmount: number, record: ExpandedLedgerEntry) => {
+        // 품목별 금액 표시 (첫 행이 아니면 개별 품목 금액 표시)
+        const displayAmount = record.isFirstRow ? supplyAmount : (record.currentItemInfo?.amount || 0);
         const colorMap = {
-          'sales': isDark ? '#40a9ff' : '#1890ff',    // 매출 - 파랑
-          'purchase': isDark ? '#d9d9d9' : '#000000', // 매입 - 다크모드: 밝은 회색, 라이트모드: 검정
-          'receipt': isDark ? '#ff7875' : '#ff4d4f',  // 수금 - 빨강
-          'payment': isDark ? '#d9d9d9' : '#000000'   // 지급 - 다크모드: 밝은 회색, 라이트모드: 검정
+          'sales': isDark ? '#40a9ff' : '#1890ff',
+          'purchase': isDark ? '#d9d9d9' : '#000000',
+          'receipt': isDark ? '#ff7875' : '#ff4d4f',
+          'payment': isDark ? '#d9d9d9' : '#000000'
         };
         return (
           <span style={{ color: colorMap[record.type] }}>
-            {Math.round(supplyAmount || 0).toLocaleString()}원
+            {Math.round(displayAmount || 0).toLocaleString()}원
           </span>
         );
       },
@@ -426,11 +486,14 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'vatAmount',
       width: 100,
       align: 'right' as const,
-      render: (vatAmount: number) => (
-        <span>
-          {Math.round(vatAmount || 0).toLocaleString()}원
-        </span>
-      ),
+      render: (vatAmount: number, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return null;
+        return (
+          <span>
+            {Math.round(vatAmount || 0).toLocaleString()}원
+          </span>
+        );
+      },
     },
     {
       title: '합계',
@@ -438,11 +501,14 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'totalAmount',
       width: 120,
       align: 'right' as const,
-      render: (totalAmount: number) => (
-        <span style={{ fontWeight: 'bold' }}>
-          {Math.round(totalAmount || 0).toLocaleString()}원
-        </span>
-      ),
+      render: (totalAmount: number, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return null;
+        return (
+          <span style={{ fontWeight: 'bold' }}>
+            {Math.round(totalAmount || 0).toLocaleString()}원
+          </span>
+        );
+      },
     },
     {
       title: '잔액',
@@ -450,7 +516,8 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'balance',
       width: 120,
       align: 'right' as const,
-      render: (balance: number) => {
+      render: (balance: number, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return null;
         const color = balance >= 0
           ? (isDark ? '#40a9ff' : '#1890ff')  // 양수: 파랑
           : (isDark ? '#ff7875' : '#ff4d4f'); // 음수: 빨강
@@ -466,7 +533,10 @@ const TransactionLedgerManagement: React.FC = () => {
       dataIndex: 'memo',
       key: 'memo',
       align: 'center' as const,
-      render: (memo: string) => memo || '-',
+      render: (memo: string, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return null;
+        return memo || '-';
+      },
     },
   ];
 
@@ -591,14 +661,14 @@ const TransactionLedgerManagement: React.FC = () => {
           <Table
             id="transaction-ledger-table"
             columns={columns}
-            dataSource={ledgerEntries}
-            rowKey="id"
+            dataSource={expandedEntries}
+            rowKey="rowKey"
             pagination={{
               current: currentPage,
               pageSize: pageSize,
-              total: ledgerEntries.length,
+              total: expandedEntries.length,
               showSizeChanger: true,
-              showTotal: (total) => `총 ${total}건`,
+              showTotal: () => `총 ${ledgerEntries.length}건`,
               onChange: (page, size) => {
                 setCurrentPage(page);
                 if (size !== pageSize) {
@@ -610,16 +680,19 @@ const TransactionLedgerManagement: React.FC = () => {
             summary={(pageData) => {
               if (pageData.length === 0) return null;
 
-              const totalSalesSupply = pageData.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.supplyAmount || 0), 0);
-              const totalSalesVat = pageData.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.vatAmount || 0), 0);
-              const totalSales = pageData.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
+              // 첫 행만 필터하여 합계 계산 (중복 방지)
+              const firstRows = pageData.filter((e: ExpandedLedgerEntry) => e.isFirstRow);
 
-              const totalPurchaseSupply = pageData.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.supplyAmount || 0), 0);
-              const totalPurchaseVat = pageData.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.vatAmount || 0), 0);
-              const totalPurchase = pageData.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
+              const totalSalesSupply = firstRows.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.supplyAmount || 0), 0);
+              const totalSalesVat = firstRows.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.vatAmount || 0), 0);
+              const totalSales = firstRows.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
 
-              const totalReceipt = pageData.filter(e => e.type === 'receipt').reduce((sum, e) => sum + (e.totalAmount || e.amount || 0), 0);
-              const totalPayment = pageData.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.totalAmount || e.amount || 0), 0);
+              const totalPurchaseSupply = firstRows.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.supplyAmount || 0), 0);
+              const totalPurchaseVat = firstRows.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.vatAmount || 0), 0);
+              const totalPurchase = firstRows.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
+
+              const totalReceipt = firstRows.filter(e => e.type === 'receipt').reduce((sum, e) => sum + (e.totalAmount || e.amount || 0), 0);
+              const totalPayment = firstRows.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.totalAmount || e.amount || 0), 0);
 
               // 합계 잔액은 전체 거래의 마지막 잔액을 표시
               const finalBalance = ledgerEntries.length > 0 ? ledgerEntries[ledgerEntries.length - 1].balance : 0;

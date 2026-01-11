@@ -229,20 +229,24 @@ body {
 .login-segmented.ant-segmented {
   background-color: #e6f4ff !important;
   border: 2px solid #1890ff !important;
+  border-radius: 8px !important;
 }
 
 .login-segmented .ant-segmented-item {
   color: #1890ff !important;
   font-weight: 600 !important;
   font-size: 15px !important;
+  padding: 8px 24px !important;
 }
 
 .login-segmented .ant-segmented-item-selected {
-  background-color: #1890ff !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.4) !important;
+  background-color: #fadb14 !important;
+  color: #000000 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 8px rgba(250, 219, 20, 0.4) !important;
 }
 
 .login-segmented .ant-segmented-thumb {
-  background-color: #1890ff !important;
+  background-color: #fadb14 !important;
+  border-radius: 6px !important;
 }

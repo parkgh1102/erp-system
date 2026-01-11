@@ -4,6 +4,15 @@ import { PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import { useReactToPrint } from 'react-to-print';
 import dayjs from 'dayjs';
 
+interface LedgerItemInfo {
+  itemCode: string;
+  itemName: string;
+  spec?: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
 interface LedgerEntry {
   id: number;
   date: string;
@@ -16,15 +25,16 @@ interface LedgerEntry {
   totalAmount: number;
   balance: number;
   memo?: string;
-  itemInfo?: {
-    itemCode: string;
-    itemName: string;
-    spec?: string;
-    quantity: number;
-    unitPrice: number;
-    amount: number;
-  };
+  itemInfo?: LedgerItemInfo;
   itemCount?: number;
+  items?: LedgerItemInfo[];
+}
+
+interface ExpandedPrintEntry {
+  entry: LedgerEntry;
+  isFirstRow: boolean;
+  itemIndex: number;
+  currentItemInfo?: LedgerItemInfo;
 }
 
 interface Customer {
@@ -62,6 +72,39 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: '거래원장',
+  });
+
+  // 품목별로 펼친 데이터 생성
+  const expandedPrintEntries: ExpandedPrintEntry[] = [];
+  ledgerEntries.forEach((entry) => {
+    if (entry.type === 'receipt' || entry.type === 'payment') {
+      expandedPrintEntries.push({
+        entry,
+        isFirstRow: true,
+        itemIndex: 0,
+        currentItemInfo: undefined
+      });
+      return;
+    }
+
+    const items = entry.items || [];
+    if (items.length === 0) {
+      expandedPrintEntries.push({
+        entry,
+        isFirstRow: true,
+        itemIndex: 0,
+        currentItemInfo: entry.itemInfo
+      });
+    } else {
+      items.forEach((item, index) => {
+        expandedPrintEntries.push({
+          entry,
+          isFirstRow: index === 0,
+          itemIndex: index,
+          currentItemInfo: item
+        });
+      });
+    }
   });
 
   // 집계 계산
@@ -307,22 +350,23 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
               </tr>
             )}
 
-            {/* 거래 내역 */}
-            {ledgerEntries.map((entry, index) => {
-              // 품목명 표시 로직
+            {/* 거래 내역 - 품목별 펼침 */}
+            {expandedPrintEntries.map((expandedEntry, index) => {
+              const { entry, isFirstRow, currentItemInfo } = expandedEntry;
+
+              // 품목명 표시
               const getItemDisplay = () => {
                 if (entry.type === 'receipt' || entry.type === 'payment') {
                   return entry.description;
                 }
-                if (entry.itemCount && entry.itemCount > 1) {
-                  const firstItem = entry.itemInfo?.itemName || entry.description;
-                  return `${firstItem} 외 ${entry.itemCount - 1}`;
-                }
-                if (entry.itemInfo) {
-                  return entry.itemInfo.itemName;
+                if (currentItemInfo) {
+                  return currentItemInfo.itemName;
                 }
                 return entry.description;
               };
+
+              // 공급가액 표시 (첫 행이면 전체 금액, 아니면 개별 품목 금액)
+              const displaySupplyAmount = isFirstRow ? entry.supplyAmount : (currentItemInfo?.amount || 0);
 
               return (
                 <tr key={index}>
@@ -331,14 +375,14 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     padding: '6px',
                     textAlign: 'center'
                   }}>
-                    {dayjs(entry.date).format('YYYY-MM-DD')}
+                    {isFirstRow ? dayjs(entry.date).format('YYYY-MM-DD') : ''}
                   </td>
                   <td style={{
                     border: '1px solid #000',
                     padding: '6px',
                     textAlign: 'center'
                   }}>
-                    {entry.customerName || customer?.name}
+                    {isFirstRow ? (entry.customerName || customer?.name) : ''}
                   </td>
                   <td style={{
                     border: '1px solid #000',
@@ -346,7 +390,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     textAlign: 'center',
                     color: entry.type === 'sales' ? '#1890ff' : entry.type === 'purchase' ? '#000' : entry.type === 'receipt' ? '#52c41a' : '#fa8c16'
                   }}>
-                    {entry.type === 'sales' ? '매출' : entry.type === 'purchase' ? '매입' : entry.type === 'receipt' ? '수금' : '지급'}
+                    {isFirstRow ? (entry.type === 'sales' ? '매출' : entry.type === 'purchase' ? '매입' : entry.type === 'receipt' ? '수금' : '지급') : ''}
                   </td>
                   <td style={{
                     border: '1px solid #000',
@@ -361,14 +405,14 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     textAlign: 'right',
                     color: entry.type === 'sales' ? '#1890ff' : entry.type === 'receipt' ? '#ff4d4f' : '#000'
                   }}>
-                    {entry.supplyAmount ? `${entry.supplyAmount.toLocaleString()}원` : ''}
+                    {displaySupplyAmount ? `${displaySupplyAmount.toLocaleString()}원` : ''}
                   </td>
                   <td style={{
                     border: '1px solid #000',
                     padding: '6px',
                     textAlign: 'right'
                   }}>
-                    {entry.vatAmount ? `${entry.vatAmount.toLocaleString()}원` : ''}
+                    {isFirstRow && entry.vatAmount ? `${entry.vatAmount.toLocaleString()}원` : ''}
                   </td>
                   <td style={{
                     border: '1px solid #000',
@@ -376,7 +420,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     textAlign: 'right',
                     fontWeight: 'bold'
                   }}>
-                    {entry.totalAmount ? `${entry.totalAmount.toLocaleString()}원` : ''}
+                    {isFirstRow && entry.totalAmount ? `${entry.totalAmount.toLocaleString()}원` : ''}
                   </td>
                   <td style={{
                     border: '1px solid #000',
@@ -385,7 +429,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     fontWeight: 'bold',
                     color: entry.balance >= 0 ? '#1890ff' : '#ff4d4f'
                   }}>
-                    {entry.balance.toLocaleString()}원
+                    {isFirstRow ? `${entry.balance.toLocaleString()}원` : ''}
                   </td>
                   <td style={{
                     border: '1px solid #000',
@@ -393,7 +437,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     textAlign: 'center',
                     fontSize: '8pt'
                   }}>
-                    {entry.memo || '-'}
+                    {isFirstRow ? (entry.memo || '-') : ''}
                   </td>
                 </tr>
               );
