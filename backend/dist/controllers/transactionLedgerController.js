@@ -101,13 +101,13 @@ exports.transactionLedgerController = {
                 previousBalance,
                 beforeDate: start.subtract(1, 'day').format('YYYY-MM-DD')
             });
-            // 매출 데이터 조회 (날짜 범위 포함)
+            // 매출 데이터 조회 (날짜 범위 포함) - items.product 포함하여 taxType 확인
             const allSales = await salesRepository.find({
                 where: {
                     customerId: Number(customerId),
                     businessId: Number(businessId),
                 },
-                relations: ['customer', 'items']
+                relations: ['customer', 'items', 'items.product']
             });
             // 날짜 범위 필터링
             const sales = allSales.filter(sale => {
@@ -115,13 +115,13 @@ exports.transactionLedgerController = {
                 return saleDate.isSameOrAfter(start, 'day') && saleDate.isSameOrBefore(end, 'day');
             });
             console.log(`📊 매출 데이터: 전체 ${allSales.length}건, 필터링 후 ${sales.length}건`);
-            // 매입 데이터 조회 (날짜 범위 포함)
+            // 매입 데이터 조회 (날짜 범위 포함) - items.product 포함하여 taxType 확인
             const allPurchases = await purchaseRepository.find({
                 where: {
                     customerId: Number(customerId),
                     businessId: Number(businessId),
                 },
-                relations: ['customer', 'items']
+                relations: ['customer', 'items', 'items.product']
             });
             // 날짜 범위 필터링
             const purchases = allPurchases.filter(purchase => {
@@ -160,10 +160,24 @@ exports.transactionLedgerController = {
                 runningBalance += totalAmount;
                 // 품목 개수 계산
                 const itemCount = sale.items?.length || 0;
-                // 전체 품목 배열 생성 (세액, 합계 포함)
+                // 전체 품목 배열 생성 (세액, 합계 포함) - product.taxType 기반 세액 계산
                 const allItems = sale.items?.map(item => {
                     const itemSupplyAmount = Number(item.supplyAmount) || 0;
-                    const itemTaxAmount = Number(item.taxAmount) || 0;
+                    // product의 taxType 확인하여 세액 계산
+                    const taxType = item.product?.taxType || 'tax_separate';
+                    let itemTaxAmount = 0;
+                    if (taxType === 'tax_free') {
+                        // 면세: 세액 0
+                        itemTaxAmount = 0;
+                    }
+                    else if (taxType === 'tax_inclusive') {
+                        // 과세10%포함: 저장된 taxAmount 사용 (이미 분리 계산됨)
+                        itemTaxAmount = Number(item.taxAmount) || 0;
+                    }
+                    else {
+                        // 과세10%별도: 저장된 taxAmount 사용
+                        itemTaxAmount = Number(item.taxAmount) || 0;
+                    }
                     return {
                         itemCode: item.productId?.toString() || '',
                         itemName: item.itemName || '',
@@ -202,15 +216,21 @@ exports.transactionLedgerController = {
                 runningBalance -= totalAmount;
                 // 품목 개수 계산
                 const itemCount = purchase.items?.length || 0;
-                // 전체 품목 배열 생성 (세액, 합계 포함)
-                // 매입 품목의 세액은 전체 세액을 품목별 공급가액 비율로 배분
+                // 전체 품목 배열 생성 (세액, 합계 포함) - product.taxType 기반 세액 계산
                 const totalPurchaseVat = Number(purchase.vatAmount) || 0;
                 const allPurchaseItems = purchase.items?.map(item => {
                     const itemSupplyAmount = Number(item.amount) || 0;
-                    // 세액 배분: 전체 세액 * (해당 품목 공급가액 / 전체 공급가액)
-                    const itemTaxAmount = supplyAmount > 0
-                        ? Math.round(totalPurchaseVat * (itemSupplyAmount / supplyAmount))
-                        : 0;
+                    // product의 taxType 확인하여 세액 계산
+                    const taxType = item.product?.taxType || 'tax_separate';
+                    let itemTaxAmount = 0;
+                    if (taxType === 'tax_free') {
+                        // 면세: 세액 0
+                        itemTaxAmount = 0;
+                    }
+                    else if (supplyAmount > 0) {
+                        // 과세: 전체 세액을 품목별 공급가액 비율로 배분
+                        itemTaxAmount = Math.round(totalPurchaseVat * (itemSupplyAmount / supplyAmount));
+                    }
                     return {
                         itemCode: item.productId?.toString() || '',
                         itemName: item.productName || '',
