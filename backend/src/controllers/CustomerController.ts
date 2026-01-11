@@ -3,12 +3,14 @@ import { AppDataSource } from '../config/database';
 import { Customer } from '../entities/Customer';
 import { Business } from '../entities/Business';
 import { User } from '../entities/User';
+import { UserBusinessAccess } from '../entities/UserBusinessAccess';
 import { logger } from '../utils/logger';
 import Joi from 'joi';
 
 const customerRepository = AppDataSource.getRepository(Customer);
 const businessRepository = AppDataSource.getRepository(Business);
 const userRepository = AppDataSource.getRepository(User);
+const userBusinessAccessRepository = AppDataSource.getRepository(UserBusinessAccess);
 
 const customerSchema = Joi.object({
   customerCode: Joi.string().max(50).allow('', null).optional(),
@@ -70,8 +72,12 @@ export const CustomerController = {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });
@@ -161,8 +167,12 @@ export const CustomerController = {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });
@@ -251,8 +261,12 @@ export const CustomerController = {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });
@@ -325,8 +339,12 @@ export const CustomerController = {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });
@@ -413,8 +431,12 @@ export const CustomerController = {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });

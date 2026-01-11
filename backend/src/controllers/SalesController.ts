@@ -6,6 +6,7 @@ import { Customer } from '../entities/Customer';
 import { SalesItem } from '../entities/SalesItem';
 import { User } from '../entities/User';
 import { Notification } from '../entities/Notification';
+import { UserBusinessAccess } from '../entities/UserBusinessAccess';
 // import { Product } from '../entities/Product';
 import Joi from 'joi';
 import { AlimtalkService } from '../services/AlimtalkService';
@@ -17,6 +18,7 @@ const customerRepository = AppDataSource.getRepository(Customer);
 const salesItemRepository = AppDataSource.getRepository(SalesItem);
 const userRepository = AppDataSource.getRepository(User);
 const notificationRepository = AppDataSource.getRepository(Notification);
+const userBusinessAccessRepository = AppDataSource.getRepository(UserBusinessAccess);
 // const productRepository = AppDataSource.getRepository(Product);
 
 const salesSchema = Joi.object({
@@ -88,8 +90,12 @@ export class SalesController {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });
@@ -164,8 +170,12 @@ export class SalesController {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });
@@ -236,8 +246,12 @@ export class SalesController {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });
@@ -374,8 +388,12 @@ export class SalesController {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });
@@ -491,8 +509,12 @@ export class SalesController {
           }
         });
       } else if (user.role === 'sales_viewer') {
-        // sales_viewer는 businessId로 할당된 business에 접근 가능
-        if (user.businessId === parseInt(businessId)) {
+        // sales_viewer는 UserBusinessAccess 또는 businessId로 접근 가능
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+
+        if (hasAccess || user.businessId === parseInt(businessId)) {
           business = await businessRepository.findOne({
             where: { id: parseInt(businessId) }
           });
