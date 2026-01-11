@@ -124,8 +124,8 @@ const LoginFormContent: React.FC = () => {
           <div style={{ marginBottom: '16px', textAlign: 'center' }}>
             <Segmented
               options={[
-                { label: '이메일', value: 'email' },
-                { label: '사용자 전용 로그인', value: 'phone' },
+                { label: '관리자', value: 'email' },
+                { label: '사용자', value: 'phone' },
               ]}
               value={loginType}
               onChange={(value) => {

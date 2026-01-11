@@ -191,11 +191,6 @@ const UserManagement: React.FC = () => {
       ),
     },
     {
-      title: '이메일',
-      dataIndex: 'email',
-      key: 'email',
-    },
-    {
       title: '전화번호',
       dataIndex: 'phone',
       key: 'phone',

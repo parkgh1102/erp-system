@@ -485,6 +485,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             { key: '/dashboard', icon: <DashboardOutlined />, label: '대시보드', roles: ['admin'] },
             { key: '/customers', icon: <TeamOutlined />, label: '거래처', roles: ['admin'] },
             { key: '/sales', icon: <ShoppingCartOutlined />, label: '매출', roles: ['admin', 'sales_viewer'] },
+            { key: '/transaction-ledger', icon: <FileTextOutlined />, label: '거래원장', roles: ['admin', 'sales_viewer'] },
             { key: '/purchases', icon: <FileTextOutlined />, label: '매입', roles: ['admin'] },
             { key: '/inventory', icon: <FileTextOutlined />, label: '재고', roles: ['admin'] },
             { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
