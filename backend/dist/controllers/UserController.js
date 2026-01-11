@@ -16,7 +16,7 @@ const createUserSchema = joi_1.default.object({
     name: joi_1.default.string().min(1).required(),
     role: joi_1.default.string().valid('admin', 'sales_viewer').required(),
     businessId: joi_1.default.number().optional()
-});
+}).unknown(true);
 const updateUserSchema = joi_1.default.object({
     email: joi_1.default.string().email().optional(),
     name: joi_1.default.string().min(2).optional(),
@@ -53,9 +53,10 @@ exports.UserController = {
             const businessId = parseInt(req.params.businessId);
             const { error, value } = createUserSchema.validate(req.body);
             if (error) {
+                logger_1.logger.warn('User create validation error', { errors: error.details.map(d => d.message) });
                 return res.status(400).json({
                     success: false,
-                    message: '입력 정보를 확인해주세요.',
+                    message: error.details.map(detail => detail.message).join(', '),
                     errors: error.details.map(detail => detail.message)
                 });
             }
