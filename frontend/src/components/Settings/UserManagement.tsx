@@ -125,13 +125,18 @@ const UserManagement: React.FC = () => {
     try {
       const values = await form.validateFields();
 
+      // 빈 문자열 필드 제거
+      const cleanedValues = Object.fromEntries(
+        Object.entries(values).filter(([_, v]) => v !== '' && v !== undefined && v !== null)
+      );
+
       if (editingUser) {
         // 수정
-        await api.put(`/businesses/${currentBusiness.id}/users/${editingUser.id}`, values);
+        await api.put(`/businesses/${currentBusiness.id}/users/${editingUser.id}`, cleanedValues);
         showSuccess('사용자 정보가 수정되었습니다.');
       } else {
         // 생성
-        await api.post(`/businesses/${currentBusiness.id}/users`, values);
+        await api.post(`/businesses/${currentBusiness.id}/users`, cleanedValues);
         showSuccess('사용자가 생성되었습니다.');
       }
 
