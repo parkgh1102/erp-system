@@ -125,7 +125,7 @@ const LoginFormContent: React.FC = () => {
             <Segmented
               options={[
                 { label: '이메일', value: 'email' },
-                { label: '전화번호', value: 'phone' },
+                { label: '사용자 전용 로그인', value: 'phone' },
               ]}
               value={loginType}
               onChange={(value) => {
