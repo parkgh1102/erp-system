@@ -405,9 +405,9 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     border: '1px solid #000',
                     padding: '6px',
                     textAlign: 'right',
-                    color: entry.type === 'sales' ? '#1890ff' : entry.type === 'receipt' ? '#ff4d4f' : '#000'
+                    color: displaySupplyAmount < 0 ? '#ff4d4f' : (entry.type === 'sales' ? '#1890ff' : entry.type === 'receipt' ? '#ff4d4f' : '#000')
                   }}>
-                    {displaySupplyAmount ? `${displaySupplyAmount.toLocaleString()}원` : ''}
+                    {displaySupplyAmount !== undefined ? `${displaySupplyAmount.toLocaleString()}원` : ''}
                   </td>
                   <td style={{
                     border: '1px solid #000',
@@ -416,7 +416,12 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                   }}>
                     {(() => {
                       const displayTax = currentItemInfo?.taxAmount ?? entry.vatAmount;
-                      return displayTax ? `${displayTax.toLocaleString()}원` : '';
+                      const isNegative = displayTax < 0;
+                      return displayTax !== undefined ? (
+                        <span style={{ color: isNegative ? '#ff4d4f' : undefined }}>
+                          {displayTax.toLocaleString()}원
+                        </span>
+                      ) : '';
                     })()}
                   </td>
                   <td style={{
@@ -427,7 +432,12 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                   }}>
                     {(() => {
                       const displayTotal = currentItemInfo?.totalAmount ?? entry.totalAmount;
-                      return displayTotal ? `${displayTotal.toLocaleString()}원` : '';
+                      const isNegative = displayTotal < 0;
+                      return displayTotal !== undefined ? (
+                        <span style={{ color: isNegative ? '#ff4d4f' : undefined }}>
+                          {displayTotal.toLocaleString()}원
+                        </span>
+                      ) : '';
                     })()}
                   </td>
                   <td style={{

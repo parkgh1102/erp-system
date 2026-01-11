@@ -469,14 +469,17 @@ const TransactionLedgerManagement: React.FC = () => {
       render: (supplyAmount: number, record: ExpandedLedgerEntry) => {
         // 품목별 공급가액 표시
         const displayAmount = record.currentItemInfo?.amount ?? supplyAmount;
+        // 음수(반품)는 빨간색, 양수는 타입별 색상
+        const isNegative = displayAmount < 0;
         const colorMap = {
           'sales': isDark ? '#40a9ff' : '#1890ff',
           'purchase': isDark ? '#d9d9d9' : '#000000',
           'receipt': isDark ? '#ff7875' : '#ff4d4f',
           'payment': isDark ? '#d9d9d9' : '#000000'
         };
+        const color = isNegative ? (isDark ? '#ff7875' : '#ff4d4f') : colorMap[record.type];
         return (
-          <span style={{ color: colorMap[record.type] }}>
+          <span style={{ color }}>
             {Math.round(displayAmount || 0).toLocaleString()}원
           </span>
         );
@@ -491,8 +494,11 @@ const TransactionLedgerManagement: React.FC = () => {
       render: (vatAmount: number, record: ExpandedLedgerEntry) => {
         // 품목별 세액 표시
         const displayTax = record.currentItemInfo?.taxAmount ?? vatAmount;
+        // 음수(반품)는 빨간색
+        const isNegative = displayTax < 0;
+        const color = isNegative ? (isDark ? '#ff7875' : '#ff4d4f') : undefined;
         return (
-          <span>
+          <span style={{ color }}>
             {Math.round(displayTax || 0).toLocaleString()}원
           </span>
         );
@@ -507,8 +513,11 @@ const TransactionLedgerManagement: React.FC = () => {
       render: (totalAmount: number, record: ExpandedLedgerEntry) => {
         // 품목별 합계 표시
         const displayTotal = record.currentItemInfo?.totalAmount ?? totalAmount;
+        // 음수(반품)는 빨간색
+        const isNegative = displayTotal < 0;
+        const color = isNegative ? (isDark ? '#ff7875' : '#ff4d4f') : undefined;
         return (
-          <span style={{ fontWeight: 'bold' }}>
+          <span style={{ fontWeight: 'bold', color }}>
             {Math.round(displayTotal || 0).toLocaleString()}원
           </span>
         );
