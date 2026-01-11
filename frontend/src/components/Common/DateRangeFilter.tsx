@@ -394,6 +394,30 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
         </Button>
       </Dropdown>
 
+      <Button
+        size="small"
+        style={{ borderColor: '#d9d9d9' }}
+        onClick={() => {
+          const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
+          const startDate = dayjs().subtract(2, 'month').startOf('month').format('YYYY-MM-DD');
+          onDateRangeChange(startDate, endDate);
+        }}
+      >
+        최근 3달
+      </Button>
+
+      <Button
+        size="small"
+        style={{ borderColor: '#d9d9d9' }}
+        onClick={() => {
+          const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
+          const startDate = dayjs().subtract(5, 'month').startOf('month').format('YYYY-MM-DD');
+          onDateRangeChange(startDate, endDate);
+        }}
+      >
+        최근 6달
+      </Button>
+
       {onLimitChange && (
         <Dropdown menu={limitMenu} trigger={['click']}>
           <Button size="small" style={{ borderColor: '#d9d9d9' }}>

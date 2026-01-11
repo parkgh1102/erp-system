@@ -1607,24 +1607,6 @@ const SalesManagement: React.FC = () => {
                 format="YYYY-MM-DD"
                 size={window.innerWidth <= 768 ? "small" : "middle"}
               />
-              <Button
-                size={window.innerWidth <= 768 ? "small" : "middle"}
-                onClick={() => setDateRange([dayjs().startOf('year'), dayjs().endOf('year')])}
-              >
-                이번년도
-              </Button>
-              <Button
-                size={window.innerWidth <= 768 ? "small" : "middle"}
-                onClick={() => setDateRange([dayjs().subtract(2, 'month').startOf('month'), dayjs().endOf('month')])}
-              >
-                최근 3달
-              </Button>
-              <Button
-                size={window.innerWidth <= 768 ? "small" : "middle"}
-                onClick={() => setDateRange([dayjs().subtract(5, 'month').startOf('month'), dayjs().endOf('month')])}
-              >
-                최근 6달
-              </Button>
               {!isSalesViewer && (
               <>
                 <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size={window.innerWidth <= 768 ? "small" : "middle"}>

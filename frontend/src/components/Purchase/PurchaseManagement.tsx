@@ -1165,21 +1165,6 @@ const PurchaseManagement: React.FC = () => {
                 onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
                 format="YYYY-MM-DD"
               />
-              <Button
-                onClick={() => setDateRange([dayjs().startOf('year'), dayjs().endOf('year')])}
-              >
-                이번년도
-              </Button>
-              <Button
-                onClick={() => setDateRange([dayjs().subtract(2, 'month').startOf('month'), dayjs().endOf('month')])}
-              >
-                최근 3달
-              </Button>
-              <Button
-                onClick={() => setDateRange([dayjs().subtract(5, 'month').startOf('month'), dayjs().endOf('month')])}
-              >
-                최근 6달
-              </Button>
               <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
               추가
             </Button>

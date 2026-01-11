@@ -664,24 +664,6 @@ const TransactionLedgerManagement: React.FC = () => {
                 size="middle"
               />
               <Button
-                size="middle"
-                onClick={() => setDateRange([dayjs().startOf('year'), dayjs().endOf('year')])}
-              >
-                이번년도
-              </Button>
-              <Button
-                size="middle"
-                onClick={() => setDateRange([dayjs().subtract(2, 'month').startOf('month'), dayjs().endOf('month')])}
-              >
-                최근 3달
-              </Button>
-              <Button
-                size="middle"
-                onClick={() => setDateRange([dayjs().subtract(5, 'month').startOf('month'), dayjs().endOf('month')])}
-              >
-                최근 6달
-              </Button>
-              <Button
                 type="primary"
                 icon={<SearchOutlined />}
                 onClick={handleSearch}
