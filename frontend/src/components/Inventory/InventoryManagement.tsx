@@ -121,7 +121,7 @@ const InventoryManagement: React.FC = () => {
       key: 'buyPrice',
       width: 120,
       align: 'right' as const,
-      render: (price: number) => price ? `${price.toLocaleString()}원` : '-',
+      render: (price: number) => price ? `${Math.floor(price).toLocaleString()}원` : '-',
     },
     {
       title: '매출단가',
@@ -129,7 +129,7 @@ const InventoryManagement: React.FC = () => {
       key: 'sellPrice',
       width: 120,
       align: 'right' as const,
-      render: (price: number) => price ? `${price.toLocaleString()}원` : '-',
+      render: (price: number) => price ? `${Math.floor(price).toLocaleString()}원` : '-',
     },
     {
       title: '재고금액(매입가)',
@@ -138,7 +138,7 @@ const InventoryManagement: React.FC = () => {
       align: 'right' as const,
       render: (_: any, record: Product) => {
         const value = (record.currentStock || 0) * (record.buyPrice || 0);
-        return value ? `${value.toLocaleString()}원` : '-';
+        return value ? `${Math.floor(value).toLocaleString()}원` : '-';
       },
     },
     {

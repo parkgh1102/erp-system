@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Button, Typography, Alert, Divider } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
+import { Card, Form, Input, Button, Typography, Alert, Divider, Segmented } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { api, authAPI, settingsAPI } from '../../utils/api';
 import { useAuthStore } from '../../stores/authStore';
@@ -12,16 +12,20 @@ const LoginFormContent: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loginType, setLoginType] = useState<'email' | 'phone'>('email');
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
 
-  const handleSubmit = async (values: { email: string; password: string }) => {
+  const handleSubmit = async (values: { email?: string; phone?: string; password: string }) => {
     setLoading(true);
     setError(null);
 
     try {
       // 로그인 API 호출 (보안 설정 정보 포함) - 속도 개선!
-      const loginResponse = await authAPI.login(values);
+      const loginData = loginType === 'email'
+        ? { email: values.email, password: values.password }
+        : { phone: values.phone, password: values.password };
+      const loginResponse = await authAPI.login(loginData);
       const { user, token, security } = loginResponse.data.data;
 
       // 보안 설정에서 2FA 및 세션 타임아웃 정보 가져오기
@@ -30,9 +34,10 @@ const LoginFormContent: React.FC = () => {
 
       if (twoFactorEnabled) {
         // 2단계 인증 ON: OTP 전송 후 OTP 페이지로 이동
-        const response = await api.post('/otp/send', { email: values.email });
+        const otpData = loginType === 'email' ? { email: values.email } : { phone: values.phone };
+        const response = await api.post('/otp/send', otpData);
         console.log('OTP 전송 성공:', response.data);
-        navigate('/otp', { state: { credentials: values, sessionTimeout } });
+        navigate('/otp', { state: { credentials: loginData, sessionTimeout } });
       } else {
         // 2단계 인증 OFF: 바로 로그인 처리
         // 세션 타임아웃 저장
@@ -116,19 +121,50 @@ const LoginFormContent: React.FC = () => {
           autoComplete="off"
           size="large"
         >
-          <Form.Item
-            name="email"
-            rules={[
-              { required: true, message: '이메일을 입력해주세요' },
-              { type: 'email', message: '올바른 이메일 형식이 아닙니다' },
-            ]}
-          >
-            <Input
-              prefix={<MailOutlined />}
-              placeholder="이메일"
-              style={{ borderRadius: '8px' }}
+          <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+            <Segmented
+              options={[
+                { label: '이메일', value: 'email' },
+                { label: '전화번호', value: 'phone' },
+              ]}
+              value={loginType}
+              onChange={(value) => {
+                setLoginType(value as 'email' | 'phone');
+                form.resetFields(['email', 'phone']);
+              }}
+              style={{ width: '100%' }}
             />
-          </Form.Item>
+          </div>
+
+          {loginType === 'email' ? (
+            <Form.Item
+              name="email"
+              rules={[
+                { required: true, message: '이메일을 입력해주세요' },
+                { type: 'email', message: '올바른 이메일 형식이 아닙니다' },
+              ]}
+            >
+              <Input
+                prefix={<MailOutlined />}
+                placeholder="이메일"
+                style={{ borderRadius: '8px' }}
+              />
+            </Form.Item>
+          ) : (
+            <Form.Item
+              name="phone"
+              rules={[
+                { required: true, message: '전화번호를 입력해주세요' },
+                { pattern: /^[0-9-]+$/, message: '올바른 전화번호 형식이 아닙니다' },
+              ]}
+            >
+              <Input
+                prefix={<PhoneOutlined />}
+                placeholder="전화번호 (예: 010-1234-5678)"
+                style={{ borderRadius: '8px' }}
+              />
+            </Form.Item>
+          )}
 
           <Form.Item
             name="password"

@@ -11,6 +11,7 @@ import api, { purchaseAPI, customerAPI, productAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { PrintPreviewModal } from '../Print/PrintPreviewModal';
+import { useFormShortcuts } from '../../hooks/useFormShortcuts';
 
 dayjs.extend(isBetween);
 
@@ -823,6 +824,25 @@ const PurchaseManagement: React.FC = () => {
       amount: 0
     }]);
   };
+
+  // F7: 저장, F8: 저장 후 초기화 단축키
+  useFormShortcuts({
+    onSave: () => {
+      if (modalVisible) {
+        form.validateFields().then((values) => {
+          handleSubmit(values, false);
+        }).catch(() => {});
+      }
+    },
+    onSaveAndReset: () => {
+      if (modalVisible) {
+        form.validateFields().then((values) => {
+          handleSubmit(values, true);
+        }).catch(() => {});
+      }
+    },
+    enabled: modalVisible
+  });
 
   // 거래명세서 인쇄 미리보기
   const handlePrintStatement = async (purchase: Purchase, mode: 'full' | 'receiver' | 'supplier') => {

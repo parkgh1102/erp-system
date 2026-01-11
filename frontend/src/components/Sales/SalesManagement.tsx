@@ -15,6 +15,7 @@ import { PrintPreviewModal } from '../Print/PrintPreviewModal';
 import { ESignaturePreviewModal } from '../Print/ESignaturePreviewModal';
 import TransactionStatement from '../Print/TransactionStatement';
 import { useMessage } from '../../hooks/useMessage';
+import { useFormShortcuts } from '../../hooks/useFormShortcuts';
 import logger from '../../utils/logger';
 
 const { Option } = Select;
@@ -1282,6 +1283,25 @@ const SalesManagement: React.FC = () => {
       amount: 0
     }]);
   };
+
+  // F7: 저장, F8: 저장 후 초기화 단축키
+  useFormShortcuts({
+    onSave: () => {
+      if (modalVisible) {
+        form.validateFields().then((values) => {
+          handleSubmit(values, false);
+        }).catch(() => {});
+      }
+    },
+    onSaveAndReset: () => {
+      if (modalVisible) {
+        form.validateFields().then((values) => {
+          handleSubmit(values, true);
+        }).catch(() => {});
+      }
+    },
+    enabled: modalVisible
+  });
 
   // 엑셀 업로드 관련 함수들
   const handleUploadConfirm = async () => {

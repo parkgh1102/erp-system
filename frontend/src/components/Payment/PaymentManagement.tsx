@@ -77,7 +77,17 @@ const PaymentManagement: React.FC = () => {
     if (!modalVisible) return;
 
     const handleModalKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'F4') {
+      // F7: 저장
+      if (event.key === 'F7') {
+        event.preventDefault();
+        form.validateFields().then(values => {
+          handleSubmit(values, false);
+        }).catch(info => {
+          console.log('Validate Failed:', info);
+        });
+      }
+      // F8: 저장 후 초기화
+      if (event.key === 'F8') {
         event.preventDefault();
         if (!editingPayment) {
           form.validateFields().then(values => {

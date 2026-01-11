@@ -39,8 +39,17 @@ const signupSchema = joi_1.default.object({
     }).required()
 });
 const loginSchema = joi_1.default.object({
-    email: joi_1.default.string().email().required(),
+    email: joi_1.default.string().allow('').optional(),
+    phone: joi_1.default.string().allow('').optional(),
     password: joi_1.default.string().required()
+}).custom((value, helpers) => {
+    if (!value.email && !value.phone) {
+        return helpers.error('any.custom', { message: '이메일 또는 전화번호를 입력해주세요.' });
+    }
+    if (value.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.email)) {
+        return helpers.error('any.custom', { message: '올바른 이메일 형식이 아닙니다.' });
+    }
+    return value;
 });
 exports.AuthController = {
     async signup(req, res) {
@@ -159,27 +168,40 @@ exports.AuthController = {
             if (error) {
                 return res.status(400).json({
                     success: false,
-                    message: '이메일과 비밀번호를 입력해주세요.'
+                    message: error.details[0].message || '이메일/전화번호와 비밀번호를 입력해주세요.'
                 });
             }
-            const { email, password } = value;
-            const user = await userRepository.findOne({
-                where: { email, isActive: true },
-                relations: ['businesses']
-            });
+            const { email, phone, password } = value;
+            // 이메일 또는 전화번호로 사용자 검색
+            let user;
+            if (email) {
+                user = await userRepository.findOne({
+                    where: { email, isActive: true },
+                    relations: ['businesses']
+                });
+            }
+            else if (phone) {
+                // 전화번호에서 숫자만 추출하여 검색
+                const cleanPhone = phone.replace(/[^0-9]/g, '');
+                const users = await userRepository.find({
+                    where: { isActive: true },
+                    relations: ['businesses']
+                });
+                user = users.find(u => u.phone && u.phone.replace(/[^0-9]/g, '') === cleanPhone);
+            }
             if (!user) {
-                securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: User not found', { email });
+                securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: User not found', { email, phone });
                 return res.status(401).json({
                     success: false,
-                    message: '이메일 또는 비밀번호가 틀립니다.'
+                    message: '아이디 또는 비밀번호가 틀립니다.'
                 });
             }
             const isPasswordValid = await bcryptjs_1.default.compare(password, user.password);
             if (!isPasswordValid) {
-                securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: Invalid password', { email, userId: user.id });
+                securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: Invalid password', { email, phone, userId: user.id });
                 return res.status(401).json({
                     success: false,
-                    message: '이메일 또는 비밀번호가 틀립니다.'
+                    message: '아이디 또는 비밀번호가 틀립니다.'
                 });
             }
             // sales_viewer인 경우 businessId로 비즈니스 정보 조회

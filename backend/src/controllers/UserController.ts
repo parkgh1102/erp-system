@@ -9,12 +9,17 @@ import { passwordSchema } from '../utils/passwordValidator';
 const userRepository = AppDataSource.getRepository(User);
 
 const createUserSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email().allow('').optional(),
   password: passwordSchema.required(),
   name: Joi.string().min(2).required(),
-  phone: Joi.string().pattern(/^[0-9-+\s()]+$/).allow(''),
+  phone: Joi.string().pattern(/^[0-9-+\s()]+$/).allow('').optional(),
   role: Joi.string().valid('admin', 'sales_viewer').required(),
   businessId: Joi.number().optional()
+}).custom((value, helpers) => {
+  if (!value.email && !value.phone) {
+    return helpers.error('any.custom', { message: '이메일 또는 전화번호를 입력해주세요.' });
+  }
+  return value;
 });
 
 const updateUserSchema = Joi.object({
@@ -66,24 +71,40 @@ export const UserController = {
 
       const { email, password, name, phone, role } = value;
 
-      // 이메일 중복 체크
-      const existingUser = await userRepository.findOne({ where: { email } });
-      if (existingUser) {
-        return res.status(409).json({
-          success: false,
-          message: '이미 사용 중인 이메일입니다.'
-        });
+      // 이메일 또는 전화번호 중복 체크
+      if (email) {
+        const existingUser = await userRepository.findOne({ where: { email } });
+        if (existingUser) {
+          return res.status(409).json({
+            success: false,
+            message: '이미 사용 중인 이메일입니다.'
+          });
+        }
+      }
+
+      if (phone && !email) {
+        // 전화번호로만 가입할 때 전화번호 중복 체크
+        const cleanPhone = phone.replace(/[^0-9]/g, '');
+        const users = await userRepository.find();
+        const existingUser = users.find(u => u.phone && u.phone.replace(/[^0-9]/g, '') === cleanPhone);
+        if (existingUser) {
+          return res.status(409).json({
+            success: false,
+            message: '이미 사용 중인 전화번호입니다.'
+          });
+        }
       }
 
       // 비밀번호 해싱
       const hashedPassword = await bcrypt.hash(password, 12);
 
-      // 사용자 생성
+      // 사용자 생성 (이메일이 없으면 전화번호를 이메일로 사용)
+      const userEmail = email || `${phone.replace(/[^0-9]/g, '')}@phone.local`;
       const user = userRepository.create({
-        email,
+        email: userEmail,
         password: hashedPassword,
         name,
-        phone,
+        phone: phone || '',
         role,
         businessId,
         isActive: true

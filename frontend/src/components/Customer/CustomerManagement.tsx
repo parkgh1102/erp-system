@@ -112,7 +112,17 @@ const CustomerManagement: React.FC = () => {
     if (!isModalVisible) return;
 
     const handleModalKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'F4') {
+      // F7: 저장
+      if (event.key === 'F7') {
+        event.preventDefault();
+        form.validateFields().then(_values => {
+          handleModalOk(false);
+        }).catch(info => {
+          logger.debug('Validate Failed:', info);
+        });
+      }
+      // F8: 저장 후 초기화
+      if (event.key === 'F8') {
         event.preventDefault();
         if (!editingCustomer) {
           form.validateFields().then(_values => {

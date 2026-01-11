@@ -132,7 +132,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       key: '/transaction-ledger',
       icon: <FileTextOutlined style={{ color: '#13c2c2' }} />,
       label: '거래원장',
-      roles: ['admin'],
+      roles: ['admin', 'sales_viewer'],
     },
   ];
 
