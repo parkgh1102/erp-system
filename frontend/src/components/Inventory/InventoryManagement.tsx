@@ -5,6 +5,7 @@ import { createExportMenuItems } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { productAPI } from '../../utils/api';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface Product {
   id: number;
@@ -25,12 +26,18 @@ interface Product {
 }
 
 const InventoryManagement: React.FC = () => {
+  const { isMobile } = useMediaQuery();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState<string>('');
-  const [pageSize, setPageSize] = useState<number>(window.innerWidth <= 768 ? 10 : 20);
+  const [pageSize, setPageSize] = useState<number>(10);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
+
+  // 화면 크기에 따른 페이지 크기 조정
+  useEffect(() => {
+    setPageSize(isMobile ? 10 : 20);
+  }, [isMobile]);
 
   useEffect(() => {
     if (currentBusiness) {
@@ -181,7 +188,7 @@ const InventoryManagement: React.FC = () => {
   );
 
   return (
-    <div style={{ padding: window.innerWidth <= 768 ? '12px' : '24px' }}>
+    <div style={{ padding: isMobile ? '12px' : '24px' }}>
       <h2 style={{ marginBottom: 16 }}>재고관리</h2>
 
       {/* 통계 카드 */}
@@ -264,7 +271,7 @@ const InventoryManagement: React.FC = () => {
           showTotal: (total) => `총 ${total}개`,
         }}
         scroll={{ x: 1200 }}
-        size={window.innerWidth <= 768 ? 'small' : 'middle'}
+        size={isMobile ? 'small' : 'middle'}
         style={{
           backgroundColor: isDark ? '#1f1f1f' : '#fff',
         }}

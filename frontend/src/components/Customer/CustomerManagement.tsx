@@ -32,6 +32,7 @@ import { customerAPI } from '../../utils/api';
 import { formatPhoneNumber, formatBusinessNumber } from '../../utils/formatters';
 import CustomerPrintModal from '../Print/CustomerPrintModal';
 import logger from '../../utils/logger';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const { Option } = Select;
 
@@ -55,6 +56,7 @@ interface Customer {
 }
 
 const CustomerManagement: React.FC = () => {
+  const { isMobile } = useMediaQuery();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -652,7 +654,7 @@ const CustomerManagement: React.FC = () => {
 
   return (
     <div style={{
-      padding: window.innerWidth <= 768 ? '16px 8px' : '24px',
+      padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
       <Row align="middle" style={{ marginBottom: 24 }}>
@@ -823,12 +825,12 @@ const CustomerManagement: React.FC = () => {
           }}
           pagination={{
             ...pagination,
-            pageSize: window.innerWidth <= 768 ? 5 : pagination.pageSize,
+            pageSize: isMobile ? 5 : pagination.pageSize,
             showSizeChanger: window.innerWidth > 768,
             showQuickJumper: window.innerWidth > 768,
-            simple: window.innerWidth <= 768,
+            simple: isMobile,
             showTotal: (total, range) =>
-              window.innerWidth <= 768
+              isMobile
                 ? `${total}건`
                 : `${range[0]}-${range[1]} of ${total} items`,
           }}
@@ -856,18 +858,18 @@ const CustomerManagement: React.FC = () => {
             onDoubleClick: () => handleRowDoubleClick(record),
             style: { cursor: 'pointer' },
           })}
-          scroll={{ x: window.innerWidth <= 768 ? 1400 : 'max-content', y: window.innerWidth <= 768 ? 400 : 600 }}
-          size={window.innerWidth <= 768 ? 'small' : 'middle'}
+          scroll={{ x: isMobile ? 1400 : 'max-content', y: isMobile ? 400 : 600 }}
+          size={isMobile ? 'small' : 'middle'}
         />
 
       <Modal
         title={editingCustomer ? '거래처 수정' : '거래처 등록'}
         open={isModalVisible}
         onCancel={handleModalCancel}
-        width={window.innerWidth <= 768 ? '95%' : 800}
-        style={{ top: window.innerWidth <= 768 ? 20 : undefined }}
+        width={isMobile ? '95%' : 800}
+        style={{ top: isMobile ? 20 : undefined }}
         footer={
-          window.innerWidth <= 768 ? (
+          isMobile ? (
             <Space direction="vertical" style={{ width: '100%' }}>
               <Button
                 key="cancel"
@@ -934,7 +936,7 @@ const CustomerManagement: React.FC = () => {
             customerType: '기타',
           }}
         >
-          <Row gutter={window.innerWidth <= 768 ? 8 : 16}>
+          <Row gutter={isMobile ? 8 : 16}>
             <Col xs={24} sm={12}>
               <Form.Item
                 label="거래처명"
@@ -946,7 +948,7 @@ const CustomerManagement: React.FC = () => {
               >
                 <Input
                   placeholder="거래처명 입력"
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                 />
               </Form.Item>
             </Col>
@@ -956,7 +958,7 @@ const CustomerManagement: React.FC = () => {
                 name="customerType"
                 rules={[{ required: true, message: '거래처 구분을 선택해주세요' }]}
               >
-                <Select size={window.innerWidth <= 768 ? 'small' : 'middle'}>
+                <Select size={isMobile ? 'small' : 'middle'}>
                   <Option value="매출처">매출처</Option>
                   <Option value="매입처">매입처</Option>
                   <Option value="기타">기타</Option>
@@ -965,7 +967,7 @@ const CustomerManagement: React.FC = () => {
             </Col>
           </Row>
 
-          <Row gutter={window.innerWidth <= 768 ? 8 : 16}>
+          <Row gutter={isMobile ? 8 : 16}>
             <Col xs={24} sm={12}>
               <Form.Item
                 label="사업자번호"
@@ -976,7 +978,7 @@ const CustomerManagement: React.FC = () => {
               >
                 <Input
                   placeholder="000-00-00000"
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                   onChange={(e) => {
                     const formatted = formatBusinessNumber(e.target.value);
                     form.setFieldsValue({ businessNumber: formatted });
@@ -994,13 +996,13 @@ const CustomerManagement: React.FC = () => {
               >
                 <Input
                   placeholder="대표자명 입력"
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={window.innerWidth <= 768 ? 8 : 16}>
+          <Row gutter={isMobile ? 8 : 16}>
             <Col xs={24} sm={12}>
               <Form.Item
                 label="전화번호"
@@ -1011,7 +1013,7 @@ const CustomerManagement: React.FC = () => {
               >
                 <Input
                   placeholder="전화번호 입력"
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                   onChange={(e) => {
                     const formatted = formatPhoneNumber(e.target.value);
                     form.setFieldsValue({ phone: formatted });
@@ -1029,7 +1031,7 @@ const CustomerManagement: React.FC = () => {
               >
                 <Input
                   placeholder="팩스번호 입력"
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                   onChange={(e) => {
                     const formatted = formatPhoneNumber(e.target.value);
                     form.setFieldsValue({ fax: formatted });

@@ -20,6 +20,7 @@ import { useThemeStore } from '../../stores/themeStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { useNavigate, useLocation } from 'react-router-dom';
 import NotificationPopover from '../Notification/NotificationPopover';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -29,18 +30,19 @@ interface AppLayoutProps {
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  const { isMobile } = useMediaQuery();
   const [collapsed, setCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 992);
+  const [isTabletOrSmaller, setIsTabletOrSmaller] = useState(window.innerWidth <= 992);
   const { user, currentBusiness, setCurrentBusiness, logout } = useAuthStore();
   const { isDark, toggleTheme } = useThemeStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 모바일 감지
+  // 태블릿 감지 (992px 이하)
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 992);
+      setIsTabletOrSmaller(window.innerWidth <= 992);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -187,7 +189,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         theme={isDark ? 'dark' : 'light'}
         style={{
           background: isDark ? '#001529' : '#ffffff',
-          display: isMobile ? 'none' : 'flex',
+          display: isTabletOrSmaller ? 'none' : 'flex',
           flexDirection: 'column',
         }}
       >
@@ -355,7 +357,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 width: 64,
                 height: 64,
                 color: isDark ? '#ffffff' : '#000000',
-                display: window.innerWidth <= 768 ? 'flex' : 'none',
+                display: isMobile ? 'flex' : 'none',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}
@@ -451,9 +453,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
         <Content
           style={{
-            margin: window.innerWidth <= 768 ? '16px 8px' : '24px',
+            margin: isMobile ? '16px 8px' : '24px',
             minHeight: 'calc(100vh - 112px)',
-            marginBottom: isMobile ? '70px' : '0',
+            marginBottom: isTabletOrSmaller ? '70px' : '0',
             background: isDark ? '#141414' : '#ffffff',
             borderRadius: '8px',
             overflow: 'auto',
@@ -464,7 +466,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </Layout>
 
       {/* 모바일 하단 탭바 */}
-      {isMobile && (
+      {isTabletOrSmaller && (
         <div
           style={{
             position: 'fixed',

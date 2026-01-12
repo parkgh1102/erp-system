@@ -21,6 +21,8 @@ import 'dayjs/locale/ko';
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
 
+import { useMediaQuery } from '../../hooks/useMediaQuery';
+
 const { Text, Title } = Typography;
 
 interface NotificationPopoverProps {
@@ -104,7 +106,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
   };
 
   // 모바일 여부 확인
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const { isMobile } = useMediaQuery();
 
   const content = (
     <div style={{

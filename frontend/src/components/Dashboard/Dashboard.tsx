@@ -28,6 +28,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import { dashboardAPI } from '../../utils/api';
 import { useMessage } from '../../hooks/useMessage';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import dayjs from 'dayjs';
 import logger from '../../utils/logger';
 
@@ -37,6 +38,7 @@ const { RangePicker } = DatePicker;
 
 const Dashboard: React.FC = () => {
   const message = useMessage();
+  const { isMobile } = useMediaQuery();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
     dayjs().startOf('month'),
@@ -255,18 +257,18 @@ const Dashboard: React.FC = () => {
 
   return (
     <div style={{
-      padding: window.innerWidth <= 768 ? '16px 8px' : '24px',
+      padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
       {/* 페이지 헤더 */}
-      <div style={{ marginBottom: window.innerWidth <= 768 ? '16px' : '24px' }}>
+      <div style={{ marginBottom: isMobile ? '16px' : '24px' }}>
         <Row justify="space-between" align="middle" gutter={[16, 8]}>
           <Col xs={24} md={12}>
-            <AntTitle level={window.innerWidth <= 768 ? 3 : 2} style={{ margin: 0 }}>
+            <AntTitle level={isMobile ? 3 : 2} style={{ margin: 0 }}>
               대시보드
             </AntTitle>
             <Text type="secondary" style={{
-              fontSize: window.innerWidth <= 768 ? '12px' : '14px',
+              fontSize: isMobile ? '12px' : '14px',
               display: 'block',
               marginTop: '4px'
             }}>
@@ -275,15 +277,15 @@ const Dashboard: React.FC = () => {
           </Col>
           <Col xs={24} md={12}>
             <Space
-              direction={window.innerWidth <= 768 ? "vertical" : "horizontal"}
+              direction={isMobile ? "vertical" : "horizontal"}
               style={{ width: '100%' }}
-              size={window.innerWidth <= 768 ? 8 : 16}
+              size={isMobile ? 8 : 16}
             >
               <Select
                 value={selectedPeriod}
                 onChange={setSelectedPeriod}
-                style={{ width: window.innerWidth <= 768 ? '100%' : 120 }}
-                size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                style={{ width: isMobile ? '100%' : 120 }}
+                size={isMobile ? 'small' : 'middle'}
               >
                 <Select.Option value="week">이번 주</Select.Option>
                 <Select.Option value="month">이번 달</Select.Option>
@@ -292,8 +294,8 @@ const Dashboard: React.FC = () => {
               <RangePicker
                 value={dateRange}
                 onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-                style={{ width: window.innerWidth <= 768 ? '100%' : 'auto' }}
-                size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                style={{ width: isMobile ? '100%' : 'auto' }}
+                size={isMobile ? 'small' : 'middle'}
               />
             </Space>
           </Col>
@@ -301,11 +303,11 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* 주요 지표 카드 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: window.innerWidth <= 768 ? '16px' : '24px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: isMobile ? '16px' : '24px' }}>
         <Col xs={24} sm={12} md={6}>
           <Card
-            size={window.innerWidth <= 768 ? 'small' : 'default'}
-            style={{ height: window.innerWidth <= 768 ? '120px' : '140px' }}
+            size={isMobile ? 'small' : 'default'}
+            style={{ height: isMobile ? '120px' : '140px' }}
           >
             <Statistic
               title="총 매출"
@@ -313,13 +315,13 @@ const Dashboard: React.FC = () => {
               precision={0}
               valueStyle={{
                 color: '#3f8600',
-                fontSize: window.innerWidth <= 768 ? '20px' : '24px'
+                fontSize: isMobile ? '20px' : '24px'
               }}
               prefix={<ArrowUpOutlined />}
               suffix="원"
             />
             <div style={{ marginTop: '8px' }}>
-              <Text type="secondary" style={{ fontSize: window.innerWidth <= 768 ? '12px' : '14px' }}>
+              <Text type="secondary" style={{ fontSize: isMobile ? '12px' : '14px' }}>
                 전월 대비 <Text style={{ color: '#3f8600' }}>+{currentStats.salesGrowth}%</Text>
               </Text>
             </div>
@@ -327,8 +329,8 @@ const Dashboard: React.FC = () => {
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card
-            size={window.innerWidth <= 768 ? 'small' : 'default'}
-            style={{ height: window.innerWidth <= 768 ? '120px' : '140px' }}
+            size={isMobile ? 'small' : 'default'}
+            style={{ height: isMobile ? '120px' : '140px' }}
           >
             <Statistic
               title="총 매입"
@@ -336,13 +338,13 @@ const Dashboard: React.FC = () => {
               precision={0}
               valueStyle={{
                 color: '#cf1322',
-                fontSize: window.innerWidth <= 768 ? '20px' : '24px'
+                fontSize: isMobile ? '20px' : '24px'
               }}
               prefix={<ArrowDownOutlined />}
               suffix="원"
             />
             <div style={{ marginTop: '8px' }}>
-              <Text type="secondary" style={{ fontSize: window.innerWidth <= 768 ? '12px' : '14px' }}>
+              <Text type="secondary" style={{ fontSize: isMobile ? '12px' : '14px' }}>
                 전월 대비 <Text style={{ color: '#cf1322' }}>{currentStats.purchaseGrowth}%</Text>
               </Text>
             </div>
@@ -350,18 +352,18 @@ const Dashboard: React.FC = () => {
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card
-            size={window.innerWidth <= 768 ? 'small' : 'default'}
-            style={{ height: window.innerWidth <= 768 ? '120px' : '140px' }}
+            size={isMobile ? 'small' : 'default'}
+            style={{ height: isMobile ? '120px' : '140px' }}
           >
             <Statistic
               title="총 거래처"
               value={currentStats.totalCustomers}
               prefix={<TeamOutlined />}
               suffix="개"
-              valueStyle={{ fontSize: window.innerWidth <= 768 ? '20px' : '24px' }}
+              valueStyle={{ fontSize: isMobile ? '20px' : '24px' }}
             />
             <div style={{ marginTop: '8px', minHeight: '20px' }}>
-              <Text type="secondary" style={{ fontSize: window.innerWidth <= 768 ? '12px' : '14px' }}>
+              <Text type="secondary" style={{ fontSize: isMobile ? '12px' : '14px' }}>
                 활성 거래처
               </Text>
             </div>
@@ -369,18 +371,18 @@ const Dashboard: React.FC = () => {
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card
-            size={window.innerWidth <= 768 ? 'small' : 'default'}
-            style={{ height: window.innerWidth <= 768 ? '120px' : '140px' }}
+            size={isMobile ? 'small' : 'default'}
+            style={{ height: isMobile ? '120px' : '140px' }}
           >
             <Statistic
               title="등록 품목"
               value={currentStats.totalProducts}
               prefix={<FileTextOutlined />}
               suffix="개"
-              valueStyle={{ fontSize: window.innerWidth <= 768 ? '20px' : '24px' }}
+              valueStyle={{ fontSize: isMobile ? '20px' : '24px' }}
             />
             <div style={{ marginTop: '8px', minHeight: '20px' }}>
-              <Text type="secondary" style={{ fontSize: window.innerWidth <= 768 ? '12px' : '14px' }}>
+              <Text type="secondary" style={{ fontSize: isMobile ? '12px' : '14px' }}>
                 활성 품목
               </Text>
             </div>
@@ -391,8 +393,8 @@ const Dashboard: React.FC = () => {
       {/* 빠른 작업 버튼 */}
       <Card
         title="빠른 작업"
-        size={window.innerWidth <= 768 ? 'small' : 'default'}
-        style={{ marginBottom: window.innerWidth <= 768 ? '16px' : '24px' }}
+        size={isMobile ? 'small' : 'default'}
+        style={{ marginBottom: isMobile ? '16px' : '24px' }}
       >
         <Row gutter={[16, 16]}>
           {quickActions.map((action, index) => (
@@ -401,17 +403,17 @@ const Dashboard: React.FC = () => {
                 type="dashed"
                 style={{
                   width: '100%',
-                  height: window.innerWidth <= 768 ? '60px' : '80px',
+                  height: isMobile ? '60px' : '80px',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: window.innerWidth <= 768 ? '4px' : '8px',
+                  gap: isMobile ? '4px' : '8px',
                 }}
                 onClick={action.action}
               >
                 <div style={{
-                  fontSize: window.innerWidth <= 768 ? '18px' : '24px',
+                  fontSize: isMobile ? '18px' : '24px',
                   color: action.color
                 }}>
                   {action.icon}
@@ -419,7 +421,7 @@ const Dashboard: React.FC = () => {
                 <Text
                   strong
                   style={{
-                    fontSize: window.innerWidth <= 768 ? '11px' : '14px',
+                    fontSize: isMobile ? '11px' : '14px',
                     textAlign: 'center',
                     lineHeight: 1.2
                   }}
@@ -436,21 +438,21 @@ const Dashboard: React.FC = () => {
       {/* 최근 거래 내역 - moved above charts */}
       <Card
         title="최근 거래 내역"
-        size={window.innerWidth <= 768 ? 'small' : 'default'}
+        size={isMobile ? 'small' : 'default'}
         extra={
           <Button
             type="link"
             icon={<EyeOutlined />}
-            size={window.innerWidth <= 768 ? 'small' : 'middle'}
+            size={isMobile ? 'small' : 'middle'}
             onClick={() => {
               setTransactionModalVisible(true);
               fetchAllTransactions();
             }}
           >
-            {window.innerWidth <= 768 ? '전체' : '전체보기'}
+            {isMobile ? '전체' : '전체보기'}
           </Button>
         }
-        style={{ marginBottom: window.innerWidth <= 768 ? '16px' : '24px' }}
+        style={{ marginBottom: isMobile ? '16px' : '24px' }}
       >
         <Table
           columns={transactionColumns}
@@ -470,8 +472,8 @@ const Dashboard: React.FC = () => {
         open={transactionModalVisible}
         onCancel={() => setTransactionModalVisible(false)}
         footer={null}
-        width={window.innerWidth <= 768 ? '95%' : 1000}
-        style={{ top: window.innerWidth <= 768 ? 20 : undefined }}
+        width={isMobile ? '95%' : 1000}
+        style={{ top: isMobile ? 20 : undefined }}
         destroyOnHidden
       >
         <div style={{ marginBottom: '16px' }}>
@@ -483,7 +485,7 @@ const Dashboard: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 allowClear
-                size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                size={isMobile ? 'small' : 'middle'}
               />
             </Col>
             <Col xs={24} sm={12} md={8}>
@@ -496,7 +498,7 @@ const Dashboard: React.FC = () => {
                   }
                 }}
                 placeholder={['시작일', '종료일']}
-                size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                size={isMobile ? 'small' : 'middle'}
               />
             </Col>
             <Col xs={24} sm={12} md={8}>
@@ -505,7 +507,7 @@ const Dashboard: React.FC = () => {
                 icon={<SearchOutlined />}
                 onClick={fetchAllTransactions}
                 style={{ width: '100%' }}
-                size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                size={isMobile ? 'small' : 'middle'}
               >
                 검색
               </Button>

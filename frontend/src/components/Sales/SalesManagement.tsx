@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip, Checkbox } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
@@ -16,6 +16,7 @@ import { ESignaturePreviewModal } from '../Print/ESignaturePreviewModal';
 import TransactionStatement from '../Print/TransactionStatement';
 import { useMessage } from '../../hooks/useMessage';
 import { useFormShortcuts } from '../../hooks/useFormShortcuts';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import logger from '../../utils/logger';
 
 const { Option } = Select;
@@ -92,6 +93,7 @@ interface Sale {
 
 const SalesManagement: React.FC = () => {
   const message = useMessage();
+  const { isMobile } = useMediaQuery();
   const [sales, setSales] = useState<Sale[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -284,7 +286,7 @@ const SalesManagement: React.FC = () => {
     }
   };
 
-  const filteredSales = sales.filter(sale => {
+  const filteredSales = useMemo(() => sales.filter(sale => {
     // 날짜 필터링
     const saleDate = dayjs(sale.transactionDate || sale.saleDate);
     const [startDate, endDate] = dateRange;
@@ -305,13 +307,15 @@ const SalesManagement: React.FC = () => {
       sale.totalAmount?.toString().includes(searchText) ||
       sale.vatAmount?.toString().includes(searchText)
     );
-  });
+  }), [sales, dateRange, searchText]);
 
   const handleSearch = (value: string) => {
     setSearchText(value);
   };
 
-  const generateAutoCompleteOptions = (keyword: string) => {
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const generateAutoCompleteOptions = useCallback((keyword: string) => {
     if (keyword.length < 2) {
       setAutoCompleteOptions([]);
       return;
@@ -328,7 +332,6 @@ const SalesManagement: React.FC = () => {
         if (item.productName?.toLowerCase().includes(searchLower)) {
           matches.add(item.productName);
         }
-        // 전잔금 등 itemName으로 저장된 품목도 검색
         const itemName = (item as any).itemName;
         if (itemName?.toLowerCase().includes(searchLower)) {
           matches.add(itemName);
@@ -350,11 +353,18 @@ const SalesManagement: React.FC = () => {
       .map(value => ({ value }));
 
     setAutoCompleteOptions(options);
-  };
+  }, [sales]);
 
   const handleSearchChange = (value: string) => {
     setSearchText(value);
-    generateAutoCompleteOptions(value);
+
+    // debounce 적용 (300ms)
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      generateAutoCompleteOptions(value);
+    }, 300);
   };
 
   const handleAdd = () => {
@@ -888,7 +898,7 @@ const SalesManagement: React.FC = () => {
     }));
   };
 
-  // 엑셀 업로드 처리
+  // 엑셀 업로드 처리 (배치 병렬 처리)
   const handleExcelUpload = async (data: any[]) => {
     if (!currentBusiness || data.length === 0) return;
 
@@ -897,46 +907,37 @@ const SalesManagement: React.FC = () => {
       let successCount = 0;
       let failCount = 0;
       const errors: string[] = [];
+      const BATCH_SIZE = 50;
 
-      for (let i = 0; i < data.length; i++) {
-        const row = data[i];
-        try {
-          // 거래처 찾기
-          const customer = customers.find(c => c.name === row['거래처명']);
-          if (!customer) {
-            const errorMsg = `${i + 1}행: 거래처 '${row['거래처명']}'를 찾을 수 없습니다.`;
-            logger.warn(errorMsg);
-            errors.push(errorMsg);
-            failCount++;
-            continue;
-          }
+      // 데이터 전처리 - 유효한 데이터와 에러 분리
+      const preparedData = data.map((row, index) => {
+        const customer = customers.find(c => c.name === row['거래처명']);
+        if (!customer) {
+          return { index, error: `${index + 1}행: 거래처 '${row['거래처명']}'를 찾을 수 없습니다.` };
+        }
 
-          // 품목 찾기 (선택사항)
-          const product = row['품목명'] ? products.find(p => p.name === row['품목명']) : null;
+        const product = row['품목명'] ? products.find(p => p.name === row['품목명']) : null;
+        const excelTaxType = row['세금구분'] || '';
+        const isTaxFree = product?.taxType === 'tax_free' ||
+                         excelTaxType === '면세' ||
+                         excelTaxType === 'tax_free';
 
-          // 면세 여부 확인 (품목의 taxType 또는 엑셀의 세금구분 컬럼)
-          const excelTaxType = row['세금구분'] || '';
-          const isTaxFree = product?.taxType === 'tax_free' ||
-                           excelTaxType === '면세' ||
-                           excelTaxType === 'tax_free';
+        const totalPrice = Number(row['합계']) || 0;
+        let supplyAmount, vatAmount;
 
-          // 합계에서 공급가액과 세액 역산
-          const totalPrice = Number(row['합계']) || 0;
-          let supplyAmount, vatAmount;
+        if (isTaxFree) {
+          supplyAmount = Number(row['공급가액']) || totalPrice;
+          vatAmount = 0;
+        } else {
+          supplyAmount = Number(row['공급가액']) || Math.round(totalPrice / 1.1);
+          vatAmount = Number(row['세액']) || (totalPrice - supplyAmount);
+        }
+        const quantity = Number(row['수량']) || 1;
+        const unitPrice = Number(row['단가']) || 0;
 
-          if (isTaxFree) {
-            // 면세: 공급가액 = 합계 또는 입력값, 세액 = 0
-            supplyAmount = Number(row['공급가액']) || totalPrice;
-            vatAmount = 0;
-          } else {
-            // 과세: 합계에서 역산
-            supplyAmount = Number(row['공급가액']) || Math.round(totalPrice / 1.1);
-            vatAmount = Number(row['세액']) || (totalPrice - supplyAmount);
-          }
-          const quantity = Number(row['수량']) || 1;
-          const unitPrice = Number(row['단가']) || 0;
-
-          await salesAPI.create(currentBusiness.id, {
+        return {
+          index,
+          data: {
             customerId: customer.id,
             saleDate: row['매출일자'] || dayjs().format('YYYY-MM-DD'),
             totalAmount: supplyAmount,
@@ -955,14 +956,40 @@ const SalesManagement: React.FC = () => {
               vatAmount: vatAmount,
               totalAmount: supplyAmount + vatAmount
             }]
-          });
-          successCount++;
-        } catch (error: any) {
-          const errorMsg = `${i + 1}행: ${error.response?.data?.message || error.message || '업로드 실패'}`;
-          errors.push(errorMsg);
+          }
+        };
+      });
+
+      // 전처리 에러 수집
+      preparedData.forEach(item => {
+        if ('error' in item && item.error) {
+          errors.push(item.error);
           failCount++;
-          logger.error('Sales upload error:', error);
         }
+      });
+
+      // 유효한 데이터만 필터링
+      const validData = preparedData.filter(item => 'data' in item) as Array<{ index: number; data: any }>;
+
+      // 배치 처리
+      for (let i = 0; i < validData.length; i += BATCH_SIZE) {
+        const batch = validData.slice(i, i + BATCH_SIZE);
+        const results = await Promise.allSettled(
+          batch.map(item => salesAPI.create(currentBusiness.id, item.data))
+        );
+
+        results.forEach((result, batchIndex) => {
+          const originalIndex = batch[batchIndex].index;
+          if (result.status === 'fulfilled') {
+            successCount++;
+          } else {
+            const error = result.reason;
+            const errorMsg = `${originalIndex + 1}행: ${error.response?.data?.message || error.message || '업로드 실패'}`;
+            errors.push(errorMsg);
+            failCount++;
+            logger.error('Sales upload error:', error);
+          }
+        });
       }
 
       fetchData();
@@ -1575,7 +1602,7 @@ const SalesManagement: React.FC = () => {
 
   return (
     <div style={{
-      padding: window.innerWidth <= 768 ? '16px 8px' : '24px',
+      padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
       <Row align="middle" style={{ marginBottom: 24 }}>
@@ -1584,19 +1611,19 @@ const SalesManagement: React.FC = () => {
         </Col>
         <Col style={{ marginLeft: '100px' }}>
           <Space direction="vertical" size="small" style={{ width: '100%' }}>
-            <Space size={window.innerWidth <= 768 ? 4 : 8} wrap>
+            <Space size={isMobile ? 4 : 8} wrap>
               <AutoComplete
                 options={autoCompleteOptions}
                 value={searchText}
                 onChange={handleSearchChange}
                 onSelect={(value) => setSearchText(value)}
-                style={{ width: window.innerWidth <= 768 ? 250 : 300 }}
+                style={{ width: isMobile ? 250 : 300 }}
               >
                 <Input.Search
                   placeholder="거래처, 품목명, 금액, 메모 등으로 검색 (2글자 이상)"
                   allowClear
                   enterButton={<SearchOutlined />}
-                  size={window.innerWidth <= 768 ? "small" : "middle"}
+                  size={isMobile ? "small" : "middle"}
                   onSearch={handleSearch}
                 />
               </AutoComplete>
@@ -1605,30 +1632,30 @@ const SalesManagement: React.FC = () => {
                 value={dateRange}
                 onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
                 format="YYYY-MM-DD"
-                size={window.innerWidth <= 768 ? "small" : "middle"}
+                size={isMobile ? "small" : "middle"}
               />
               {!isSalesViewer && (
               <>
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size={window.innerWidth <= 768 ? "small" : "middle"}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size={isMobile ? "small" : "middle"}>
                   추가
                 </Button>
                 <Button
                   icon={<ImportOutlined />}
-                  size={window.innerWidth <= 768 ? "small" : "middle"}
+                  size={isMobile ? "small" : "middle"}
                   onClick={() => setExcelUploadModalVisible(true)}
                   style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
                 >
                   엑셀업로드
                 </Button>
                 <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-                  <Button icon={<ExportOutlined />} size={window.innerWidth <= 768 ? "small" : "middle"} style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                  <Button icon={<ExportOutlined />} size={isMobile ? "small" : "middle"} style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
                     파일저장
                   </Button>
                 </Dropdown>
                 <Button
                   onClick={handleSelectAll}
                   type="default"
-                  size={window.innerWidth <= 768 ? "small" : "middle"}
+                  size={isMobile ? "small" : "middle"}
                   style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
                 >
                   {selectedRowKeys.length === filteredSales.length && filteredSales.length > 0 ? '전체 해제' : '전체 선택'}
@@ -1682,7 +1709,7 @@ const SalesManagement: React.FC = () => {
                     }
                   }}
                 >
-                  <Button danger disabled={selectedRowKeys.length === 0} size={window.innerWidth <= 768 ? "small" : "middle"}>
+                  <Button danger disabled={selectedRowKeys.length === 0} size={isMobile ? "small" : "middle"}>
                     선택 삭제 ({selectedRowKeys.length})
                   </Button>
                 </Popconfirm>
@@ -1739,7 +1766,7 @@ const SalesManagement: React.FC = () => {
                 >
                   <Button
                     icon={<PrinterOutlined />}
-                    size={window.innerWidth <= 768 ? "small" : "middle"}
+                    size={isMobile ? "small" : "middle"}
                     style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
                   >
                     인쇄 <DownOutlined />
@@ -1749,7 +1776,7 @@ const SalesManagement: React.FC = () => {
             )}
             <Button
               icon={<EditOutlined />}
-              size={window.innerWidth <= 768 ? "small" : "middle"}
+              size={isMobile ? "small" : "middle"}
               onClick={prepareESignature}
               style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
             >
@@ -1785,18 +1812,18 @@ const SalesManagement: React.FC = () => {
           style: { cursor: 'pointer' }
         })}
         scroll={{ x: 1200 }}
-        size={window.innerWidth <= 768 ? "small" : "middle"}
+        size={isMobile ? "small" : "middle"}
         onChange={handleTableChange}
         pagination={{
           ...pagination,
-          pageSize: window.innerWidth <= 768 ? 5 : pagination.pageSize,
+          pageSize: isMobile ? 5 : pagination.pageSize,
           pageSizeOptions: ['5', '10', '20', '50'],
           showSizeChanger: true,
           showQuickJumper: window.innerWidth > 768,
           total: filteredSales.length,
           showTotal: (total, range) => {
             const searchInfo = searchText ? ` (전체 ${sales.length}건 중 검색결과)` : '';
-            return window.innerWidth <= 768
+            return isMobile
               ? `${total}건`
               : `${range[0]}-${range[1]} / ${total}건${searchInfo}`;
           },
@@ -1823,21 +1850,21 @@ const SalesManagement: React.FC = () => {
         keyboard={true}
         destroyOnHidden={true}
         footer={null}
-        width={window.innerWidth <= 768 ? '100%' : 1600}
+        width={isMobile ? '100%' : 1600}
         modalRender={(modal) => (
           <div style={{ transform: `translate(${modalDragPosition.x}px, ${modalDragPosition.y}px)` }}>
             {modal}
           </div>
         )}
         style={{
-          top: window.innerWidth <= 768 ? 0 : 30,
-          maxWidth: window.innerWidth <= 768 ? '100vw' : '1600px',
+          top: isMobile ? 0 : 30,
+          maxWidth: isMobile ? '100vw' : '1600px',
           paddingBottom: 0,
-          margin: window.innerWidth <= 768 ? 0 : 'auto'
+          margin: isMobile ? 0 : 'auto'
         }}
         styles={{
           body: {
-            maxHeight: window.innerWidth <= 768 ? 'calc(100vh - 110px)' : 'calc(100vh - 200px)',
+            maxHeight: isMobile ? 'calc(100vh - 110px)' : 'calc(100vh - 200px)',
             overflowY: 'auto',
             overflowX: 'hidden'
           }
@@ -1866,7 +1893,7 @@ const SalesManagement: React.FC = () => {
                   showSearch
                   allowClear
                   loading={loading}
-                  size={window.innerWidth <= 768 ? "small" : "middle"}
+                  size={isMobile ? "small" : "middle"}
                   filterOption={(input, option) => {
                     try {
                       const children = option?.children;
@@ -1897,7 +1924,7 @@ const SalesManagement: React.FC = () => {
               >
                 <DatePicker
                   style={{ width: '100%' }}
-                  size={window.innerWidth <= 768 ? "small" : "middle"}
+                  size={isMobile ? "small" : "middle"}
                 />
               </Form.Item>
             </Col>
@@ -2272,15 +2299,15 @@ const SalesManagement: React.FC = () => {
           setUploadData([]);
         }}
         onOk={handleUploadConfirm}
-        width={window.innerWidth <= 768 ? '100%' : 1200}
+        width={isMobile ? '100%' : 1200}
         style={{
-          top: window.innerWidth <= 768 ? 0 : 30,
-          maxWidth: window.innerWidth <= 768 ? '100vw' : '1200px',
-          margin: window.innerWidth <= 768 ? 0 : 'auto'
+          top: isMobile ? 0 : 30,
+          maxWidth: isMobile ? '100vw' : '1200px',
+          margin: isMobile ? 0 : 'auto'
         }}
         styles={{
           body: {
-            maxHeight: window.innerWidth <= 768 ? 'calc(100vh - 150px)' : 'calc(100vh - 200px)',
+            maxHeight: isMobile ? 'calc(100vh - 150px)' : 'calc(100vh - 200px)',
             overflowY: 'auto'
           }
         }}
@@ -2294,8 +2321,8 @@ const SalesManagement: React.FC = () => {
         </div>
         <Table
           dataSource={uploadData}
-          scroll={{ x: window.innerWidth <= 768 ? 800 : 1000, y: 400 }}
-          pagination={{ pageSize: window.innerWidth <= 768 ? 5 : 10 }}
+          scroll={{ x: isMobile ? 800 : 1000, y: 400 }}
+          pagination={{ pageSize: isMobile ? 5 : 10 }}
           rowKey="index"
           size="small"
           columns={[

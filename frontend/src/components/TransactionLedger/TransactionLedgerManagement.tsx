@@ -13,6 +13,7 @@ import { TransactionLedger } from '../Print/TransactionLedger';
 import PrintModal from '../Print/PrintModal';
 import TransactionLedgerPrintModal from '../Print/TransactionLedgerPrintModal';
 import dayjs from 'dayjs';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -68,6 +69,7 @@ interface Customer {
 }
 
 const TransactionLedgerManagement: React.FC = () => {
+  const { isMobile } = useMediaQuery();
   const [loading, setLoading] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -621,7 +623,7 @@ const TransactionLedgerManagement: React.FC = () => {
 
   return (
     <div style={{
-      padding: window.innerWidth <= 768 ? '16px 8px' : '24px',
+      padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
       <Row align="middle" style={{ marginBottom: 24 }}>
@@ -851,8 +853,8 @@ const TransactionLedgerManagement: React.FC = () => {
         title="거래원장 인쇄"
         open={printModalVisible}
         onCancel={() => setPrintModalVisible(false)}
-        width={window.innerWidth <= 768 ? '95%' : '90%'}
-        style={{ maxWidth: window.innerWidth <= 768 ? 'none' : '1200px' }}
+        width={isMobile ? '95%' : '90%'}
+        style={{ maxWidth: isMobile ? 'none' : '1200px' }}
         footer={[
           <Button key="cancel" onClick={() => setPrintModalVisible(false)}>
             취소

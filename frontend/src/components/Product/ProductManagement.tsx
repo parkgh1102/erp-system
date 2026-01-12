@@ -9,6 +9,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { productAPI } from '../../utils/api';
 import dayjs from 'dayjs';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const { TextArea } = Input;
 
@@ -30,6 +31,7 @@ interface Product {
 }
 
 const ProductManagement: React.FC = () => {
+  const { isMobile } = useMediaQuery();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -47,7 +49,7 @@ const ProductManagement: React.FC = () => {
   const [uploadResultModalVisible, setUploadResultModalVisible] = useState(false);
   const [uploadResults, setUploadResults] = useState<UploadResultItem[]>([]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
-  const [pageSize, setPageSize] = useState<number>(window.innerWidth <= 768 ? 5 : 10);
+  const [pageSize, setPageSize] = useState<number>(isMobile ? 5 : 10);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
@@ -665,7 +667,7 @@ const ProductManagement: React.FC = () => {
 
   return (
     <div style={{
-      padding: window.innerWidth <= 768 ? '16px 8px' : '24px',
+      padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
       <Row align="middle" style={{ marginBottom: 24 }}>
@@ -804,17 +806,17 @@ const ProductManagement: React.FC = () => {
           onDoubleClick: () => handleEdit(record),
           style: { cursor: 'pointer' }
         })}
-        scroll={{ x: window.innerWidth <= 768 ? 1200 : undefined }}
-        size={window.innerWidth <= 768 ? 'small' : 'middle'}
+        scroll={{ x: isMobile ? 1200 : undefined }}
+        size={isMobile ? 'small' : 'middle'}
         pagination={{
           pageSize: pageSize,
-          pageSizeOptions: window.innerWidth <= 768 ? ['5', '10', '20'] : ['10', '20', '50', '100'],
+          pageSizeOptions: isMobile ? ['5', '10', '20'] : ['10', '20', '50', '100'],
           showSizeChanger: window.innerWidth > 768,
           showQuickJumper: window.innerWidth > 768,
-          simple: window.innerWidth <= 768,
+          simple: isMobile,
           showTotal: (total, range) => {
             const searchInfo = searchText ? ` (전체 ${products.length}건 중 검색결과)` : '';
-            return window.innerWidth <= 768
+            return isMobile
               ? `${total}건`
               : `${range[0]}-${range[1]} / ${total}건${searchInfo}`;
           },
@@ -837,8 +839,8 @@ const ProductManagement: React.FC = () => {
         keyboard={true}
         destroyOnHidden={true}
         footer={null}
-        width={window.innerWidth <= 768 ? '95%' : 1000}
-        style={{ top: window.innerWidth <= 768 ? 20 : 50 }}
+        width={isMobile ? '95%' : 1000}
+        style={{ top: isMobile ? 20 : 50 }}
         getContainer={false}
       >
         <Form
@@ -847,7 +849,7 @@ const ProductManagement: React.FC = () => {
           onFinish={handleSubmit}
           initialValues={{ taxType: 'tax_separate' }}
         >
-          <Row gutter={window.innerWidth <= 768 ? 8 : 16}>
+          <Row gutter={isMobile ? 8 : 16}>
             <Col xs={24} sm={12}>
               <Form.Item
                 name="productCode"
@@ -857,7 +859,7 @@ const ProductManagement: React.FC = () => {
                 <Input
                   placeholder="P0001"
                   disabled={editingProduct ? true : false}
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                 />
               </Form.Item>
             </Col>
@@ -867,12 +869,12 @@ const ProductManagement: React.FC = () => {
                 label="품목명"
                 rules={[{ required: true, message: '품목명을 입력해주세요!' }]}
               >
-                <Input size={window.innerWidth <= 768 ? 'small' : 'middle'} />
+                <Input size={isMobile ? 'small' : 'middle'} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={window.innerWidth <= 768 ? 8 : 16}>
+          <Row gutter={isMobile ? 8 : 16}>
             <Col xs={24} sm={12}>
               <Form.Item
                 name="spec"
@@ -880,8 +882,8 @@ const ProductManagement: React.FC = () => {
               >
                 <Select
                   showSearch
-                  placeholder={window.innerWidth <= 768 ? "규격" : "규격 선택 또는 직접 입력 (예: box, ea, pallet, 자루)"}
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  placeholder={isMobile ? "규격" : "규격 선택 또는 직접 입력 (예: box, ea, pallet, 자루)"}
+                  size={isMobile ? 'small' : 'middle'}
                   allowClear
                   dropdownStyle={{ minWidth: 200 }}
                   listHeight={300}
@@ -938,8 +940,8 @@ const ProductManagement: React.FC = () => {
               >
                 <Select
                   showSearch
-                  placeholder={window.innerWidth <= 768 ? "단위" : "단위 선택 또는 직접 입력 (예: kg, ea, set)"}
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  placeholder={isMobile ? "단위" : "단위 선택 또는 직접 입력 (예: kg, ea, set)"}
+                  size={isMobile ? 'small' : 'middle'}
                   allowClear
                   dropdownStyle={{ minWidth: 180 }}
                   dropdownRender={(menu) => (
@@ -990,7 +992,7 @@ const ProductManagement: React.FC = () => {
             </Col>
           </Row>
 
-          <Row gutter={window.innerWidth <= 768 ? 8 : 16}>
+          <Row gutter={isMobile ? 8 : 16}>
             <Col xs={24} sm={12}>
               <Form.Item
                 name="buyPrice"
@@ -1003,7 +1005,7 @@ const ProductManagement: React.FC = () => {
                   min={0}
                   placeholder="0"
                   addonAfter="원"
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                 />
               </Form.Item>
             </Col>
@@ -1019,13 +1021,13 @@ const ProductManagement: React.FC = () => {
                   min={0}
                   placeholder="0"
                   addonAfter="원"
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={window.innerWidth <= 768 ? 8 : 16}>
+          <Row gutter={isMobile ? 8 : 16}>
             <Col xs={24} sm={12}>
               <Form.Item
                 name="category"
@@ -1033,7 +1035,7 @@ const ProductManagement: React.FC = () => {
               >
                 <Input
                   placeholder="분류를 입력하세요"
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                 />
               </Form.Item>
             </Col>
@@ -1043,7 +1045,7 @@ const ProductManagement: React.FC = () => {
                 label="세금구분"
                 rules={[{ required: true, message: '세금구분을 선택해주세요!' }]}
               >
-                <Radio.Group size={window.innerWidth <= 768 ? 'small' : 'middle'}>
+                <Radio.Group size={isMobile ? 'small' : 'middle'}>
                   <Radio value="tax_separate">과세 10%별도</Radio>
                   <Radio value="tax_inclusive">과세 10%포함</Radio>
                   <Radio value="tax_free">면세</Radio>
@@ -1057,9 +1059,9 @@ const ProductManagement: React.FC = () => {
             label="비고"
           >
             <TextArea
-              rows={window.innerWidth <= 768 ? 2 : 3}
+              rows={isMobile ? 2 : 3}
               placeholder="비고 사항을 입력하세요"
-              size={window.innerWidth <= 768 ? 'small' : 'middle'}
+              size={isMobile ? 'small' : 'middle'}
             />
           </Form.Item>
 
@@ -1070,38 +1072,38 @@ const ProductManagement: React.FC = () => {
             borderTop: '1px solid #f0f0f0'
           }}>
             <Space
-              size={window.innerWidth <= 768 ? 8 : 16}
+              size={isMobile ? 8 : 16}
               style={{ justifyContent: 'center' }}
-              direction={window.innerWidth <= 768 ? 'vertical' : 'horizontal'}
+              direction={isMobile ? 'vertical' : 'horizontal'}
             >
               <Button
-                size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                size={isMobile ? 'small' : 'middle'}
                 onClick={() => {
                   setModalVisible(false);
                   form.resetFields();
                   setEditingProduct(null);
                 }}
-                style={{ width: window.innerWidth <= 768 ? '200px' : 'auto' }}
+                style={{ width: isMobile ? '200px' : 'auto' }}
               >
                 취소
               </Button>
               <Button
-                size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                size={isMobile ? 'small' : 'middle'}
                 type="primary"
                 htmlType="submit"
-                style={{ width: window.innerWidth <= 768 ? '200px' : 'auto' }}
+                style={{ width: isMobile ? '200px' : 'auto' }}
               >
                 저장
               </Button>
               {!editingProduct && (
                 <Button
-                  size={window.innerWidth <= 768 ? 'small' : 'middle'}
+                  size={isMobile ? 'small' : 'middle'}
                   type="default"
                   style={{
                     backgroundColor: '#52c41a',
                     borderColor: '#52c41a',
                     color: 'white',
-                    width: window.innerWidth <= 768 ? '200px' : 'auto'
+                    width: isMobile ? '200px' : 'auto'
                   }}
                   onClick={() => {
                     form.validateFields().then(values => {
@@ -1111,7 +1113,7 @@ const ProductManagement: React.FC = () => {
                     });
                   }}
                 >
-                  {window.innerWidth <= 768 ? '저장+초기화' : '저장 후 초기화'}
+                  {isMobile ? '저장+초기화' : '저장 후 초기화'}
                 </Button>
               )}
             </Space>

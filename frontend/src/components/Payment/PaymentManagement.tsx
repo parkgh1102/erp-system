@@ -13,6 +13,8 @@ import isBetween from 'dayjs/plugin/isBetween';
 
 dayjs.extend(isBetween);
 
+import { useMediaQuery } from '../../hooks/useMediaQuery';
+
 const { Option } = Select;
 const { TextArea } = Input;
 // RangePicker duplicate issue resolved
@@ -44,6 +46,7 @@ interface Payment {
 }
 
 const PaymentManagement: React.FC = () => {
+  const { isMobile } = useMediaQuery();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -706,7 +709,7 @@ const PaymentManagement: React.FC = () => {
 
   return (
     <div style={{
-      padding: window.innerWidth <= 768 ? '16px 8px' : '24px',
+      padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
       <Row align="middle" style={{ marginBottom: 24 }}>
@@ -721,7 +724,7 @@ const PaymentManagement: React.FC = () => {
                 value={searchText}
                 onChange={handleSearchChange}
                 onSelect={(value) => setSearchText(value)}
-                style={{ width: window.innerWidth <= 768 ? 250 : 300 }}
+                style={{ width: isMobile ? 250 : 300 }}
               >
                 <Input.Search
                   placeholder="거래처, 수금/지급금액, 메모 등으로 검색 (2글자 이상)"
@@ -755,19 +758,19 @@ const PaymentManagement: React.FC = () => {
             </Button>
             <Button
               icon={<ImportOutlined />}
-              size={window.innerWidth <= 768 ? "small" : "middle"}
+              size={isMobile ? "small" : "middle"}
               onClick={() => setExcelUploadModalVisible(true)}
               style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
             >
-              {window.innerWidth <= 768 ? '' : '엑셀업로드'}
+              {isMobile ? '' : '엑셀업로드'}
             </Button>
             <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
               <Button
                 icon={<ExportOutlined />}
-                size={window.innerWidth <= 768 ? "small" : "middle"}
+                size={isMobile ? "small" : "middle"}
                 style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
               >
-                {window.innerWidth <= 768 ? '' : '파일저장'}
+                {isMobile ? '' : '파일저장'}
               </Button>
             </Dropdown>
             {window.innerWidth > 768 && (
@@ -870,20 +873,20 @@ const PaymentManagement: React.FC = () => {
                   rowSelection={getRowSelection()}
                   showSorterTooltip={false}
                   scroll={{ x: 900 }}
-                  size={window.innerWidth <= 768 ? "small" : "middle"}
+                  size={isMobile ? "small" : "middle"}
                   onRow={(record) => ({
                     onClick: (e) => handleRowClick(record, e),
                     onDoubleClick: () => handleEdit(record),
                     style: { cursor: 'pointer' }
                   })}
                   pagination={{
-                    pageSize: window.innerWidth <= 768 ? 5 : 10,
+                    pageSize: isMobile ? 5 : 10,
                     pageSizeOptions: ['5', '10', '20', '50'],
                     showSizeChanger: true,
                     showQuickJumper: window.innerWidth > 768,
                     showTotal: (total, range) => {
                       const searchInfo = searchText ? ` (전체 ${payments.filter(p => p.type === 'receipt').length}건 중 검색결과)` : '';
-                      return window.innerWidth <= 768
+                      return isMobile
                         ? `${total}건`
                         : `${range[0]}-${range[1]} / ${total}건${searchInfo}`;
                     },
@@ -904,20 +907,20 @@ const PaymentManagement: React.FC = () => {
                   rowSelection={getRowSelection()}
                   showSorterTooltip={false}
                   scroll={{ x: 900 }}
-                  size={window.innerWidth <= 768 ? "small" : "middle"}
+                  size={isMobile ? "small" : "middle"}
                   onRow={(record) => ({
                     onClick: (e) => handleRowClick(record, e),
                     onDoubleClick: () => handleEdit(record),
                     style: { cursor: 'pointer' }
                   })}
                   pagination={{
-                    pageSize: window.innerWidth <= 768 ? 5 : 10,
+                    pageSize: isMobile ? 5 : 10,
                     pageSizeOptions: ['5', '10', '20', '50'],
                     showSizeChanger: true,
                     showQuickJumper: window.innerWidth > 768,
                     showTotal: (total, range) => {
                       const searchInfo = searchText ? ` (전체 ${payments.filter(p => p.type === 'payment').length}건 중 검색결과)` : '';
-                      return window.innerWidth <= 768
+                      return isMobile
                         ? `${total}건`
                         : `${range[0]}-${range[1]} / ${total}건${searchInfo}`;
                     },
@@ -1113,7 +1116,7 @@ const PaymentManagement: React.FC = () => {
           bulkForm.resetFields();
         }}
         footer={null}
-        width={window.innerWidth <= 768 ? '95%' : 800}
+        width={isMobile ? '95%' : 800}
       >
         <Form
           form={bulkForm}
