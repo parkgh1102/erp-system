@@ -725,7 +725,7 @@ const TransactionLedgerManagement: React.FC = () => {
             </Col>
           </Row>
           <Row gutter={16} style={{ marginTop: '8px' }}>
-            <Col xs={24} sm={12} md={12} lg={12} xl={12}>
+            <Col xs={24} sm={12} md={6} lg={6} xl={6}>
               <strong>주소:</strong> {selectedCustomerInfo.address || '미등록'}
             </Col>
             <Col xs={12} sm={6} md={6} lg={6} xl={6}>
@@ -733,6 +733,9 @@ const TransactionLedgerManagement: React.FC = () => {
             </Col>
             <Col xs={12} sm={6} md={6} lg={6} xl={6}>
               <strong>이메일:</strong> {selectedCustomerInfo.email || '미등록'}
+            </Col>
+            <Col xs={24} sm={6} md={6} lg={6} xl={6}>
+              <strong>조회기간:</strong> {dateRange ? `${dateRange[0].format('YYYY-MM-DD')} ~ ${dateRange[1].format('YYYY-MM-DD')}` : '-'}
             </Col>
           </Row>
         </Card>
