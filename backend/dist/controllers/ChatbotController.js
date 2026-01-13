@@ -21,7 +21,6 @@ class ERPDataHelper {
     // 매출 통계 조회
     static async getSalesStats(businessId, startDate, endDate) {
         const salesRepo = database_1.AppDataSource.getRepository(Sales_1.Sales);
-        console.log('📊 매출 조회 시작:', { businessId, startDate, endDate });
         let whereCondition = { businessId };
         if (startDate && endDate) {
             whereCondition.transactionDate = (0, typeorm_1.Between)(new Date(startDate), new Date(endDate));

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip, Checkbox } from 'antd';
+import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip, Checkbox, Progress } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
@@ -129,6 +129,7 @@ const SalesManagement: React.FC = () => {
   });
   const [uploadData, setUploadData] = useState<any[]>([]);
   const [excelUploadModalVisible, setExcelUploadModalVisible] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; visible: boolean }>({ current: 0, total: 0, visible: false });
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   const [printMode, setPrintMode] = useState<'full' | 'receiver' | 'supplier'>('full');
   const [transactionStatementModalVisible, setTransactionStatementVisible] = useState(false);
@@ -980,7 +981,11 @@ const SalesManagement: React.FC = () => {
       // 유효한 데이터만 필터링
       const validData = preparedData.filter(item => 'data' in item) as Array<{ index: number; data: any }>;
 
+      // 진행률 표시 시작
+      setUploadProgress({ current: 0, total: validData.length, visible: true });
+
       // 배치 처리
+      let processedCount = 0;
       for (let i = 0; i < validData.length; i += BATCH_SIZE) {
         const batch = validData.slice(i, i + BATCH_SIZE);
         const results = await Promise.allSettled(
@@ -999,7 +1004,14 @@ const SalesManagement: React.FC = () => {
             logger.error('Sales upload error:', error);
           }
         });
+
+        // 진행률 업데이트
+        processedCount += batch.length;
+        setUploadProgress(prev => ({ ...prev, current: processedCount }));
       }
+
+      // 진행률 표시 종료
+      setUploadProgress(prev => ({ ...prev, visible: false }));
 
       fetchData();
 
@@ -1802,8 +1814,16 @@ const SalesManagement: React.FC = () => {
       </Row>
 
       {loading && (
-        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9999 }}>
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9999, textAlign: 'center', background: 'rgba(255,255,255,0.9)', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
           <Spin size="large" />
+          {uploadProgress.visible && uploadProgress.total > 0 && (
+            <div style={{ marginTop: '16px', width: '200px' }}>
+              <Progress percent={Math.round((uploadProgress.current / uploadProgress.total) * 100)} size="small" />
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                {uploadProgress.current} / {uploadProgress.total} 처리 중...
+              </div>
+            </div>
+          )}
         </div>
       )}
 

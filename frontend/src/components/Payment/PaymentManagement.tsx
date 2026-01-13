@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, message, Popconfirm, Card, Row, Col, InputNumber, Tabs, Spin, AutoComplete, Typography, Dropdown, Radio, Alert } from 'antd';
 import { EditOutlined, DeleteOutlined, MoneyCollectOutlined, PayCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, PrinterOutlined } from '@ant-design/icons';
-import { createExportMenuItems } from '../../utils/exportUtils';
+import { createExportMenuItems, exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { paymentAPI, customerAPI } from '../../utils/api';
@@ -86,8 +86,7 @@ const PaymentManagement: React.FC = () => {
         form.validateFields().then(values => {
           handleSubmit(values, false);
         }).catch(info => {
-          console.log('Validate Failed:', info);
-        });
+                  });
       }
       // F8: 저장 후 초기화
       if (event.key === 'F8') {
@@ -96,8 +95,7 @@ const PaymentManagement: React.FC = () => {
           form.validateFields().then(values => {
             handleSubmit(values, true);
           }).catch(info => {
-            console.log('Validate Failed:', info);
-          });
+                      });
         }
       }
     };
@@ -432,10 +430,70 @@ const PaymentManagement: React.FC = () => {
   };
 
   // 엑셀 업로드 관련 함수들
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleFileUpload = (_file: File) => {
-    // TODO: Implement file upload functionality
-    message.info('파일 업로드 기능은 준비 중입니다.');
+  const handleFileUpload = async (file: File) => {
+    const ExcelJS = await import('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const arrayBuffer = await file.arrayBuffer();
+    await workbook.xlsx.load(arrayBuffer);
+
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) {
+      message.error('엑셀 시트를 찾을 수 없습니다.');
+      return false;
+    }
+
+    const parsedData: any[] = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // 헤더 스킵
+
+      const dateValue = row.getCell(1).value;
+      const customerName = String(row.getCell(2).value || '').trim();
+      const typeValue = String(row.getCell(3).value || '').trim();
+      const amount = Number(String(row.getCell(4).value || '0').replace(/[^0-9.-]/g, '')) || 0;
+      const memo = String(row.getCell(5).value || '').trim();
+
+      if (!customerName || !amount) return;
+
+      // 거래처 매칭
+      const matchedCustomer = customers.find(c =>
+        c.name === customerName || c.name.includes(customerName) || customerName.includes(c.name)
+      );
+
+      // 날짜 처리
+      let paymentDate = '';
+      if (dateValue instanceof Date) {
+        paymentDate = dayjs(dateValue).format('YYYY-MM-DD');
+      } else if (typeof dateValue === 'string') {
+        paymentDate = dayjs(dateValue).format('YYYY-MM-DD');
+      } else if (typeof dateValue === 'number') {
+        // Excel 날짜 시리얼 넘버
+        const excelEpoch = new Date(1899, 11, 30);
+        const jsDate = new Date(excelEpoch.getTime() + dateValue * 86400000);
+        paymentDate = dayjs(jsDate).format('YYYY-MM-DD');
+      }
+
+      // 유형 처리
+      const type = typeValue.includes('수금') ? 'receipt' : typeValue.includes('지급') ? 'payment' : 'receipt';
+
+      parsedData.push({
+        paymentDate,
+        customerName,
+        customerId: matchedCustomer?.id || null,
+        type,
+        amount,
+        memo,
+        matched: !!matchedCustomer
+      });
+    });
+
+    if (parsedData.length === 0) {
+      message.warning('업로드할 데이터가 없습니다.');
+      return false;
+    }
+
+    setUploadData(parsedData);
+    setUploadModalVisible(true);
+    message.success(`${parsedData.length}건의 데이터를 불러왔습니다.`);
     return false;
   };
 
@@ -481,10 +539,45 @@ const PaymentManagement: React.FC = () => {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const downloadTemplate = () => {
-    // TODO: Implement template download functionality
-    message.info('템플릿 다운로드 기능은 준비 중입니다.');
+  const downloadTemplate = async () => {
+    const ExcelJS = await import('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('수금지급 업로드 템플릿');
+
+    // 헤더 설정
+    const headers = ['일자', '거래처명', '유형(수금/지급)', '금액', '메모'];
+    worksheet.addRow(headers);
+
+    // 헤더 스타일
+    const headerRow = worksheet.getRow(1);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '366092' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+    });
+
+    // 샘플 데이터
+    worksheet.addRow(['2026-01-13', '(주)테스트거래처', '수금', '1000000', '1월분 수금']);
+    worksheet.addRow(['2026-01-14', '(주)샘플회사', '지급', '500000', '외주비 지급']);
+
+    // 컬럼 너비
+    worksheet.columns = [
+      { width: 15 }, { width: 25 }, { width: 15 }, { width: 15 }, { width: 30 }
+    ];
+
+    // 다운로드
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = '수금지급_업로드_템플릿.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    message.success('템플릿이 다운로드되었습니다.');
   };
 
   // 일괄 등록 함수
@@ -701,8 +794,23 @@ const PaymentManagement: React.FC = () => {
 
 
   const handleExport = async (type: 'excel' | 'pdf') => {
-    // Export functionality can be implemented here
-    message.info(`${type.toUpperCase()} 내보내기 기능은 준비 중입니다.`);
+    const isReceipt = activeTab === 'receipt';
+    const data = isReceipt ? filteredReceiptData : filteredPaymentData;
+    const title = isReceipt ? '수금 내역' : '지급 내역';
+    const filename = isReceipt ? '수금내역' : '지급내역';
+
+    const exportColumns = [
+      { key: 'paymentDate', title: isReceipt ? '수금일자' : '지급일자', dataIndex: 'paymentDate', render: (date: string) => date ? dayjs(date).format('YYYY-MM-DD') : '-' },
+      { key: 'customerName', title: '거래처', dataIndex: 'customer', render: (_: any, record: Payment) => record.customer?.name || '-' },
+      { key: 'amount', title: isReceipt ? '수금금액' : '지급금액', dataIndex: 'amount', render: (amount: number) => amount ? `${amount.toLocaleString()}원` : '0원' },
+      { key: 'memo', title: '메모', dataIndex: 'memo', render: (memo: string) => memo || '-' },
+    ];
+
+    if (type === 'excel') {
+      await exportToExcel({ filename, title, columns: exportColumns, data, selectedRowKeys });
+    } else {
+      await exportToPDF({ filename, title, columns: exportColumns, data, selectedRowKeys });
+    }
   };
 
   const actionMenuItems = createExportMenuItems(handleExport);
@@ -1045,8 +1153,7 @@ const PaymentManagement: React.FC = () => {
                     form.validateFields().then(values => {
                       handleSubmit(values, true);
                     }).catch(info => {
-                      console.log('Validate Failed:', info);
-                    });
+                                          });
                   }}
                 >
                   저장 후 초기화

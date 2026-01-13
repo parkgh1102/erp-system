@@ -21,8 +21,7 @@ export interface ExportOptions {
 
 // 엑셀 내보내기 (ExcelJS 사용 - 보안 강화)
 export const exportToExcel = async (options: ExportOptions) => {
-  console.log('exportToExcel called with options:', options);
-  try {
+    try {
     const { filename, title, columns, data, selectedRowKeys } = options;
 
     // 선택된 행만 필터링
@@ -136,8 +135,7 @@ export const exportToExcel = async (options: ExportOptions) => {
 
 // PDF 내보내기 (HTML to Canvas 방식으로 한글 지원)
 export const exportToPDF = async (options: ExportOptions) => {
-  console.log('exportToPDF called with options:', options);
-  try {
+    try {
     const { filename, title, columns, data, selectedRowKeys } = options;
 
     // 선택된 행만 필터링
@@ -252,8 +250,7 @@ export const exportToPDF = async (options: ExportOptions) => {
 
 // 인쇄 (바로 인쇄 다이얼로그 실행)
 export const printData = (options: ExportOptions) => {
-  console.log('printData called with options:', options);
-  try {
+    try {
     const { title, columns, data, selectedRowKeys } = options;
 
     // 선택된 행만 필터링

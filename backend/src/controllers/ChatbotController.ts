@@ -22,8 +22,6 @@ class ERPDataHelper {
   static async getSalesStats(businessId: number, startDate?: string, endDate?: string) {
     const salesRepo = AppDataSource.getRepository(Sales);
 
-    console.log('📊 매출 조회 시작:', { businessId, startDate, endDate });
-
     let whereCondition: any = { businessId };
     if (startDate && endDate) {
       whereCondition.transactionDate = Between(new Date(startDate), new Date(endDate));
