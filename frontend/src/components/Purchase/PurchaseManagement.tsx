@@ -992,13 +992,13 @@ const PurchaseManagement: React.FC = () => {
 
   const columns = [
     {
-      title: '매입일자',
+      title: isMobile ? '일자' : '매입일자',
       key: 'purchaseDate',
-      width: '10%',
+      width: isMobile ? 65 : '10%',
       align: 'center' as const,
       render: (record: Purchase) => {
         const date = record.purchaseDate;
-        return date ? dayjs(date).format('YYYY-MM-DD') : '';
+        return date ? dayjs(date).format(isMobile ? 'MM-DD' : 'YYYY-MM-DD') : '';
       },
       sorter: (a: Purchase, b: Purchase) => {
         const dateA = a.purchaseDate || '';
@@ -1009,7 +1009,7 @@ const PurchaseManagement: React.FC = () => {
     {
       title: '거래처명',
       key: 'customerName',
-      width: '12%',
+      width: isMobile ? 70 : '12%',
       align: 'center' as const,
       render: (record: Purchase) => record.customer?.name || '-',
       sorter: (a: Purchase, b: Purchase) => (a.customer?.name || '').localeCompare(b.customer?.name || ''),
@@ -1018,7 +1018,7 @@ const PurchaseManagement: React.FC = () => {
       title: '품목명',
       dataIndex: 'items',
       key: 'productName',
-      width: '12%',
+      width: isMobile ? 80 : '12%',
       align: 'center' as const,
       render: (items: PurchaseItem[]) => {
         if (!items || items.length === 0) return '-';
@@ -1109,11 +1109,11 @@ const PurchaseManagement: React.FC = () => {
     {
       title: '합계',
       key: 'total',
-      width: '10%',
+      width: isMobile ? 75 : '10%',
       align: 'right' as const,
       render: (record: Purchase) => {
         const total = (record.totalAmount || 0) + (record.vatAmount || 0);
-        return Math.round(total).toLocaleString() + '원';
+        return <span style={{ fontSize: isMobile ? '11px' : 'inherit' }}>{Math.round(total).toLocaleString()}원</span>;
       },
       sorter: (a: Purchase, b: Purchase) => {
         const totalA = (a.totalAmount || 0) + (a.vatAmount || 0);

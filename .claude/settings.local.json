@@ -209,7 +209,12 @@
       "Bash(az webapp deploy:*)",
       "Bash(for i in 1 2 3 4 5)",
       "Bash(npx vite build)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "WebFetch(domain:webapperp.ai.kr)",
+      "WebFetch(domain:erp-backend-gaee.onrender.com)",
+      "Bash(pm2 list:*)",
+      "Bash(npx @azure/static-web-apps-cli deploy:*)",
+      "WebFetch(domain:white-ocean-03a1f7000.azurestaticapps.net)"
     ],
     "deny": [],
     "ask": []

@@ -1418,13 +1418,13 @@ const SalesManagement: React.FC = () => {
 
   const allColumns = [
     {
-      title: '매출일자',
+      title: isMobile ? '일자' : '매출일자',
       key: 'transactionDate',
-      width: '10%',
+      width: isMobile ? 65 : '10%',
       align: 'center' as const,
       render: (record: Sale) => {
         const date = record.transactionDate || record.saleDate;
-        return date ? dayjs(date).format('YYYY-MM-DD') : '';
+        return date ? dayjs(date).format(isMobile ? 'MM-DD' : 'YYYY-MM-DD') : '';
       },
       sorter: (a: Sale, b: Sale) => {
         const dateA = a.transactionDate || a.saleDate || '';
@@ -1435,7 +1435,7 @@ const SalesManagement: React.FC = () => {
     {
       title: '거래처명',
       key: 'customerName',
-      width: '12%',
+      width: isMobile ? 70 : '12%',
       align: 'center' as const,
       render: (record: Sale) => record.customer?.name || '-',
       sorter: (a: Sale, b: Sale) => (a.customer?.name || '').localeCompare(b.customer?.name || ''),
@@ -1444,7 +1444,7 @@ const SalesManagement: React.FC = () => {
       title: '품목명',
       dataIndex: 'items',
       key: 'productName',
-      width: '12%',
+      width: isMobile ? 80 : '12%',
       align: 'center' as const,
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
@@ -1542,11 +1542,11 @@ const SalesManagement: React.FC = () => {
     {
       title: '합계',
       key: 'total',
-      width: '10%',
+      width: isMobile ? 75 : '10%',
       align: 'right' as const,
       render: (record: Sale) => {
         const total = Math.round((Number(record.totalAmount) || 0) + (Number(record.vatAmount) || 0));
-        return <span style={{ color: total < 0 ? '#ff4d4f' : 'inherit' }}>{total.toLocaleString()}원</span>;
+        return <span style={{ color: total < 0 ? '#ff4d4f' : 'inherit', fontSize: isMobile ? '11px' : 'inherit' }}>{total.toLocaleString()}원</span>;
       },
       sorter: (a: Sale, b: Sale) => {
         const totalA = (Number(a.totalAmount) || 0) + (Number(a.vatAmount) || 0);

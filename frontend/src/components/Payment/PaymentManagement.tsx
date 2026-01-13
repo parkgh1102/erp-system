@@ -625,7 +625,7 @@ const PaymentManagement: React.FC = () => {
     {
       title: 'No.',
       key: 'index',
-      width: '8%',
+      width: isMobile ? 0 : '8%',
       align: 'center' as const,
       render: (_: any, __: any, index: number) => index + 1,
     },
@@ -633,27 +633,27 @@ const PaymentManagement: React.FC = () => {
       title: '수금일자',
       dataIndex: 'paymentDate',
       key: 'paymentDate',
-      width: '15%',
+      width: isMobile ? 80 : '15%',
       align: 'center' as const,
-      render: (date: string) => date ? dayjs(date).format('YYYY-MM-DD') : '-',
+      render: (date: string) => date ? dayjs(date).format(isMobile ? 'MM-DD' : 'YYYY-MM-DD') : '-',
       sorter: (a: Payment, b: Payment) => new Date(a.paymentDate || '').getTime() - new Date(b.paymentDate || '').getTime(),
     },
     {
       title: '거래처',
       key: 'customerName',
-      width: '20%',
+      width: isMobile ? 80 : '20%',
       align: 'center' as const,
       render: (record: Payment) => record.customer?.name || '-',
       sorter: (a: Payment, b: Payment) => (a.customer?.name || '').localeCompare(b.customer?.name || ''),
     },
     {
-      title: '수금금액',
+      title: isMobile ? '금액' : '수금금액',
       dataIndex: 'amount',
       key: 'amount',
-      width: '15%',
+      width: isMobile ? 80 : '15%',
       align: 'right' as const,
       render: (amount: number) => (
-        <span style={{ color: '#52c41a', fontWeight: 'bold' }}>
+        <span style={{ color: '#52c41a', fontWeight: 'bold', fontSize: isMobile ? '11px' : 'inherit' }}>
           {amount ? amount.toLocaleString() : '0'}원
         </span>
       ),
@@ -708,7 +708,7 @@ const PaymentManagement: React.FC = () => {
     {
       title: 'No.',
       key: 'index',
-      width: '8%',
+      width: isMobile ? 0 : '8%',
       align: 'center' as const,
       render: (_: any, __: any, index: number) => index + 1,
     },
@@ -716,27 +716,27 @@ const PaymentManagement: React.FC = () => {
       title: '지급일자',
       dataIndex: 'paymentDate',
       key: 'paymentDate',
-      width: '15%',
+      width: isMobile ? 80 : '15%',
       align: 'center' as const,
-      render: (date: string) => date ? dayjs(date).format('YYYY-MM-DD') : '-',
+      render: (date: string) => date ? dayjs(date).format(isMobile ? 'MM-DD' : 'YYYY-MM-DD') : '-',
       sorter: (a: Payment, b: Payment) => new Date(a.paymentDate || '').getTime() - new Date(b.paymentDate || '').getTime(),
     },
     {
       title: '거래처',
       key: 'customerName',
-      width: '20%',
+      width: isMobile ? 80 : '20%',
       align: 'center' as const,
       render: (record: Payment) => record.customer?.name || '-',
       sorter: (a: Payment, b: Payment) => (a.customer?.name || '').localeCompare(b.customer?.name || ''),
     },
     {
-      title: '지급금액',
+      title: isMobile ? '금액' : '지급금액',
       dataIndex: 'amount',
       key: 'amount',
-      width: '15%',
+      width: isMobile ? 80 : '15%',
       align: 'right' as const,
       render: (amount: number) => (
-        <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
+        <span style={{ color: '#ff4d4f', fontWeight: 'bold', fontSize: isMobile ? '11px' : 'inherit' }}>
           {amount ? amount.toLocaleString() : '0'}원
         </span>
       ),
