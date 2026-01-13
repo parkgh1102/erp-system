@@ -395,6 +395,9 @@ const uploadProducts = async (req, res) => {
         const results = { success: 0, failed: 0, errors: [] };
         for (const row of data) {
             try {
+                // 디버깅: 컬럼명 확인
+                console.log('품목 업로드 row 키:', Object.keys(row));
+                console.log('세금구분 원본값:', row['세금구분']);
                 // 세금구분 매핑 (한글 -> 영문 코드) - 기본값은 과세별도(tax_separate)
                 let taxType = 'tax_separate';
                 const rawTaxType = (row['세금구분'] || '').toString().trim();
@@ -413,20 +416,42 @@ const uploadProducts = async (req, res) => {
                     taxType = 'tax_inclusive';
                 }
                 // 나머지는 모두 과세별도 (기본값)
-                const product = productRepo.create({
-                    businessId,
-                    productCode: row['품목코드'],
-                    name: row['품목명'],
-                    spec: row['규격'] || null,
-                    unit: row['단위'] || null,
-                    currentStock: 0, // 엑셀 업로드 시 재고는 0으로 초기화
-                    buyPrice: parseFloat(row['매입단가']) || 0,
-                    sellPrice: parseFloat(row['매출단가']) || 0,
-                    category: row['분류'] || null,
-                    taxType: taxType,
-                    memo: row['비고'] || null,
-                    isActive: row['활성여부'] === 'Y'
+                console.log('매핑된 taxType:', taxType);
+                // 품목 코드
+                const productCode = String(row['품목코드'] || '').trim();
+                // 기존 품목 코드가 있는지 확인
+                let product = await productRepo.findOne({
+                    where: { businessId, productCode }
                 });
+                if (product) {
+                    // 기존 품목 업데이트
+                    product.name = row['품목명'];
+                    product.spec = row['규격'] || null;
+                    product.unit = row['단위'] || null;
+                    product.buyPrice = parseFloat(row['매입단가']) || 0;
+                    product.sellPrice = parseFloat(row['매출단가']) || 0;
+                    product.category = row['분류'] || null;
+                    product.taxType = taxType;
+                    product.memo = row['비고'] || null;
+                    product.isActive = row['활성여부'] === 'Y';
+                }
+                else {
+                    // 새 품목 생성
+                    product = productRepo.create({
+                        businessId,
+                        productCode,
+                        name: row['품목명'],
+                        spec: row['규격'] || null,
+                        unit: row['단위'] || null,
+                        currentStock: 0, // 엑셀 업로드 시 재고는 0으로 초기화
+                        buyPrice: parseFloat(row['매입단가']) || 0,
+                        sellPrice: parseFloat(row['매출단가']) || 0,
+                        category: row['분류'] || null,
+                        taxType: taxType,
+                        memo: row['비고'] || null,
+                        isActive: row['활성여부'] === 'Y'
+                    });
+                }
                 await productRepo.save(product);
                 results.success++;
             }
