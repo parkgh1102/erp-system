@@ -1,5 +1,12 @@
 import { create } from 'zustand';
 import api from '../utils/api';
+import {
+  registerPushNotification,
+  requestPushPermission,
+  getPushPermission,
+  showNotification,
+  isPushSupported
+} from '../utils/pushNotification';
 
 export interface Notification {
   id: number;
@@ -19,18 +26,25 @@ interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
   isLoading: boolean;
+  pushPermission: NotificationPermission | 'unsupported';
+  pushEnabled: boolean;
   fetchNotifications: () => Promise<void>;
   fetchUnreadCount: () => Promise<void>;
   markAsRead: (id: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (id: number) => Promise<void>;
   deleteAllNotifications: () => Promise<void>;
+  initPushNotifications: () => Promise<void>;
+  requestPushPermission: () => Promise<void>;
+  sendPushNotification: (title: string, body: string, url?: string) => void;
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,
+  pushPermission: 'default',
+  pushEnabled: false,
 
   // 알림 조회
   fetchNotifications: async () => {
@@ -114,5 +128,42 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     } catch (error) {
       console.error('모든 알림 삭제 실패:', error);
     }
+  },
+
+  // 푸시 알림 초기화
+  initPushNotifications: async () => {
+    if (!isPushSupported()) {
+      set({ pushPermission: 'unsupported', pushEnabled: false });
+      return;
+    }
+
+    const registered = await registerPushNotification();
+    const permission = getPushPermission();
+
+    set({
+      pushPermission: permission as NotificationPermission,
+      pushEnabled: registered && permission === 'granted'
+    });
+  },
+
+  // 푸시 알림 권한 요청
+  requestPushPermission: async () => {
+    const permission = await requestPushPermission();
+    set({
+      pushPermission: permission,
+      pushEnabled: permission === 'granted'
+    });
+  },
+
+  // 푸시 알림 전송
+  sendPushNotification: (title: string, body: string, url?: string) => {
+    const { pushEnabled } = get();
+    if (!pushEnabled) return;
+
+    showNotification({
+      title,
+      body,
+      data: url ? { url } : undefined
+    });
   },
 }));

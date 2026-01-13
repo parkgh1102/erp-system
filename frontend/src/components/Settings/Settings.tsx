@@ -34,6 +34,7 @@ import {
 } from '@ant-design/icons';
 import { useThemeStore } from '../../stores/themeStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useNotificationStore } from '../../stores/notificationStore';
 import { useMessage } from '../../hooks/useMessage';
 import { settingsAPI, activityLogAPI } from '../../utils/api';
 import UserManagement from './UserManagement';
@@ -58,6 +59,12 @@ const Settings: React.FC = () => {
   const { isDark, toggleTheme } = useThemeStore();
   const { currentBusiness, user } = useAuthStore();
   const { success: showSuccess, error: showError } = useMessage();
+  const {
+    pushPermission,
+    pushEnabled,
+    initPushNotifications,
+    requestPushPermission: requestPush
+  } = useNotificationStore();
   const [loading, setLoading] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [notifications, setNotifications] = useState({
@@ -141,6 +148,11 @@ const Settings: React.FC = () => {
   useEffect(() => {
     fetchActivityLogs();
   }, []);
+
+  // 푸시 알림 초기화
+  useEffect(() => {
+    initPushNotifications();
+  }, [initPushNotifications]);
 
   const fetchActivityLogs = async () => {
     setLogsLoading(true);
@@ -600,14 +612,53 @@ const Settings: React.FC = () => {
                   </Form.Item>
 
                   <Form.Item label="브라우저 알림">
-                    <Space>
-                      <Switch
-                        checked={notificationChannels.browserNotifications}
-                        onChange={(checked) => setNotificationChannels(prev => ({ ...prev, browserNotifications: checked }))}
-                      />
-                      <Text type="secondary">
-                        브라우저 푸시 알림을 받습니다
-                      </Text>
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      <Space>
+                        <Switch
+                          checked={notificationChannels.browserNotifications}
+                          onChange={(checked) => setNotificationChannels(prev => ({ ...prev, browserNotifications: checked }))}
+                        />
+                        <Text type="secondary">
+                          브라우저 푸시 알림을 받습니다
+                        </Text>
+                      </Space>
+                      <div style={{ marginTop: 8 }}>
+                        {pushPermission === 'unsupported' ? (
+                          <Alert
+                            message="이 브라우저는 푸시 알림을 지원하지 않습니다"
+                            type="warning"
+                            showIcon
+                            style={{ marginTop: 8 }}
+                          />
+                        ) : pushPermission === 'granted' ? (
+                          <Alert
+                            message="푸시 알림이 활성화되어 있습니다"
+                            type="success"
+                            showIcon
+                            style={{ marginTop: 8 }}
+                          />
+                        ) : pushPermission === 'denied' ? (
+                          <Alert
+                            message="푸시 알림이 차단되어 있습니다. 브라우저 설정에서 허용해주세요."
+                            type="error"
+                            showIcon
+                            style={{ marginTop: 8 }}
+                          />
+                        ) : (
+                          <Button
+                            type="primary"
+                            icon={<BellOutlined />}
+                            onClick={async () => {
+                              await requestPush();
+                              if (pushPermission === 'granted') {
+                                showSuccess('푸시 알림이 활성화되었습니다');
+                              }
+                            }}
+                          >
+                            푸시 알림 권한 요청
+                          </Button>
+                        )}
+                      </div>
                     </Space>
                   </Form.Item>
 

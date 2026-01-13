@@ -14,6 +14,7 @@ import {
   MenuUnfoldOutlined,
   BellOutlined,
   BankOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -35,7 +36,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [isTabletOrSmaller, setIsTabletOrSmaller] = useState(window.innerWidth <= 992);
   const { user, currentBusiness, setCurrentBusiness, logout } = useAuthStore();
   const { isDark, toggleTheme } = useThemeStore();
-  const { unreadCount, fetchUnreadCount } = useNotificationStore();
+  const { unreadCount, fetchUnreadCount, initPushNotifications } = useNotificationStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -57,6 +58,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
+
+  // 푸시 알림 초기화
+  useEffect(() => {
+    initPushNotifications();
+  }, [initPushNotifications]);
 
   // 다크모드에서 선택된 메뉴 스타일
   React.useEffect(() => {
@@ -137,6 +143,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       label: '거래원장',
       roles: ['admin', 'sales_viewer'],
     },
+    {
+      key: '/reports',
+      icon: <BarChartOutlined style={{ color: '#2f54eb' }} />,
+      label: '리포트',
+      roles: ['admin'],
+    },
   ];
 
   // 사용자 권한에 따라 메뉴 필터링
@@ -176,7 +188,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout className={isDark ? 'dark-mode' : ''} style={{ minHeight: '100vh' }}>
       <Sider
         trigger={null}
         collapsible
@@ -491,6 +503,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             { key: '/purchases', icon: <FileTextOutlined />, label: '매입', roles: ['admin'] },
             { key: '/inventory', icon: <FileTextOutlined />, label: '재고', roles: ['admin'] },
             { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
+            { key: '/reports', icon: <BarChartOutlined />, label: '리포트', roles: ['admin'] },
           ].filter(item => item.roles.includes(user?.role || 'admin')).map((item) => {
             const isActive = location.pathname === item.key;
             return (

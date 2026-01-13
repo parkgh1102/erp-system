@@ -82,14 +82,14 @@ const InventoryManagement: React.FC = () => {
       title: '품목코드',
       dataIndex: 'productCode',
       key: 'productCode',
-      width: 120,
+      width: isMobile ? 70 : 120,
       sorter: (a: Product, b: Product) => (a.productCode || '').localeCompare(b.productCode || ''),
     },
     {
       title: '품목명',
       dataIndex: 'name',
       key: 'name',
-      width: 200,
+      width: isMobile ? 80 : 200,
       sorter: (a: Product, b: Product) => (a.name || '').localeCompare(b.name || ''),
     },
     {
@@ -97,6 +97,7 @@ const InventoryManagement: React.FC = () => {
       dataIndex: 'spec',
       key: 'spec',
       width: 100,
+      responsive: ['md'] as const,
       render: (text: string) => text || '-',
     },
     {
@@ -104,13 +105,14 @@ const InventoryManagement: React.FC = () => {
       dataIndex: 'unit',
       key: 'unit',
       width: 80,
+      responsive: ['lg'] as const,
       render: (text: string) => text || 'EA',
     },
     {
       title: '현재고',
       dataIndex: 'currentStock',
       key: 'currentStock',
-      width: 100,
+      width: isMobile ? 60 : 100,
       align: 'right' as const,
       sorter: (a: Product, b: Product) => (a.currentStock || 0) - (b.currentStock || 0),
       render: (stock: number) => {
@@ -119,38 +121,39 @@ const InventoryManagement: React.FC = () => {
         if (value <= 0) color = 'red';
         else if (value < 10) color = 'orange';
         else if (value >= 100) color = 'green';
-        return <Tag color={color}>{value.toLocaleString()}</Tag>;
+        return <Tag color={color} style={{ fontSize: isMobile ? '11px' : 'inherit' }}>{value.toLocaleString()}</Tag>;
       },
     },
     {
-      title: '매입단가',
+      title: isMobile ? '매입가' : '매입단가',
       dataIndex: 'buyPrice',
       key: 'buyPrice',
-      width: 120,
+      width: isMobile ? 70 : 120,
       align: 'right' as const,
       render: (price: number | null | undefined) => {
         if (price === null || price === undefined) return '-';
-        return `${Math.floor(price).toLocaleString()}원`;
+        return <span style={{ fontSize: isMobile ? '11px' : 'inherit' }}>{Math.floor(price).toLocaleString()}원</span>;
       },
     },
     {
-      title: '매출단가',
+      title: isMobile ? '매출가' : '매출단가',
       dataIndex: 'sellPrice',
       key: 'sellPrice',
-      width: 120,
+      width: isMobile ? 70 : 120,
       align: 'right' as const,
+      responsive: ['sm'] as const,
       render: (price: number | null | undefined) => {
         if (price === null || price === undefined) return '-';
-        return `${Math.floor(price).toLocaleString()}원`;
+        return <span style={{ fontSize: isMobile ? '11px' : 'inherit' }}>{Math.floor(price).toLocaleString()}원</span>;
       },
     },
     {
-      title: '재고금액(매입가)',
+      title: '재고금액',
       key: 'stockValue',
       width: 150,
       align: 'right' as const,
+      responsive: ['lg'] as const,
       render: (_: any, record: Product) => {
-        // 매입단가가 null/undefined인 경우 재고금액도 계산 불가
         if (record.buyPrice === null || record.buyPrice === undefined) return '-';
         const value = (record.currentStock || 0) * record.buyPrice;
         return `${Math.floor(value).toLocaleString()}원`;
@@ -161,6 +164,7 @@ const InventoryManagement: React.FC = () => {
       dataIndex: 'category',
       key: 'category',
       width: 100,
+      responsive: ['lg'] as const,
       render: (text: string) => text || '-',
     },
     {
@@ -168,6 +172,7 @@ const InventoryManagement: React.FC = () => {
       dataIndex: 'taxType',
       key: 'taxType',
       width: 110,
+      responsive: ['xl'] as const,
       render: (taxType: string) => {
         switch (taxType) {
           case 'tax_separate': return '과세 10%별도';
@@ -259,18 +264,20 @@ const InventoryManagement: React.FC = () => {
       {/* 재고 테이블 */}
       <Table
         id="inventory-table"
+        className={isMobile ? 'mobile-compact-table' : ''}
         columns={columns}
         dataSource={filteredProducts}
         rowKey="id"
         loading={loading}
         pagination={{
-          pageSize: pageSize,
-          showSizeChanger: true,
+          pageSize: isMobile ? 10 : pageSize,
+          showSizeChanger: !isMobile,
           pageSizeOptions: ['10', '20', '50', '100'],
           onShowSizeChange: (_, size) => setPageSize(size),
-          showTotal: (total) => `총 ${total}개`,
+          showTotal: (total) => isMobile ? `${total}개` : `총 ${total}개`,
+          simple: isMobile,
         }}
-        scroll={{ x: 1200 }}
+        scroll={{ x: isMobile ? 350 : 1200 }}
         size={isMobile ? 'small' : 'middle'}
         style={{
           backgroundColor: isDark ? '#1f1f1f' : '#fff',

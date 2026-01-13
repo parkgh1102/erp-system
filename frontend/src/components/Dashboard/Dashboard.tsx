@@ -225,6 +225,7 @@ const Dashboard: React.FC = () => {
       title: '구분',
       dataIndex: 'type',
       key: 'type',
+      width: isMobile ? 50 : 80,
       render: (type: string) => (
         <Tag color={type === '매출' ? 'green' : 'blue'}>{type}</Tag>
       ),
@@ -233,22 +234,31 @@ const Dashboard: React.FC = () => {
       title: '거래처',
       dataIndex: 'customer',
       key: 'customer',
+      width: isMobile ? 70 : 120,
     },
     {
       title: '금액',
       dataIndex: 'amount',
       key: 'amount',
-      render: (amount: number) => `${amount.toLocaleString()}원`,
+      width: isMobile ? 80 : 100,
+      render: (amount: number) => (
+        <span style={{ fontSize: isMobile ? '11px' : 'inherit' }}>
+          {amount.toLocaleString()}원
+        </span>
+      ),
     },
     {
       title: '일자',
       dataIndex: 'date',
       key: 'date',
+      width: isMobile ? 65 : 100,
+      render: (date: string) => isMobile && date ? date.slice(5) : date,
     },
     {
       title: '상태',
       dataIndex: 'status',
       key: 'status',
+      width: isMobile ? 50 : 80,
       render: (status: string) => (
         <Tag color={status === '완료' ? 'green' : 'processing'}>{status}</Tag>
       ),
@@ -455,13 +465,14 @@ const Dashboard: React.FC = () => {
         style={{ marginBottom: isMobile ? '16px' : '24px' }}
       >
         <Table
+          className={isMobile ? 'mobile-compact-table' : ''}
           columns={transactionColumns}
           dataSource={currentTransactions}
           pagination={false}
           size="small"
           rowKey="id"
           loading={loading}
-          scroll={{ x: 600 }}
+          scroll={{ x: isMobile ? 320 : 600 }}
         />
       </Card>
 

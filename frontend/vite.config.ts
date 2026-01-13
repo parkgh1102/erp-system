@@ -72,15 +72,52 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // 청크 분할 전략
-        manualChunks: {
-          // React 관련 라이브러리를 별도 청크로 분리
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          // Ant Design을 별도 청크로 분리
-          'antd-vendor': ['antd', '@ant-design/icons'],
-          // 차트 라이브러리를 별도 청크로 분리
-          'chart-vendor': ['chart.js', 'react-chartjs-2'],
-          // 유틸리티 라이브러리를 별도 청크로 분리
-          'utils-vendor': ['axios', 'dayjs', 'zustand'],
+        manualChunks: (id) => {
+          // node_modules 내부 라이브러리 분리
+          if (id.includes('node_modules')) {
+            // React 관련 라이브러리
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            // Ant Design
+            if (id.includes('antd') || id.includes('@ant-design')) {
+              return 'antd-vendor';
+            }
+            // 차트 라이브러리
+            if (id.includes('chart.js') || id.includes('react-chartjs')) {
+              return 'chart-vendor';
+            }
+            // Excel 라이브러리
+            if (id.includes('exceljs')) {
+              return 'excel-vendor';
+            }
+            // 유틸리티 라이브러리
+            if (id.includes('axios') || id.includes('dayjs') || id.includes('zustand')) {
+              return 'utils-vendor';
+            }
+          }
+          // 페이지 컴포넌트 분리
+          if (id.includes('/components/Dashboard/')) {
+            return 'page-dashboard';
+          }
+          if (id.includes('/components/Sales/')) {
+            return 'page-sales';
+          }
+          if (id.includes('/components/Purchase/')) {
+            return 'page-purchase';
+          }
+          if (id.includes('/components/Payment/')) {
+            return 'page-payment';
+          }
+          if (id.includes('/components/Inventory/')) {
+            return 'page-inventory';
+          }
+          if (id.includes('/components/Reports/')) {
+            return 'page-reports';
+          }
+          if (id.includes('/components/Settings/')) {
+            return 'page-settings';
+          }
         },
 
         // 에셋 파일명 패턴

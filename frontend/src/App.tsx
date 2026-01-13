@@ -1,28 +1,38 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ConfigProvider, App as AntApp, theme } from 'antd';
+import { ConfigProvider, App as AntApp, theme, Spin } from 'antd';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from './stores/themeStore';
 import AppLayout from './components/Layout/AppLayout';
-import LoginForm from './components/Auth/LoginForm';
-import SignupForm from './components/Auth/SignupForm';
-import PasswordReset from './components/Auth/PasswordReset';
-import PasswordChange from './components/Auth/PasswordChange';
-import { OTPPage } from './components/Auth/OTPPage';
-import Dashboard from './components/Dashboard/Dashboard';
-import CustomerManagement from './components/Customer/CustomerManagement';
-import ProductManagement from './components/Product/ProductManagement';
-import SalesManagement from './components/Sales/SalesManagement';
-import PurchaseManagement from './components/Purchase/PurchaseManagement';
-import InventoryManagement from './components/Inventory/InventoryManagement';
-import PaymentManagement from './components/Payment/PaymentManagement';
-import TransactionLedgerManagement from './components/TransactionLedger/TransactionLedgerManagement';
-import Profile from './components/Profile/Profile';
-import Settings from './components/Settings/Settings';
-import TokenExpirationNotifier from './components/Common/TokenExpirationNotifier';
-import ChatbotWidget from './components/Chatbot/ChatbotWidget';
 import koKR from 'antd/locale/ko_KR';
 import 'dayjs/locale/ko';
+
+// Lazy loaded components for code splitting
+const LoginForm = lazy(() => import('./components/Auth/LoginForm'));
+const SignupForm = lazy(() => import('./components/Auth/SignupForm'));
+const PasswordReset = lazy(() => import('./components/Auth/PasswordReset'));
+const PasswordChange = lazy(() => import('./components/Auth/PasswordChange'));
+const OTPPage = lazy(() => import('./components/Auth/OTPPage').then(m => ({ default: m.OTPPage })));
+const Dashboard = lazy(() => import('./components/Dashboard/Dashboard'));
+const CustomerManagement = lazy(() => import('./components/Customer/CustomerManagement'));
+const ProductManagement = lazy(() => import('./components/Product/ProductManagement'));
+const SalesManagement = lazy(() => import('./components/Sales/SalesManagement'));
+const PurchaseManagement = lazy(() => import('./components/Purchase/PurchaseManagement'));
+const InventoryManagement = lazy(() => import('./components/Inventory/InventoryManagement'));
+const PaymentManagement = lazy(() => import('./components/Payment/PaymentManagement'));
+const TransactionLedgerManagement = lazy(() => import('./components/TransactionLedger/TransactionLedgerManagement'));
+const Profile = lazy(() => import('./components/Profile/Profile'));
+const Settings = lazy(() => import('./components/Settings/Settings'));
+const Reports = lazy(() => import('./components/Reports/Reports'));
+const TokenExpirationNotifier = lazy(() => import('./components/Common/TokenExpirationNotifier'));
+const ChatbotWidget = lazy(() => import('./components/Chatbot/ChatbotWidget'));
+
+// Loading fallback component
+const PageLoader: React.FC = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+    <Spin size="large" />
+  </div>
+);
 
 // 세션 타임아웃 시간 계산 (밀리초)
 const getSessionTimeoutMs = (): number => {
@@ -124,11 +134,11 @@ const AppContent: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
 
   return (
-    <>
+    <Suspense fallback={null}>
       <TokenExpirationNotifier />
       {/* 로그인된 사용자에게만 챗봇 표시 */}
       {isAuthenticated && <ChatbotWidget />}
-    </>
+    </Suspense>
   );
 };
 
@@ -137,6 +147,7 @@ const App: React.FC = () => {
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ThemeWrapper>
         <AppContent />
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* 공개 라우트 */}
           <Route
@@ -274,6 +285,16 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <Reports />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
 
           {/* 기본 리다이렉트 */}
           <Route
@@ -307,6 +328,7 @@ const App: React.FC = () => {
             }
           />
         </Routes>
+        </Suspense>
       </ThemeWrapper>
     </Router>
   );
