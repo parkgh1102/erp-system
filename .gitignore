@@ -152,3 +152,5 @@ frontend-deploy-*.zip
 *.db-wal
 azure-logs/
 *.zip
+*.cwd
+tmpclaude-*
