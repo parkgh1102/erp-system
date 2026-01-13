@@ -179,7 +179,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
               </div>
             </div>
             <div style={{ display: 'flex' }}>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1.5 }}>
                 <strong>주소:</strong> {customer.address || '미등록'}
               </div>
               <div style={{ flex: 1 }}>
@@ -188,7 +188,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
               <div style={{ flex: 1 }}>
                 <strong>이메일:</strong> {customer.email || '미등록'}
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1.2 }}>
                 <strong>조회기간:</strong> {dateRange ? `${dateRange[0].format('YYYY-MM-DD')} ~ ${dateRange[1].format('YYYY-MM-DD')}` : '-'}
               </div>
             </div>
