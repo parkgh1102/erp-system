@@ -40,12 +40,39 @@ const sanitizeErrorMessage = (message: string): string => {
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
   withCredentials: true, // 쿠키를 포함하여 요청
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// 재시도 설정
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
+// 재시도 가능한 에러인지 확인
+const isRetryableError = (error: any): boolean => {
+  if (!error.response) {
+    // 네트워크 에러 (timeout, 연결 실패)
+    return error.code === 'ECONNABORTED' || error.message?.includes('Network Error');
+  }
+  // 서버 에러 (503, 502, 504)
+  return [502, 503, 504].includes(error.response?.status);
+};
+
+// 재시도 로직
+const retryRequest = async (error: any, retryCount: number = 0): Promise<any> => {
+  if (retryCount >= MAX_RETRIES || !isRetryableError(error)) {
+    return Promise.reject(error);
+  }
+
+  const delay = RETRY_DELAY * Math.pow(2, retryCount); // 지수 백오프
+  await new Promise(resolve => setTimeout(resolve, delay));
+
+  const config = { ...error.config, _retryCount: retryCount + 1 };
+  return api.request(config);
+};
 
 api.interceptors.request.use(
   (config) => {
@@ -73,10 +100,16 @@ api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
     // skipErrorHandler가 설정된 요청은 에러 처리를 건너뜀
     if (error.config?.skipErrorHandler) {
       return Promise.reject(error);
+    }
+
+    // 재시도 로직 (네트워크 에러, 서버 에러)
+    const retryCount = error.config?._retryCount || 0;
+    if (isRetryableError(error) && retryCount < MAX_RETRIES) {
+      return retryRequest(error, retryCount);
     }
 
     // 429 에러 처리 (한 번만 표시)

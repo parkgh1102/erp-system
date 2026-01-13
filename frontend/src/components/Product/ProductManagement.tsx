@@ -13,6 +13,11 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const { TextArea } = Input;
 
+// 규격 옵션 상수 (컴포넌트 외부에서 한 번만 생성)
+const JARU_OPTIONS = Array.from({ length: 200 }, (_, i) => `${i + 1}자루`);
+const DEFAULT_SPEC_OPTIONS: string[] = ['box', 'ea', 'pallet', '자루', 'set', 'pack', ...JARU_OPTIONS];
+const DEFAULT_UNIT_OPTIONS: string[] = ['kg', 'ea', 'set', '개', 'box', 'pcs'];
+
 interface Product {
   id: number;
   productCode: string;
@@ -37,10 +42,8 @@ const ProductManagement: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [form] = Form.useForm();
-  const [unitOptions, setUnitOptions] = useState<string[]>(['kg', 'ea', 'set', '개', 'box', 'pcs']);
-  // 규격 옵션: 기본 옵션 + 자루 1~200
-  const jaruOptions = Array.from({ length: 200 }, (_, i) => `${i + 1}자루`);
-  const [specOptions, setSpecOptions] = useState<string[]>(['box', 'ea', 'pallet', '자루', 'set', 'pack', ...jaruOptions]);
+  const [unitOptions, setUnitOptions] = useState<string[]>(DEFAULT_UNIT_OPTIONS);
+  const [specOptions, setSpecOptions] = useState<string[]>(DEFAULT_SPEC_OPTIONS);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [autoCompleteOptions, setAutoCompleteOptions] = useState<{value: string}[]>([]);

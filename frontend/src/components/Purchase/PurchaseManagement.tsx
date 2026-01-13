@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, App } from 'antd';
+import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, App, Progress } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { PrintPreviewModal } from '../Print/PrintPreviewModal';
 import { useFormShortcuts } from '../../hooks/useFormShortcuts';
+import ShortcutGuide from '../Common/ShortcutGuide';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 dayjs.extend(isBetween);
@@ -19,6 +20,17 @@ dayjs.extend(isBetween);
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
+
+// 규격 옵션 상수 (500개 배열 - 컴포넌트 외부에서 한 번만 생성)
+const DEFAULT_SPEC_OPTIONS: string[] = [
+  'box', 'ea', 'pallet', '자루', 'set', 'pack',
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}box`),
+  ...Array.from({ length: 100 }, (_, i) => `${i + 1}pallet`),
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}ea`),
+];
+
+// 단위 옵션 상수
+const DEFAULT_UNIT_OPTIONS: string[] = ['EA', 'BOX', 'KG', 'M', 'SET', 'kg', 'ea', 'box', 'set', 'pcs', '개'];
 
 interface Product {
   id: number;
@@ -115,17 +127,9 @@ const PurchaseManagement: React.FC = () => {
   const [printPreviewOpen, setPrintPreviewOpen] = useState(false);
   const [printMode, setPrintMode] = useState<'full' | 'receiver' | 'supplier'>('full');
   const [selectedPurchaseForStatement, setSelectedPurchaseForStatement] = useState<Purchase | null>(null);
-  const [specOptions, setSpecOptions] = useState<string[]>([
-    // 기본 옵션
-    'box', 'ea', 'pallet', '자루', 'set', 'pack',
-    // 1~200 box
-    ...Array.from({ length: 200 }, (_, i) => `${i + 1}box`),
-    // 1~100 pallet
-    ...Array.from({ length: 100 }, (_, i) => `${i + 1}pallet`),
-    // 1~200 ea
-    ...Array.from({ length: 200 }, (_, i) => `${i + 1}ea`),
-  ]);
-  const [unitOptions, setUnitOptions] = useState<string[]>(['EA', 'BOX', 'KG', 'M', 'SET', 'kg', 'ea', 'box', 'set', 'pcs', '개']);
+  const [specOptions, setSpecOptions] = useState<string[]>(DEFAULT_SPEC_OPTIONS);
+  const [unitOptions, setUnitOptions] = useState<string[]>(DEFAULT_UNIT_OPTIONS);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number; visible: boolean }>({ current: 0, total: 0, visible: false });
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
@@ -461,6 +465,7 @@ const PurchaseManagement: React.FC = () => {
     if (!currentBusiness || data.length === 0) return;
 
     setLoading(true);
+    setUploadProgress({ current: 0, total: data.length, visible: true });
     try {
       let successCount = 0;
       let failCount = 0;
@@ -548,6 +553,8 @@ const PurchaseManagement: React.FC = () => {
             console.error('Purchase upload error:', error);
           }
         });
+        // 진행률 업데이트
+        setUploadProgress(prev => ({ ...prev, current: Math.min(i + BATCH_SIZE, validData.length) + failCount }));
       }
 
       fetchData();
@@ -563,6 +570,7 @@ const PurchaseManagement: React.FC = () => {
       message.error('엑셀 업로드에 실패했습니다.', 2);
     } finally {
       setLoading(false);
+      setUploadProgress({ current: 0, total: 0, visible: false });
     }
   };
 
@@ -1033,6 +1041,7 @@ const PurchaseManagement: React.FC = () => {
       key: 'spec',
       width: '8%',
       align: 'center' as const,
+      responsive: ['lg'] as const,
       render: (items: PurchaseItem[]) => {
         if (!items || items.length === 0) return '-';
         return items[0]?.spec || '-';
@@ -1044,6 +1053,7 @@ const PurchaseManagement: React.FC = () => {
       key: 'unit',
       width: '6%',
       align: 'center' as const,
+      responsive: ['lg'] as const,
       render: (items: PurchaseItem[]) => {
         if (!items || items.length === 0) return '-';
         return items[0]?.unit || '-';
@@ -1069,6 +1079,7 @@ const PurchaseManagement: React.FC = () => {
       key: 'unitPrice',
       width: '9%',
       align: 'right' as const,
+      responsive: ['md'] as const,
       render: (items: PurchaseItem[]) => {
         if (!items || items.length === 0) return '-';
         return Math.round(items[0]?.unitPrice || 0).toLocaleString() + '원';
@@ -1080,6 +1091,7 @@ const PurchaseManagement: React.FC = () => {
       key: 'totalAmount',
       width: '10%',
       align: 'right' as const,
+      responsive: ['md'] as const,
       render: (amount: number) => Math.round(amount || 0).toLocaleString() + '원',
       sorter: (a: Purchase, b: Purchase) => (a.totalAmount || 0) - (b.totalAmount || 0),
     },
@@ -1089,6 +1101,7 @@ const PurchaseManagement: React.FC = () => {
       key: 'vatAmount',
       width: '9%',
       align: 'right' as const,
+      responsive: ['md'] as const,
       render: (amount: number) => Math.round(amount || 0).toLocaleString() + '원',
       sorter: (a: Purchase, b: Purchase) => (a.vatAmount || 0) - (b.vatAmount || 0),
     },
@@ -1113,6 +1126,7 @@ const PurchaseManagement: React.FC = () => {
       key: 'memo',
       width: '10%',
       align: 'center' as const,
+      responsive: ['lg'] as const,
       render: (memo: string) => memo || '-',
     },
     {
@@ -1335,9 +1349,33 @@ const PurchaseManagement: React.FC = () => {
         </Col>
       </Row>
 
-      {loading && (
+      {loading && !uploadProgress.visible && (
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9999 }}>
           <Spin size="large" />
+        </div>
+      )}
+
+      {uploadProgress.visible && (
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 9999,
+          padding: '24px 32px',
+          borderRadius: '8px',
+          backgroundColor: isDark ? '#1f1f1f' : '#fff',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          minWidth: '300px',
+          textAlign: 'center'
+        }}>
+          <div style={{ marginBottom: 12, color: isDark ? '#fff' : '#000' }}>
+            엑셀 업로드 중... ({uploadProgress.current}/{uploadProgress.total})
+          </div>
+          <Progress
+            percent={Math.round((uploadProgress.current / uploadProgress.total) * 100)}
+            status="active"
+          />
         </div>
       )}
 
@@ -1766,12 +1804,12 @@ const PurchaseManagement: React.FC = () => {
           </Form.Item>
 
           <div style={{ textAlign: 'center', marginBottom: 0, paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
-            <Space size="middle" style={{ justifyContent: 'center' }}>
+            <Space size="middle" style={{ justifyContent: 'center', alignItems: 'center' }}>
               <Button size="middle" onClick={closeModal}>
                 취소
               </Button>
               <Button size="middle" type="primary" htmlType="submit">
-                저장
+                저장 (F8)
               </Button>
               {!editingPurchase && (
                 <Button
@@ -1786,9 +1824,10 @@ const PurchaseManagement: React.FC = () => {
                     });
                   }}
                 >
-                  저장 후 초기화
+                  저장 후 초기화 (F9)
                 </Button>
               )}
+              <ShortcutGuide />
             </Space>
           </div>
         </Form>

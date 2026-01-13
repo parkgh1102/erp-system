@@ -284,21 +284,39 @@ export class DashboardController {
   static async getCategoryData(req: Request, res: Response) {
     try {
       const { businessId } = req.params;
-      // TODO: 날짜 필터링 기능 구현 예정
-      // const { period = 'month', startDate, endDate } = req.query;
+      const { startDate, endDate } = req.query;
 
-      // 제품 카테고리별 데이터 간단 버전 (실제 거래 아이템 데이터가 없을 경우 기본값)
+      // 날짜 필터링이 있으면 매출 기준으로 카테고리별 데이터 조회
       let categoryData = [];
       try {
-        categoryData = await AppDataSource.query(`
-          SELECT
-            COALESCE(p.category, '기타') as category,
-            COUNT(*) as count
-          FROM products p
-          WHERE p."businessId" = ?
-          GROUP BY COALESCE(p.category, '기타')
-          ORDER BY count DESC
-        `, [businessId]);
+        if (startDate && endDate) {
+          // 기간 내 매출 품목 기준 카테고리별 통계
+          categoryData = await AppDataSource.query(`
+            SELECT
+              COALESCE(p.category, '기타') as category,
+              COUNT(*) as count,
+              SUM(COALESCE(si."supplyAmount", si.amount, 0)) as amount
+            FROM sales_items si
+            LEFT JOIN products p ON si."productId" = p.id
+            LEFT JOIN sales s ON si."salesId" = s.id
+            WHERE s."businessId" = ?
+              AND s."transactionDate" >= ?
+              AND s."transactionDate" <= ?
+            GROUP BY COALESCE(p.category, '기타')
+            ORDER BY amount DESC
+          `, [businessId, startDate, endDate]);
+        } else {
+          // 기본: 제품 카테고리별 데이터
+          categoryData = await AppDataSource.query(`
+            SELECT
+              COALESCE(p.category, '기타') as category,
+              COUNT(*) as count
+            FROM products p
+            WHERE p."businessId" = ?
+            GROUP BY COALESCE(p.category, '기타')
+            ORDER BY count DESC
+          `, [businessId]);
+        }
       } catch (error) {
         console.error('Category query error:', error);
         categoryData = [];

@@ -14,6 +14,7 @@ dayjs.extend(isBetween);
 import { PrintPreviewModal } from '../Print/PrintPreviewModal';
 import { ESignaturePreviewModal } from '../Print/ESignaturePreviewModal';
 import TransactionStatement from '../Print/TransactionStatement';
+import ShortcutGuide from '../Common/ShortcutGuide';
 import { useMessage } from '../../hooks/useMessage';
 import { useFormShortcuts } from '../../hooks/useFormShortcuts';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -22,6 +23,17 @@ import logger from '../../utils/logger';
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
+
+// 규격 옵션 상수 (500개 배열 - 컴포넌트 외부에서 한 번만 생성)
+const DEFAULT_SPEC_OPTIONS: string[] = [
+  'box', 'ea', 'pallet', '자루', 'set', 'pack',
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}box`),
+  ...Array.from({ length: 100 }, (_, i) => `${i + 1}pallet`),
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}ea`),
+];
+
+// 단위 옵션 상수
+const DEFAULT_UNIT_OPTIONS: string[] = ['EA', 'BOX', 'KG', 'M', 'SET', 'kg', 'ea', 'box', 'set', 'pcs', '개'];
 
 interface Product {
   id: number;
@@ -137,17 +149,8 @@ const SalesManagement: React.FC = () => {
   const [transactionDataForPrint, setTransactionDataForPrint] = useState<any[]>([]); // 인쇄용 거래 데이터 (잔액 포함)
   const [eSignaturePreviewOpen, setESignaturePreviewOpen] = useState(false);
   const [eSignatureTransactionData, setESignatureTransactionData] = useState<any>(null);
-  const [specOptions, setSpecOptions] = useState<string[]>([
-    // 기본 옵션
-    'box', 'ea', 'pallet', '자루', 'set', 'pack',
-    // 1~200 box
-    ...Array.from({ length: 200 }, (_, i) => `${i + 1}box`),
-    // 1~100 pallet
-    ...Array.from({ length: 100 }, (_, i) => `${i + 1}pallet`),
-    // 1~200 ea
-    ...Array.from({ length: 200 }, (_, i) => `${i + 1}ea`),
-  ]);
-  const [unitOptions, setUnitOptions] = useState<string[]>(['EA', 'BOX', 'KG', 'M', 'SET', 'kg', 'ea', 'box', 'set', 'pcs', '개']);
+  const [specOptions, setSpecOptions] = useState<string[]>(DEFAULT_SPEC_OPTIONS);
+  const [unitOptions, setUnitOptions] = useState<string[]>(DEFAULT_UNIT_OPTIONS);
   const [showBankAccount, setShowBankAccount] = useState(true); // 계좌번호 입력 체크박스 (기본: 체크)
   const { currentBusiness, user } = useAuthStore();
   const isSalesViewer = user?.role === 'sales_viewer';
@@ -1464,6 +1467,7 @@ const SalesManagement: React.FC = () => {
       key: 'spec',
       width: '8%',
       align: 'center' as const,
+      responsive: ['lg'] as const,
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
         // specification 또는 spec 둘 다 확인
@@ -1476,6 +1480,7 @@ const SalesManagement: React.FC = () => {
       key: 'unit',
       width: '6%',
       align: 'center' as const,
+      responsive: ['lg'] as const,
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
         return items[0]?.unit || '-';
@@ -1501,6 +1506,7 @@ const SalesManagement: React.FC = () => {
       key: 'unitPrice',
       width: '9%',
       align: 'right' as const,
+      responsive: ['md'] as const,
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
         return Math.round(Number(items[0]?.unitPrice) || 0).toLocaleString() + '원';
@@ -1512,6 +1518,7 @@ const SalesManagement: React.FC = () => {
       key: 'totalAmount',
       width: '10%',
       align: 'right' as const,
+      responsive: ['md'] as const,
       render: (amount: number) => {
         const value = Math.round(Number(amount) || 0);
         return <span style={{ color: value < 0 ? '#ff4d4f' : 'inherit' }}>{value.toLocaleString()}원</span>;
@@ -1524,6 +1531,7 @@ const SalesManagement: React.FC = () => {
       key: 'vatAmount',
       width: '9%',
       align: 'right' as const,
+      responsive: ['md'] as const,
       render: (amount: number) => {
         const value = Math.round(Number(amount) || 0);
         return <span style={{ color: value < 0 ? '#ff4d4f' : 'inherit' }}>{value.toLocaleString()}원</span>;
@@ -1550,6 +1558,7 @@ const SalesManagement: React.FC = () => {
       key: 'memo',
       width: '10%',
       align: 'center' as const,
+      responsive: ['lg'] as const,
       render: (record: Sale) => {
         const memo = record.memo || '-';
         // 전자서명이 완료된 경우 V 체크 표시 with Tooltip
@@ -2295,12 +2304,12 @@ const SalesManagement: React.FC = () => {
           </Form.Item>
 
           <div style={{ textAlign: 'center', marginBottom: 0, paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
-            <Space size="middle" style={{ justifyContent: 'center' }}>
+            <Space size="middle" style={{ justifyContent: 'center', alignItems: 'center' }}>
               <Button size="middle" onClick={closeModal}>
                 취소
               </Button>
               <Button size="middle" type="primary" htmlType="submit">
-                저장
+                저장 (F8)
               </Button>
               {!editingSale && (
                 <Button
@@ -2315,9 +2324,10 @@ const SalesManagement: React.FC = () => {
                     });
                   }}
                 >
-                  저장 후 초기화
+                  저장 후 초기화 (F9)
                 </Button>
               )}
+              <ShortcutGuide />
             </Space>
           </div>
         </Form>
