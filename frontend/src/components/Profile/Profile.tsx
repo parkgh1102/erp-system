@@ -151,9 +151,9 @@ const Profile: React.FC = () => {
         message.success('프로필 사진이 업데이트되었습니다.');
         // 사용자 정보 새로고침을 위해 프로필 재조회
         const profileResponse = await authAPI.getProfile();
-        if (profileResponse.data.success) {
-          // 페이지 새로고침 없이 즉시 아바타 업데이트
-          window.location.reload();
+        if (profileResponse.data.success && profileResponse.data.data) {
+          // 페이지 새로고침 없이 상태 업데이트
+          updateUser(profileResponse.data.data);
         }
       }
     } catch (error: any) {

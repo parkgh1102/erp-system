@@ -16,11 +16,6 @@ class AlimtalkService {
         try {
             // 전화번호 정제: 숫자만 추출 (하이픈, 공백 등 제거)
             const cleanPhone = phone.replace(/\D/g, '');
-            console.log('=== OTP 알림톡 전송 시작 ===');
-            console.log('전화번호:', phone, '→', cleanPhone);
-            console.log('OTP 코드:', otpCode);
-            console.log('템플릿 코드:', this.OTP_TEMPLATE_CODE);
-            console.log('API URL:', this.API_URL);
             const formData = new form_data_1.default();
             formData.append('api_key', this.API_KEY);
             formData.append('template_code', this.OTP_TEMPLATE_CODE);
@@ -35,29 +30,18 @@ class AlimtalkService {
                 },
                 timeout: 10000, // 10초 타임아웃
             });
-            console.log('알림톡 API 응답:', JSON.stringify(response.data, null, 2));
             // 응답 코드 100이 정상 접수 (result 또는 code 필드)
             const resultCode = response.data.result || response.data.code;
             if (resultCode === '100' || resultCode === 100) {
-                console.log('=== OTP 알림톡 전송 성공 ===');
                 return true;
             }
             else {
-                console.error('=== OTP 알림톡 전송 실패 ===');
-                console.error('응답 코드:', resultCode);
-                console.error('응답 메시지:', response.data.message);
-                console.error('전체 응답:', response.data);
+                console.error('OTP 알림톡 전송 실패 - 코드:', resultCode);
                 return false;
             }
         }
         catch (error) {
-            console.error('=== OTP 알림톡 전송 중 오류 ===');
-            console.error('오류 메시지:', error.message);
-            console.error('오류 코드:', error.code);
-            if (error.response) {
-                console.error('응답 상태:', error.response.status);
-                console.error('응답 데이터:', error.response.data);
-            }
+            console.error('OTP 알림톡 전송 오류:', error.message);
             return false;
         }
     }
@@ -78,7 +62,6 @@ class AlimtalkService {
             const cleanPhone = phone.replace(/\D/g, '');
             // 템플릿 변수: #{회사명} 하나만 사용
             const variables = companyName || name;
-            console.log('회원가입 환영 알림톡 전송 시도:', { phone, cleanPhone, companyName, variables });
             const formData = new form_data_1.default();
             formData.append('api_key', this.API_KEY);
             formData.append('template_code', this.WELCOME_TEMPLATE_CODE);
@@ -93,19 +76,17 @@ class AlimtalkService {
                 },
                 timeout: 10000,
             });
-            console.log('회원가입 환영 알림톡 응답:', response.data);
             const resultCode = response.data.result || response.data.code;
             if (resultCode === '100' || resultCode === 100) {
-                console.log('회원가입 환영 알림톡 전송 성공');
                 return true;
             }
             else {
-                console.error('회원가입 환영 알림톡 전송 실패:', response.data);
+                console.error('회원가입 환영 알림톡 전송 실패 - 코드:', resultCode);
                 return false;
             }
         }
         catch (error) {
-            console.error('회원가입 환영 알림톡 전송 중 오류:', error);
+            console.error('회원가입 환영 알림톡 오류:', error.message);
             return false;
         }
     }
@@ -133,13 +114,6 @@ class AlimtalkService {
                 companyName, // #{회사명}
                 imageUrl // #{URL}
             ].join('|');
-            console.log('전자서명 완료 안내 알림톡 전송 시도:', {
-                phone,
-                cleanPhone,
-                companyName,
-                imageUrl,
-                variables
-            });
             const formData = new form_data_1.default();
             formData.append('api_key', this.API_KEY);
             formData.append('template_code', this.ESIGNATURE_TEMPLATE_CODE);
@@ -154,19 +128,17 @@ class AlimtalkService {
                 },
                 timeout: 10000,
             });
-            console.log('전자서명 완료 안내 알림톡 응답:', response.data);
             const resultCode = response.data.result || response.data.code;
             if (resultCode === '100' || resultCode === 100) {
-                console.log('전자서명 완료 안내 알림톡 전송 성공');
                 return true;
             }
             else {
-                console.error('전자서명 완료 안내 알림톡 전송 실패:', response.data);
+                console.error('전자서명 완료 알림톡 전송 실패 - 코드:', resultCode);
                 return false;
             }
         }
         catch (error) {
-            console.error('전자서명 완료 안내 알림톡 전송 중 오류:', error);
+            console.error('전자서명 완료 알림톡 오류:', error.message);
             return false;
         }
     }
@@ -178,11 +150,11 @@ class AlimtalkService {
     }
 }
 exports.AlimtalkService = AlimtalkService;
-AlimtalkService.API_URL = 'http://221.139.14.189/API/alimtalk_api';
-AlimtalkService.API_KEY = 'FVLKIK16YSJ0513';
+AlimtalkService.API_URL = process.env.ALIMTALK_API_URL || 'http://221.139.14.189/API/alimtalk_api';
+AlimtalkService.API_KEY = process.env.ALIMTALK_API_KEY;
 AlimtalkService.OTP_TEMPLATE_CODE = 'SJT_123168'; // OTP 템플릿
 AlimtalkService.WELCOME_TEMPLATE_CODE = 'SJT_123166'; // 회원가입 환영 템플릿
 AlimtalkService.ESIGNATURE_TEMPLATE_CODE = 'SJT_125177'; // 전자서명 완료 안내 템플릿
-AlimtalkService.SENDER_KEY = 'ebb6785f05eeae3c22142d465bb46603ff1eeb32';
-AlimtalkService.CALLBACK = '01040167148'; // 발신번호
+AlimtalkService.SENDER_KEY = process.env.ALIMTALK_SENDER_KEY;
+AlimtalkService.CALLBACK = process.env.ALIMTALK_CALLBACK; // 발신번호
 //# sourceMappingURL=AlimtalkService.js.map

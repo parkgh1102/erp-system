@@ -315,6 +315,15 @@ const SalesManagement: React.FC = () => {
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // 컴포넌트 언마운트 시 타이머 정리 (메모리 누수 방지)
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
   const generateAutoCompleteOptions = useCallback((keyword: string) => {
     if (keyword.length < 2) {
       setAutoCompleteOptions([]);
