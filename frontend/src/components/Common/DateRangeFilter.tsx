@@ -7,9 +7,10 @@ import dayjs from 'dayjs';
 interface DateRangeFilterProps {
   onDateRangeChange: (startDate: string, endDate: string) => void;
   onLimitChange?: (limit: number) => void;
+  isMobile?: boolean;
 }
 
-const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, onLimitChange }) => {
+const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, onLimitChange, isMobile = false }) => {
   const currentYear = dayjs().year();
   const lastYear = currentYear - 1;
   const currentMonth = dayjs().month() + 1;
@@ -368,35 +369,40 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
     ],
   };
 
-  return (
-    <Space size="small" wrap>
+  // 모바일 버튼 스타일
+  const mobileButtonStyle: React.CSSProperties = isMobile
+    ? { padding: '0 10px', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }
+    : {};
+
+  const content = (
+    <Space size="small" wrap={!isMobile} style={isMobile ? { flexWrap: 'nowrap' } : undefined}>
       <Dropdown menu={recentDaysMenu} trigger={['click']}>
-        <Button size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+        <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white', ...mobileButtonStyle }}>
           최근7일 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown popupRender={() => monthMenuContent} trigger={['click']}>
-        <Button size="middle" style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}>
+        <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white', ...mobileButtonStyle }}>
           최근 한달 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown popupRender={() => quarterMenuContent} trigger={['click']}>
-        <Button size="middle" style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16', color: 'white' }}>
+        <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16', color: 'white', ...mobileButtonStyle }}>
           이번분기 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown menu={yearMenu} trigger={['click']}>
-        <Button size="middle" style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}>
+        <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white', ...mobileButtonStyle }}>
           이번년도 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Button
-        size="middle"
-        style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
+        size={isMobile ? 'small' : 'middle'}
+        style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white', ...mobileButtonStyle }}
         onClick={() => {
           const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
           const startDate = dayjs().subtract(2, 'month').startOf('month').format('YYYY-MM-DD');
@@ -407,8 +413,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
       </Button>
 
       <Button
-        size="middle"
-        style={{ backgroundColor: '#eb2f96', borderColor: '#eb2f96', color: 'white' }}
+        size={isMobile ? 'small' : 'middle'}
+        style={{ backgroundColor: '#eb2f96', borderColor: '#eb2f96', color: 'white', ...mobileButtonStyle }}
         onClick={() => {
           const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
           const startDate = dayjs().subtract(5, 'month').startOf('month').format('YYYY-MM-DD');
@@ -420,13 +426,35 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
 
       {onLimitChange && (
         <Dropdown menu={limitMenu} trigger={['click']}>
-          <Button size="middle" style={{ backgroundColor: '#595959', borderColor: '#595959', color: 'white' }}>
+          <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#595959', borderColor: '#595959', color: 'white', ...mobileButtonStyle }}>
             최근자료 <DownOutlined />
           </Button>
         </Dropdown>
       )}
     </Space>
   );
+
+  // 모바일: 가로 스크롤 컨테이너
+  if (isMobile) {
+    return (
+      <div style={{
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        WebkitOverflowScrolling: 'touch',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none',
+        margin: '0 -8px',
+        padding: '4px 8px'
+      }}>
+        <style>{`.date-range-filter-mobile::-webkit-scrollbar { display: none; }`}</style>
+        <div className="date-range-filter-mobile" style={{ display: 'inline-flex', gap: '6px' }}>
+          {content}
+        </div>
+      </div>
+    );
+  }
+
+  return content;
 };
 
 export default DateRangeFilter;

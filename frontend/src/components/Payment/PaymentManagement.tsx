@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, message, Popconfirm, Card, Row, Col, InputNumber, Tabs, Spin, AutoComplete, Typography, Dropdown, Radio, Alert } from 'antd';
-import { EditOutlined, DeleteOutlined, MoneyCollectOutlined, PayCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, PrinterOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, message, Popconfirm, Card, Row, Col, InputNumber, Tabs, Spin, AutoComplete, Typography, Dropdown, Radio, Alert, Drawer } from 'antd';
+import { EditOutlined, DeleteOutlined, MoneyCollectOutlined, PayCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, PrinterOutlined, MoreOutlined } from '@ant-design/icons';
 import { createExportMenuItems, exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -67,6 +67,7 @@ const PaymentManagement: React.FC = () => {
   ]);
   const [bulkModalVisible, setBulkModalVisible] = useState(false);
   const [bulkForm] = Form.useForm();
+  const [mobileActionDrawerVisible, setMobileActionDrawerVisible] = useState(false);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
@@ -815,143 +816,252 @@ const PaymentManagement: React.FC = () => {
 
   const actionMenuItems = createExportMenuItems(handleExport);
 
+  // 모바일 액션 드로어 내용
+  const mobileActionDrawerContent = (
+    <Space direction="vertical" style={{ width: '100%' }} size="small">
+      <Button
+        icon={<ImportOutlined />}
+        onClick={() => { setExcelUploadModalVisible(true); setMobileActionDrawerVisible(false); }}
+        block
+        size="large"
+        style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white', justifyContent: 'flex-start' }}
+      >
+        엑셀업로드
+      </Button>
+      <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight" trigger={['click']}>
+        <Button icon={<ExportOutlined />} block size="large" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white', justifyContent: 'flex-start' }}>
+          파일저장
+        </Button>
+      </Dropdown>
+      <Button
+        onClick={() => { handleSelectAll(); setMobileActionDrawerVisible(false); }}
+        block
+        size="large"
+        style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white', justifyContent: 'flex-start' }}
+      >
+        {selectedRowKeys.length === (activeTab === 'receipt' ? filteredReceiptData.length : filteredPaymentData.length) && (activeTab === 'receipt' ? filteredReceiptData.length : filteredPaymentData.length) > 0 ? '전체 해제' : '전체 선택'}
+      </Button>
+      <Popconfirm
+        title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
+        onConfirm={() => { handleBulkDelete(); setMobileActionDrawerVisible(false); }}
+        okText="예"
+        cancelText="아니오"
+        disabled={selectedRowKeys.length === 0}
+      >
+        <Button danger block size="large" disabled={selectedRowKeys.length === 0} style={{ justifyContent: 'flex-start' }}>
+          선택 삭제 ({selectedRowKeys.length})
+        </Button>
+      </Popconfirm>
+      <Button
+        icon={<PrinterOutlined />}
+        onClick={() => { handlePrint(); setMobileActionDrawerVisible(false); }}
+        block
+        size="large"
+        style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white', justifyContent: 'flex-start' }}
+      >
+        인쇄
+      </Button>
+    </Space>
+  );
+
   return (
     <div style={{
       padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
-      <Row align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>수금/지급 관리</h2>
-        </Col>
-        <Col style={{ marginLeft: '100px' }}>
-          <Space direction="vertical" size="small" style={{ width: '100%' }}>
-            <Space size="middle" wrap>
-              <AutoComplete
-                options={autoCompleteOptions}
-                value={searchText}
-                onChange={handleSearchChange}
-                onSelect={(value) => setSearchText(value)}
-                style={{ width: isMobile ? 250 : 300 }}
-              >
-                <Input.Search
-                  placeholder="거래처, 수금/지급금액, 메모 등으로 검색 (2글자 이상)"
-                  allowClear
-                  enterButton={<SearchOutlined />}
-                  size="middle"
-                  onSearch={handleSearch}
-                />
-              </AutoComplete>
-              <DatePicker.RangePicker
-                style={{ width: 300 }}
-                value={dateRange}
-                onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-                format="YYYY-MM-DD"
+      {/* 모바일 레이아웃 */}
+      {isMobile ? (
+        <div style={{ marginBottom: 16 }}>
+          <h2 style={{ margin: '0 0 12px 0', color: isDark ? '#ffffff' : '#000000', fontSize: '20px', fontWeight: 'bold' }}>수금/지급 관리</h2>
+          <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <AutoComplete
+              options={autoCompleteOptions}
+              value={searchText}
+              onChange={handleSearchChange}
+              onSelect={(value) => setSearchText(value)}
+              style={{ width: '100%' }}
+            >
+              <Input.Search
+                placeholder="거래처, 금액 검색"
+                allowClear
+                enterButton={<SearchOutlined />}
+                size="middle"
+                onSearch={handleSearch}
               />
-              <Button
-              type="primary"
-              icon={<MoneyCollectOutlined />}
-              onClick={() => handleAdd('receipt')}
-              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
-            >
-              수금
-            </Button>
-            <Button
-              type="primary"
-              icon={<PayCircleOutlined />}
-              onClick={() => handleAdd('payment')}
-              style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }}
-            >
-              지급
-            </Button>
-            <Button
-              icon={<ImportOutlined />}
-              size={isMobile ? "small" : "middle"}
-              onClick={() => setExcelUploadModalVisible(true)}
-              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
-            >
-              {isMobile ? '' : '엑셀업로드'}
-            </Button>
-            <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-              <Button
-                icon={<ExportOutlined />}
-                size={isMobile ? "small" : "middle"}
-                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
-              >
-                {isMobile ? '' : '파일저장'}
-              </Button>
-            </Dropdown>
-            {window.innerWidth > 768 && (
-              <Button
-                onClick={handleSelectAll}
-                type="default"
-                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
-              >
-                {selectedRowKeys.length === (activeTab === 'receipt' ? filteredReceiptData.length : filteredPaymentData.length)
-                  && (activeTab === 'receipt' ? filteredReceiptData.length : filteredPaymentData.length) > 0
-                  ? '전체 해제' : '전체 선택'}
-              </Button>
-            )}
-            <Popconfirm
-              title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
-              onConfirm={handleBulkDelete}
-              okText="예"
-              cancelText="아니오"
-              disabled={selectedRowKeys.length === 0}
-              okButtonProps={{
-                autoFocus: true,
-                size: 'large',
-                style: { minWidth: '80px', height: '40px', fontSize: '16px' }
-              }}
-              cancelButtonProps={{
-                size: 'large',
-                style: { minWidth: '80px', height: '40px', fontSize: '16px' }
-              }}
-              placement="top"
-              overlayStyle={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 9999,
-                pointerEvents: 'auto'
-              }}
-              styles={{
-                body: {
-                  padding: '20px',
-                  fontSize: '18px',
-                  fontWeight: '500',
-                  minWidth: '350px',
-                  textAlign: 'center',
-                  borderRadius: '12px',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
-                }
-              }}
-              transitionName=""
-              mouseEnterDelay={0}
-              mouseLeaveDelay={0}
-            >
-              <Button danger disabled={selectedRowKeys.length === 0}>
-                선택 삭제 ({selectedRowKeys.length})
-              </Button>
-            </Popconfirm>
-            <Button
-              icon={<PrinterOutlined />}
-              onClick={handlePrint}
+            </AutoComplete>
+            <DatePicker.RangePicker
+              style={{ width: '100%' }}
+              value={dateRange}
+              onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+              format="YYYY-MM-DD"
               size="middle"
-              style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
-            >
-              인쇄
-            </Button>
+            />
+            <Space size="small" wrap>
+              <Button
+                type="primary"
+                icon={<MoneyCollectOutlined />}
+                onClick={() => handleAdd('receipt')}
+                size="middle"
+                style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+              >
+                수금
+              </Button>
+              <Button
+                type="primary"
+                icon={<PayCircleOutlined />}
+                onClick={() => handleAdd('payment')}
+                size="middle"
+                style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }}
+              >
+                지급
+              </Button>
+              <Button icon={<MoreOutlined />} onClick={() => setMobileActionDrawerVisible(true)} size="middle">
+                더보기
+              </Button>
             </Space>
             <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => {
-                setDateRange([dayjs(startDate), dayjs(endDate)]);
-              }}
+              onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+              isMobile={true}
             />
           </Space>
-        </Col>
-      </Row>
+        </div>
+      ) : (
+        /* 데스크톱 레이아웃 */
+        <Row align="middle" style={{ marginBottom: 24 }}>
+          <Col>
+            <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>수금/지급 관리</h2>
+          </Col>
+          <Col style={{ marginLeft: '100px' }}>
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Space size="middle" wrap>
+                <AutoComplete
+                  options={autoCompleteOptions}
+                  value={searchText}
+                  onChange={handleSearchChange}
+                  onSelect={(value) => setSearchText(value)}
+                  style={{ width: 300 }}
+                >
+                  <Input.Search
+                    placeholder="거래처, 수금/지급금액, 메모 등으로 검색 (2글자 이상)"
+                    allowClear
+                    enterButton={<SearchOutlined />}
+                    size="middle"
+                    onSearch={handleSearch}
+                  />
+                </AutoComplete>
+                <DatePicker.RangePicker
+                  style={{ width: 300 }}
+                  value={dateRange}
+                  onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+                  format="YYYY-MM-DD"
+                />
+                <Button
+                  type="primary"
+                  icon={<MoneyCollectOutlined />}
+                  onClick={() => handleAdd('receipt')}
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                >
+                  수금
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<PayCircleOutlined />}
+                  onClick={() => handleAdd('payment')}
+                  style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }}
+                >
+                  지급
+                </Button>
+                <Button
+                  icon={<ImportOutlined />}
+                  size="middle"
+                  onClick={() => setExcelUploadModalVisible(true)}
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+                >
+                  엑셀업로드
+                </Button>
+                <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
+                  <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                    파일저장
+                  </Button>
+                </Dropdown>
+                <Button
+                  onClick={handleSelectAll}
+                  type="default"
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+                >
+                  {selectedRowKeys.length === (activeTab === 'receipt' ? filteredReceiptData.length : filteredPaymentData.length) && (activeTab === 'receipt' ? filteredReceiptData.length : filteredPaymentData.length) > 0 ? '전체 해제' : '전체 선택'}
+                </Button>
+                <Popconfirm
+                  title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
+                  onConfirm={handleBulkDelete}
+                  okText="예"
+                  cancelText="아니오"
+                  disabled={selectedRowKeys.length === 0}
+                  okButtonProps={{
+                    autoFocus: true,
+                    size: 'large',
+                    style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+                  }}
+                  cancelButtonProps={{
+                    size: 'large',
+                    style: { minWidth: '80px', height: '40px', fontSize: '16px' }
+                  }}
+                  placement="top"
+                  overlayStyle={{
+                    position: 'fixed',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 9999,
+                    pointerEvents: 'auto'
+                  }}
+                  styles={{
+                    body: {
+                      padding: '20px',
+                      fontSize: '18px',
+                      fontWeight: '500',
+                      minWidth: '350px',
+                      textAlign: 'center',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)'
+                    }
+                  }}
+                  transitionName=""
+                  mouseEnterDelay={0}
+                  mouseLeaveDelay={0}
+                >
+                  <Button danger disabled={selectedRowKeys.length === 0}>
+                    선택 삭제 ({selectedRowKeys.length})
+                  </Button>
+                </Popconfirm>
+                <Button
+                  icon={<PrinterOutlined />}
+                  onClick={handlePrint}
+                  size="middle"
+                  style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
+                >
+                  인쇄
+                </Button>
+              </Space>
+              <DateRangeFilter
+                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+              />
+            </Space>
+          </Col>
+        </Row>
+      )}
+
+      {/* 모바일 액션 드로어 */}
+      <Drawer
+        title="작업 선택"
+        placement="bottom"
+        onClose={() => setMobileActionDrawerVisible(false)}
+        open={mobileActionDrawerVisible}
+        height="auto"
+        styles={{ body: { padding: '12px 16px' } }}
+      >
+        {mobileActionDrawerContent}
+      </Drawer>
 
 
       {loading && (
@@ -980,7 +1090,7 @@ const PaymentManagement: React.FC = () => {
                   loading={false}
                   rowSelection={getRowSelection()}
                   showSorterTooltip={false}
-                  scroll={{ x: 900 }}
+                  scroll={{ x: isMobile ? 500 : 900 }}
                   size={isMobile ? "small" : "middle"}
                   onRow={(record) => ({
                     onClick: (e) => handleRowClick(record, e),
@@ -1014,7 +1124,7 @@ const PaymentManagement: React.FC = () => {
                   loading={false}
                   rowSelection={getRowSelection()}
                   showSorterTooltip={false}
-                  scroll={{ x: 900 }}
+                  scroll={{ x: isMobile ? 500 : 900 }}
                   size={isMobile ? "small" : "middle"}
                   onRow={(record) => ({
                     onClick: (e) => handleRowClick(record, e),

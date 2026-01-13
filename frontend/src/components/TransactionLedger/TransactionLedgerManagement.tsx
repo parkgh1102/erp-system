@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, Row, Col, Select, DatePicker, Button, Table, Space, message, Modal, Form, Input, Spin, AutoComplete, Dropdown, Statistic, Alert, Badge, Tabs, Tag, Progress, Divider, List, Avatar, Tooltip } from 'antd';
-import { SearchOutlined, PrinterOutlined, FilePdfOutlined, ExportOutlined, DollarOutlined, UserOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Select, DatePicker, Button, Table, Space, message, Modal, Form, Input, Spin, AutoComplete, Dropdown, Statistic, Alert, Badge, Tabs, Tag, Progress, Divider, List, Avatar, Tooltip, Drawer } from 'antd';
+import { SearchOutlined, PrinterOutlined, FilePdfOutlined, ExportOutlined, DollarOutlined, UserOutlined, ArrowUpOutlined, ArrowDownOutlined, MoreOutlined } from '@ant-design/icons';
 import { useReactToPrint } from 'react-to-print';
 import SignatureEditModal from './SignatureEditModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
@@ -93,6 +93,7 @@ const TransactionLedgerManagement: React.FC = () => {
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [generalPrintModalVisible, setGeneralPrintModalVisible] = useState(false);
   const [ledgerPrintModalVisible, setLedgerPrintModalVisible] = useState(false);
+  const [mobileActionDrawerVisible, setMobileActionDrawerVisible] = useState(false);
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -621,92 +622,157 @@ const TransactionLedgerManagement: React.FC = () => {
     'transaction-ledger-table'
   );
 
+  // 모바일 액션 드로어 내용
+  const mobileActionDrawerContent = (
+    <Space direction="vertical" style={{ width: '100%' }} size="small">
+      <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight" trigger={['click']}>
+        <Button icon={<ExportOutlined />} block size="large" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white', justifyContent: 'flex-start' }}>
+          파일저장
+        </Button>
+      </Dropdown>
+      <Button
+        icon={<PrinterOutlined />}
+        onClick={() => { setLedgerPrintModalVisible(true); setMobileActionDrawerVisible(false); }}
+        block
+        size="large"
+        style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white', justifyContent: 'flex-start' }}
+      >
+        인쇄
+      </Button>
+    </Space>
+  );
+
   return (
     <div style={{
       padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
-      <Row align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>거래원장 조회</h2>
-        </Col>
-        <Col style={{ marginLeft: '100px' }}>
-          <Space direction="vertical" size="small" style={{ width: '100%' }}>
-            <Space size="middle" wrap>
-              <Select
-                style={{ width: 350 }}
-                showSearch
-                placeholder="거래처 선택"
-                size="middle"
-                value={selectedCustomer}
-                onChange={(value) => {
-                  setSelectedCustomer(value);
-                  const customer = customersWithTransactions.find(c => c.id === value);
-                  if (customer) {
-                    setCustomerSearchText(customer.name);
-                  }
-                }}
-                filterOption={(input, option) =>
-                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase()) ||
-                  (option?.code ?? '').toLowerCase().includes(input.toLowerCase())
-                }
-                options={customersWithTransactions.map(customer => ({
-                  value: customer.id,
-                  label: `${customer.name} (${customer.customerCode})`,
-                  code: customer.customerCode
-                }))}
-                notFoundContent={
-                  customersWithTransactions.length === 0
-                    ? '선택한 기간에 거래 기록이 없습니다'
-                    : '검색 결과가 없습니다'
-                }
-                allowClear
-                onClear={() => {
-                  setSelectedCustomer(null);
-                  setCustomerSearchText('');
-                }}
-              />
-              <RangePicker
-                style={{ width: 300 }}
-                value={dateRange}
-                onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-                format="YYYY-MM-DD"
-                size="middle"
-              />
-              <Button
-                type="primary"
-                icon={<SearchOutlined />}
-                onClick={handleSearch}
-                size="middle"
-              >
+      {/* 모바일 레이아웃 */}
+      {isMobile ? (
+        <div style={{ marginBottom: 16 }}>
+          <h2 style={{ margin: '0 0 12px 0', color: isDark ? '#ffffff' : '#000000', fontSize: '20px', fontWeight: 'bold' }}>거래원장 조회</h2>
+          <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Select
+              style={{ width: '100%' }}
+              showSearch
+              placeholder="거래처 선택"
+              size="middle"
+              value={selectedCustomer}
+              onChange={(value) => {
+                setSelectedCustomer(value);
+                const customer = customersWithTransactions.find(c => c.id === value);
+                if (customer) setCustomerSearchText(customer.name);
+              }}
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                (option?.code ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={customersWithTransactions.map(customer => ({
+                value: customer.id,
+                label: `${customer.name} (${customer.customerCode})`,
+                code: customer.customerCode
+              }))}
+              notFoundContent={customersWithTransactions.length === 0 ? '선택한 기간에 거래 기록이 없습니다' : '검색 결과가 없습니다'}
+              allowClear
+              onClear={() => { setSelectedCustomer(null); setCustomerSearchText(''); }}
+            />
+            <RangePicker
+              style={{ width: '100%' }}
+              value={dateRange}
+              onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+              format="YYYY-MM-DD"
+              size="middle"
+            />
+            <Space size="small" wrap>
+              <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} size="middle">
                 조회
               </Button>
-              <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-                <Button
-                  icon={<ExportOutlined />}
-                  size="middle"
-                  style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
-                >
-                  파일저장
-                </Button>
-              </Dropdown>
-              <Button
-                icon={<PrinterOutlined />}
-                onClick={() => setLedgerPrintModalVisible(true)}
-                size="middle"
-                style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
-              >
-                인쇄
+              <Button icon={<MoreOutlined />} onClick={() => setMobileActionDrawerVisible(true)} size="middle">
+                더보기
               </Button>
             </Space>
             <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => {
-                setDateRange([dayjs(startDate), dayjs(endDate)]);
-              }}
+              onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+              isMobile={true}
             />
           </Space>
-        </Col>
-      </Row>
+        </div>
+      ) : (
+        /* 데스크톱 레이아웃 */
+        <Row align="middle" style={{ marginBottom: 24 }}>
+          <Col>
+            <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>거래원장 조회</h2>
+          </Col>
+          <Col style={{ marginLeft: '100px' }}>
+            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Space size="middle" wrap>
+                <Select
+                  style={{ width: 350 }}
+                  showSearch
+                  placeholder="거래처 선택"
+                  size="middle"
+                  value={selectedCustomer}
+                  onChange={(value) => {
+                    setSelectedCustomer(value);
+                    const customer = customersWithTransactions.find(c => c.id === value);
+                    if (customer) setCustomerSearchText(customer.name);
+                  }}
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                    (option?.code ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={customersWithTransactions.map(customer => ({
+                    value: customer.id,
+                    label: `${customer.name} (${customer.customerCode})`,
+                    code: customer.customerCode
+                  }))}
+                  notFoundContent={customersWithTransactions.length === 0 ? '선택한 기간에 거래 기록이 없습니다' : '검색 결과가 없습니다'}
+                  allowClear
+                  onClear={() => { setSelectedCustomer(null); setCustomerSearchText(''); }}
+                />
+                <RangePicker
+                  style={{ width: 300 }}
+                  value={dateRange}
+                  onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+                  format="YYYY-MM-DD"
+                  size="middle"
+                />
+                <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} size="middle">
+                  조회
+                </Button>
+                <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
+                  <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                    파일저장
+                  </Button>
+                </Dropdown>
+                <Button
+                  icon={<PrinterOutlined />}
+                  onClick={() => setLedgerPrintModalVisible(true)}
+                  size="middle"
+                  style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white' }}
+                >
+                  인쇄
+                </Button>
+              </Space>
+              <DateRangeFilter
+                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+              />
+            </Space>
+          </Col>
+        </Row>
+      )}
+
+      {/* 모바일 액션 드로어 */}
+      <Drawer
+        title="작업 선택"
+        placement="bottom"
+        onClose={() => setMobileActionDrawerVisible(false)}
+        open={mobileActionDrawerVisible}
+        height="auto"
+        styles={{ body: { padding: '12px 16px' } }}
+      >
+        {mobileActionDrawerContent}
+      </Drawer>
 
       {selectedCustomerInfo && (
         <Card size="small" style={{ marginBottom: '16px', backgroundColor: isDark ? '#1f1f1f' : '#f8f9fa' }}>
