@@ -406,22 +406,25 @@ export const uploadProducts = async (req: Request, res: Response) => {
         // 세금구분 매핑 (한글 -> 영문 코드) - 기본값은 과세별도(tax_separate)
         let taxType = 'tax_separate';
         const rawTaxType = (row['세금구분'] || '').toString().trim();
-        const taxTypeLower = rawTaxType.toLowerCase();
+        // 공백 제거한 버전도 준비
+        const taxTypeNormalized = rawTaxType.replace(/\s/g, '').toLowerCase();
 
         // 면세 체크 (먼저 체크)
-        if (taxTypeLower === 'tax_free' || taxTypeLower === '면세' || taxTypeLower.includes('면세')) {
+        if (taxTypeNormalized === 'tax_free' ||
+            taxTypeNormalized === '면세' ||
+            taxTypeNormalized.includes('면세')) {
           taxType = 'tax_free';
         }
-        // 과세포함 체크 (포함 키워드가 있는 경우)
-        else if (taxTypeLower === 'tax_inclusive' ||
-                 taxTypeLower === '포함' ||
-                 taxTypeLower === '과세포함' ||
-                 taxTypeLower === '과세(포함)' ||
-                 taxTypeLower === '과세 10%포함' ||
-                 taxTypeLower.includes('포함')) {
+        // 과세포함 체크 (포함 키워드가 있는 경우, 단 별도는 제외)
+        else if (taxTypeNormalized === 'tax_inclusive' ||
+                 taxTypeNormalized === '과세10%포함' ||
+                 taxTypeNormalized === '과세포함' ||
+                 taxTypeNormalized === '과세(포함)' ||
+                 (taxTypeNormalized.includes('포함') && !taxTypeNormalized.includes('별도'))) {
           taxType = 'tax_inclusive';
         }
-        // 나머지는 모두 과세별도 (기본값)
+        // 과세별도 (기본값) - 명시적 체크도 추가
+        // tax_separate, 과세10%별도, 과세별도, 별도 등은 모두 기본값(tax_separate)으로 처리됨
 
         console.log('매핑된 taxType:', taxType);
 
