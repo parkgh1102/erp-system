@@ -226,12 +226,16 @@ const Reports: React.FC = () => {
   }), []);
 
   // Monthly trend chart config
+  const safeMonthlyData = Array.isArray(monthlyData) ? monthlyData : [];
+  const safeCategoryData = Array.isArray(categoryData) ? categoryData : [];
+  const safePaymentStatusData = Array.isArray(paymentStatusData) ? paymentStatusData : [];
+
   const monthlyChartData = useMemo(() => ({
-    labels: monthlyData.map(d => d.month),
+    labels: safeMonthlyData.map(d => d.month),
     datasets: [
       {
         label: '매출',
-        data: monthlyData.map(d => d.sales),
+        data: safeMonthlyData.map(d => d.sales),
         borderColor: chartColors.primary,
         backgroundColor: `${chartColors.primary}20`,
         fill: true,
@@ -239,7 +243,7 @@ const Reports: React.FC = () => {
       },
       {
         label: '매입',
-        data: monthlyData.map(d => d.purchases),
+        data: safeMonthlyData.map(d => d.purchases),
         borderColor: chartColors.warning,
         backgroundColor: `${chartColors.warning}20`,
         fill: true,
@@ -247,20 +251,20 @@ const Reports: React.FC = () => {
       },
       {
         label: '순이익',
-        data: monthlyData.map(d => d.profit),
+        data: safeMonthlyData.map(d => d.profit),
         borderColor: chartColors.success,
         backgroundColor: `${chartColors.success}20`,
         fill: true,
         tension: 0.4,
       },
     ],
-  }), [monthlyData, chartColors]);
+  }), [safeMonthlyData, chartColors]);
 
   // Category pie chart config
   const categoryChartData = useMemo(() => ({
-    labels: categoryData.map(d => d.name),
+    labels: safeCategoryData.map(d => d.name),
     datasets: [{
-      data: categoryData.map(d => d.amount),
+      data: safeCategoryData.map(d => d.amount),
       backgroundColor: [
         chartColors.primary,
         chartColors.success,
@@ -272,18 +276,18 @@ const Reports: React.FC = () => {
       borderWidth: 2,
       borderColor: isDark ? '#1f1f1f' : '#ffffff',
     }],
-  }), [categoryData, chartColors, isDark]);
+  }), [safeCategoryData, chartColors, isDark]);
 
   // Payment status chart
   const paymentChartData = useMemo(() => ({
-    labels: paymentStatusData.map(d => d.status),
+    labels: safePaymentStatusData.map(d => d.status),
     datasets: [{
-      data: paymentStatusData.map(d => d.amount),
+      data: safePaymentStatusData.map(d => d.amount),
       backgroundColor: [chartColors.success, chartColors.warning, chartColors.danger],
       borderWidth: 2,
       borderColor: isDark ? '#1f1f1f' : '#ffffff',
     }],
-  }), [paymentStatusData, chartColors, isDark]);
+  }), [safePaymentStatusData, chartColors, isDark]);
 
   const chartOptions = useMemo(() => ({
     responsive: true,
