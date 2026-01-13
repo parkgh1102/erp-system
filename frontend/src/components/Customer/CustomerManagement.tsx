@@ -948,7 +948,8 @@ const CustomerManagement: React.FC = () => {
 
       <Table
           id="customer-table"
-          columns={columns}
+          className={isMobile ? 'mobile-compact-table' : ''}
+          columns={isMobile ? columns.filter(col => ['customerCode', 'name', 'actions'].includes(col.key as string)) : columns}
           dataSource={customers}
           rowKey="id"
           loading={loading}
@@ -991,7 +992,7 @@ const CustomerManagement: React.FC = () => {
             onDoubleClick: () => handleRowDoubleClick(record),
             style: { cursor: 'pointer' },
           })}
-          scroll={{ x: isMobile ? 500 : 'max-content', y: isMobile ? 400 : 600 }}
+          scroll={{ x: isMobile ? 280 : 'max-content', y: isMobile ? 400 : 600 }}
           size={isMobile ? 'small' : 'middle'}
         />
 

@@ -1436,7 +1436,8 @@ const PurchaseManagement: React.FC = () => {
 
       <Table
         id="purchase-table"
-        columns={columns}
+        className={isMobile ? 'mobile-compact-table' : ''}
+        columns={isMobile ? columns.filter(col => ['purchaseDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns}
         dataSource={filteredPurchases}
         rowKey="id"
         loading={false}
@@ -1447,7 +1448,7 @@ const PurchaseManagement: React.FC = () => {
           onDoubleClick: () => handleEdit(record),
           style: { cursor: 'pointer' }
         })}
-        scroll={{ x: isMobile ? 600 : 1200 }}
+        scroll={{ x: isMobile ? 320 : 1200 }}
         size={isMobile ? "small" : "middle"}
         onChange={handleTableChange}
         pagination={{

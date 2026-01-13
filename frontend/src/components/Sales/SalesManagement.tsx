@@ -1905,7 +1905,8 @@ const SalesManagement: React.FC = () => {
 
       <Table
         id="sales-table"
-        columns={columns}
+        className={isMobile ? 'mobile-compact-table' : ''}
+        columns={isMobile ? columns.filter(col => ['transactionDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns}
         dataSource={filteredSales}
         rowKey="id"
         loading={false}
@@ -1916,7 +1917,7 @@ const SalesManagement: React.FC = () => {
           onDoubleClick: () => openESignatureForRecord(record),
           style: { cursor: 'pointer' }
         })}
-        scroll={{ x: isMobile ? 600 : 1200 }}
+        scroll={{ x: isMobile ? 320 : 1200 }}
         size={isMobile ? "small" : "middle"}
         onChange={handleTableChange}
         pagination={{

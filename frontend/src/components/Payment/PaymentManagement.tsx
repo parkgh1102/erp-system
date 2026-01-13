@@ -1084,13 +1084,14 @@ const PaymentManagement: React.FC = () => {
               children: (
                 <Table
                   id="payment-table"
-                  columns={receiptColumns}
+                  className={isMobile ? 'mobile-compact-table' : ''}
+                  columns={isMobile ? receiptColumns.filter(col => ['paymentDate', 'customerName', 'amount'].includes(col.key as string)) : receiptColumns}
                   dataSource={filteredReceiptData}
                   rowKey="id"
                   loading={false}
                   rowSelection={getRowSelection()}
                   showSorterTooltip={false}
-                  scroll={{ x: isMobile ? 500 : 900 }}
+                  scroll={{ x: isMobile ? 260 : 900 }}
                   size={isMobile ? "small" : "middle"}
                   onRow={(record) => ({
                     onClick: (e) => handleRowClick(record, e),
@@ -1118,13 +1119,14 @@ const PaymentManagement: React.FC = () => {
               children: (
                 <Table
                   id="payment-table"
-                  columns={paymentColumns}
+                  className={isMobile ? 'mobile-compact-table' : ''}
+                  columns={isMobile ? paymentColumns.filter(col => ['paymentDate', 'customerName', 'amount'].includes(col.key as string)) : paymentColumns}
                   dataSource={filteredPaymentData}
                   rowKey="id"
                   loading={false}
                   rowSelection={getRowSelection()}
                   showSorterTooltip={false}
-                  scroll={{ x: isMobile ? 500 : 900 }}
+                  scroll={{ x: isMobile ? 260 : 900 }}
                   size={isMobile ? "small" : "middle"}
                   onRow={(record) => ({
                     onClick: (e) => handleRowClick(record, e),

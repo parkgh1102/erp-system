@@ -811,15 +811,19 @@ const TransactionLedgerManagement: React.FC = () => {
         <Spin spinning={loading}>
           <Table
             id="transaction-ledger-table"
+            className={isMobile ? 'mobile-compact-table' : ''}
             columns={columns}
             dataSource={expandedEntries}
             rowKey="rowKey"
+            scroll={{ x: isMobile ? 400 : 'max-content' }}
+            size={isMobile ? 'small' : 'middle'}
             pagination={{
               current: currentPage,
-              pageSize: pageSize,
+              pageSize: isMobile ? 5 : pageSize,
               total: expandedEntries.length,
-              showSizeChanger: true,
-              showTotal: () => `총 ${ledgerEntries.length}건`,
+              showSizeChanger: !isMobile,
+              simple: isMobile,
+              showTotal: () => isMobile ? `${ledgerEntries.length}건` : `총 ${ledgerEntries.length}건`,
               onChange: (page, size) => {
                 setCurrentPage(page);
                 if (size !== pageSize) {

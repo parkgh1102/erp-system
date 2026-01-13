@@ -102,6 +102,46 @@
   }
 }
 
+/* 모바일 컴팩트 테이블 스타일 */
+.mobile-compact-table .ant-table-selection-column {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  padding: 4px !important;
+}
+
+.mobile-compact-table .ant-table-thead > tr > th {
+  padding: 6px 4px !important;
+  font-size: 12px !important;
+  white-space: nowrap !important;
+}
+
+.mobile-compact-table .ant-table-tbody > tr > td {
+  padding: 6px 4px !important;
+  font-size: 13px !important;
+  min-height: 36px !important;
+}
+
+.mobile-compact-table .ant-checkbox-inner {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.mobile-compact-table .ant-table-cell {
+  word-break: break-all !important;
+}
+
+.mobile-compact-table .ant-btn-sm {
+  min-height: 28px !important;
+  min-width: 28px !important;
+  padding: 2px 6px !important;
+  font-size: 11px !important;
+}
+
+.mobile-compact-table .ant-space {
+  gap: 2px !important;
+}
+
 /* 모바일 푸터 여백 확보 (하단 탭바용) */
 @media (max-width: 992px) {
   .ant-layout-content {
