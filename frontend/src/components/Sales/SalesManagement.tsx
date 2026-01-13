@@ -1813,17 +1813,21 @@ const SalesManagement: React.FC = () => {
         </Col>
       </Row>
 
-      {loading && (
-        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9999, textAlign: 'center', background: 'rgba(255,255,255,0.9)', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+      {loading && !uploadProgress.visible && (
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9999 }}>
           <Spin size="large" />
-          {uploadProgress.visible && uploadProgress.total > 0 && (
-            <div style={{ marginTop: '16px', width: '200px' }}>
-              <Progress percent={Math.round((uploadProgress.current / uploadProgress.total) * 100)} size="small" />
-              <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
-                {uploadProgress.current} / {uploadProgress.total} 처리 중...
-              </div>
+        </div>
+      )}
+
+      {uploadProgress.visible && (
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9999, textAlign: 'center', background: isDark ? 'rgba(30,30,30,0.95)' : 'rgba(255,255,255,0.95)', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+          <Spin size="large" />
+          <div style={{ marginTop: '16px', width: '200px' }}>
+            <Progress percent={Math.round((uploadProgress.current / uploadProgress.total) * 100)} size="small" />
+            <div style={{ fontSize: '12px', color: isDark ? '#aaa' : '#666', marginTop: '8px' }}>
+              {uploadProgress.current} / {uploadProgress.total} 처리 중...
             </div>
-          )}
+          </div>
         </div>
       )}
 
