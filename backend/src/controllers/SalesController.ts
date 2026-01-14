@@ -115,6 +115,13 @@ export class SalesController {
         order: { transactionDate: 'DESC', createdAt: 'DESC' }
       });
 
+      // items를 id 순서로 정렬 (등록 순서 유지)
+      sales.forEach(sale => {
+        if (sale.items) {
+          sale.items.sort((a, b) => a.id - b.id);
+        }
+      });
+
       // 서명 이미지 조회 로그
       const signedSales = sales.filter(s => s.signatureImage);
       console.log('📊 매출 조회 완료:', {
@@ -199,6 +206,11 @@ export class SalesController {
           success: false,
           message: '매출 정보를 찾을 수 없습니다.'
         });
+      }
+
+      // items를 id 순서로 정렬 (등록 순서 유지)
+      if (sales.items) {
+        sales.items.sort((a, b) => a.id - b.id);
       }
 
       res.json({
@@ -333,6 +345,11 @@ export class SalesController {
         where: { id: savedSales.id },
         relations: ['customer', 'items', 'items.product', 'signedByUser']
       });
+
+      // items를 id 순서로 정렬 (등록 순서 유지)
+      if (result?.items) {
+        result.items.sort((a, b) => a.id - b.id);
+      }
 
       res.status(201).json({
         success: true,
@@ -471,6 +488,11 @@ export class SalesController {
         where: { id: parseInt(id) },
         relations: ['customer', 'items', 'items.product', 'signedByUser']
       });
+
+      // items를 id 순서로 정렬 (등록 순서 유지)
+      if (result?.items) {
+        result.items.sort((a, b) => a.id - b.id);
+      }
 
       res.json({
         success: true,
@@ -688,6 +710,11 @@ export class SalesController {
           updatedAt: true
         }
       });
+
+      // items를 id 순서로 정렬 (등록 순서 유지)
+      if (result?.items) {
+        result.items.sort((a, b) => a.id - b.id);
+      }
 
       res.json({
         success: true,

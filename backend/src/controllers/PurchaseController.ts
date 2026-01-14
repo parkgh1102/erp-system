@@ -97,6 +97,13 @@ export class PurchaseController {
         order: { purchaseDate: 'DESC', createdAt: 'DESC' }
       });
 
+      // items를 id 순서로 정렬 (등록 순서 유지)
+      purchases.forEach(purchase => {
+        if (purchase.items) {
+          purchase.items.sort((a, b) => a.id - b.id);
+        }
+      });
+
       res.json({
         success: true,
         data: {
@@ -166,6 +173,11 @@ export class PurchaseController {
           success: false,
           message: '매입 정보를 찾을 수 없습니다.'
         });
+      }
+
+      // items를 id 순서로 정렬 (등록 순서 유지)
+      if (purchase.items) {
+        purchase.items.sort((a, b) => a.id - b.id);
       }
 
       res.json({
@@ -270,6 +282,11 @@ export class PurchaseController {
         where: { id: savedPurchase.id },
         relations: ['customer', 'items']
       });
+
+      // items를 id 순서로 정렬 (등록 순서 유지)
+      if (createdPurchase?.items) {
+        createdPurchase.items.sort((a, b) => a.id - b.id);
+      }
 
       res.status(201).json({
         success: true,
@@ -389,6 +406,11 @@ export class PurchaseController {
         where: { id: purchase.id },
         relations: ['customer', 'items']
       });
+
+      // items를 id 순서로 정렬 (등록 순서 유지)
+      if (updatedPurchase?.items) {
+        updatedPurchase.items.sort((a, b) => a.id - b.id);
+      }
 
       res.json({
         success: true,
