@@ -20,8 +20,8 @@ const ALLOWED_IMAGE_MIME_TYPES = [
   'image/jpg',
   'image/png',
   'image/gif',
-  'image/webp',
-  'image/svg+xml'
+  'image/webp'
+  // 'image/svg+xml' - SVG는 XSS 취약점으로 제외
 ];
 
 // 허용되는 이미지 확장자
@@ -30,8 +30,8 @@ const ALLOWED_IMAGE_EXTENSIONS = [
   '.jpeg',
   '.png',
   '.gif',
-  '.webp',
-  '.svg'
+  '.webp'
+  // '.svg' - SVG는 JavaScript 포함 가능하여 XSS 위험으로 제외
 ];
 
 // 파일 크기 제한 (5MB)

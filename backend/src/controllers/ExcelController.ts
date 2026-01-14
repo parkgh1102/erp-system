@@ -515,6 +515,11 @@ export const uploadSales = async (req: Request, res: Response) => {
     for (const key in groupedData) {
       try {
         const rows = groupedData[key];
+        // 배열 범위 체크 - 빈 배열 방지
+        if (!rows || rows.length === 0) {
+          console.warn(`그룹 ${key}의 데이터가 비어있습니다.`);
+          continue;
+        }
         const firstRow = rows[0];
 
         // 거래처 찾기
@@ -602,6 +607,11 @@ export const uploadPurchases = async (req: Request, res: Response) => {
     for (const key in groupedData) {
       try {
         const rows = groupedData[key];
+        // 배열 범위 체크 - 빈 배열 방지
+        if (!rows || rows.length === 0) {
+          console.warn(`그룹 ${key}의 데이터가 비어있습니다.`);
+          continue;
+        }
         const firstRow = rows[0];
 
         // 거래처 찾기
@@ -610,7 +620,7 @@ export const uploadPurchases = async (req: Request, res: Response) => {
         });
 
         // 매입 생성
-        const totalAmount = rows.reduce((sum, r) => sum + parseFloat(r['금액']), 0);
+        const totalAmount = rows.reduce((sum, r) => sum + parseFloat(r['금액'] || 0), 0);
         const vatAmount = totalAmount * 0.1; // 10% 부가세
 
         const purchase = purchaseRepo.create({
