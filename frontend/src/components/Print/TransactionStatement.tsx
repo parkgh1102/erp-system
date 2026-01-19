@@ -388,7 +388,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
         <div style={{ flex: 1, marginBottom: '1mm' }}>
           {/* 메모란 */}
           <div style={{
-            border: '2px solid #000',
+            border: '1px solid #000',
             display: 'flex',
             alignItems: 'stretch',
             height: '6.5mm',
@@ -423,8 +423,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
 
           {/* 공지사항 */}
           <div style={{
-            border: '2px solid #000',
-            borderTop: '1px solid #000',
+            border: '1px solid #000',
+            borderTop: 'none',
             display: 'flex',
             alignItems: 'stretch',
             height: '6.5mm',
@@ -458,8 +458,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
 
           {/* 계좌번호 */}
           <div style={{
-            border: '2px solid #000',
-            borderTop: '1px solid #000',
+            border: '1px solid #000',
+            borderTop: 'none',
             display: 'flex',
             alignItems: 'stretch',
             height: '6.5mm',
