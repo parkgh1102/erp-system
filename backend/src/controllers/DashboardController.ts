@@ -4,6 +4,7 @@ import { Customer } from '../entities/Customer';
 import { Product } from '../entities/Product';
 import { Sales } from '../entities/Sales';
 import { Purchase } from '../entities/Purchase';
+import { Payment } from '../entities/Payment';
 import dayjs from 'dayjs';
 
 export class DashboardController {
@@ -40,9 +41,10 @@ export class DashboardController {
       const purchaseRepo = AppDataSource.getRepository(Purchase);
       const customerRepo = AppDataSource.getRepository(Customer);
       const productRepo = AppDataSource.getRepository(Product);
+      const paymentRepo = AppDataSource.getRepository(Payment);
 
       // 현재 기간 통계
-      const [totalSalesResult, totalPurchasesResult, totalCustomers, totalProducts] = await Promise.all([
+      const [totalSalesResult, totalPurchasesResult, totalCustomers, totalProducts, totalReceiptsResult, totalPaymentsResult] = await Promise.all([
         salesRepo
           .createQueryBuilder('sales')
           .where('sales.businessId = :businessId', { businessId })
@@ -58,7 +60,25 @@ export class DashboardController {
           .getRawOne(),
 
         customerRepo.count({ where: { businessId: parseInt(businessId as string), isActive: true } }),
-        productRepo.count({ where: { businessId: parseInt(businessId as string), isActive: true } })
+        productRepo.count({ where: { businessId: parseInt(businessId as string), isActive: true } }),
+
+        // 수금 합계 (paymentType = '수금')
+        paymentRepo
+          .createQueryBuilder('payment')
+          .where('payment.businessId = :businessId', { businessId })
+          .andWhere('payment.paymentDate BETWEEN :startDate AND :endDate', { startDate: queryStartDate, endDate: queryEndDate })
+          .andWhere('payment.paymentType = :type', { type: '수금' })
+          .select('COALESCE(SUM(payment.amount), 0)', 'total')
+          .getRawOne(),
+
+        // 지급 합계 (paymentType = '지급')
+        paymentRepo
+          .createQueryBuilder('payment')
+          .where('payment.businessId = :businessId', { businessId })
+          .andWhere('payment.paymentDate BETWEEN :startDate AND :endDate', { startDate: queryStartDate, endDate: queryEndDate })
+          .andWhere('payment.paymentType = :type', { type: '지급' })
+          .select('COALESCE(SUM(payment.amount), 0)', 'total')
+          .getRawOne()
       ]);
 
       // 이전 기간과 비교를 위한 날짜 계산
@@ -83,6 +103,8 @@ export class DashboardController {
 
       const currentSales = parseFloat(totalSalesResult.total) || 0;
       const currentPurchases = parseFloat(totalPurchasesResult.total) || 0;
+      const currentReceipts = parseFloat(totalReceiptsResult.total) || 0;
+      const currentPayments = parseFloat(totalPaymentsResult.total) || 0;
       const prevSales = parseFloat(prevSalesResult.total) || 0;
       const prevPurchases = parseFloat(prevPurchasesResult.total) || 0;
 
@@ -93,8 +115,12 @@ export class DashboardController {
       const stats = {
         totalSales: currentSales,
         totalPurchases: currentPurchases,
+        totalReceipts: currentReceipts,
+        totalPayments: currentPayments,
         totalCustomers,
         totalProducts,
+        customerCount: totalCustomers,
+        productCount: totalProducts,
         salesGrowth: Number(salesGrowth.toFixed(1)),
         purchaseGrowth: Number(purchaseGrowth.toFixed(1)),
         netProfit: currentSales - currentPurchases,

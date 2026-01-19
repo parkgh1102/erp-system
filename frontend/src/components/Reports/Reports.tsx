@@ -358,8 +358,8 @@ const Reports: React.FC = () => {
     },
     {
       title: '거래처명',
-      dataIndex: 'companyName',
-      key: 'companyName',
+      dataIndex: 'name',
+      key: 'name',
       ellipsis: true,
     },
     {
