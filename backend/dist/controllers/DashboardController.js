@@ -267,9 +267,9 @@ class DashboardController {
             FROM sales_items si
             LEFT JOIN products p ON si."productId" = p.id
             LEFT JOIN sales s ON si."salesId" = s.id
-            WHERE s."businessId" = ?
-              AND s."transactionDate" >= ?
-              AND s."transactionDate" <= ?
+            WHERE s."businessId" = $1
+              AND s."transactionDate" >= $2
+              AND s."transactionDate" <= $3
             GROUP BY COALESCE(p.category, '기타')
             ORDER BY amount DESC
           `, [businessId, startDate, endDate]);
@@ -281,7 +281,7 @@ class DashboardController {
               COALESCE(p.category, '기타') as category,
               COUNT(*) as count
             FROM products p
-            WHERE p."businessId" = ?
+            WHERE p."businessId" = $1
             GROUP BY COALESCE(p.category, '기타')
             ORDER BY count DESC
           `, [businessId]);
