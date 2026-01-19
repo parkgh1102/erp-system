@@ -256,6 +256,8 @@ export const dashboardAPI = {
     api.get(`/businesses/${businessId}/dashboard/category-data`, { params }),
   getMonthlyTrend: (businessId: number, params?: PaginationQuery) =>
     api.get(`/businesses/${businessId}/dashboard/monthly-trend`, { params }),
+  getTopCustomers: (businessId: number, params?: PaginationQuery) =>
+    api.get(`/businesses/${businessId}/dashboard/top-customers`, { params }),
 };
 
 export const businessAPI = {

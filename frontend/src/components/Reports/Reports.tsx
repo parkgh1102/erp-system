@@ -30,7 +30,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { dashboardAPI, salesAPI, purchaseAPI, customerAPI, paymentAPI } from '../../utils/api';
+import { dashboardAPI } from '../../utils/api';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import dayjs from 'dayjs';
@@ -188,11 +188,14 @@ const Reports: React.FC = () => {
         setCategoryData(categoryResponse.value.data.data || []);
       }
 
-      // Fetch top customers
+      // Fetch top customers (매출 기준 상위 거래처)
       try {
-        const customersResponse = await customerAPI.getAll(currentBusiness.id, { limit: 10 });
-        if (customersResponse.data.success) {
-          setTopCustomers(customersResponse.data.data.customers?.slice(0, 5) || []);
+        const topCustomersResponse = await dashboardAPI.getTopCustomers(currentBusiness.id, {
+          ...params,
+          limit: 5
+        });
+        if (topCustomersResponse.data.success) {
+          setTopCustomers(topCustomersResponse.data.data || []);
         }
       } catch (e) {
         console.error('Top customers fetch error:', e);

@@ -77,4 +77,5 @@ router.get('/:businessId/dashboard/sales-chart', DashboardController_1.Dashboard
 router.get('/:businessId/dashboard/category-data', DashboardController_1.DashboardController.getCategoryData);
 router.get('/:businessId/dashboard/monthly-trend', DashboardController_1.DashboardController.getMonthlyTrend);
 router.get('/:businessId/dashboard/all-transactions', DashboardController_1.DashboardController.getAllTransactions);
+router.get('/:businessId/dashboard/top-customers', DashboardController_1.DashboardController.getTopCustomers);
 //# sourceMappingURL=businessRoutes.js.map

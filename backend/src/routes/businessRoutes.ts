@@ -81,5 +81,6 @@ router.get('/:businessId/dashboard/sales-chart', DashboardController.getSalesCha
 router.get('/:businessId/dashboard/category-data', DashboardController.getCategoryData);
 router.get('/:businessId/dashboard/monthly-trend', DashboardController.getMonthlyTrend);
 router.get('/:businessId/dashboard/all-transactions', DashboardController.getAllTransactions);
+router.get('/:businessId/dashboard/top-customers', DashboardController.getTopCustomers);
 
 export { router as businessRoutes };

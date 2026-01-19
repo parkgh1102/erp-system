@@ -9,6 +9,7 @@ const Customer_1 = require("../entities/Customer");
 const Product_1 = require("../entities/Product");
 const Sales_1 = require("../entities/Sales");
 const Purchase_1 = require("../entities/Purchase");
+const Payment_1 = require("../entities/Payment");
 const dayjs_1 = __importDefault(require("dayjs"));
 class DashboardController {
     static async getStats(req, res) {
@@ -42,8 +43,9 @@ class DashboardController {
             const purchaseRepo = database_1.AppDataSource.getRepository(Purchase_1.Purchase);
             const customerRepo = database_1.AppDataSource.getRepository(Customer_1.Customer);
             const productRepo = database_1.AppDataSource.getRepository(Product_1.Product);
+            const paymentRepo = database_1.AppDataSource.getRepository(Payment_1.Payment);
             // 현재 기간 통계
-            const [totalSalesResult, totalPurchasesResult, totalCustomers, totalProducts] = await Promise.all([
+            const [totalSalesResult, totalPurchasesResult, totalCustomers, totalProducts, totalReceiptsResult, totalPaymentsResult] = await Promise.all([
                 salesRepo
                     .createQueryBuilder('sales')
                     .where('sales.businessId = :businessId', { businessId })
@@ -57,7 +59,23 @@ class DashboardController {
                     .select('COALESCE(SUM(purchases.totalAmount + purchases.vatAmount), 0)', 'total')
                     .getRawOne(),
                 customerRepo.count({ where: { businessId: parseInt(businessId), isActive: true } }),
-                productRepo.count({ where: { businessId: parseInt(businessId), isActive: true } })
+                productRepo.count({ where: { businessId: parseInt(businessId), isActive: true } }),
+                // 수금 합계 (paymentType = '수금')
+                paymentRepo
+                    .createQueryBuilder('payment')
+                    .where('payment.businessId = :businessId', { businessId })
+                    .andWhere('payment.paymentDate BETWEEN :startDate AND :endDate', { startDate: queryStartDate, endDate: queryEndDate })
+                    .andWhere('payment.paymentType = :type', { type: '수금' })
+                    .select('COALESCE(SUM(payment.amount), 0)', 'total')
+                    .getRawOne(),
+                // 지급 합계 (paymentType = '지급')
+                paymentRepo
+                    .createQueryBuilder('payment')
+                    .where('payment.businessId = :businessId', { businessId })
+                    .andWhere('payment.paymentDate BETWEEN :startDate AND :endDate', { startDate: queryStartDate, endDate: queryEndDate })
+                    .andWhere('payment.paymentType = :type', { type: '지급' })
+                    .select('COALESCE(SUM(payment.amount), 0)', 'total')
+                    .getRawOne()
             ]);
             // 이전 기간과 비교를 위한 날짜 계산
             const prevStartDate = (0, dayjs_1.default)(queryStartDate).subtract(1, period).toDate();
@@ -78,6 +96,8 @@ class DashboardController {
             ]);
             const currentSales = parseFloat(totalSalesResult.total) || 0;
             const currentPurchases = parseFloat(totalPurchasesResult.total) || 0;
+            const currentReceipts = parseFloat(totalReceiptsResult.total) || 0;
+            const currentPayments = parseFloat(totalPaymentsResult.total) || 0;
             const prevSales = parseFloat(prevSalesResult.total) || 0;
             const prevPurchases = parseFloat(prevPurchasesResult.total) || 0;
             // 성장률 계산
@@ -86,8 +106,12 @@ class DashboardController {
             const stats = {
                 totalSales: currentSales,
                 totalPurchases: currentPurchases,
+                totalReceipts: currentReceipts,
+                totalPayments: currentPayments,
                 totalCustomers,
                 totalProducts,
+                customerCount: totalCustomers,
+                productCount: totalProducts,
                 salesGrowth: Number(salesGrowth.toFixed(1)),
                 purchaseGrowth: Number(purchaseGrowth.toFixed(1)),
                 netProfit: currentSales - currentPurchases,
@@ -291,44 +315,12 @@ class DashboardController {
                 console.error('Category query error:', error);
                 categoryData = [];
             }
-            const colors = [
-                'rgba(24, 144, 255, 0.8)',
-                'rgba(82, 196, 26, 0.8)',
-                'rgba(250, 173, 20, 0.8)',
-                'rgba(245, 34, 45, 0.8)',
-                'rgba(114, 46, 209, 0.8)',
-                'rgba(255, 99, 132, 0.8)',
-                'rgba(54, 162, 235, 0.8)',
-                'rgba(255, 206, 86, 0.8)',
-            ];
-            const labels = categoryData.map((item) => item.category || '기타');
-            const data = categoryData.map((item) => parseInt(String(item.count)) || 0);
-            const backgroundColor = labels.map((_, index) => colors[index % colors.length]);
-            // 데이터가 없는 경우 기본 데이터 반환
-            if (categoryData.length === 0) {
-                const defaultCategoryData = {
-                    labels: ['기타'],
-                    datasets: [
-                        {
-                            data: [0],
-                            backgroundColor: [colors[0]],
-                            borderWidth: 0,
-                        },
-                    ],
-                };
-                return res.json({ success: true, data: defaultCategoryData });
-            }
-            const result = {
-                labels,
-                datasets: [
-                    {
-                        data,
-                        backgroundColor,
-                        borderWidth: 0,
-                    },
-                ],
-            };
-            res.json({ success: true, data: result });
+            // 프론트엔드에서 기대하는 형식으로 변환: [{ name, amount }]
+            const formattedData = categoryData.map((item) => ({
+                name: item.category || '기타',
+                amount: parseFloat(String(item.amount)) || parseInt(String(item.count)) || 0
+            }));
+            res.json({ success: true, data: formattedData });
         }
         catch (error) {
             console.error('Category data error:', error);
@@ -452,6 +444,48 @@ class DashboardController {
         catch (error) {
             console.error('Get all transactions error:', error);
             res.status(500).json({ success: false, message: '전체 거래 내역 조회에 실패했습니다.' });
+        }
+    }
+    // 매출 기준 상위 거래처 조회
+    static async getTopCustomers(req, res) {
+        try {
+            const { businessId } = req.params;
+            const { startDate, endDate, limit = 10 } = req.query;
+            const salesRepo = database_1.AppDataSource.getRepository(Sales_1.Sales);
+            // 거래처별 매출 합계 쿼리
+            let queryBuilder = salesRepo
+                .createQueryBuilder('sales')
+                .leftJoin('sales.customer', 'customer')
+                .select('customer.id', 'id')
+                .addSelect('customer.name', 'name')
+                .addSelect('customer.businessNumber', 'businessNumber')
+                .addSelect('SUM(sales.totalAmount + sales.vatAmount)', 'totalAmount')
+                .addSelect('COUNT(sales.id)', 'transactionCount')
+                .where('sales.businessId = :businessId', { businessId })
+                .andWhere('customer.id IS NOT NULL');
+            if (startDate && endDate) {
+                queryBuilder = queryBuilder.andWhere('sales.transactionDate BETWEEN :startDate AND :endDate', { startDate, endDate });
+            }
+            const topCustomers = await queryBuilder
+                .groupBy('customer.id')
+                .addGroupBy('customer.name')
+                .addGroupBy('customer.businessNumber')
+                .orderBy('totalAmount', 'DESC')
+                .limit(parseInt(limit))
+                .getRawMany();
+            // 숫자 타입 변환
+            const formattedCustomers = topCustomers.map(c => ({
+                id: c.id,
+                name: c.name,
+                businessNumber: c.businessNumber,
+                totalAmount: parseFloat(c.totalAmount) || 0,
+                transactionCount: parseInt(c.transactionCount) || 0
+            }));
+            res.json({ success: true, data: formattedCustomers });
+        }
+        catch (error) {
+            console.error('Get top customers error:', error);
+            res.status(500).json({ success: false, message: '상위 거래처 조회에 실패했습니다.' });
         }
     }
 }

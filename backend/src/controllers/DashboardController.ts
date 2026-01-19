@@ -505,4 +505,55 @@ export class DashboardController {
       res.status(500).json({ success: false, message: '전체 거래 내역 조회에 실패했습니다.' });
     }
   }
+
+  // 매출 기준 상위 거래처 조회
+  static async getTopCustomers(req: Request, res: Response) {
+    try {
+      const { businessId } = req.params;
+      const { startDate, endDate, limit = 10 } = req.query;
+
+      const salesRepo = AppDataSource.getRepository(Sales);
+
+      // 거래처별 매출 합계 쿼리
+      let queryBuilder = salesRepo
+        .createQueryBuilder('sales')
+        .leftJoin('sales.customer', 'customer')
+        .select('customer.id', 'id')
+        .addSelect('customer.name', 'name')
+        .addSelect('customer.businessNumber', 'businessNumber')
+        .addSelect('SUM(sales.totalAmount + sales.vatAmount)', 'totalAmount')
+        .addSelect('COUNT(sales.id)', 'transactionCount')
+        .where('sales.businessId = :businessId', { businessId })
+        .andWhere('customer.id IS NOT NULL');
+
+      if (startDate && endDate) {
+        queryBuilder = queryBuilder.andWhere(
+          'sales.transactionDate BETWEEN :startDate AND :endDate',
+          { startDate, endDate }
+        );
+      }
+
+      const topCustomers = await queryBuilder
+        .groupBy('customer.id')
+        .addGroupBy('customer.name')
+        .addGroupBy('customer.businessNumber')
+        .orderBy('totalAmount', 'DESC')
+        .limit(parseInt(limit as string))
+        .getRawMany();
+
+      // 숫자 타입 변환
+      const formattedCustomers = topCustomers.map(c => ({
+        id: c.id,
+        name: c.name,
+        businessNumber: c.businessNumber,
+        totalAmount: parseFloat(c.totalAmount) || 0,
+        transactionCount: parseInt(c.transactionCount) || 0
+      }));
+
+      res.json({ success: true, data: formattedCustomers });
+    } catch (error) {
+      console.error('Get top customers error:', error);
+      res.status(500).json({ success: false, message: '상위 거래처 조회에 실패했습니다.' });
+    }
+  }
 }
