@@ -388,7 +388,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
         <div style={{ flex: 1, marginBottom: '1mm' }}>
           {/* 메모란 */}
           <div style={{
-            border: '2px solid #4a7c59',
+            border: '2px solid #000',
             display: 'flex',
             alignItems: 'stretch',
             height: '6.5mm',
@@ -397,7 +397,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           }}>
             <div style={{
               width: '18mm',
-              borderRight: '1px solid #4a7c59',
+              borderRight: '1px solid #000',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -423,8 +423,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
 
           {/* 공지사항 */}
           <div style={{
-            border: '2px solid #1565c0',
-            borderTop: '1px solid #1565c0',
+            border: '2px solid #000',
+            borderTop: '1px solid #000',
             display: 'flex',
             alignItems: 'stretch',
             height: '6.5mm',
@@ -432,7 +432,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           }}>
             <div style={{
               width: '18mm',
-              borderRight: '1px solid #1565c0',
+              borderRight: '1px solid #000',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -458,8 +458,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
 
           {/* 계좌번호 */}
           <div style={{
-            border: '2px solid #e65100',
-            borderTop: '1px solid #e65100',
+            border: '2px solid #000',
+            borderTop: '1px solid #000',
             display: 'flex',
             alignItems: 'stretch',
             height: '6.5mm',
@@ -467,7 +467,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           }}>
             <div style={{
               width: '18mm',
-              borderRight: '1px solid #e65100',
+              borderRight: '1px solid #000',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
