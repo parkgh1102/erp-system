@@ -238,7 +238,7 @@ export const transactionLedgerAPI = {
   getLedgerSummary: (businessId: number, params?: PaginationQuery) =>
     api.get(`/transaction-ledger/${businessId}/ledger/summary`, { params }),
   getCustomerBalance: (businessId: number, customerId: number) =>
-    api.get(`/transaction-ledger/${businessId}/ledger/balance/${customerId}`),
+    api.get(`/transaction-ledger/${businessId}/customer/${customerId}/balance`),
   getCustomersBalance: (businessId: number, params?: PaginationQuery) =>
     api.get(`/transaction-ledger/${businessId}/ledger/balances`, { params }),
   getCustomersWithTransactions: (businessId: number, params: { startDate: string; endDate: string }) =>
