@@ -376,7 +376,8 @@ export const AuthController = {
       perfLog.role = user.role;
       perfLog.businessCount = user.businesses?.length || 0;
 
-      logger.info(`⚡ 로그인 성능: ${perfLog.times.total}ms`, perfLog);
+      // 프로덕션에서도 반드시 출력되도록 console.log 사용
+      console.log('[INFO] ⚡ 로그인 성능:', perfLog.times.total + 'ms', JSON.stringify(perfLog, null, 2));
 
       res.json({
         success: true,
