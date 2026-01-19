@@ -181,9 +181,6 @@ export const AuthController = {
   },
 
   async login(req: Request, res: Response) {
-    const startTime = Date.now();
-    const perfLog: any = { step: 'login', times: {} };
-
     try {
       const { error, value } = loginSchema.validate(req.body);
       if (error) {
@@ -194,11 +191,8 @@ export const AuthController = {
       }
 
       const { email, phone, password } = value;
-      perfLog.email = email;
-      perfLog.phone = phone;
 
       // 이메일 또는 전화번호로 사용자 검색
-      const t1 = Date.now();
       let user;
       if (email) {
         user = await userRepository.findOne({
@@ -215,7 +209,6 @@ export const AuthController = {
           .andWhere('REPLACE(REPLACE(REPLACE(user.phone, \'-\', \'\'), \' \', \'\'), \'.\', \'\') = :phone', { phone: cleanPhone })
           .getOne();
       }
-      perfLog.times.userQuery = Date.now() - t1;
 
       if (!user) {
         securityLogger.logAuthFailure(req, 'Login failed: User not found', { email, phone });
@@ -225,10 +218,7 @@ export const AuthController = {
         });
       }
 
-      const t2 = Date.now();
       const isPasswordValid = await bcrypt.compare(password, user.password);
-      perfLog.times.passwordCheck = Date.now() - t2;
-
       if (!isPasswordValid) {
         securityLogger.logAuthFailure(req, 'Login failed: Invalid password', { email, phone, userId: user.id });
         return res.status(401).json({
@@ -240,7 +230,6 @@ export const AuthController = {
       // sales_viewer인 경우 접근 가능한 사업자 목록 조회 (최적화)
       const env = getValidatedEnv();
 
-      const t3 = Date.now();
       if (user.role === 'sales_viewer') {
         // UserBusinessAccess에서 접근 가능한 사업자 조회 (필요한 컬럼만 조인)
         const accessRepository = AppDataSource.getRepository(UserBusinessAccess);
@@ -269,7 +258,6 @@ export const AuthController = {
           }
         }
       }
-      perfLog.times.businessAccess = Date.now() - t3;
 
       // 로그인 성공 로깅
       securityLogger.logAuthSuccess(req, user.id);
@@ -291,7 +279,6 @@ export const AuthController = {
       ).catch(err => logger.error('Activity log error:', err));
 
       // 보안 설정 일괄 조회 (sessionTimeout + twoFactorAuth 한 번에)
-      const t4 = Date.now();
       let sessionTimeoutHours = 8; // 기본값 8시간
       let twoFactorAuth = true; // 기본값 ON
       let sessionTimeout = '8h';
@@ -321,7 +308,6 @@ export const AuthController = {
       } catch (err) {
         logger.error('Settings query error:', err);
       }
-      perfLog.times.settingsQuery = Date.now() - t4;
 
       if (env.NODE_ENV === 'development') {
         console.log('⏰ 세션 유지 시간:', sessionTimeoutHours, '시간');
@@ -370,14 +356,6 @@ export const AuthController = {
       //   // 보안 설정 조회 실패 시 기본값 사용
       //   logger.error('Security settings query error:', err);
       // }
-
-      perfLog.times.total = Date.now() - startTime;
-      perfLog.userId = user.id;
-      perfLog.role = user.role;
-      perfLog.businessCount = user.businesses?.length || 0;
-
-      // 프로덕션에서도 반드시 출력되도록 console.log 사용
-      console.log('[INFO] ⚡ 로그인 성능:', perfLog.times.total + 'ms', JSON.stringify(perfLog, null, 2));
 
       res.json({
         success: true,

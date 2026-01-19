@@ -263,8 +263,6 @@ async function bootstrap() {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📊 Health: http://localhost:${PORT}/health`);
     console.log(`✅ Server is ready to accept requests`);
-    console.log(`📅 Deployment time: ${new Date().toISOString()}`);
-    console.log(`🔍 로그인 성능 모니터링 활성화됨`);
   });
 
   // 서버 타임아웃 설정 (3분)
