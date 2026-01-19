@@ -348,48 +348,13 @@ export class DashboardController {
         categoryData = [];
       }
 
-      const colors = [
-        'rgba(24, 144, 255, 0.8)',
-        'rgba(82, 196, 26, 0.8)',
-        'rgba(250, 173, 20, 0.8)',
-        'rgba(245, 34, 45, 0.8)',
-        'rgba(114, 46, 209, 0.8)',
-        'rgba(255, 99, 132, 0.8)',
-        'rgba(54, 162, 235, 0.8)',
-        'rgba(255, 206, 86, 0.8)',
-      ];
+      // 프론트엔드에서 기대하는 형식으로 변환: [{ name, amount }]
+      const formattedData = categoryData.map((item: { category?: string; amount?: string | number; count?: string | number }) => ({
+        name: item.category || '기타',
+        amount: parseFloat(String(item.amount)) || parseInt(String(item.count)) || 0
+      }));
 
-      const labels = categoryData.map((item: { category?: string }) => item.category || '기타');
-      const data = categoryData.map((item: { count?: string | number }) => parseInt(String(item.count)) || 0);
-      const backgroundColor = labels.map((_: string, index: number) => colors[index % colors.length]);
-
-      // 데이터가 없는 경우 기본 데이터 반환
-      if (categoryData.length === 0) {
-        const defaultCategoryData = {
-          labels: ['기타'],
-          datasets: [
-            {
-              data: [0],
-              backgroundColor: [colors[0]],
-              borderWidth: 0,
-            },
-          ],
-        };
-        return res.json({ success: true, data: defaultCategoryData });
-      }
-
-      const result = {
-        labels,
-        datasets: [
-          {
-            data,
-            backgroundColor,
-            borderWidth: 0,
-          },
-        ],
-      };
-
-      res.json({ success: true, data: result });
+      res.json({ success: true, data: formattedData });
     } catch (error) {
       console.error('Category data error:', error);
       res.status(500).json({ success: false, message: '카테고리 데이터 조회에 실패했습니다.' });
