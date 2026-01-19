@@ -388,7 +388,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
         <div style={{ flex: 1, marginBottom: '1mm' }}>
           {/* 메모란 */}
           <div style={{
-            border: '2px solid #000',
+            border: '2px solid #4a7c59',
             display: 'flex',
             alignItems: 'stretch',
             height: '6.5mm',
@@ -397,13 +397,14 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           }}>
             <div style={{
               width: '18mm',
-              borderRight: '1px solid #000',
+              borderRight: '1px solid #4a7c59',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '9pt',
-              fontWeight: 'normal',
-              backgroundColor: '#fff',
+              fontWeight: 'bold',
+              backgroundColor: '#e8f5e9',
+              color: '#2e7d32',
               boxSizing: 'border-box'
             }}>메모란:</div>
             <div style={{
@@ -422,8 +423,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
 
           {/* 공지사항 */}
           <div style={{
-            border: '2px solid #000',
-            borderTop: '1px solid #000',
+            border: '2px solid #1565c0',
+            borderTop: '1px solid #1565c0',
             display: 'flex',
             alignItems: 'stretch',
             height: '6.5mm',
@@ -431,13 +432,14 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           }}>
             <div style={{
               width: '18mm',
-              borderRight: '1px solid #000',
+              borderRight: '1px solid #1565c0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '9pt',
-              fontWeight: 'normal',
-              backgroundColor: '#fff',
+              fontWeight: 'bold',
+              backgroundColor: '#e3f2fd',
+              color: '#1565c0',
               boxSizing: 'border-box'
             }}>공지사항:</div>
             <div style={{
@@ -456,8 +458,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
 
           {/* 계좌번호 */}
           <div style={{
-            border: '2px solid #000',
-            borderTop: '1px solid #000',
+            border: '2px solid #e65100',
+            borderTop: '1px solid #e65100',
             display: 'flex',
             alignItems: 'stretch',
             height: '6.5mm',
@@ -465,13 +467,14 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           }}>
             <div style={{
               width: '18mm',
-              borderRight: '1px solid #000',
+              borderRight: '1px solid #e65100',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '9pt',
-              fontWeight: 'normal',
-              backgroundColor: '#fff',
+              fontWeight: 'bold',
+              backgroundColor: '#fff3e0',
+              color: '#e65100',
               boxSizing: 'border-box'
             }}>계좌번호:</div>
             <div style={{
