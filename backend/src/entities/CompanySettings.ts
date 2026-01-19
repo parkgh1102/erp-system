@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { Business } from './Business';
 
 @Entity('company_settings')
+@Index(['businessId', 'settingKey'])
 export class CompanySettings {
   @PrimaryGeneratedColumn()
   id!: number;

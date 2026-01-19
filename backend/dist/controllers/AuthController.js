@@ -198,17 +198,25 @@ exports.AuthController = {
                     message: '아이디 또는 비밀번호가 틀립니다.'
                 });
             }
-            // sales_viewer인 경우 접근 가능한 사업자 목록 조회
+            // sales_viewer인 경우 접근 가능한 사업자 목록 조회 (최적화)
             const env = (0, envValidator_1.getValidatedEnv)();
             if (user.role === 'sales_viewer') {
-                // UserBusinessAccess에서 접근 가능한 사업자 조회
+                // UserBusinessAccess에서 접근 가능한 사업자 조회 (필요한 컬럼만 조인)
                 const accessRepository = database_1.AppDataSource.getRepository(UserBusinessAccess_1.UserBusinessAccess);
-                const accessList = await accessRepository.find({
-                    where: { userId: user.id },
-                    relations: ['business']
-                });
+                const accessList = await accessRepository
+                    .createQueryBuilder('access')
+                    .leftJoinAndSelect('access.business', 'business')
+                    .where('access.userId = :userId', { userId: user.id })
+                    .andWhere('business.isActive = :isActive', { isActive: true })
+                    .select([
+                    'access.id',
+                    'business.id', 'business.businessNumber', 'business.companyName',
+                    'business.representative', 'business.businessType', 'business.businessItem',
+                    'business.address', 'business.phone', 'business.fax'
+                ])
+                    .getMany();
                 if (accessList.length > 0) {
-                    user.businesses = accessList.map(a => a.business).filter(b => b && b.isActive);
+                    user.businesses = accessList.map(a => a.business).filter(b => b);
                 }
                 else if (user.businessId) {
                     // 기존 방식 하위 호환: businessId가 있으면 사용
@@ -229,24 +237,32 @@ exports.AuthController = {
             }
             // 활동 로그 기록 (비동기 처리 - 응답 속도 개선)
             (0, ActivityLogController_1.logActivity)('login', 'user', user.id, `사용자가 로그인했습니다.`, req, { email: user.email }).catch(err => logger_1.logger.error('Activity log error:', err));
-            // 세션 유지 시간: CompanySettings에서 조회
+            // 보안 설정 일괄 조회 (sessionTimeout + twoFactorAuth 한 번에)
             let sessionTimeoutHours = 8; // 기본값 8시간
+            let twoFactorAuth = true; // 기본값 ON
+            let sessionTimeout = '8h';
             try {
-                const settingsRepository = database_1.AppDataSource.getRepository(CompanySettings_1.CompanySettings);
-                const settings = await settingsRepository.findOne({
-                    where: { businessId, settingKey: 'sessionTimeout' }
-                });
-                if (settings && settings.settingValue) {
-                    // '1h', '4h', '8h', '24h' 형식을 시간 숫자로 변환
-                    const timeoutValue = settings.settingValue;
+                const settings = await companySettingsRepository
+                    .createQueryBuilder('settings')
+                    .where('settings.businessId = :businessId', { businessId })
+                    .andWhere('settings.settingKey IN (:...keys)', { keys: ['sessionTimeout', 'twoFactorAuth'] })
+                    .getMany();
+                const settingsMap = new Map(settings.map(s => [s.settingKey, s.settingValue]));
+                const timeoutValue = settingsMap.get('sessionTimeout');
+                if (timeoutValue) {
+                    sessionTimeout = timeoutValue;
                     const hours = parseInt(timeoutValue.replace('h', ''));
                     if (!isNaN(hours) && hours > 0) {
                         sessionTimeoutHours = hours;
                     }
                 }
+                const twoFactorValue = settingsMap.get('twoFactorAuth');
+                if (twoFactorValue !== undefined) {
+                    twoFactorAuth = twoFactorValue === 'true';
+                }
             }
             catch (err) {
-                logger_1.logger.error('Session timeout settings query error:', err);
+                logger_1.logger.error('Settings query error:', err);
             }
             if (env.NODE_ENV === 'development') {
                 console.log('⏰ 세션 유지 시간:', sessionTimeoutHours, '시간');
@@ -267,21 +283,6 @@ exports.AuthController = {
                 sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
                 maxAge: cookieMaxAge * 2
             });
-            // 보안 설정 조회 (2FA 정보 포함) - 프론트엔드에서 별도 API 호출 제거로 로그인 속도 개선
-            // CompanySettings에서 조회, 없으면 기본값 ON 사용
-            let twoFactorAuth = true; // 기본값 ON
-            let sessionTimeout = '8h';
-            try {
-                const twoFactorSetting = await companySettingsRepository.findOne({
-                    where: { businessId, settingKey: 'twoFactorAuth' }
-                });
-                if (twoFactorSetting) {
-                    twoFactorAuth = twoFactorSetting.settingValue === 'true';
-                }
-            }
-            catch (err) {
-                logger_1.logger.error('2FA setting query error:', err);
-            }
             // try {
             //   const SecuritySettings = (await import('../entities/SecuritySettings')).SecuritySettings;
             //   const securitySettingsRepo = AppDataSource.getRepository(SecuritySettings);

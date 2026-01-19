@@ -181,8 +181,9 @@ exports.CustomerController = {
             if (type) {
                 queryBuilder.andWhere('customer.customerType = :type', { type });
             }
-            // 정렬 처리
-            if (sortField && sortOrder) {
+            // 정렬 처리 (SQL 인젝션 방지를 위한 화이트리스트 검증)
+            const allowedSortFields = ['name', 'customerCode', 'businessNumber', 'createdAt', 'updatedAt', 'customerType'];
+            if (sortField && sortOrder && allowedSortFields.includes(sortField)) {
                 const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
                 queryBuilder.orderBy(`customer.${sortField}`, orderDirection);
             }

@@ -49,6 +49,7 @@ __decorate([
     __metadata("design:type", Date)
 ], CompanySettings.prototype, "updatedAt", void 0);
 exports.CompanySettings = CompanySettings = __decorate([
-    (0, typeorm_1.Entity)('company_settings')
+    (0, typeorm_1.Entity)('company_settings'),
+    (0, typeorm_1.Index)(['businessId', 'settingKey'])
 ], CompanySettings);
 //# sourceMappingURL=CompanySettings.js.map

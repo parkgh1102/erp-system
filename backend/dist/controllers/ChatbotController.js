@@ -35,10 +35,8 @@ class ERPDataHelper {
             where: whereCondition,
             relations: ['customer', 'items', 'items.product']
         });
-        console.log('📊 조회된 매출 건수:', sales.length);
         const totalSales = sales.reduce((sum, sale) => sum + (Number(sale.totalAmount) || 0), 0);
         const totalVat = sales.reduce((sum, sale) => sum + (Number(sale.vatAmount) || 0), 0);
-        console.log('📊 매출 합계:', { totalSales, totalVat, grandTotal: totalSales + totalVat });
         return {
             count: sales.length,
             totalAmount: totalSales,
@@ -159,57 +157,35 @@ class ERPDataHelper {
      * @returns 'tax_exempt' (면세), 'vat_included' (부가세 포함), 'vat_separate' (부가세 별도)
      */
     static inferPriceType(sellPrice, taxType) {
-        console.log(`  🔍 가격 유형 추론 시작: sellPrice=${sellPrice}, taxType="${taxType}"`);
         // 1. DB에 저장된 영어 값으로 직접 확인 (최우선)
-        if (taxType === 'tax_free') {
-            console.log(`  💡 가격 유형 추론: 면세 (DB taxType=${taxType})`);
+        if (taxType === 'tax_free')
             return 'tax_exempt';
-        }
-        if (taxType === 'tax_inclusive') {
-            console.log(`  💡 가격 유형 추론: 부가세 포함 (DB taxType=${taxType})`);
+        if (taxType === 'tax_inclusive')
             return 'vat_included';
-        }
-        if (taxType === 'tax_separate') {
-            console.log(`  💡 가격 유형 추론: 부가세 별도 (DB taxType=${taxType})`);
+        if (taxType === 'tax_separate')
             return 'vat_separate';
-        }
         // 2. 한글 면세/영세 확인 (AI 추출값)
-        if (taxType === '면세' || taxType === 'tax_exempt') {
-            console.log(`  💡 가격 유형 추론: 면세 (taxType=${taxType})`);
+        if (taxType === '면세' || taxType === 'tax_exempt')
             return 'tax_exempt';
-        }
-        if (taxType === '영세' || taxType === 'zero_rated') {
-            console.log(`  💡 가격 유형 추론: 영세 (taxType=${taxType})`);
+        if (taxType === '영세' || taxType === 'zero_rated')
             return 'tax_exempt';
-        }
-        // 3. 과세 품목인 경우 가격 패턴으로 판단 (한글 '과세'이거나 값이 없는 경우)
+        // 3. 과세 품목인 경우 가격 패턴으로 판단
         if (taxType === '과세' || taxType === 'taxable' || !taxType) {
-            // 3-1. 가격이 10의 배수인지 확인 → 부가세 별도일 가능성
-            if (sellPrice % 10 === 0) {
-                console.log(`  💡 가격 유형 추론: 부가세 별도 (가격=${sellPrice}원, 10의 배수)`);
+            if (sellPrice % 10 === 0)
                 return 'vat_separate';
-            }
-            // 3-2. 가격을 1.1로 나눈 값이 10의 배수인지 확인 → 부가세 포함일 가능성
             const priceWithoutVAT = sellPrice / 1.1;
             const roundedPrice = Math.round(priceWithoutVAT);
-            // 오차 범위 1원 이내 & 10의 배수
             if (Math.abs(priceWithoutVAT - roundedPrice) < 1 && roundedPrice % 10 === 0) {
-                console.log(`  💡 가격 유형 추론: 부가세 포함 (가격=${sellPrice}원, VAT제외=${roundedPrice}원)`);
                 return 'vat_included';
             }
-            // 3-3. 판단 불가능한 경우 → 부가세 별도 (기본값)
-            console.log(`  💡 가격 유형 추론: 부가세 별도 (기본값, 가격=${sellPrice}원)`);
             return 'vat_separate';
         }
-        // 기본값
-        console.log(`  ⚠️ 알 수 없는 taxType="${taxType}", 기본값 부가세 별도 반환`);
         return 'vat_separate';
     }
     // 매출 등록
     static async createSales(businessId, salesData) {
         const salesRepo = database_1.AppDataSource.getRepository(Sales_1.Sales);
         const salesItemRepo = database_1.AppDataSource.getRepository(SalesItem_1.SalesItem);
-        console.log('💾 매출 등록 시작:', salesData);
         // 매출 생성
         const sales = salesRepo.create({
             businessId,
@@ -221,7 +197,6 @@ class ERPDataHelper {
             memo: salesData.memo || null
         });
         const savedSales = await salesRepo.save(sales);
-        console.log('✅ 매출 저장 완료:', savedSales.id);
         // 거래 항목들 생성
         if (salesData.items && salesData.items.length > 0) {
             const items = [];
@@ -239,7 +214,6 @@ class ERPDataHelper {
                 else {
                     taxAmount = 0; // 면세 (tax-exempt)
                 }
-                console.log(`  품목: ${itemData.productName}, 과세구분: ${itemTaxType}, 공급가: ${supplyAmount}, 세액: ${taxAmount}`);
                 const item = salesItemRepo.create({
                     salesId: savedSales.id,
                     productId: itemData.productId || null,
@@ -252,7 +226,6 @@ class ERPDataHelper {
                 items.push(item);
             }
             await salesItemRepo.save(items);
-            console.log('✅ 매출 항목 저장 완료:', items.length, '개');
         }
         // 생성된 데이터를 다시 조회해서 반환
         const result = await salesRepo.findOne({
@@ -265,7 +238,6 @@ class ERPDataHelper {
     static async createPurchase(businessId, purchaseData) {
         const purchaseRepo = database_1.AppDataSource.getRepository(Purchase_1.Purchase);
         const purchaseItemRepo = database_1.AppDataSource.getRepository(PurchaseItem_1.PurchaseItem);
-        console.log('💾 매입 등록 시작:', purchaseData);
         // 매입 생성
         const purchase = purchaseRepo.create({
             businessId,
@@ -276,13 +248,10 @@ class ERPDataHelper {
             memo: purchaseData.memo || null
         });
         const savedPurchase = await purchaseRepo.save(purchase);
-        console.log('✅ 매입 저장 완료:', savedPurchase.id);
         // 매입 항목들 생성
         if (purchaseData.items && purchaseData.items.length > 0) {
             const items = [];
             for (const itemData of purchaseData.items) {
-                const itemTaxType = itemData.taxType || '과세';
-                console.log(`  품목: ${itemData.productName}, 과세구분: ${itemTaxType}, 금액: ${itemData.amount}`);
                 const item = purchaseItemRepo.create({
                     purchaseId: savedPurchase.id,
                     productId: itemData.productId || null,
@@ -294,7 +263,6 @@ class ERPDataHelper {
                 items.push(item);
             }
             await purchaseItemRepo.save(items);
-            console.log('✅ 매입 항목 저장 완료:', items.length, '개');
         }
         // 생성된 데이터를 다시 조회해서 반환
         const result = await purchaseRepo.findOne({
@@ -306,7 +274,6 @@ class ERPDataHelper {
     // 수금 등록
     static async createPayment(businessId, paymentData) {
         const paymentRepo = database_1.AppDataSource.getRepository(Payment_1.Payment);
-        console.log('💾 수금/입금 등록 시작:', paymentData);
         // 수금/입금 생성
         const payment = paymentRepo.create({
             businessId,
@@ -319,7 +286,6 @@ class ERPDataHelper {
             memo: paymentData.memo || null
         });
         const savedPayment = await paymentRepo.save(payment);
-        console.log('✅ 수금/입금 저장 완료:', savedPayment.id);
         // 생성된 데이터를 다시 조회해서 반환
         const result = await paymentRepo.findOne({
             where: { id: savedPayment.id },
@@ -342,7 +308,6 @@ async function analyzeIntentAndFetchData(message, businessId) {
     const lastDay = new Date(year, month, 0).getDate(); // 해당 월의 마지막 날짜
     const firstDayStr = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDayStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    console.log('📅 날짜 계산:', { year, month, lastDay, firstDayStr, lastDayStr });
     // 매출 관련 질문 (이번 달 1일 ~ 말일)
     if (messageLower.includes('매출') || messageLower.includes('판매') || messageLower.includes('sales')) {
         data.salesStats = await ERPDataHelper.getSalesStats(businessId, firstDayStr, lastDayStr);
@@ -550,7 +515,6 @@ async function extractTransactionInfo(message, businessId) {
     const result = await model.generateContent(extractPrompt);
     const response = await result.response;
     const text = response.text().trim();
-    console.log('🤖 AI 추출 결과:', text);
     // JSON 파싱
     try {
         // Markdown 코드 블록 제거
@@ -568,10 +532,8 @@ async function extractTransactionInfo(message, businessId) {
  */
 const sendMessage = async (req, res) => {
     try {
-        console.log('📥 챗봇 메시지 수신');
         const { message } = req.body;
         const user = req.user;
-        console.log('👤 User 객체:', JSON.stringify(user, null, 2));
         if (!message || typeof message !== 'string') {
             return res.status(400).json({ error: '메시지를 입력해주세요.' });
         }
@@ -602,9 +564,7 @@ const sendMessage = async (req, res) => {
             (messageLower.includes('이번') && !messageLower.includes('등록') && !messageLower.includes('판매') && !messageLower.includes('구매'));
         if (isQueryIntent) {
             // 조회 의도인 경우 일반 질의응답 처리
-            console.log('🔍 조회 의도 감지 - 질의응답 모드');
             const { context, data } = await analyzeIntentAndFetchData(message, businessId);
-            console.log('✅ 데이터 가져오기 완료');
             const prompt = `당신은 ERP 시스템의 AI 어시스턴트입니다. 사용자의 질문에 대해 친절하고 정확하게 답변해주세요.
 
 사용자 질문: ${message}
@@ -630,12 +590,10 @@ ERP 시스템 데이터:${context}
 세액: [부가세]원
 
 총 매출 건수: [건수]건`;
-            console.log('🤖 Gemini API 호출 중...');
             try {
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 const aiResponse = response.text();
-                console.log('✅ Gemini 응답 받음');
                 return res.json({
                     message: aiResponse,
                     data: data,
@@ -643,8 +601,7 @@ ERP 시스템 데이터:${context}
                 });
             }
             catch (geminiError) {
-                console.error('❌ Gemini API 에러:', geminiError.message);
-                console.error('❌ Gemini API 에러 상세:', geminiError);
+                console.error('Gemini API error:', geminiError.message);
                 // Gemini API 에러 시 조회된 데이터를 더 읽기 쉽게 포맷팅하여 반환
                 let formattedResponse = '📊 조회 결과:\n';
                 if (data.salesStats) {
@@ -689,13 +646,10 @@ ERP 시스템 데이터:${context}
             }
         }
         // 2단계: 거래 등록 의도인 경우 거래 정보 추출
-        console.log('🔍 등록 의도 감지 - 거래 정보 추출 중...');
         const extractedData = await extractTransactionInfo(message, businessId);
         if (!extractedData) {
             // 거래 정보를 추출하지 못한 경우
-            console.log('🔍 사용자 의도 분석 시작...');
             const { context, data } = await analyzeIntentAndFetchData(message, businessId);
-            console.log('✅ 데이터 가져오기 완료');
             const prompt = `당신은 ERP 시스템의 AI 어시스턴트입니다. 사용자의 질문에 대해 친절하고 정확하게 답변해주세요.
 
 사용자 질문: ${message}
@@ -721,12 +675,10 @@ ERP 시스템 데이터:${context}
 세액: [부가세]원
 
 총 매출 건수: [건수]건`;
-            console.log('🤖 Gemini API 호출 중...');
             try {
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 const aiResponse = response.text();
-                console.log('✅ Gemini 응답 받음');
                 return res.json({
                     message: aiResponse,
                     data: data,
@@ -734,8 +686,7 @@ ERP 시스템 데이터:${context}
                 });
             }
             catch (geminiError) {
-                console.error('❌ Gemini API 에러:', geminiError.message);
-                console.error('❌ Gemini API 에러 상세:', geminiError);
+                console.error('Gemini API error:', geminiError.message);
                 // Gemini API 에러 시 조회된 데이터를 더 읽기 쉽게 포맷팅하여 반환
                 let formattedResponse = '📊 조회 결과:\n';
                 if (data.salesStats) {
@@ -775,15 +726,11 @@ ERP 시스템 데이터:${context}
         const transactionList = extractedData.isMultiple
             ? extractedData.transactions
             : [extractedData.transaction];
-        console.log('✅ 거래 의도 감지됨:', extractedData);
-        console.log(`📊 총 ${transactionList.length}건의 거래 처리 시작`);
         const results = [];
         const errors = [];
         for (let i = 0; i < transactionList.length; i++) {
             const transactionInfo = transactionList[i];
-            console.log(`\n========== 거래 ${i + 1}/${transactionList.length} 처리 시작 ==========`);
             if (!transactionInfo.transactionType) {
-                console.log(`⚠️ 거래 ${i + 1}: 거래 유형 없음, 건너뜀`);
                 continue;
             }
             try {
@@ -793,10 +740,6 @@ ERP 시스템 데이터:${context}
                     const customers = await ERPDataHelper.findCustomerByName(user.businessId, transactionInfo.customerName);
                     if (customers.length > 0) {
                         customerId = customers[0].id;
-                        console.log('✅ 고객 찾음:', customers[0].name, '(ID:', customerId, ')');
-                    }
-                    else {
-                        console.log('⚠️ 고객을 찾지 못함:', transactionInfo.customerName);
                     }
                 }
                 // 3단계: 제품 검색 및 ID, taxType, 가격 유형 매핑 (매출/매입인 경우만)
@@ -815,30 +758,17 @@ ERP 시스템 데이터:${context}
                                 const priceType = ERPDataHelper.inferPriceType(Number(product.sellPrice), item.taxType);
                                 // 가격 유형에 따라 금액 재계산
                                 if (priceType === 'tax_exempt') {
-                                    // 면세: 부가세 없음
                                     item.taxType = '면세';
-                                    console.log('✅ 제품 찾음:', product.name, '(ID:', item.productId, ', 면세)');
                                 }
                                 else if (priceType === 'vat_included') {
-                                    // 부가세 포함: 사용자가 입력한 금액이 부가세 포함 금액
-                                    // amount = 총액, 이를 1.1로 나눠서 공급가액 계산
                                     const originalAmount = item.amount;
                                     item.amount = Math.round(originalAmount / 1.1);
                                     item.unitPrice = Math.round(item.amount / item.quantity);
-                                    console.log('✅ 제품 찾음:', product.name, `(ID: ${item.productId}, 부가세 포함, ${originalAmount}원 → 공급가 ${item.amount}원)`);
                                 }
                                 else {
-                                    // 부가세 별도: 사용자가 입력한 금액이 공급가액
                                     item.taxType = '과세';
-                                    console.log('✅ 제품 찾음:', product.name, '(ID:', item.productId, ', 부가세 별도)');
                                 }
                             }
-                            else {
-                                console.log('✅ 제품 찾음:', product.name, '(ID:', item.productId, ', 가격 정보 없음)');
-                            }
-                        }
-                        else {
-                            console.log('⚠️ 제품을 찾지 못함:', item.productName, '(제품 없이 등록, 세금:', item.taxType || '과세', ')');
                         }
                     }
                     // 거래 전체 금액 재계산
@@ -852,7 +782,6 @@ ERP 시스템 데이터:${context}
                             return sum + Math.round(item.amount * 0.1);
                         }
                     }, 0);
-                    console.log(`💰 거래 금액 재계산: 공급가 ${transactionInfo.totalAmount.toLocaleString()}원 + 부가세 ${transactionInfo.vatAmount.toLocaleString()}원`);
                 }
                 // 4단계: 거래 유형별 처리
                 let result;
@@ -934,7 +863,6 @@ ${transactionInfo.paymentMethod ? `• 방법: ${transactionInfo.paymentMethod}`
 
 ${transactionInfo.transactionType} ID: #${result?.id}`;
                 }
-                console.log(`✅ 거래 ${i + 1} 등록 완료:`, result?.id);
                 results.push({
                     index: i + 1,
                     success: true,
@@ -943,7 +871,7 @@ ${transactionInfo.transactionType} ID: #${result?.id}`;
                 });
             }
             catch (error) {
-                console.error(`❌ 거래 ${i + 1} 등록 실패:`, error);
+                console.error('Transaction registration failed:', error.message);
                 errors.push({
                     index: i + 1,
                     transactionInfo,
@@ -994,10 +922,7 @@ ${transactionInfo.transactionType} ID: #${result?.id}`;
         });
     }
     catch (error) {
-        console.error('❌ Chatbot error:', error);
-        console.error('❌ Error stack:', error.stack);
-        console.error('❌ Error name:', error.name);
-        console.error('❌ Error message:', error.message);
+        console.error('Chatbot error:', error.message);
         res.status(500).json({
             error: '챗봇 응답 생성 중 오류가 발생했습니다.',
             details: error.message,

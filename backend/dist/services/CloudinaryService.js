@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CloudinaryService = void 0;
 const cloudinary_1 = require("cloudinary");
+const safeConsole_1 = __importDefault(require("../utils/safeConsole"));
 // Cloudinary 설정
 cloudinary_1.v2.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -17,11 +21,11 @@ class CloudinaryService {
      */
     static async uploadImage(imageBuffer, fileName) {
         if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-            console.error('❌ Cloudinary 환경변수가 설정되지 않았습니다.');
+            safeConsole_1.default.error('Cloudinary 환경변수가 설정되지 않았습니다.');
             return null;
         }
         try {
-            console.log('📤 Cloudinary 업로드 시작...');
+            safeConsole_1.default.log('Cloudinary 업로드 시작...');
             // Buffer를 base64 data URI로 변환
             const base64Image = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
             // 업로드 옵션
@@ -37,15 +41,11 @@ class CloudinaryService {
             }
             // 업로드 실행
             const result = await cloudinary_1.v2.uploader.upload(base64Image, uploadOptions);
-            console.log('✅ Cloudinary 업로드 성공:', {
-                url: result.secure_url,
-                public_id: result.public_id,
-                bytes: result.bytes
-            });
+            safeConsole_1.default.log('Cloudinary 업로드 성공:', result.public_id);
             return result.secure_url;
         }
         catch (error) {
-            console.error('❌ Cloudinary 업로드 실패:', error.message || error);
+            safeConsole_1.default.error('Cloudinary 업로드 실패:', error.message || error);
             return null;
         }
     }
@@ -56,11 +56,11 @@ class CloudinaryService {
     static async deleteImage(publicId) {
         try {
             await cloudinary_1.v2.uploader.destroy(publicId);
-            console.log('✅ Cloudinary 이미지 삭제:', publicId);
+            safeConsole_1.default.log('Cloudinary 이미지 삭제:', publicId);
             return true;
         }
         catch (error) {
-            console.error('❌ Cloudinary 삭제 실패:', error.message);
+            safeConsole_1.default.error('Cloudinary 삭제 실패:', error.message);
             return false;
         }
     }
