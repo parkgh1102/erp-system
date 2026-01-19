@@ -894,9 +894,9 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
               <TransactionStatement
                 data={{
                   ...data,
-                  memo: showMemo ? memoText : null,
-                  notice: showNotice ? noticeText : null,
-                  bankAccount: showBankAccount ? bankAccountText : null
+                  memo: showMemo ? (data.memo || memoText) : null,
+                  notice: showNotice ? (data.notice || noticeText) : null,
+                  bankAccount: showBankAccount ? (data.bankAccount || bankAccountText) : null
                 }}
                 type={type}
                 supplierInfo={supplierInfo}
