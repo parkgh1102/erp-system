@@ -3,7 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.logger = void 0;
 exports.logger = {
     info: (message, meta) => {
-        if (process.env.NODE_ENV === 'development') {
+        // 성능 로그는 프로덕션에서도 출력
+        if (message.includes('⚡') || message.includes('성능')) {
+            console.log('[INFO]', message, meta || '');
+        }
+        else if (process.env.NODE_ENV === 'development') {
             console.log('[INFO]', message, meta ? sanitizeLogData(meta) : '');
         }
     },
