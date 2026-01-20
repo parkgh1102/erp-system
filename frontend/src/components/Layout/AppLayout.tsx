@@ -14,7 +14,6 @@ import {
   MenuUnfoldOutlined,
   BellOutlined,
   BankOutlined,
-  AuditOutlined,
   SolutionOutlined,
   FileDoneOutlined,
   AccountBookOutlined,
@@ -145,12 +144,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       icon: <FileTextOutlined style={{ color: '#13c2c2' }} />,
       label: '거래원장',
       roles: ['admin', 'sales_viewer'],
-    },
-    {
-      key: '/tax-invoices',
-      icon: <AuditOutlined style={{ color: '#2f54eb' }} />,
-      label: '세금계산서',
-      roles: ['admin'],
     },
     {
       key: '/quotations',

@@ -23,7 +23,6 @@ const PaymentManagement = lazy(() => import('./components/Payment/PaymentManagem
 const TransactionLedgerManagement = lazy(() => import('./components/TransactionLedger/TransactionLedgerManagement'));
 const Profile = lazy(() => import('./components/Profile/Profile'));
 const Settings = lazy(() => import('./components/Settings/Settings'));
-const TaxInvoiceManagement = lazy(() => import('./components/TaxInvoice/TaxInvoiceManagement'));
 const QuotationManagement = lazy(() => import('./components/Quotation/QuotationManagement'));
 const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrder/PurchaseOrderManagement'));
 const CustomerBalanceManagement = lazy(() => import('./components/CustomerBalance/CustomerBalanceManagement'));
@@ -284,16 +283,6 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <AppLayout>
                   <Settings />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/tax-invoices"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <TaxInvoiceManagement />
                 </AppLayout>
               </ProtectedRoute>
             }
