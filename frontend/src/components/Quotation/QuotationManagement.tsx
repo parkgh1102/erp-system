@@ -40,6 +40,7 @@ import { customerAPI, productAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import QuotationPrint from '../Print/QuotationPrint';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -120,6 +121,7 @@ const QuotationManagement: React.FC = () => {
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([
     { productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0 }
   ]);
+  const [printModalVisible, setPrintModalVisible] = useState(false);
 
   // 샘플 데이터
   const [sampleQuotations] = useState<Quotation[]>([
@@ -598,7 +600,7 @@ const QuotationManagement: React.FC = () => {
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
-          <Button key="print" icon={<PrinterOutlined />}>인쇄</Button>,
+          <Button key="print" icon={<PrinterOutlined />} onClick={() => setPrintModalVisible(true)}>인쇄</Button>,
           <Button key="close" onClick={() => setDetailModalVisible(false)}>닫기</Button>,
         ]}
         width={800}
@@ -636,6 +638,43 @@ const QuotationManagement: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* 인쇄 모달 */}
+      <QuotationPrint
+        open={printModalVisible}
+        onClose={() => setPrintModalVisible(false)}
+        data={selectedQuotation ? {
+          quotationNumber: selectedQuotation.quotationNumber,
+          quotationDate: selectedQuotation.quotationDate,
+          validUntil: selectedQuotation.validUntil,
+          supplier: {
+            companyName: currentBusiness?.companyName || '',
+            businessNumber: currentBusiness?.businessNumber || '',
+            representative: currentBusiness?.representative || '',
+            address: currentBusiness?.address || '',
+            phone: currentBusiness?.phone || '',
+          },
+          receiver: {
+            companyName: selectedQuotation.customer?.name || '',
+            representative: selectedQuotation.customer?.representative || '',
+            phone: selectedQuotation.customer?.phone || '',
+          },
+          items: (selectedQuotation.items || []).map(item => ({
+            productName: item.productName,
+            spec: item.spec,
+            unit: item.unit,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            supplyAmount: item.supplyAmount,
+            vatAmount: item.vatAmount,
+            totalAmount: item.totalAmount,
+          })),
+          supplyAmount: selectedQuotation.supplyAmount,
+          vatAmount: selectedQuotation.vatAmount,
+          totalAmount: selectedQuotation.totalAmount,
+          memo: selectedQuotation.memo,
+        } : null}
+      />
     </div>
   );
 };

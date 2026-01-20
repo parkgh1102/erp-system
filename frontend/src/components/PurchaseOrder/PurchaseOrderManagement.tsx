@@ -39,6 +39,7 @@ import { customerAPI, productAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import PurchaseOrderPrint from '../Print/PurchaseOrderPrint';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -116,6 +117,7 @@ const PurchaseOrderManagement: React.FC = () => {
   const [orderItems, setOrderItems] = useState<PurchaseOrderItem[]>([
     { productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0 }
   ]);
+  const [printModalVisible, setPrintModalVisible] = useState(false);
 
   // 샘플 데이터
   const [sampleOrders] = useState<PurchaseOrder[]>([
@@ -587,7 +589,7 @@ const PurchaseOrderManagement: React.FC = () => {
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
-          <Button key="print" icon={<PrinterOutlined />}>인쇄</Button>,
+          <Button key="print" icon={<PrinterOutlined />} onClick={() => setPrintModalVisible(true)}>인쇄</Button>,
           <Button key="close" onClick={() => setDetailModalVisible(false)}>닫기</Button>,
         ]}
         width={800}
@@ -625,6 +627,43 @@ const PurchaseOrderManagement: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* 인쇄 모달 */}
+      <PurchaseOrderPrint
+        open={printModalVisible}
+        onClose={() => setPrintModalVisible(false)}
+        data={selectedOrder ? {
+          orderNumber: selectedOrder.orderNumber,
+          orderDate: selectedOrder.orderDate,
+          deliveryDate: selectedOrder.deliveryDate,
+          buyer: {
+            companyName: currentBusiness?.companyName || '',
+            businessNumber: currentBusiness?.businessNumber || '',
+            representative: currentBusiness?.representative || '',
+            address: currentBusiness?.address || '',
+            phone: currentBusiness?.phone || '',
+          },
+          supplier: {
+            companyName: selectedOrder.supplier?.name || '',
+            businessNumber: selectedOrder.supplier?.businessNumber || '',
+            phone: selectedOrder.supplier?.phone || '',
+          },
+          items: (selectedOrder.items || []).map(item => ({
+            productName: item.productName,
+            spec: item.spec,
+            unit: item.unit,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            supplyAmount: item.supplyAmount,
+            vatAmount: item.vatAmount,
+            totalAmount: item.totalAmount,
+          })),
+          supplyAmount: selectedOrder.supplyAmount,
+          vatAmount: selectedOrder.vatAmount,
+          totalAmount: selectedOrder.totalAmount,
+          memo: selectedOrder.memo,
+        } : null}
+      />
     </div>
   );
 };

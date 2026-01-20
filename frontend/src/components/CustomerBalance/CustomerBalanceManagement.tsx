@@ -24,6 +24,7 @@ import {
   WarningOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
+  PrinterOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -31,6 +32,7 @@ import { customerAPI, salesAPI, purchaseAPI, paymentAPI } from '../../utils/api'
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import CustomerBalancePrint from '../Print/CustomerBalancePrint';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -74,6 +76,7 @@ const CustomerBalanceManagement: React.FC = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerBalance | null>(null);
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetail[]>([]);
+  const [printModalVisible, setPrintModalVisible] = useState(false);
 
   // 샘플 데이터
   const [sampleBalances] = useState<CustomerBalance[]>([
@@ -445,7 +448,10 @@ const CustomerBalanceManagement: React.FC = () => {
         title={`거래처 잔액 상세 - ${selectedCustomer?.name}`}
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
-        footer={<Button onClick={() => setDetailModalVisible(false)}>닫기</Button>}
+        footer={[
+          <Button key="print" icon={<PrinterOutlined />} onClick={() => setPrintModalVisible(true)}>인쇄</Button>,
+          <Button key="close" onClick={() => setDetailModalVisible(false)}>닫기</Button>,
+        ]}
         width={800}
       >
         {selectedCustomer && (
@@ -511,6 +517,27 @@ const CustomerBalanceManagement: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* 인쇄 모달 */}
+      <CustomerBalancePrint
+        open={printModalVisible}
+        onClose={() => setPrintModalVisible(false)}
+        data={selectedCustomer ? {
+          customerCode: selectedCustomer.customerCode,
+          name: selectedCustomer.name,
+          businessNumber: selectedCustomer.businessNumber,
+          totalSales: selectedCustomer.totalSales,
+          totalReceipts: selectedCustomer.totalReceipts,
+          receivableBalance: selectedCustomer.receivableBalance,
+          totalPurchases: selectedCustomer.totalPurchases,
+          totalPayments: selectedCustomer.totalPayments,
+          payableBalance: selectedCustomer.payableBalance,
+          netBalance: selectedCustomer.netBalance,
+          transactions: transactionDetails,
+          printDate: dayjs().format('YYYY-MM-DD'),
+          businessName: currentBusiness?.companyName || '',
+        } : null}
+      />
     </div>
   );
 };

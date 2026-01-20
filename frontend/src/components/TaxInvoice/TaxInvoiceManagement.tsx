@@ -37,6 +37,7 @@ import { salesAPI, customerAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import TaxInvoicePrint from '../Print/TaxInvoicePrint';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -103,6 +104,7 @@ const TaxInvoiceManagement: React.FC = () => {
     dayjs().startOf('month'),
     dayjs().endOf('month'),
   ]);
+  const [printModalVisible, setPrintModalVisible] = useState(false);
 
   // 샘플 데이터 (실제로는 API에서 가져옴)
   const [sampleInvoices] = useState<TaxInvoice[]>([
@@ -497,7 +499,7 @@ const TaxInvoiceManagement: React.FC = () => {
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
-          <Button key="print" icon={<PrinterOutlined />}>인쇄</Button>,
+          <Button key="print" icon={<PrinterOutlined />} onClick={() => setPrintModalVisible(true)}>인쇄</Button>,
           <Button key="close" onClick={() => setDetailModalVisible(false)}>닫기</Button>,
         ]}
         width={800}
@@ -541,6 +543,34 @@ const TaxInvoiceManagement: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* 인쇄 모달 */}
+      <TaxInvoicePrint
+        open={printModalVisible}
+        onClose={() => setPrintModalVisible(false)}
+        data={selectedInvoice ? {
+          invoiceNumber: selectedInvoice.invoiceNumber,
+          issueDate: selectedInvoice.issueDate,
+          invoiceType: selectedInvoice.invoiceType,
+          supplier: {
+            companyName: currentBusiness?.companyName || '',
+            businessNumber: currentBusiness?.businessNumber || '',
+            representative: currentBusiness?.representative || '',
+            address: currentBusiness?.address || '',
+          },
+          receiver: {
+            companyName: selectedInvoice.customer?.name || '',
+            businessNumber: selectedInvoice.customer?.businessNumber || '',
+            representative: selectedInvoice.customer?.representative || '',
+            address: selectedInvoice.customer?.address || '',
+          },
+          items: selectedInvoice.items || [],
+          supplyAmount: selectedInvoice.supplyAmount,
+          vatAmount: selectedInvoice.vatAmount,
+          totalAmount: selectedInvoice.totalAmount,
+          memo: selectedInvoice.memo,
+        } : null}
+      />
     </div>
   );
 };
