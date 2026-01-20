@@ -23,7 +23,6 @@ const PaymentManagement = lazy(() => import('./components/Payment/PaymentManagem
 const TransactionLedgerManagement = lazy(() => import('./components/TransactionLedger/TransactionLedgerManagement'));
 const Profile = lazy(() => import('./components/Profile/Profile'));
 const Settings = lazy(() => import('./components/Settings/Settings'));
-const Reports = lazy(() => import('./components/Reports/Reports'));
 const TokenExpirationNotifier = lazy(() => import('./components/Common/TokenExpirationNotifier'));
 const ChatbotWidget = lazy(() => import('./components/Chatbot/ChatbotWidget'));
 
@@ -285,17 +284,6 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <AppLayout>
-                  <Reports />
-                </AppLayout>
-              </ProtectedRoute>
-            }
-          />
-
           {/* 기본 리다이렉트 */}
           <Route
             path="/"

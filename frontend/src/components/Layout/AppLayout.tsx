@@ -14,7 +14,6 @@ import {
   MenuUnfoldOutlined,
   BellOutlined,
   BankOutlined,
-  BarChartOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -142,12 +141,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       icon: <FileTextOutlined style={{ color: '#13c2c2' }} />,
       label: '거래원장',
       roles: ['admin', 'sales_viewer'],
-    },
-    {
-      key: '/reports',
-      icon: <BarChartOutlined style={{ color: '#2f54eb' }} />,
-      label: '리포트',
-      roles: ['admin'],
     },
   ];
 
@@ -503,7 +496,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             { key: '/purchases', icon: <FileTextOutlined />, label: '매입', roles: ['admin'] },
             { key: '/inventory', icon: <FileTextOutlined />, label: '재고', roles: ['admin'] },
             { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
-            { key: '/reports', icon: <BarChartOutlined />, label: '리포트', roles: ['admin'] },
           ].filter(item => item.roles.includes(user?.role || 'admin')).map((item) => {
             const isActive = location.pathname === item.key;
             return (
