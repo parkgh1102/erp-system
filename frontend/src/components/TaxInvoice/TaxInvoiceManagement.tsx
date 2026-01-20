@@ -148,7 +148,8 @@ const TaxInvoiceManagement: React.FC = () => {
       // 거래처 데이터 로드
       const customerRes = await customerAPI.getAll(currentBusiness.id);
       if (customerRes.data.success) {
-        setCustomers(customerRes.data.data || []);
+        const data = customerRes.data.data;
+        setCustomers(Array.isArray(data) ? data : []);
       }
 
       // TODO: 실제 세금계산서 API 연동
@@ -463,7 +464,7 @@ const TaxInvoiceManagement: React.FC = () => {
             <Col xs={24} sm={12}>
               <Form.Item name="customerId" label="거래처" rules={[{ required: true, message: '거래처를 선택하세요' }]}>
                 <Select placeholder="거래처 선택" showSearch optionFilterProp="children">
-                  {customers.map((c) => (
+                  {(customers || []).map((c) => (
                     <Option key={c.id} value={c.id}>
                       {c.name} {c.businessNumber && `(${c.businessNumber})`}
                     </Option>

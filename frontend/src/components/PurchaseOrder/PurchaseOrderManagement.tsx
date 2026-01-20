@@ -162,8 +162,14 @@ const PurchaseOrderManagement: React.FC = () => {
         customerAPI.getAll(currentBusiness.id),
         productAPI.getAll(currentBusiness.id),
       ]);
-      if (customerRes.data.success) setSuppliers(customerRes.data.data || []);
-      if (productRes.data.success) setProducts(productRes.data.data || []);
+      if (customerRes.data.success) {
+        const data = customerRes.data.data;
+        setSuppliers(Array.isArray(data) ? data : []);
+      }
+      if (productRes.data.success) {
+        const data = productRes.data.data;
+        setProducts(Array.isArray(data) ? data : []);
+      }
       setOrders(sampleOrders);
     } catch (error) {
       console.error('데이터 로드 오류:', error);
@@ -499,7 +505,7 @@ const PurchaseOrderManagement: React.FC = () => {
             <Col xs={24} sm={8}>
               <Form.Item name="supplierId" label="공급업체" rules={[{ required: true }]}>
                 <Select placeholder="공급업체 선택" showSearch optionFilterProp="children">
-                  {suppliers.map((s) => (
+                  {(suppliers || []).map((s) => (
                     <Option key={s.id} value={s.id}>{s.name}</Option>
                   ))}
                 </Select>
@@ -509,7 +515,7 @@ const PurchaseOrderManagement: React.FC = () => {
 
           <Divider>품목 목록</Divider>
 
-          {orderItems.map((item, index) => (
+          {(orderItems || []).map((item, index) => (
             <Row gutter={8} key={index} style={{ marginBottom: 8 }}>
               <Col xs={24} sm={6}>
                 <Select
@@ -520,7 +526,7 @@ const PurchaseOrderManagement: React.FC = () => {
                   showSearch
                   optionFilterProp="children"
                 >
-                  {products.map((p) => (
+                  {(products || []).map((p) => (
                     <Option key={p.id} value={p.id}>{p.name}</Option>
                   ))}
                 </Select>

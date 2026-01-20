@@ -214,7 +214,13 @@
       "WebFetch(domain:erp-backend-gaee.onrender.com)",
       "Bash(pm2 list:*)",
       "Bash(npx @azure/static-web-apps-cli deploy:*)",
-      "WebFetch(domain:white-ocean-03a1f7000.azurestaticapps.net)"
+      "WebFetch(domain:white-ocean-03a1f7000.azurestaticapps.net)",
+      "Bash(az monitor app-insights query:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:erp-backend-app.azurewebsites.net)",
+      "WebFetch(domain:webapperp.vercel.app)",
+      "Bash(ssh-keygen:*)",
+      "Bash(ssh:*)"
     ],
     "deny": [],
     "ask": []

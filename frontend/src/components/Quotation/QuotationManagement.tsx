@@ -166,8 +166,14 @@ const QuotationManagement: React.FC = () => {
         customerAPI.getAll(currentBusiness.id),
         productAPI.getAll(currentBusiness.id),
       ]);
-      if (customerRes.data.success) setCustomers(customerRes.data.data || []);
-      if (productRes.data.success) setProducts(productRes.data.data || []);
+      if (customerRes.data.success) {
+        const data = customerRes.data.data;
+        setCustomers(Array.isArray(data) ? data : []);
+      }
+      if (productRes.data.success) {
+        const data = productRes.data.data;
+        setProducts(Array.isArray(data) ? data : []);
+      }
       setQuotations(sampleQuotations);
     } catch (error) {
       console.error('데이터 로드 오류:', error);
@@ -510,7 +516,7 @@ const QuotationManagement: React.FC = () => {
             <Col xs={24} sm={8}>
               <Form.Item name="customerId" label="거래처" rules={[{ required: true }]}>
                 <Select placeholder="거래처 선택" showSearch optionFilterProp="children">
-                  {customers.map((c) => (
+                  {(customers || []).map((c) => (
                     <Option key={c.id} value={c.id}>{c.name}</Option>
                   ))}
                 </Select>
@@ -520,7 +526,7 @@ const QuotationManagement: React.FC = () => {
 
           <Divider>품목 목록</Divider>
 
-          {quotationItems.map((item, index) => (
+          {(quotationItems || []).map((item, index) => (
             <Row gutter={8} key={index} style={{ marginBottom: 8 }}>
               <Col xs={24} sm={6}>
                 <Select
@@ -531,7 +537,7 @@ const QuotationManagement: React.FC = () => {
                   showSearch
                   optionFilterProp="children"
                 >
-                  {products.map((p) => (
+                  {(products || []).map((p) => (
                     <Option key={p.id} value={p.id}>{p.name}</Option>
                   ))}
                 </Select>
