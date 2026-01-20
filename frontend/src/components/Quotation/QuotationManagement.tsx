@@ -392,11 +392,14 @@ const QuotationManagement: React.FC = () => {
     {
       title: '관리',
       key: 'action',
-      width: 150,
+      width: 180,
       render: (_: any, record: Quotation) => (
         <Space size="small">
           <Tooltip title="상세보기">
             <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
+          </Tooltip>
+          <Tooltip title="인쇄/저장">
+            <Button type="text" size="small" icon={<PrinterOutlined />} onClick={() => { setSelectedQuotation(record); setPrintModalVisible(true); }} />
           </Tooltip>
           <Tooltip title="수정">
             <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openModal(record)} />

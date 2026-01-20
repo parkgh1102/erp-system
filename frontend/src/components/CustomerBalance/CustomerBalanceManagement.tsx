@@ -223,8 +223,8 @@ const CustomerBalanceManagement: React.FC = () => {
     return result;
   }, [balances, activeTab, searchText]);
 
-  // 상세보기
-  const openDetail = (customer: CustomerBalance) => {
+  // 샘플 거래 내역 설정
+  const loadTransactionDetails = (customer: CustomerBalance) => {
     setSelectedCustomer(customer);
     // 샘플 거래 내역
     setTransactionDetails([
@@ -233,7 +233,18 @@ const CustomerBalanceManagement: React.FC = () => {
       { id: 3, date: '2026-01-15', type: 'sales', description: '매출 #S002', amount: 2000000, balance: 2500000 },
       { id: 4, date: '2026-01-18', type: 'receipt', description: '수금 #R002', amount: -1000000, balance: 1500000 },
     ]);
+  };
+
+  // 상세보기
+  const openDetail = (customer: CustomerBalance) => {
+    loadTransactionDetails(customer);
     setDetailModalVisible(true);
+  };
+
+  // 인쇄
+  const openPrint = (customer: CustomerBalance) => {
+    loadTransactionDetails(customer);
+    setPrintModalVisible(true);
   };
 
   // 금액 포맷
@@ -300,11 +311,16 @@ const CustomerBalanceManagement: React.FC = () => {
     {
       title: '관리',
       key: 'action',
-      width: 80,
+      width: 100,
       render: (_: any, record: CustomerBalance) => (
-        <Tooltip title="상세보기">
-          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
-        </Tooltip>
+        <Space size="small">
+          <Tooltip title="상세보기">
+            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
+          </Tooltip>
+          <Tooltip title="인쇄/저장">
+            <Button type="text" size="small" icon={<PrinterOutlined />} onClick={() => openPrint(record)} />
+          </Tooltip>
+        </Space>
       ),
     },
   ];
