@@ -14,6 +14,10 @@ import {
   MenuUnfoldOutlined,
   BellOutlined,
   BankOutlined,
+  AuditOutlined,
+  SolutionOutlined,
+  FileDoneOutlined,
+  AccountBookOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -141,6 +145,30 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       icon: <FileTextOutlined style={{ color: '#13c2c2' }} />,
       label: '거래원장',
       roles: ['admin', 'sales_viewer'],
+    },
+    {
+      key: '/tax-invoices',
+      icon: <AuditOutlined style={{ color: '#2f54eb' }} />,
+      label: '세금계산서',
+      roles: ['admin'],
+    },
+    {
+      key: '/quotations',
+      icon: <SolutionOutlined style={{ color: '#9254de' }} />,
+      label: '견적서',
+      roles: ['admin'],
+    },
+    {
+      key: '/purchase-orders',
+      icon: <FileDoneOutlined style={{ color: '#ff7a45' }} />,
+      label: '발주서',
+      roles: ['admin'],
+    },
+    {
+      key: '/customer-balance',
+      icon: <AccountBookOutlined style={{ color: '#36cfc9' }} />,
+      label: '미수/미지급',
+      roles: ['admin'],
     },
   ];
 

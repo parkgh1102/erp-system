@@ -23,6 +23,10 @@ const PaymentManagement = lazy(() => import('./components/Payment/PaymentManagem
 const TransactionLedgerManagement = lazy(() => import('./components/TransactionLedger/TransactionLedgerManagement'));
 const Profile = lazy(() => import('./components/Profile/Profile'));
 const Settings = lazy(() => import('./components/Settings/Settings'));
+const TaxInvoiceManagement = lazy(() => import('./components/TaxInvoice/TaxInvoiceManagement'));
+const QuotationManagement = lazy(() => import('./components/Quotation/QuotationManagement'));
+const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrder/PurchaseOrderManagement'));
+const CustomerBalanceManagement = lazy(() => import('./components/CustomerBalance/CustomerBalanceManagement'));
 const TokenExpirationNotifier = lazy(() => import('./components/Common/TokenExpirationNotifier'));
 const ChatbotWidget = lazy(() => import('./components/Chatbot/ChatbotWidget'));
 
@@ -280,6 +284,46 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <AppLayout>
                   <Settings />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tax-invoices"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <TaxInvoiceManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/quotations"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <QuotationManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-orders"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PurchaseOrderManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customer-balance"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CustomerBalanceManagement />
                 </AppLayout>
               </ProtectedRoute>
             }
