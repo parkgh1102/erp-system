@@ -77,6 +77,7 @@ const CustomerBalanceManagement: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerBalance | null>(null);
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetail[]>([]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   // 샘플 데이터
   const [sampleBalances] = useState<CustomerBalance[]>([
@@ -311,16 +312,11 @@ const CustomerBalanceManagement: React.FC = () => {
     {
       title: '관리',
       key: 'action',
-      width: 100,
+      width: 80,
       render: (_: any, record: CustomerBalance) => (
-        <Space size="small">
-          <Tooltip title="상세보기">
-            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
-          </Tooltip>
-          <Tooltip title="인쇄/저장">
-            <Button type="text" size="small" icon={<PrinterOutlined />} onClick={() => openPrint(record)} />
-          </Tooltip>
-        </Space>
+        <Tooltip title="상세보기">
+          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
+        </Tooltip>
       ),
     },
   ];
@@ -413,16 +409,35 @@ const CustomerBalanceManagement: React.FC = () => {
 
       {/* 필터 */}
       <Card size="small" style={{ marginBottom: 16 }}>
-        <Space wrap size="middle">
-          <Input
-            placeholder="거래처명, 코드, 사업자번호 검색"
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: isMobile ? '100%' : 250 }}
-            allowClear
-          />
-        </Space>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <Space wrap size="middle">
+            <Input
+              placeholder="거래처명, 코드, 사업자번호 검색"
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: isMobile ? '100%' : 250 }}
+              allowClear
+            />
+          </Space>
+          <Button
+            icon={<PrinterOutlined />}
+            onClick={() => {
+              if (selectedRowKeys.length === 0) {
+                message.warning('인쇄할 항목을 선택해주세요.');
+                return;
+              }
+              const selected = filteredBalances.find(b => b.id === selectedRowKeys[0]);
+              if (selected) {
+                loadTransactionDetails(selected);
+                setPrintModalVisible(true);
+              }
+            }}
+            disabled={selectedRowKeys.length === 0}
+          >
+            인쇄/저장 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+          </Button>
+        </div>
       </Card>
 
       {/* 테이블 */}
@@ -433,13 +448,18 @@ const CustomerBalanceManagement: React.FC = () => {
           dataSource={filteredBalances}
           rowKey="id"
           loading={loading}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (keys) => setSelectedRowKeys(keys),
+          }}
           pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }}
           scroll={{ x: 700 }}
           size={isMobile ? 'small' : 'middle'}
           summary={() => (
             <Table.Summary fixed>
               <Table.Summary.Row style={{ background: isDark ? '#1f1f1f' : '#fafafa' }}>
-                <Table.Summary.Cell index={0} colSpan={3}>
+                <Table.Summary.Cell index={0} />
+                <Table.Summary.Cell index={1} colSpan={2}>
                   <Text strong>합계</Text>
                 </Table.Summary.Cell>
                 {activeTab !== 'payable' && (

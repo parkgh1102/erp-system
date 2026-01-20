@@ -122,6 +122,7 @@ const QuotationManagement: React.FC = () => {
     { productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0 }
   ]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   // 샘플 데이터
   const [sampleQuotations] = useState<Quotation[]>([
@@ -392,14 +393,11 @@ const QuotationManagement: React.FC = () => {
     {
       title: '관리',
       key: 'action',
-      width: 180,
+      width: 150,
       render: (_: any, record: Quotation) => (
         <Space size="small">
           <Tooltip title="상세보기">
             <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
-          </Tooltip>
-          <Tooltip title="인쇄/저장">
-            <Button type="text" size="small" icon={<PrinterOutlined />} onClick={() => { setSelectedQuotation(record); setPrintModalVisible(true); }} />
           </Tooltip>
           <Tooltip title="수정">
             <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openModal(record)} />
@@ -465,21 +463,40 @@ const QuotationManagement: React.FC = () => {
 
       {/* 필터 */}
       <Card size="small" style={{ marginBottom: 16 }}>
-        <Space wrap size="middle">
-          <RangePicker
-            value={dateRange}
-            onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-            style={{ width: isMobile ? '100%' : 240 }}
-          />
-          <Input
-            placeholder="견적번호, 거래처명 검색"
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: isMobile ? '100%' : 200 }}
-            allowClear
-          />
-        </Space>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <Space wrap size="middle">
+            <RangePicker
+              value={dateRange}
+              onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+              style={{ width: isMobile ? '100%' : 240 }}
+            />
+            <Input
+              placeholder="견적번호, 거래처명 검색"
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: isMobile ? '100%' : 200 }}
+              allowClear
+            />
+          </Space>
+          <Button
+            icon={<PrinterOutlined />}
+            onClick={() => {
+              if (selectedRowKeys.length === 0) {
+                message.warning('인쇄할 항목을 선택해주세요.');
+                return;
+              }
+              const selected = filteredQuotations.find(q => q.id === selectedRowKeys[0]);
+              if (selected) {
+                setSelectedQuotation(selected);
+                setPrintModalVisible(true);
+              }
+            }}
+            disabled={selectedRowKeys.length === 0}
+          >
+            인쇄/저장 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+          </Button>
+        </div>
       </Card>
 
       {/* 테이블 */}
@@ -490,6 +507,10 @@ const QuotationManagement: React.FC = () => {
           dataSource={filteredQuotations}
           rowKey="id"
           loading={loading}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (keys) => setSelectedRowKeys(keys),
+          }}
           pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }}
           scroll={{ x: 800 }}
           size={isMobile ? 'small' : 'middle'}
