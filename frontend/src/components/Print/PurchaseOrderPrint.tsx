@@ -166,6 +166,7 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
       <style>{`
         @media print {
           .print-modal-footer,
+          .ant-modal-footer,
           .ant-modal-close,
           .ant-modal-header {
             display: none !important;

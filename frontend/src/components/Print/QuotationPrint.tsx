@@ -167,6 +167,7 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
       <style>{`
         @media print {
           .print-modal-footer,
+          .ant-modal-footer,
           .ant-modal-close,
           .ant-modal-header {
             display: none !important;

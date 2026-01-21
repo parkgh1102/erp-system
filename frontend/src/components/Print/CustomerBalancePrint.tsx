@@ -169,6 +169,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
       <style>{`
         @media print {
           .print-modal-footer,
+          .ant-modal-footer,
           .ant-modal-close,
           .ant-modal-header {
             display: none !important;
