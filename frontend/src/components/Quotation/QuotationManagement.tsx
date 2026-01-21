@@ -692,6 +692,7 @@ const QuotationManagement: React.FC = () => {
             representative: currentBusiness?.representative || '',
             address: currentBusiness?.address || '',
             phone: currentBusiness?.phone || '',
+            sealImage: currentBusiness?.sealImage,
           },
           receiver: {
             companyName: selectedQuotation.customer?.name || '',

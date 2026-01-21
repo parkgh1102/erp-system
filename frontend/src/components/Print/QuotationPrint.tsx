@@ -28,6 +28,7 @@ interface QuotationData {
     phone?: string;
     fax?: string;
     email?: string;
+    sealImage?: string;
   };
   receiver: {
     companyName: string;
@@ -264,8 +265,16 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data }) 
                   </table>
                 </td>
                 <td style={{ width: '40%', verticalAlign: 'top', textAlign: 'right' }}>
-                  <div style={{ border: '1px solid #ddd', padding: 30, display: 'inline-block', minWidth: 120, textAlign: 'center' }}>
-                    <div style={{ fontSize: 10, color: '#999' }}>(인)</div>
+                  <div style={{ border: '1px solid #ddd', padding: data.supplier.sealImage ? 10 : 30, display: 'inline-block', minWidth: 120, minHeight: 80, textAlign: 'center' }}>
+                    {data.supplier.sealImage ? (
+                      <img
+                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${data.supplier.sealImage}`}
+                        alt="도장"
+                        style={{ maxWidth: 100, maxHeight: 100, objectFit: 'contain' }}
+                      />
+                    ) : (
+                      <div style={{ fontSize: 10, color: '#999', paddingTop: 20 }}>(인)</div>
+                    )}
                   </div>
                 </td>
               </tr>

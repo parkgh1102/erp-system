@@ -22,6 +22,7 @@ import {
   SaveOutlined,
   PhoneOutlined,
   MailOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -33,7 +34,7 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 
 const Profile: React.FC = () => {
-  const { user, updateUser, currentBusiness, setAuth, token } = useAuthStore();
+  const { user, updateUser, currentBusiness, setAuth, token, setCurrentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
@@ -44,6 +45,7 @@ const Profile: React.FC = () => {
   const [businessEditing, setBusinessEditing] = useState(false);
   const [businessLoading, setBusinessLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [sealLoading, setSealLoading] = useState(false);
 
   // 프로필 정보 로드
   useEffect(() => {
@@ -168,6 +170,64 @@ const Profile: React.FC = () => {
     className: 'avatar-uploader',
     showUploadList: false,
     beforeUpload: handleAvatarUpload,
+  };
+
+  const handleSealUpload = async (file: File) => {
+    if (!currentBusiness) return false;
+
+    const isImage = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/gif';
+    if (!isImage) {
+      message.error('JPG/PNG/GIF 파일만 업로드 가능합니다.');
+      return false;
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('이미지는 2MB보다 작아야 합니다.');
+      return false;
+    }
+
+    setSealLoading(true);
+    try {
+      const response = await businessAPI.uploadSealImage(currentBusiness.id, file);
+      if (response.data.success) {
+        message.success('도장 이미지가 업로드되었습니다.');
+        // currentBusiness 업데이트
+        if (setCurrentBusiness) {
+          setCurrentBusiness({ ...currentBusiness, sealImage: response.data.data.sealImage });
+        }
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '도장 이미지 업로드에 실패했습니다.');
+    } finally {
+      setSealLoading(false);
+    }
+    return false;
+  };
+
+  const handleSealDelete = async () => {
+    if (!currentBusiness) return;
+
+    setSealLoading(true);
+    try {
+      const response = await businessAPI.deleteSealImage(currentBusiness.id);
+      if (response.data.success) {
+        message.success('도장 이미지가 삭제되었습니다.');
+        if (setCurrentBusiness) {
+          setCurrentBusiness({ ...currentBusiness, sealImage: undefined });
+        }
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '도장 이미지 삭제에 실패했습니다.');
+    } finally {
+      setSealLoading(false);
+    }
+  };
+
+  const sealUploadProps: UploadProps = {
+    name: 'seal',
+    showUploadList: false,
+    beforeUpload: handleSealUpload,
+    accept: 'image/jpeg,image/png,image/gif',
   };
 
   if (pageLoading) {
@@ -573,6 +633,61 @@ const Profile: React.FC = () => {
                         <Text>{currentBusiness.fax || '미등록'}</Text>
                       </div>
                     )}
+                  </Col>
+                  <Col xs={24}>
+                    <Divider style={{ margin: '16px 0' }} />
+                    <div>
+                      <Text strong>도장 이미지</Text>
+                      <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
+                        (인쇄 시 사용됩니다)
+                      </Text>
+                    </div>
+                    <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div
+                        style={{
+                          width: 100,
+                          height: 100,
+                          border: '1px dashed #d9d9d9',
+                          borderRadius: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: isDark ? '#1f1f1f' : '#fafafa',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {currentBusiness.sealImage ? (
+                          <img
+                            src={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${currentBusiness.sealImage}`}
+                            alt="도장"
+                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                          />
+                        ) : (
+                          <Text type="secondary" style={{ fontSize: 12 }}>(인)</Text>
+                        )}
+                      </div>
+                      <Space direction="vertical" size="small">
+                        <Upload {...sealUploadProps}>
+                          <Button icon={<UploadOutlined />} loading={sealLoading} size="small">
+                            도장 업로드
+                          </Button>
+                        </Upload>
+                        {currentBusiness.sealImage && (
+                          <Button
+                            icon={<DeleteOutlined />}
+                            onClick={handleSealDelete}
+                            loading={sealLoading}
+                            size="small"
+                            danger
+                          >
+                            도장 삭제
+                          </Button>
+                        )}
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          PNG/JPG/GIF, 최대 2MB
+                        </Text>
+                      </Space>
+                    </div>
                   </Col>
                 </Row>
 

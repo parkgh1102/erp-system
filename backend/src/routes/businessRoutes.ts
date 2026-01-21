@@ -30,6 +30,8 @@ router.post('/', BusinessController.create);
 router.put('/:id', BusinessController.update);
 router.delete('/:id', BusinessController.delete);
 router.get('/validate/:businessNumber', BusinessController.validateBusinessNumber);
+router.post('/:id/seal', upload.single('seal'), BusinessController.uploadSealImage);
+router.delete('/:id/seal', BusinessController.deleteSealImage);
 
 // 거래처 관리 API 라우트
 router.post('/:businessId/customers', CustomerController.create);

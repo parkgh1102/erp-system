@@ -682,6 +682,7 @@ const PurchaseOrderManagement: React.FC = () => {
             representative: currentBusiness?.representative || '',
             address: currentBusiness?.address || '',
             phone: currentBusiness?.phone || '',
+            sealImage: currentBusiness?.sealImage,
           },
           supplier: {
             companyName: selectedOrder.supplier?.name || '',

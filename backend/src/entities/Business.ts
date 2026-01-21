@@ -49,6 +49,9 @@ export class Business {
   @Column({ length: 200, nullable: true, comment: '홈페이지' })
   homepage?: string;
 
+  @Column({ length: 500, nullable: true, comment: '도장 이미지 경로' })
+  sealImage?: string;
+
   @Column({ default: true })
   isActive!: boolean;
 

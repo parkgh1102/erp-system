@@ -273,6 +273,15 @@ export const businessAPI = {
     api.delete(`/businesses/${id}`),
   validateBusinessNumber: (businessNumber: string) =>
     api.get(`/businesses/validate/${businessNumber}`),
+  uploadSealImage: (businessId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('seal', file);
+    return api.post(`/businesses/${businessId}/seal`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  deleteSealImage: (businessId: number) =>
+    api.delete(`/businesses/${businessId}/seal`),
 };
 
 export const passwordResetAPI = {

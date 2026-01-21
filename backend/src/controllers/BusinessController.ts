@@ -3,6 +3,8 @@ import { AppDataSource } from '../config/database';
 import { Business } from '../entities/Business';
 import { validate } from '../utils/validation';
 import Joi from 'joi';
+import path from 'path';
+import fs from 'fs';
 
 const businessRepository = AppDataSource.getRepository(Business);
 
@@ -260,6 +262,107 @@ export class BusinessController {
       res.status(500).json({
         success: false,
         message: '사업자번호 검증 중 오류가 발생했습니다.'
+      });
+    }
+  }
+
+  // 도장 이미지 업로드
+  static async uploadSealImage(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({
+          success: false,
+          message: '파일이 첨부되지 않았습니다.'
+        });
+      }
+
+      const business = await businessRepository.findOne({
+        where: { id: Number(id), isActive: true }
+      });
+
+      if (!business) {
+        return res.status(404).json({
+          success: false,
+          message: '사업자를 찾을 수 없습니다.'
+        });
+      }
+
+      // 기존 도장 이미지 삭제
+      if (business.sealImage) {
+        const oldImagePath = path.join(__dirname, '../../', business.sealImage);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+
+      // 새 도장 이미지 저장
+      const uploadsDir = path.join(__dirname, '../../uploads/seals');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      const ext = path.extname(file.originalname);
+      const filename = `seal-${id}-${Date.now()}${ext}`;
+      const filepath = path.join(uploadsDir, filename);
+
+      fs.writeFileSync(filepath, file.buffer);
+
+      business.sealImage = `/uploads/seals/${filename}`;
+      const updatedBusiness = await businessRepository.save(business);
+
+      res.json({
+        success: true,
+        message: '도장 이미지가 성공적으로 업로드되었습니다.',
+        data: {
+          sealImage: updatedBusiness.sealImage
+        }
+      });
+    } catch (error) {
+      console.error('Error uploading seal image:', error);
+      res.status(500).json({
+        success: false,
+        message: '도장 이미지 업로드 중 오류가 발생했습니다.'
+      });
+    }
+  }
+
+  // 도장 이미지 삭제
+  static async deleteSealImage(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const business = await businessRepository.findOne({
+        where: { id: Number(id), isActive: true }
+      });
+
+      if (!business) {
+        return res.status(404).json({
+          success: false,
+          message: '사업자를 찾을 수 없습니다.'
+        });
+      }
+
+      if (business.sealImage) {
+        const imagePath = path.join(__dirname, '../../', business.sealImage);
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+        business.sealImage = undefined;
+        await businessRepository.save(business);
+      }
+
+      res.json({
+        success: true,
+        message: '도장 이미지가 삭제되었습니다.'
+      });
+    } catch (error) {
+      console.error('Error deleting seal image:', error);
+      res.status(500).json({
+        success: false,
+        message: '도장 이미지 삭제 중 오류가 발생했습니다.'
       });
     }
   }

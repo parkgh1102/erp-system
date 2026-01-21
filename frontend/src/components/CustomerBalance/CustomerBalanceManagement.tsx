@@ -409,18 +409,23 @@ const CustomerBalanceManagement: React.FC = () => {
 
       {/* 필터 */}
       <Card size="small" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <Space wrap size="middle">
-            <Input
-              placeholder="거래처명, 코드, 사업자번호 검색"
-              prefix={<SearchOutlined />}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: isMobile ? '100%' : 250 }}
-              allowClear
-            />
-          </Space>
+        <Space wrap size="middle">
+          <Input
+            placeholder="거래처명, 코드, 사업자번호 검색"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: isMobile ? '100%' : 250 }}
+            allowClear
+          />
           <Button
+            icon={<ExportOutlined />}
+            onClick={() => message.info('저장 기능')}
+          >
+            저장
+          </Button>
+          <Button
+            type="primary"
             icon={<PrinterOutlined />}
             onClick={() => {
               if (selectedRowKeys.length === 0) {
@@ -433,11 +438,10 @@ const CustomerBalanceManagement: React.FC = () => {
                 setPrintModalVisible(true);
               }
             }}
-            disabled={selectedRowKeys.length === 0}
           >
-            인쇄/저장 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+            인쇄
           </Button>
-        </div>
+        </Space>
       </Card>
 
       {/* 테이블 */}
@@ -452,6 +456,17 @@ const CustomerBalanceManagement: React.FC = () => {
             selectedRowKeys,
             onChange: (keys) => setSelectedRowKeys(keys),
           }}
+          onRow={(record) => ({
+            onClick: (e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest('button') || target.closest('a') || target.closest('.ant-checkbox-wrapper')) return;
+              const key = record.id;
+              setSelectedRowKeys(prev =>
+                prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+              );
+            },
+            style: { cursor: 'pointer' }
+          })}
           pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }}
           scroll={{ x: 700 }}
           size={isMobile ? 'small' : 'middle'}

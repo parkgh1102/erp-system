@@ -25,6 +25,7 @@ interface Business {
   fax?: string;
   email?: string;
   homepage?: string;
+  sealImage?: string;
 }
 
 interface AuthState {
