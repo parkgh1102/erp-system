@@ -29,6 +29,7 @@ import {
   FilePdfOutlined,
   FileImageOutlined,
   CopyOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
