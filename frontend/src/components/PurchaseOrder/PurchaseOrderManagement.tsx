@@ -500,6 +500,31 @@ const PurchaseOrderManagement: React.FC = () => {
           >
             <Button icon={<DownloadOutlined />}>저장</Button>
           </Dropdown>
+          <Popconfirm
+            title="선택한 항목을 삭제하시겠습니까?"
+            description={`${selectedRowKeys.length}건의 발주서가 삭제됩니다.`}
+            onConfirm={() => {
+              if (selectedRowKeys.length === 0) {
+                message.warning('삭제할 항목을 선택해주세요.');
+                return;
+              }
+              // TODO: 실제 API 연동 시 bulk delete 구현
+              message.success(`${selectedRowKeys.length}건의 발주서가 삭제되었습니다.`);
+              setSelectedRowKeys([]);
+              fetchData();
+            }}
+            okText="삭제"
+            cancelText="취소"
+            disabled={selectedRowKeys.length === 0}
+          >
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              disabled={selectedRowKeys.length === 0}
+            >
+              선택삭제 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+            </Button>
+          </Popconfirm>
           <Button
             type="primary"
             icon={<PrinterOutlined />}
