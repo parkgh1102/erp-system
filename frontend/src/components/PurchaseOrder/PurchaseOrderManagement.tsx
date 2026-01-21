@@ -501,8 +501,8 @@ const PurchaseOrderManagement: React.FC = () => {
             <Button icon={<DownloadOutlined />}>저장</Button>
           </Dropdown>
           <Popconfirm
-            title="선택한 항목을 삭제하시겠습니까?"
-            description={`${selectedRowKeys.length}건의 발주서가 삭제됩니다.`}
+            title={<span style={{ fontSize: 16, fontWeight: 600 }}>선택한 항목을 삭제하시겠습니까?</span>}
+            description={<span style={{ fontSize: 14 }}>{selectedRowKeys.length}건의 발주서가 삭제됩니다.</span>}
             onConfirm={() => {
               if (selectedRowKeys.length === 0) {
                 message.warning('삭제할 항목을 선택해주세요.');
@@ -516,6 +516,9 @@ const PurchaseOrderManagement: React.FC = () => {
             okText="삭제"
             cancelText="취소"
             disabled={selectedRowKeys.length === 0}
+            okButtonProps={{ autoFocus: true, size: 'middle' }}
+            cancelButtonProps={{ size: 'middle' }}
+            overlayStyle={{ minWidth: 280 }}
           >
             <Button
               danger
