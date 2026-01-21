@@ -32,6 +32,7 @@ import {
   EyeOutlined,
   SwapOutlined,
   MinusCircleOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -452,23 +453,28 @@ const PurchaseOrderManagement: React.FC = () => {
 
       {/* 필터 */}
       <Card size="small" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <Space wrap size="middle">
-            <RangePicker
-              value={dateRange}
-              onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-              style={{ width: isMobile ? '100%' : 240 }}
-            />
-            <Input
-              placeholder="발주번호, 공급업체 검색"
-              prefix={<SearchOutlined />}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: isMobile ? '100%' : 200 }}
-              allowClear
-            />
-          </Space>
+        <Space wrap size="middle">
+          <RangePicker
+            value={dateRange}
+            onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+            style={{ width: isMobile ? '100%' : 240 }}
+          />
+          <Input
+            placeholder="발주번호, 공급업체 검색"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: isMobile ? '100%' : 200 }}
+            allowClear
+          />
           <Button
+            icon={<ExportOutlined />}
+            onClick={() => message.info('저장 기능')}
+          >
+            저장
+          </Button>
+          <Button
+            type="primary"
             icon={<PrinterOutlined />}
             onClick={() => {
               if (selectedRowKeys.length === 0) {
@@ -481,11 +487,10 @@ const PurchaseOrderManagement: React.FC = () => {
                 setPrintModalVisible(true);
               }
             }}
-            disabled={selectedRowKeys.length === 0}
           >
-            인쇄/저장 {selectedRowKeys.length > 0 && `(${selectedRowKeys.length})`}
+            인쇄
           </Button>
-        </div>
+        </Space>
       </Card>
 
       {/* 테이블 */}
@@ -500,6 +505,17 @@ const PurchaseOrderManagement: React.FC = () => {
             selectedRowKeys,
             onChange: (keys) => setSelectedRowKeys(keys),
           }}
+          onRow={(record) => ({
+            onClick: (e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest('button') || target.closest('a') || target.closest('.ant-checkbox-wrapper')) return;
+              const key = record.id;
+              setSelectedRowKeys(prev =>
+                prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+              );
+            },
+            style: { cursor: 'pointer' }
+          })}
           pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }}
           scroll={{ x: 800 }}
           size={isMobile ? 'small' : 'middle'}
