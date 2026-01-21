@@ -15,16 +15,20 @@ import {
   Modal,
   Tooltip,
   DatePicker,
+  Dropdown,
 } from 'antd';
 import {
   SearchOutlined,
   AccountBookOutlined,
-  ExportOutlined,
   EyeOutlined,
   WarningOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
   PrinterOutlined,
+  DownloadOutlined,
+  FilePdfOutlined,
+  FileImageOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -78,6 +82,7 @@ const CustomerBalanceManagement: React.FC = () => {
   const [transactionDetails, setTransactionDetails] = useState<TransactionDetail[]>([]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [autoSaveType, setAutoSaveType] = useState<'pdf' | 'png' | 'jpg' | 'clipboard' | null>(null);
 
   // 샘플 데이터
   const [sampleBalances] = useState<CustomerBalance[]>([
@@ -418,12 +423,34 @@ const CustomerBalanceManagement: React.FC = () => {
             style={{ width: isMobile ? '100%' : 250 }}
             allowClear
           />
-          <Button
-            icon={<ExportOutlined />}
-            onClick={() => message.info('저장 기능')}
+          <Dropdown
+            menu={{
+              items: [
+                { key: 'pdf', label: 'PDF 저장', icon: <FilePdfOutlined />, onClick: () => {
+                  if (selectedRowKeys.length === 0) { message.warning('저장할 항목을 선택해주세요.'); return; }
+                  const selected = filteredBalances.find(b => b.id === selectedRowKeys[0]);
+                  if (selected) { loadTransactionDetails(selected); setAutoSaveType('pdf'); setPrintModalVisible(true); }
+                }},
+                { key: 'png', label: 'PNG 저장', icon: <FileImageOutlined />, onClick: () => {
+                  if (selectedRowKeys.length === 0) { message.warning('저장할 항목을 선택해주세요.'); return; }
+                  const selected = filteredBalances.find(b => b.id === selectedRowKeys[0]);
+                  if (selected) { loadTransactionDetails(selected); setAutoSaveType('png'); setPrintModalVisible(true); }
+                }},
+                { key: 'jpg', label: 'JPG 저장', icon: <FileImageOutlined />, onClick: () => {
+                  if (selectedRowKeys.length === 0) { message.warning('저장할 항목을 선택해주세요.'); return; }
+                  const selected = filteredBalances.find(b => b.id === selectedRowKeys[0]);
+                  if (selected) { loadTransactionDetails(selected); setAutoSaveType('jpg'); setPrintModalVisible(true); }
+                }},
+                { key: 'clipboard', label: '클립보드 복사', icon: <CopyOutlined />, onClick: () => {
+                  if (selectedRowKeys.length === 0) { message.warning('복사할 항목을 선택해주세요.'); return; }
+                  const selected = filteredBalances.find(b => b.id === selectedRowKeys[0]);
+                  if (selected) { loadTransactionDetails(selected); setAutoSaveType('clipboard'); setPrintModalVisible(true); }
+                }},
+              ]
+            }}
           >
-            저장
-          </Button>
+            <Button icon={<DownloadOutlined />}>저장</Button>
+          </Dropdown>
           <Button
             type="primary"
             icon={<PrinterOutlined />}
@@ -435,6 +462,7 @@ const CustomerBalanceManagement: React.FC = () => {
               const selected = filteredBalances.find(b => b.id === selectedRowKeys[0]);
               if (selected) {
                 loadTransactionDetails(selected);
+                setAutoSaveType(null);
                 setPrintModalVisible(true);
               }
             }}
@@ -572,7 +600,8 @@ const CustomerBalanceManagement: React.FC = () => {
       {/* 인쇄 모달 */}
       <CustomerBalancePrint
         open={printModalVisible}
-        onClose={() => setPrintModalVisible(false)}
+        onClose={() => { setPrintModalVisible(false); setAutoSaveType(null); }}
+        autoSaveType={autoSaveType}
         data={selectedCustomer ? {
           customerCode: selectedCustomer.customerCode,
           name: selectedCustomer.name,

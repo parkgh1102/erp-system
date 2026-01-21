@@ -19,11 +19,12 @@ import {
   Statistic,
   Popconfirm,
   Divider,
+  Dropdown,
 } from 'antd';
 import {
   PlusOutlined,
   SearchOutlined,
-  ExportOutlined,
+  DownloadOutlined,
   PrinterOutlined,
   SolutionOutlined,
   CheckCircleOutlined,
@@ -33,6 +34,9 @@ import {
   EyeOutlined,
   SwapOutlined,
   MinusCircleOutlined,
+  FilePdfOutlined,
+  FileImageOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -41,6 +45,8 @@ import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import QuotationPrint from '../Print/QuotationPrint';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -123,6 +129,7 @@ const QuotationManagement: React.FC = () => {
   ]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [autoSaveType, setAutoSaveType] = useState<'pdf' | 'png' | 'jpg' | 'clipboard' | null>(null);
 
   // 샘플 데이터
   const [sampleQuotations] = useState<Quotation[]>([
@@ -477,12 +484,34 @@ const QuotationManagement: React.FC = () => {
             style={{ width: isMobile ? '100%' : 200 }}
             allowClear
           />
-          <Button
-            icon={<ExportOutlined />}
-            onClick={() => message.info('저장 기능')}
+          <Dropdown
+            menu={{
+              items: [
+                { key: 'pdf', label: 'PDF 저장', icon: <FilePdfOutlined />, onClick: () => {
+                  if (selectedRowKeys.length === 0) { message.warning('저장할 항목을 선택해주세요.'); return; }
+                  const selected = filteredQuotations.find(q => q.id === selectedRowKeys[0]);
+                  if (selected) { setSelectedQuotation(selected); setAutoSaveType('pdf'); setPrintModalVisible(true); }
+                }},
+                { key: 'png', label: 'PNG 저장', icon: <FileImageOutlined />, onClick: () => {
+                  if (selectedRowKeys.length === 0) { message.warning('저장할 항목을 선택해주세요.'); return; }
+                  const selected = filteredQuotations.find(q => q.id === selectedRowKeys[0]);
+                  if (selected) { setSelectedQuotation(selected); setAutoSaveType('png'); setPrintModalVisible(true); }
+                }},
+                { key: 'jpg', label: 'JPG 저장', icon: <FileImageOutlined />, onClick: () => {
+                  if (selectedRowKeys.length === 0) { message.warning('저장할 항목을 선택해주세요.'); return; }
+                  const selected = filteredQuotations.find(q => q.id === selectedRowKeys[0]);
+                  if (selected) { setSelectedQuotation(selected); setAutoSaveType('jpg'); setPrintModalVisible(true); }
+                }},
+                { key: 'clipboard', label: '클립보드 복사', icon: <CopyOutlined />, onClick: () => {
+                  if (selectedRowKeys.length === 0) { message.warning('복사할 항목을 선택해주세요.'); return; }
+                  const selected = filteredQuotations.find(q => q.id === selectedRowKeys[0]);
+                  if (selected) { setSelectedQuotation(selected); setAutoSaveType('clipboard'); setPrintModalVisible(true); }
+                }},
+              ]
+            }}
           >
-            저장
-          </Button>
+            <Button icon={<DownloadOutlined />}>저장</Button>
+          </Dropdown>
           <Button
             type="primary"
             icon={<PrinterOutlined />}
@@ -681,7 +710,8 @@ const QuotationManagement: React.FC = () => {
       {/* 인쇄 모달 */}
       <QuotationPrint
         open={printModalVisible}
-        onClose={() => setPrintModalVisible(false)}
+        onClose={() => { setPrintModalVisible(false); setAutoSaveType(null); }}
+        autoSaveType={autoSaveType}
         data={selectedQuotation ? {
           quotationNumber: selectedQuotation.quotationNumber,
           quotationDate: selectedQuotation.quotationDate,
