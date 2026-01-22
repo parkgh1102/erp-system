@@ -32,6 +32,7 @@ router.get('/validate/:businessNumber', BusinessController_1.BusinessController.
 router.get('/', BusinessController_1.BusinessController.getAll);
 router.post('/', BusinessController_1.BusinessController.create);
 // 파라미터가 있는 경로 (seal 경로를 /:id보다 먼저)
+router.get('/:id/seal', BusinessController_1.BusinessController.getSealImage);
 router.post('/:id/seal', upload.single('seal'), BusinessController_1.BusinessController.uploadSealImage);
 router.delete('/:id/seal', BusinessController_1.BusinessController.deleteSealImage);
 router.get('/:id', BusinessController_1.BusinessController.getById);

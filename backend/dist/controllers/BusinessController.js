@@ -240,6 +240,53 @@ class BusinessController {
             });
         }
     }
+    // 도장 이미지 조회
+    static async getSealImage(req, res) {
+        try {
+            const { id } = req.params;
+            const business = await businessRepository.findOne({
+                where: { id: Number(id), isActive: true }
+            });
+            if (!business) {
+                return res.status(404).json({
+                    success: false,
+                    message: '사업자를 찾을 수 없습니다.'
+                });
+            }
+            if (!business.sealImage) {
+                return res.status(404).json({
+                    success: false,
+                    message: '등록된 도장 이미지가 없습니다.'
+                });
+            }
+            // 이미지 파일 경로
+            const imagePath = path_1.default.join(__dirname, '../../', business.sealImage);
+            if (!fs_1.default.existsSync(imagePath)) {
+                return res.status(404).json({
+                    success: false,
+                    message: '도장 이미지 파일을 찾을 수 없습니다.'
+                });
+            }
+            // 파일 확장자에 따른 Content-Type 설정
+            const ext = path_1.default.extname(imagePath).toLowerCase();
+            let contentType = 'image/png';
+            if (ext === '.jpg' || ext === '.jpeg') {
+                contentType = 'image/jpeg';
+            }
+            else if (ext === '.gif') {
+                contentType = 'image/gif';
+            }
+            res.setHeader('Content-Type', contentType);
+            fs_1.default.createReadStream(imagePath).pipe(res);
+        }
+        catch (error) {
+            console.error('Error getting seal image:', error);
+            res.status(500).json({
+                success: false,
+                message: '도장 이미지 조회 중 오류가 발생했습니다.'
+            });
+        }
+    }
     // 도장 이미지 업로드
     static async uploadSealImage(req, res) {
         try {
