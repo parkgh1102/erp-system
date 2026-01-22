@@ -24,9 +24,16 @@ jobs:
       - name: Install, build, and prepare package
         working-directory: ./backend
         run: |
-          npm install
+          echo "=== Current directory ==="
+          pwd
+          echo "=== Installing dependencies ==="
+          npm install 2>&1 || { echo "npm install failed"; exit 1; }
+          echo "=== Checking node_modules ==="
+          ls -la
+          ls -la node_modules | head -20 || echo "node_modules not found"
+          echo "=== Building ==="
           npm run build
-          echo "Build completed"
+          echo "=== Preparing package ==="
           mkdir -p ../deploy-package
           cp -r dist ../deploy-package/
           cp -r node_modules ../deploy-package/
