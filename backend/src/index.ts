@@ -66,12 +66,9 @@ if (validatedEnv.FRONTEND_URL && !allowedOrigins.includes(validatedEnv.FRONTEND_
 // CORS 미들웨어 설정
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // 프로덕션에서는 origin이 없는 요청 거부 (보안 강화)
+    // Origin이 없는 요청 허용 (health check, 서버 간 통신, CLI 등)
     if (!origin) {
-      if (validatedEnv.NODE_ENV === 'production') {
-        return callback(new Error('CORS policy: Origin required'), false);
-      }
-      return callback(null, true); // 개발환경에서는 허용
+      return callback(null, true);
     }
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
