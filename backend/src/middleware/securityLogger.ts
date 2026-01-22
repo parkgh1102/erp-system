@@ -30,6 +30,7 @@ const sanitizeSensitiveData = (data: unknown): unknown => {
 
 class SecurityLogger {
   private logPath: string;
+  private canWriteToFile: boolean = true;
 
   constructor() {
     this.logPath = path.join(process.cwd(), 'logs', 'security.log');
@@ -37,9 +38,14 @@ class SecurityLogger {
   }
 
   private ensureLogDirectory() {
-    const logDir = path.dirname(this.logPath);
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
+    try {
+      const logDir = path.dirname(this.logPath);
+      if (!fs.existsSync(logDir)) {
+        fs.mkdirSync(logDir, { recursive: true });
+      }
+    } catch (error) {
+      console.warn('Security log directory creation failed, using console logging only');
+      this.canWriteToFile = false;
     }
   }
 
@@ -56,11 +62,17 @@ class SecurityLogger {
       timestamp: new Date().toISOString()
     });
 
-    fs.appendFileSync(this.logPath, logEntry);
+    if (this.canWriteToFile) {
+      try {
+        fs.appendFileSync(this.logPath, logEntry);
+      } catch (error) {
+        this.canWriteToFile = false;
+      }
+    }
 
-    // 콘솔에도 출력 (개발 환경에서만)
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('🚨 Security Event:', event);
+    // 콘솔에도 출력
+    if (process.env.NODE_ENV === 'development' || !this.canWriteToFile) {
+      console.warn('Security Event:', event);
     }
   }
 
