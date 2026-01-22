@@ -27,9 +27,6 @@ jobs:
           npm install
           npm run build
           echo "Build completed"
-          rm -rf node_modules
-          npm install --omit=dev
-          echo "Production dependencies installed"
           mkdir -p ../deploy-package
           cp -r dist ../deploy-package/
           cp -r node_modules ../deploy-package/
