@@ -21,34 +21,23 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: Install dependencies and build
+      - name: Install, build, and prepare package
         working-directory: ./backend
         run: |
           npm install
           npm run build
-          echo "Build completed successfully"
-
-      - name: Install production dependencies
-        working-directory: ./backend
-        run: |
+          echo "Build completed"
           rm -rf node_modules
           npm install --omit=dev
           echo "Production dependencies installed"
-
-      - name: Prepare and zip deployment package
-        run: |
-          mkdir -p deploy-package
-          cp -r backend/dist deploy-package/
-          cp -r backend/node_modules deploy-package/
-          cp backend/package.json deploy-package/
-          cp backend/package-lock.json deploy-package/ 2>/dev/null || echo "No package-lock.json"
-          cd deploy-package
+          mkdir -p ../deploy-package
+          cp -r dist ../deploy-package/
+          cp -r node_modules ../deploy-package/
+          cp package.json ../deploy-package/
+          cd ../deploy-package
           zip -r ../release.zip .
-          cd ..
-          echo "=== Package contents ==="
-          ls -la deploy-package/
           echo "=== Zip size ==="
-          du -h release.zip
+          du -h ../release.zip
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
