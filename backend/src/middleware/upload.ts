@@ -3,13 +3,19 @@ import path from 'path';
 import fs from 'fs';
 import { Request } from 'express';
 
-// uploads 디렉토리가 없으면 생성
+// uploads 디렉토리가 없으면 생성 (실패 시 메모리 스토리지 사용)
+let useMemoryStorage = false;
 const uploadsDir = path.join(__dirname, '../../uploads/avatars');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (error) {
+  console.warn('Upload directory creation failed, using memory storage');
+  useMemoryStorage = true;
 }
 
-const storage = multer.diskStorage({
+const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
   },
@@ -19,6 +25,8 @@ const storage = multer.diskStorage({
     cb(null, `avatar-${userId}-${Date.now()}${ext}`);
   }
 });
+
+const storage = useMemoryStorage ? multer.memoryStorage() : diskStorage;
 
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   // MIME 타입 체크
