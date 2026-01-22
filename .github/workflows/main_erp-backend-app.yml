@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies and build
         working-directory: ./backend
         run: |
-          npm ci
+          npm install
           npm run build
           echo "Build completed successfully"
 
@@ -32,7 +32,7 @@ jobs:
         working-directory: ./backend
         run: |
           rm -rf node_modules
-          npm ci --omit=dev
+          npm install --omit=dev
           echo "Production dependencies installed"
 
       - name: Prepare and zip deployment package
