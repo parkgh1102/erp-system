@@ -42,6 +42,9 @@ export class PurchaseItem {
   @Column({ type: 'decimal', precision: 15, scale: 2, comment: '금액' })
   amount!: number;
 
+  @Column({ type: 'int', default: 0, comment: '정렬 순서' })
+  sortOrder!: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

@@ -45,6 +45,9 @@ export class SalesItem {
   @Column({ type: 'text', nullable: true, comment: '비고' })
   remark?: string;
 
+  @Column({ type: 'int', default: 0, comment: '정렬 순서' })
+  sortOrder!: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

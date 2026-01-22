@@ -27,12 +27,16 @@ const upload = (0, multer_1.default)({
 // 모든 business 라우트에 인증 미들웨어 적용
 router.use(auth_1.authenticateToken);
 // 사업자 관리 API 라우트
+// 특정 경로를 파라미터 경로보다 먼저 정의
+router.get('/validate/:businessNumber', BusinessController_1.BusinessController.validateBusinessNumber);
 router.get('/', BusinessController_1.BusinessController.getAll);
-router.get('/:id', BusinessController_1.BusinessController.getById);
 router.post('/', BusinessController_1.BusinessController.create);
+// 파라미터가 있는 경로 (seal 경로를 /:id보다 먼저)
+router.post('/:id/seal', upload.single('seal'), BusinessController_1.BusinessController.uploadSealImage);
+router.delete('/:id/seal', BusinessController_1.BusinessController.deleteSealImage);
+router.get('/:id', BusinessController_1.BusinessController.getById);
 router.put('/:id', BusinessController_1.BusinessController.update);
 router.delete('/:id', BusinessController_1.BusinessController.delete);
-router.get('/validate/:businessNumber', BusinessController_1.BusinessController.validateBusinessNumber);
 // 거래처 관리 API 라우트
 router.post('/:businessId/customers', CustomerController_1.CustomerController.create);
 router.get('/:businessId/customers', CustomerController_1.CustomerController.getAll);

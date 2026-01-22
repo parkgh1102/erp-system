@@ -14,6 +14,7 @@ export declare class SalesItem {
     taxAmount: number;
     specification?: string;
     remark?: string;
+    sortOrder: number;
     createdAt: Date;
 }
 //# sourceMappingURL=SalesItem.d.ts.map

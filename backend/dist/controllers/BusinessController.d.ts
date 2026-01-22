@@ -6,5 +6,7 @@ export declare class BusinessController {
     static update(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static delete(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
     static validateBusinessNumber(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static uploadSealImage(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
+    static deleteSealImage(req: Request, res: Response): Promise<Response<any, Record<string, any>>>;
 }
 //# sourceMappingURL=BusinessController.d.ts.map

@@ -71,6 +71,10 @@ __decorate([
     __metadata("design:type", String)
 ], SalesItem.prototype, "remark", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'int', default: 0, comment: '정렬 순서' }),
+    __metadata("design:type", Number)
+], SalesItem.prototype, "sortOrder", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], SalesItem.prototype, "createdAt", void 0);

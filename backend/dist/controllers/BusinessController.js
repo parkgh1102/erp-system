@@ -8,6 +8,8 @@ const database_1 = require("../config/database");
 const Business_1 = require("../entities/Business");
 const validation_1 = require("../utils/validation");
 const joi_1 = __importDefault(require("joi"));
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
 const businessSchema = joi_1.default.object({
     businessNumber: joi_1.default.string().length(12).pattern(/^[0-9-]+$/).required(),
@@ -235,6 +237,94 @@ class BusinessController {
             res.status(500).json({
                 success: false,
                 message: '사업자번호 검증 중 오류가 발생했습니다.'
+            });
+        }
+    }
+    // 도장 이미지 업로드
+    static async uploadSealImage(req, res) {
+        try {
+            const { id } = req.params;
+            const file = req.file;
+            if (!file) {
+                return res.status(400).json({
+                    success: false,
+                    message: '파일이 첨부되지 않았습니다.'
+                });
+            }
+            const business = await businessRepository.findOne({
+                where: { id: Number(id), isActive: true }
+            });
+            if (!business) {
+                return res.status(404).json({
+                    success: false,
+                    message: '사업자를 찾을 수 없습니다.'
+                });
+            }
+            // 기존 도장 이미지 삭제
+            if (business.sealImage) {
+                const oldImagePath = path_1.default.join(__dirname, '../../', business.sealImage);
+                if (fs_1.default.existsSync(oldImagePath)) {
+                    fs_1.default.unlinkSync(oldImagePath);
+                }
+            }
+            // 새 도장 이미지 저장
+            const uploadsDir = path_1.default.join(__dirname, '../../uploads/seals');
+            if (!fs_1.default.existsSync(uploadsDir)) {
+                fs_1.default.mkdirSync(uploadsDir, { recursive: true });
+            }
+            const ext = path_1.default.extname(file.originalname);
+            const filename = `seal-${id}-${Date.now()}${ext}`;
+            const filepath = path_1.default.join(uploadsDir, filename);
+            fs_1.default.writeFileSync(filepath, file.buffer);
+            business.sealImage = `/uploads/seals/${filename}`;
+            const updatedBusiness = await businessRepository.save(business);
+            res.json({
+                success: true,
+                message: '도장 이미지가 성공적으로 업로드되었습니다.',
+                data: {
+                    sealImage: updatedBusiness.sealImage
+                }
+            });
+        }
+        catch (error) {
+            console.error('Error uploading seal image:', error);
+            res.status(500).json({
+                success: false,
+                message: '도장 이미지 업로드 중 오류가 발생했습니다.'
+            });
+        }
+    }
+    // 도장 이미지 삭제
+    static async deleteSealImage(req, res) {
+        try {
+            const { id } = req.params;
+            const business = await businessRepository.findOne({
+                where: { id: Number(id), isActive: true }
+            });
+            if (!business) {
+                return res.status(404).json({
+                    success: false,
+                    message: '사업자를 찾을 수 없습니다.'
+                });
+            }
+            if (business.sealImage) {
+                const imagePath = path_1.default.join(__dirname, '../../', business.sealImage);
+                if (fs_1.default.existsSync(imagePath)) {
+                    fs_1.default.unlinkSync(imagePath);
+                }
+                business.sealImage = undefined;
+                await businessRepository.save(business);
+            }
+            res.json({
+                success: true,
+                message: '도장 이미지가 삭제되었습니다.'
+            });
+        }
+        catch (error) {
+            console.error('Error deleting seal image:', error);
+            res.status(500).json({
+                success: false,
+                message: '도장 이미지 삭제 중 오류가 발생했습니다.'
             });
         }
     }

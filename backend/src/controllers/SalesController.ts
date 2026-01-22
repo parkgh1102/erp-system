@@ -115,10 +115,10 @@ export class SalesController {
         order: { transactionDate: 'DESC', createdAt: 'DESC' }
       });
 
-      // items를 id 순서로 정렬 (등록 순서 유지)
+      // items를 sortOrder 순서로 정렬 (등록 순서 유지)
       sales.forEach(sale => {
         if (sale.items) {
-          sale.items.sort((a, b) => a.id - b.id);
+          sale.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
         }
       });
 
@@ -210,7 +210,7 @@ export class SalesController {
 
       // items를 id 순서로 정렬 (등록 순서 유지)
       if (sales.items) {
-        sales.items.sort((a, b) => a.id - b.id);
+        sales.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
       }
 
       res.json({
@@ -311,10 +311,10 @@ export class SalesController {
 
       const savedSales = await salesRepository.save(sales);
 
-      // 거래 항목들 생성
+      // 거래 항목들 생성 (순서 유지를 위해 순차적 저장)
       if (value.items && value.items.length > 0) {
-        const items = [];
-        for (const itemData of value.items) {
+        for (let i = 0; i < value.items.length; i++) {
+          const itemData = value.items[i];
           // 프론트엔드에서 보낸 값이 있으면 사용, 없으면 계산
           const defaultAmount = itemData.quantity * itemData.unitPrice;
           const supplyAmount = itemData.supplyAmount !== undefined ? itemData.supplyAmount : (itemData.amount || defaultAmount);
@@ -333,11 +333,11 @@ export class SalesController {
             supplyAmount: supplyAmount,
             taxAmount: taxAmount,
             specification: itemData.spec || itemData.specification || null,
-            unit: itemData.unit || null
+            unit: itemData.unit || null,
+            sortOrder: i  // 순서 저장
           });
-          items.push(item);
+          await salesItemRepository.save(item);  // 순차적 저장
         }
-        await salesItemRepository.save(items);
       }
 
       // 생성된 데이터를 다시 조회해서 반환
@@ -348,7 +348,7 @@ export class SalesController {
 
       // items를 id 순서로 정렬 (등록 순서 유지)
       if (result?.items) {
-        result.items.sort((a, b) => a.id - b.id);
+        result.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
       }
 
       res.status(201).json({
@@ -455,10 +455,10 @@ export class SalesController {
         bankAccount: value.bankAccount || null
       });
 
-      // 새로운 항목들 생성
+      // 새로운 항목들 생성 (순서 유지를 위해 순차적 저장)
       if (value.items && value.items.length > 0) {
-        const items = [];
-        for (const itemData of value.items) {
+        for (let i = 0; i < value.items.length; i++) {
+          const itemData = value.items[i];
           // 프론트엔드에서 보낸 값이 있으면 사용, 없으면 계산
           const defaultAmount = itemData.quantity * itemData.unitPrice;
           const supplyAmount = itemData.supplyAmount !== undefined ? itemData.supplyAmount : (itemData.amount || defaultAmount);
@@ -477,11 +477,11 @@ export class SalesController {
             supplyAmount: supplyAmount,
             taxAmount: taxAmount,
             specification: itemData.spec || itemData.specification || null,
-            unit: itemData.unit || null
+            unit: itemData.unit || null,
+            sortOrder: i  // 순서 저장
           });
-          items.push(item);
+          await salesItemRepository.save(item);  // 순차적 저장
         }
-        await salesItemRepository.save(items);
       }
 
       const result = await salesRepository.findOne({
@@ -491,7 +491,7 @@ export class SalesController {
 
       // items를 id 순서로 정렬 (등록 순서 유지)
       if (result?.items) {
-        result.items.sort((a, b) => a.id - b.id);
+        result.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
       }
 
       res.json({
@@ -713,7 +713,7 @@ export class SalesController {
 
       // items를 id 순서로 정렬 (등록 순서 유지)
       if (result?.items) {
-        result.items.sort((a, b) => a.id - b.id);
+        result.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
       }
 
       res.json({

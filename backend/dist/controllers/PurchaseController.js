@@ -94,7 +94,7 @@ class PurchaseController {
             // items를 id 순서로 정렬 (등록 순서 유지)
             purchases.forEach(purchase => {
                 if (purchase.items) {
-                    purchase.items.sort((a, b) => a.id - b.id);
+                    purchase.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                 }
             });
             res.json({
@@ -164,7 +164,7 @@ class PurchaseController {
             }
             // items를 id 순서로 정렬 (등록 순서 유지)
             if (purchase.items) {
-                purchase.items.sort((a, b) => a.id - b.id);
+                purchase.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
             }
             res.json({
                 success: true,
@@ -238,19 +238,24 @@ class PurchaseController {
                 isActive: true
             });
             const savedPurchase = await purchaseRepository.save(purchase);
+            // 순서 유지를 위해 순차적 저장
             if (value.items && value.items.length > 0) {
-                const items = value.items.map((item) => purchaseItemRepository.create({
-                    purchaseId: savedPurchase.id,
-                    productId: item.productId || null,
-                    productCode: item.productCode || '',
-                    productName: item.productName,
-                    spec: item.spec || '',
-                    unit: item.unit || '',
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    amount: item.amount
-                }));
-                await purchaseItemRepository.save(items);
+                for (let i = 0; i < value.items.length; i++) {
+                    const item = value.items[i];
+                    const purchaseItem = purchaseItemRepository.create({
+                        purchaseId: savedPurchase.id,
+                        productId: item.productId || null,
+                        productCode: item.productCode || '',
+                        productName: item.productName,
+                        spec: item.spec || '',
+                        unit: item.unit || '',
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        amount: item.amount,
+                        sortOrder: i // 순서 저장
+                    });
+                    await purchaseItemRepository.save(purchaseItem); // 순차적 저장
+                }
             }
             const createdPurchase = await purchaseRepository.findOne({
                 where: { id: savedPurchase.id },
@@ -258,7 +263,7 @@ class PurchaseController {
             });
             // items를 id 순서로 정렬 (등록 순서 유지)
             if (createdPurchase?.items) {
-                createdPurchase.items.sort((a, b) => a.id - b.id);
+                createdPurchase.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
             }
             res.status(201).json({
                 success: true,
@@ -345,19 +350,24 @@ class PurchaseController {
             if (purchase.items && purchase.items.length > 0) {
                 await purchaseItemRepository.delete({ purchaseId: purchase.id });
             }
+            // 순서 유지를 위해 순차적 저장
             if (value.items && value.items.length > 0) {
-                const items = value.items.map((item) => purchaseItemRepository.create({
-                    purchaseId: purchase.id,
-                    productId: item.productId || null,
-                    productCode: item.productCode || '',
-                    productName: item.productName,
-                    spec: item.spec || '',
-                    unit: item.unit || '',
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    amount: item.amount
-                }));
-                await purchaseItemRepository.save(items);
+                for (let i = 0; i < value.items.length; i++) {
+                    const item = value.items[i];
+                    const purchaseItem = purchaseItemRepository.create({
+                        purchaseId: purchase.id,
+                        productId: item.productId || null,
+                        productCode: item.productCode || '',
+                        productName: item.productName,
+                        spec: item.spec || '',
+                        unit: item.unit || '',
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        amount: item.amount,
+                        sortOrder: i // 순서 저장
+                    });
+                    await purchaseItemRepository.save(purchaseItem); // 순차적 저장
+                }
             }
             const updatedPurchase = await purchaseRepository.findOne({
                 where: { id: purchase.id },
@@ -365,7 +375,7 @@ class PurchaseController {
             });
             // items를 id 순서로 정렬 (등록 순서 유지)
             if (updatedPurchase?.items) {
-                updatedPurchase.items.sort((a, b) => a.id - b.id);
+                updatedPurchase.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
             }
             res.json({
                 success: true,

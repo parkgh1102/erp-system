@@ -67,6 +67,10 @@ __decorate([
     __metadata("design:type", Number)
 ], PurchaseItem.prototype, "amount", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: 'int', default: 0, comment: '정렬 순서' }),
+    __metadata("design:type", Number)
+], PurchaseItem.prototype, "sortOrder", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], PurchaseItem.prototype, "createdAt", void 0);

@@ -13,6 +13,7 @@ export declare class PurchaseItem {
     quantity: number;
     unitPrice: number;
     amount: number;
+    sortOrder: number;
     createdAt: Date;
 }
 //# sourceMappingURL=PurchaseItem.d.ts.map

@@ -19,6 +19,7 @@ export declare class Business {
     fax?: string;
     email?: string;
     homepage?: string;
+    sealImage?: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
