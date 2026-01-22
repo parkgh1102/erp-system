@@ -24,14 +24,22 @@ jobs:
       - name: Install dependencies and build
         working-directory: ./backend
         run: |
-          npm install
+          npm ci
           npm run build
           echo "Build completed successfully"
+
+      - name: Install production dependencies
+        working-directory: ./backend
+        run: |
+          rm -rf node_modules
+          npm ci --omit=dev
+          echo "Production dependencies installed"
 
       - name: Prepare and zip deployment package
         run: |
           mkdir -p deploy-package
           cp -r backend/dist deploy-package/
+          cp -r backend/node_modules deploy-package/
           cp backend/package.json deploy-package/
           cp backend/package-lock.json deploy-package/ 2>/dev/null || echo "No package-lock.json"
           cd deploy-package
