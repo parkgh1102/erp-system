@@ -306,11 +306,11 @@ const QuotationManagement: React.FC = () => {
         quotationNumber: editingQuotation ? editingQuotation.quotationNumber : nextNumber,
         quotationDate: values.quotationDate.format('YYYY-MM-DD'),
         validUntil: values.validUntil.format('YYYY-MM-DD'),
-        customerId: values.customerId || null,
+        customerId: null,
         supplyAmount: totals.supplyAmount,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
-        memo: values.memo || '',
+        memo: values.customerName ? `[거래처: ${values.customerName}] ${values.memo || ''}` : (values.memo || ''),
         paymentTerms: values.paymentTerms || '',
         deliveryTerms: values.deliveryTerms || '',
         status: values.status || 'draft',
@@ -647,12 +647,8 @@ const QuotationManagement: React.FC = () => {
               </Form.Item>
             </Col>
             <Col xs={24} sm={8}>
-              <Form.Item name="customerId" label="거래처" rules={[{ required: true }]}>
-                <Select placeholder="거래처 선택" showSearch optionFilterProp="children">
-                  {(customers || []).map((c) => (
-                    <Option key={c.id} value={c.id}>{c.name}</Option>
-                  ))}
-                </Select>
+              <Form.Item name="customerName" label="거래처">
+                <Input placeholder="거래처명 입력" />
               </Form.Item>
             </Col>
           </Row>
@@ -662,21 +658,26 @@ const QuotationManagement: React.FC = () => {
           {(quotationItems || []).map((item, index) => (
             <Row gutter={8} key={index} style={{ marginBottom: 8 }}>
               <Col xs={24} sm={6}>
-                <Select
-                  placeholder="품목 선택"
-                  value={item.productId || undefined}
-                  onChange={(val) => handleProductSelect(index, val)}
-                  style={{ width: '100%' }}
-                  showSearch
-                  optionFilterProp="children"
-                >
-                  {(products || []).map((p) => (
-                    <Option key={p.id} value={p.id}>{p.name}</Option>
-                  ))}
-                </Select>
+                <Input
+                  placeholder="품목명"
+                  value={item.productName}
+                  onChange={(e) => {
+                    const newItems = [...quotationItems];
+                    newItems[index].productName = e.target.value;
+                    setQuotationItems(newItems);
+                  }}
+                />
               </Col>
               <Col xs={8} sm={3}>
-                <Input value={item.spec} placeholder="규격" readOnly />
+                <Input
+                  value={item.spec}
+                  placeholder="규격"
+                  onChange={(e) => {
+                    const newItems = [...quotationItems];
+                    newItems[index].spec = e.target.value;
+                    setQuotationItems(newItems);
+                  }}
+                />
               </Col>
               <Col xs={8} sm={3}>
                 <InputNumber

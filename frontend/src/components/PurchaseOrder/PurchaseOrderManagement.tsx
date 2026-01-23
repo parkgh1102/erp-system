@@ -292,11 +292,11 @@ const PurchaseOrderManagement: React.FC = () => {
         orderNumber: editingOrder ? editingOrder.orderNumber : nextNumber,
         orderDate: values.orderDate.format('YYYY-MM-DD'),
         deliveryDate: values.deliveryDate.format('YYYY-MM-DD'),
-        supplierId: values.supplierId || null,
+        supplierId: null,
         supplyAmount: totals.supplyAmount,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
-        memo: values.memo || '',
+        memo: values.supplierName ? `[공급업체: ${values.supplierName}] ${values.memo || ''}` : (values.memo || ''),
         deliveryLocation: values.deliveryLocation || '',
         paymentTerms: values.paymentTerms || '',
         status: values.status || 'draft',
@@ -633,12 +633,8 @@ const PurchaseOrderManagement: React.FC = () => {
               </Form.Item>
             </Col>
             <Col xs={24} sm={8}>
-              <Form.Item name="supplierId" label="공급업체" rules={[{ required: true }]}>
-                <Select placeholder="공급업체 선택" showSearch optionFilterProp="children">
-                  {(suppliers || []).map((s) => (
-                    <Option key={s.id} value={s.id}>{s.name}</Option>
-                  ))}
-                </Select>
+              <Form.Item name="supplierName" label="공급업체">
+                <Input placeholder="공급업체명 입력" />
               </Form.Item>
             </Col>
           </Row>
@@ -648,21 +644,26 @@ const PurchaseOrderManagement: React.FC = () => {
           {(orderItems || []).map((item, index) => (
             <Row gutter={8} key={index} style={{ marginBottom: 8 }}>
               <Col xs={24} sm={6}>
-                <Select
-                  placeholder="품목 선택"
-                  value={item.productId || undefined}
-                  onChange={(val) => handleProductSelect(index, val)}
-                  style={{ width: '100%' }}
-                  showSearch
-                  optionFilterProp="children"
-                >
-                  {(products || []).map((p) => (
-                    <Option key={p.id} value={p.id}>{p.name}</Option>
-                  ))}
-                </Select>
+                <Input
+                  placeholder="품목명"
+                  value={item.productName}
+                  onChange={(e) => {
+                    const newItems = [...orderItems];
+                    newItems[index].productName = e.target.value;
+                    setOrderItems(newItems);
+                  }}
+                />
               </Col>
               <Col xs={8} sm={3}>
-                <Input value={item.spec} placeholder="규격" readOnly />
+                <Input
+                  value={item.spec}
+                  placeholder="규격"
+                  onChange={(e) => {
+                    const newItems = [...orderItems];
+                    newItems[index].spec = e.target.value;
+                    setOrderItems(newItems);
+                  }}
+                />
               </Col>
               <Col xs={8} sm={3}>
                 <InputNumber
