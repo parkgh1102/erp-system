@@ -220,7 +220,8 @@
       "WebFetch(domain:erp-backend-app.azurewebsites.net)",
       "WebFetch(domain:webapperp.vercel.app)",
       "Bash(ssh-keygen:*)",
-      "Bash(ssh:*)"
+      "Bash(ssh:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
