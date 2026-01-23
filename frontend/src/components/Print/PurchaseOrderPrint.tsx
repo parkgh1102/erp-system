@@ -165,6 +165,12 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
     <>
       <style>{`
         @media print {
+          body > *:not(.ant-modal-root) {
+            display: none !important;
+          }
+          .ant-modal-mask {
+            display: none !important;
+          }
           .print-modal-footer,
           .ant-modal-footer,
           .ant-modal-close,
@@ -173,6 +179,11 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
           }
           .ant-modal-content {
             box-shadow: none !important;
+            border: none !important;
+          }
+          .ant-modal-wrap {
+            position: absolute !important;
+            overflow: visible !important;
           }
           .ant-modal {
             position: absolute !important;

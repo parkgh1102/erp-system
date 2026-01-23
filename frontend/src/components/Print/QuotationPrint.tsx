@@ -166,6 +166,12 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
       {/* 인쇄 시 버튼 숨김을 위한 스타일 */}
       <style>{`
         @media print {
+          body > *:not(.ant-modal-root) {
+            display: none !important;
+          }
+          .ant-modal-mask {
+            display: none !important;
+          }
           .print-modal-footer,
           .ant-modal-footer,
           .ant-modal-close,
@@ -174,6 +180,11 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
           }
           .ant-modal-content {
             box-shadow: none !important;
+            border: none !important;
+          }
+          .ant-modal-wrap {
+            position: absolute !important;
+            overflow: visible !important;
           }
           .ant-modal {
             position: absolute !important;
