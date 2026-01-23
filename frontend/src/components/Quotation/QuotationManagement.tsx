@@ -25,6 +25,7 @@ import {
   PrinterOutlined,
   SolutionOutlined,
   DeleteOutlined,
+  EditOutlined,
   MinusCircleOutlined,
   FilePdfOutlined,
   FileImageOutlined,
@@ -498,8 +499,25 @@ const QuotationManagement: React.FC = () => {
             </Button>
           </Popconfirm>
           <Button
+            icon={<EditOutlined />}
+            disabled={selectedRowKeys.length !== 1}
+            onClick={() => {
+              if (selectedRowKeys.length !== 1) {
+                message.warning('수정할 항목을 1개 선택해주세요.');
+                return;
+              }
+              const selected = filteredQuotations.find(q => q.id === selectedRowKeys[0]);
+              if (selected) {
+                openModal(selected);
+              }
+            }}
+          >
+            수정
+          </Button>
+          <Button
             type="primary"
             icon={<PrinterOutlined />}
+            disabled={selectedRowKeys.length === 0}
             onClick={() => {
               if (selectedRowKeys.length === 0) {
                 message.warning('인쇄할 항목을 선택해주세요.');
@@ -536,6 +554,9 @@ const QuotationManagement: React.FC = () => {
               setSelectedRowKeys(prev =>
                 prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
               );
+            },
+            onDoubleClick: () => {
+              openModal(record);
             },
             style: { cursor: 'pointer' }
           })}

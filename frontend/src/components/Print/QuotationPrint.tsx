@@ -342,12 +342,14 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
           </table>
 
           {/* 비고/조건 */}
-          <div style={{ marginBottom: 20, padding: 15, backgroundColor: '#fafafa', border: '1px solid #ddd', fontSize: 11 }}>
-            <div style={{ fontWeight: 'bold', marginBottom: 8 }}>비고 및 조건</div>
-            <div style={{ whiteSpace: 'pre-line', color: '#555' }}>
-              {data.memo || '- 상기 견적금액은 부가세 포함 금액입니다.\n- 본 견적서의 유효기간이 경과한 경우 재견적을 요청해 주시기 바랍니다.'}
+          {data.memo && (
+            <div style={{ marginBottom: 20, padding: 15, backgroundColor: '#fafafa', border: '1px solid #ddd', fontSize: 11 }}>
+              <div style={{ fontWeight: 'bold', marginBottom: 8 }}>비고</div>
+              <div style={{ whiteSpace: 'pre-line', color: '#555' }}>
+                {data.memo}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 공급자 정보 */}
           <div style={{ marginTop: 30, borderTop: '2px solid #1a237e', paddingTop: 20 }}>
