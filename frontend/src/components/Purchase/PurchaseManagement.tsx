@@ -21,12 +21,13 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
 
-// 규격 옵션 상수 (500개 배열 - 컴포넌트 외부에서 한 번만 생성)
+// 규격 옵션 상수
 const DEFAULT_SPEC_OPTIONS: string[] = [
   'box', 'ea', 'pallet', '자루', 'set', 'pack',
   ...Array.from({ length: 200 }, (_, i) => `${i + 1}box`),
-  ...Array.from({ length: 100 }, (_, i) => `${i + 1}pallet`),
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}pallet`),
   ...Array.from({ length: 200 }, (_, i) => `${i + 1}ea`),
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}자루`),
 ];
 
 // 단위 옵션 상수

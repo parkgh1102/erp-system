@@ -46,6 +46,17 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 const { TextArea } = Input;
 
+// 규격 옵션 상수
+const SPEC_OPTIONS: string[] = [
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}box`),
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}자루`),
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}pallet`),
+  ...Array.from({ length: 200 }, (_, i) => `${i + 1}ea`),
+];
+
+// 단위 옵션 상수
+const UNIT_OPTIONS: string[] = ['kg', 'ea', 'g'];
+
 interface Customer {
   id: number;
   customerCode: string;
@@ -625,28 +636,40 @@ const QuotationManagement: React.FC = () => {
                 />
               </Col>
               <Col span={2}>
-                <Input
-                  value={item.spec}
+                <Select
+                  value={item.spec || undefined}
                   placeholder="규격"
-                  onChange={(e) => {
+                  onChange={(val) => {
                     const newItems = [...quotationItems];
-                    newItems[index].spec = e.target.value;
+                    newItems[index].spec = val;
                     setQuotationItems(newItems);
                   }}
                   size="small"
-                />
+                  style={{ width: '100%' }}
+                  showSearch
+                  allowClear
+                  popupMatchSelectWidth={false}
+                >
+                  {SPEC_OPTIONS.map(opt => <Option key={opt} value={opt}>{opt}</Option>)}
+                </Select>
               </Col>
               <Col span={2}>
-                <Input
-                  value={item.unit}
+                <Select
+                  value={item.unit || undefined}
                   placeholder="단위"
-                  onChange={(e) => {
+                  onChange={(val) => {
                     const newItems = [...quotationItems];
-                    newItems[index].unit = e.target.value;
+                    newItems[index].unit = val;
                     setQuotationItems(newItems);
                   }}
                   size="small"
-                />
+                  style={{ width: '100%' }}
+                  showSearch
+                  allowClear
+                  popupMatchSelectWidth={false}
+                >
+                  {UNIT_OPTIONS.map(opt => <Option key={opt} value={opt}>{opt}</Option>)}
+                </Select>
               </Col>
               <Col span={2}>
                 <InputNumber
