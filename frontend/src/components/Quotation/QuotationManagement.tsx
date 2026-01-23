@@ -661,6 +661,7 @@ const QuotationManagement: React.FC = () => {
                   onChange={(val) => calculateItemAmount(index, 'taxType', val)}
                   style={{ width: '100%' }}
                   size="small"
+                  popupMatchSelectWidth={false}
                 >
                   <Option value="exempt">면세</Option>
                   <Option value="vat_included">과세(포함)</Option>
