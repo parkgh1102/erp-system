@@ -23,7 +23,7 @@ const { TextArea } = Input;
 
 // 규격 옵션 상수
 const DEFAULT_SPEC_OPTIONS: string[] = [
-  'box', 'ea', 'pallet', '자루', 'set', 'pack',
+  'box', 'ea', 'pallet', '자루',
   ...Array.from({ length: 200 }, (_, i) => `${i + 1}box`),
   ...Array.from({ length: 200 }, (_, i) => `${i + 1}pallet`),
   ...Array.from({ length: 200 }, (_, i) => `${i + 1}ea`),
@@ -31,7 +31,7 @@ const DEFAULT_SPEC_OPTIONS: string[] = [
 ];
 
 // 단위 옵션 상수
-const DEFAULT_UNIT_OPTIONS: string[] = ['EA', 'BOX', 'KG', 'M', 'SET', 'kg', 'ea', 'box', 'set', 'pcs', '개'];
+const DEFAULT_UNIT_OPTIONS: string[] = ['kg', 'g', 'ea'];
 
 interface Product {
   id: number;
