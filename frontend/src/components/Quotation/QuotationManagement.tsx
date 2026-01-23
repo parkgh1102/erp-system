@@ -13,9 +13,7 @@ import {
   Col,
   InputNumber,
   Typography,
-  Tag,
   Tooltip,
-  Tabs,
   Statistic,
   Popconfirm,
   Divider,
@@ -27,12 +25,9 @@ import {
   DownloadOutlined,
   PrinterOutlined,
   SolutionOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
-  SwapOutlined,
   MinusCircleOutlined,
   FilePdfOutlined,
   FileImageOutlined,
@@ -40,7 +35,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { customerAPI, productAPI, quotationAPI } from '../../utils/api';
+import { quotationAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -85,7 +80,7 @@ interface QuotationItem {
   vatAmount: number;
   totalAmount: number;
   memo?: string;
-  taxType: 'taxable' | 'exempt';
+  taxType: 'exempt' | 'vat_included' | 'vat_separate';
 }
 
 interface Quotation {
@@ -111,22 +106,19 @@ const QuotationManagement: React.FC = () => {
   const { isDark } = useThemeStore();
 
   const [quotations, setQuotations] = useState<Quotation[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [form] = Form.useForm();
-  const [activeTab, setActiveTab] = useState<string>('all');
   const [searchText, setSearchText] = useState('');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
     dayjs().startOf('month'),
     dayjs().endOf('month'),
   ]);
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([
-    { productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'taxable' }
+    { productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'vat_separate' }
   ]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -138,19 +130,7 @@ const QuotationManagement: React.FC = () => {
     if (!currentBusiness) return;
     setLoading(true);
     try {
-      const [customerRes, productRes, quotationRes] = await Promise.all([
-        customerAPI.getAll(currentBusiness.id),
-        productAPI.getAll(currentBusiness.id),
-        quotationAPI.getAll(currentBusiness.id),
-      ]);
-      if (customerRes.data.success) {
-        const data = customerRes.data.data;
-        setCustomers(Array.isArray(data) ? data : []);
-      }
-      if (productRes.data.success) {
-        const data = productRes.data.data;
-        setProducts(Array.isArray(data) ? data : []);
-      }
+      const quotationRes = await quotationAPI.getAll(currentBusiness.id);
       if (quotationRes.data.success) {
         const data = quotationRes.data.data;
         setQuotations(Array.isArray(data) ? data.map((q: any) => ({
@@ -168,6 +148,7 @@ const QuotationManagement: React.FC = () => {
             vatAmount: Number(item.vatAmount),
             totalAmount: Number(item.supplyAmount) + Number(item.vatAmount),
             memo: item.remark,
+            taxType: 'vat_separate' as const,
           })),
         })) : []);
       }
@@ -187,28 +168,21 @@ const QuotationManagement: React.FC = () => {
   const stats = useMemo(() => {
     return {
       total: quotations.length,
-      draft: quotations.filter(q => q.status === 'draft').length,
-      sent: quotations.filter(q => q.status === 'sent').length,
-      accepted: quotations.filter(q => q.status === 'accepted').length,
-      totalAmount: quotations.reduce((sum, q) => sum + q.totalAmount, 0),
+      totalAmount: quotations.reduce((sum, q) => sum + Number(q.totalAmount), 0),
     };
   }, [quotations]);
 
   // 필터링된 데이터
   const filteredQuotations = useMemo(() => {
     let result = [...quotations];
-    if (activeTab !== 'all') {
-      result = result.filter(q => q.status === activeTab);
-    }
     if (searchText) {
       const search = searchText.toLowerCase();
       result = result.filter(q =>
-        q.quotationNumber.toLowerCase().includes(search) ||
-        q.customer?.name.toLowerCase().includes(search)
+        q.quotationNumber.toLowerCase().includes(search)
       );
     }
     return result;
-  }, [quotations, activeTab, searchText]);
+  }, [quotations, searchText]);
 
   // 품목 금액 계산
   const calculateItemAmount = (index: number, field: string, value: number | string) => {
@@ -217,10 +191,19 @@ const QuotationManagement: React.FC = () => {
 
     if (field === 'quantity') item.quantity = value as number;
     if (field === 'unitPrice') item.unitPrice = value as number;
-    if (field === 'taxType') item.taxType = value as 'taxable' | 'exempt';
+    if (field === 'taxType') item.taxType = value as 'exempt' | 'vat_included' | 'vat_separate';
 
-    item.supplyAmount = item.quantity * item.unitPrice;
-    item.vatAmount = item.taxType === 'exempt' ? 0 : Math.round(item.supplyAmount * 0.1);
+    const totalPrice = item.quantity * item.unitPrice;
+    if (item.taxType === 'exempt') {
+      item.supplyAmount = totalPrice;
+      item.vatAmount = 0;
+    } else if (item.taxType === 'vat_included') {
+      item.supplyAmount = Math.round(totalPrice / 1.1);
+      item.vatAmount = totalPrice - item.supplyAmount;
+    } else {
+      item.supplyAmount = totalPrice;
+      item.vatAmount = Math.round(totalPrice * 0.1);
+    }
     item.totalAmount = item.supplyAmount + item.vatAmount;
 
     setQuotationItems(newItems);
@@ -230,7 +213,7 @@ const QuotationManagement: React.FC = () => {
   const addItem = () => {
     setQuotationItems([...quotationItems, {
       productId: 0, productCode: '', productName: '', spec: '', unit: '',
-      quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'taxable'
+      quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'vat_separate'
     }]);
   };
 
@@ -288,7 +271,7 @@ const QuotationManagement: React.FC = () => {
         validUntil: dayjs().add(1, 'month'),
         status: 'draft',
       });
-      setQuotationItems([{ productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'taxable' }]);
+      setQuotationItems([{ productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'vat_separate' }]);
     }
     setModalVisible(true);
   };
@@ -312,10 +295,10 @@ const QuotationManagement: React.FC = () => {
         supplyAmount: totals.supplyAmount,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
-        memo: values.customerName ? `[거래처: ${values.customerName}] ${values.memo || ''}` : (values.memo || ''),
+        memo: values.memo || '',
         paymentTerms: values.paymentTerms || '',
         deliveryTerms: values.deliveryTerms || '',
-        status: values.status || 'draft',
+        status: 'draft',
         items: quotationItems.filter(item => item.productId || item.productName).map(item => ({
           productId: item.productId || null,
           itemName: item.productName,
@@ -343,12 +326,6 @@ const QuotationManagement: React.FC = () => {
     }
   };
 
-  // 매출 전환
-  const convertToSales = async (quotation: Quotation) => {
-    message.success('견적서가 매출로 전환되었습니다.');
-    fetchData();
-  };
-
   // 삭제
   const handleDelete = async (id: number) => {
     if (!currentBusiness) return;
@@ -365,18 +342,6 @@ const QuotationManagement: React.FC = () => {
   // 금액 포맷
   const formatCurrency = (value: number) => new Intl.NumberFormat('ko-KR').format(value) + '원';
 
-  // 상태 태그
-  const renderStatusTag = (status: string) => {
-    const statusConfig: Record<string, { color: string; text: string }> = {
-      draft: { color: 'default', text: '임시저장' },
-      sent: { color: 'blue', text: '발송완료' },
-      accepted: { color: 'green', text: '승인' },
-      rejected: { color: 'red', text: '거절' },
-      converted: { color: 'purple', text: '매출전환' },
-    };
-    const config = statusConfig[status] || statusConfig.draft;
-    return <Tag color={config.color}>{config.text}</Tag>;
-  };
 
   // 합계 계산
   const totals = useMemo(() => {
@@ -428,16 +393,9 @@ const QuotationManagement: React.FC = () => {
       render: (val: number) => <Text strong>{formatCurrency(val)}</Text>,
     },
     {
-      title: '상태',
-      dataIndex: 'status',
-      key: 'status',
-      width: 90,
-      render: (status: string) => renderStatusTag(status),
-    },
-    {
       title: '관리',
       key: 'action',
-      width: 150,
+      width: 120,
       render: (_: any, record: Quotation) => (
         <Space size="small">
           <Tooltip title="상세보기">
@@ -446,11 +404,6 @@ const QuotationManagement: React.FC = () => {
           <Tooltip title="수정">
             <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openModal(record)} />
           </Tooltip>
-          {record.status === 'accepted' && (
-            <Tooltip title="매출전환">
-              <Button type="text" size="small" icon={<SwapOutlined />} onClick={() => convertToSales(record)} style={{ color: '#52c41a' }} />
-            </Tooltip>
-          )}
           <Popconfirm title="삭제하시겠습니까?" onConfirm={() => handleDelete(record.id)} okText="삭제" cancelText="취소">
             <Tooltip title="삭제">
               <Button type="text" size="small" danger icon={<DeleteOutlined />} />
@@ -461,12 +414,6 @@ const QuotationManagement: React.FC = () => {
     },
   ];
 
-  const tabItems = [
-    { key: 'all', label: `전체 (${stats.total})` },
-    { key: 'draft', label: `임시저장 (${stats.draft})` },
-    { key: 'sent', label: `발송 (${stats.sent})` },
-    { key: 'accepted', label: `승인 (${stats.accepted})` },
-  ];
 
   return (
     <div style={{ padding: isMobile ? 12 : 24 }}>
@@ -483,22 +430,12 @@ const QuotationManagement: React.FC = () => {
 
       {/* 통계 카드 */}
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col xs={12} sm={6}>
+        <Col xs={12} sm={12}>
           <Card size="small">
             <Statistic title="전체" value={stats.total} suffix="건" valueStyle={{ color: '#1890ff' }} />
           </Card>
         </Col>
-        <Col xs={12} sm={6}>
-          <Card size="small">
-            <Statistic title="발송완료" value={stats.sent} suffix="건" valueStyle={{ color: '#1890ff' }} />
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
-          <Card size="small">
-            <Statistic title="승인" value={stats.accepted} suffix="건" valueStyle={{ color: '#52c41a' }} />
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
+        <Col xs={12} sm={12}>
           <Card size="small">
             <Statistic title="총 금액" value={stats.totalAmount} formatter={(val) => formatCurrency(val as number)} valueStyle={{ color: '#1890ff', fontSize: isMobile ? 16 : 20 }} />
           </Card>
@@ -599,7 +536,6 @@ const QuotationManagement: React.FC = () => {
 
       {/* 테이블 */}
       <Card size="small">
-        <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
         <Table
           columns={columns}
           dataSource={filteredQuotations}
@@ -743,8 +679,9 @@ const QuotationManagement: React.FC = () => {
                   style={{ width: '100%' }}
                   size="small"
                 >
-                  <Option value="taxable">과세</Option>
                   <Option value="exempt">면세</Option>
+                  <Option value="vat_included">과세(포함)</Option>
+                  <Option value="vat_separate">과세(별도)</Option>
                 </Select>
               </Col>
               <Col span={1}>
@@ -786,8 +723,7 @@ const QuotationManagement: React.FC = () => {
               <Col span={8}><Text type="secondary">견적번호</Text><div><Text strong>{selectedQuotation.quotationNumber}</Text></div></Col>
               <Col span={8}><Text type="secondary">견적일</Text><div><Text strong>{dayjs(selectedQuotation.quotationDate).format('YYYY-MM-DD')}</Text></div></Col>
               <Col span={8}><Text type="secondary">유효기간</Text><div><Text strong>{dayjs(selectedQuotation.validUntil).format('YYYY-MM-DD')}</Text></div></Col>
-              <Col span={12}><Text type="secondary">거래처</Text><div><Text strong>{selectedQuotation.customer?.name}</Text></div></Col>
-              <Col span={12}><Text type="secondary">상태</Text><div>{renderStatusTag(selectedQuotation.status)}</div></Col>
+              <Col span={24}><Text type="secondary">거래처</Text><div><Text strong>{selectedQuotation.customer?.name || '-'}</Text></div></Col>
             </Row>
             <Divider />
             <Table
