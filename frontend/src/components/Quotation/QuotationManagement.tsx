@@ -661,6 +661,12 @@ const QuotationManagement: React.FC = () => {
                 <InputNumber
                   value={item.unitPrice}
                   onChange={(val) => calculateItemAmount(index, 'unitPrice', val || 0)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addItem();
+                    }
+                  }}
                   formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={(v) => v?.replace(/,/g, '') as any}
                   style={{ width: '100%' }}
