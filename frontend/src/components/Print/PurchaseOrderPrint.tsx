@@ -215,7 +215,7 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
           </Space>
         }
       >
-        <div ref={printRef} style={{ padding: 30, backgroundColor: '#fff', fontFamily: 'Malgun Gothic, sans-serif', color: '#000' }}>
+        <div ref={printRef} style={{ padding: 30, backgroundColor: '#fff', fontFamily: 'Malgun Gothic, sans-serif', color: '#000', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties}>
           {/* 제목 */}
           <div style={{ textAlign: 'center', marginBottom: 30 }}>
             <h1 style={{ fontSize: 32, fontWeight: 'bold', margin: 0, letterSpacing: 12, color: '#e65100' }}>발 주 서</h1>

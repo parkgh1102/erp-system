@@ -218,7 +218,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
           </Space>
         }
       >
-        <div ref={printRef} style={{ padding: 30, backgroundColor: '#fff', fontFamily: 'Malgun Gothic, sans-serif', color: '#000' }}>
+        <div ref={printRef} style={{ padding: 30, backgroundColor: '#fff', fontFamily: 'Malgun Gothic, sans-serif', color: '#000', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties}>
           {/* 제목 */}
           <div style={{ textAlign: 'center', marginBottom: 30 }}>
             <h1 style={{ fontSize: 28, fontWeight: 'bold', margin: 0, letterSpacing: 8, color: '#36cfc9' }}>미수/미지급 현황표</h1>
