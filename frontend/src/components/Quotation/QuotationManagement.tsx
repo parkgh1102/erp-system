@@ -116,7 +116,7 @@ const QuotationManagement: React.FC = () => {
     dayjs().endOf('month'),
   ]);
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([
-    { productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'vat_separate' }
+    { productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'exempt' }
   ]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -146,7 +146,7 @@ const QuotationManagement: React.FC = () => {
             vatAmount: Number(item.vatAmount),
             totalAmount: Number(item.supplyAmount) + Number(item.vatAmount),
             memo: item.remark,
-            taxType: 'vat_separate' as const,
+            taxType: 'exempt' as const,
           })),
         })) : []);
       }
@@ -211,7 +211,7 @@ const QuotationManagement: React.FC = () => {
   const addItem = () => {
     setQuotationItems([...quotationItems, {
       productId: 0, productCode: '', productName: '', spec: '', unit: '',
-      quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'vat_separate'
+      quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'exempt'
     }]);
   };
 
@@ -269,7 +269,7 @@ const QuotationManagement: React.FC = () => {
         validUntil: dayjs().add(1, 'month'),
         status: 'draft',
       });
-      setQuotationItems([{ productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'vat_separate' }]);
+      setQuotationItems([{ productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'exempt' }]);
     }
     setModalVisible(true);
   };
