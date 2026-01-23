@@ -289,10 +289,14 @@ export class BusinessController {
         });
       }
 
-      // 이미지 파일 경로
-      const imagePath = path.join(__dirname, '../../', business.sealImage);
+      // 이미지 파일 경로 (process.cwd() 기준으로 변경)
+      const imagePath = path.join(process.cwd(), business.sealImage);
 
       if (!fs.existsSync(imagePath)) {
+        // DB에는 경로가 있지만 파일이 없는 경우 - DB 정리
+        console.warn(`Seal image file not found: ${imagePath}, clearing DB reference`);
+        business.sealImage = undefined;
+        await businessRepository.save(business);
         return res.status(404).json({
           success: false,
           message: '도장 이미지 파일을 찾을 수 없습니다.'
@@ -345,14 +349,14 @@ export class BusinessController {
 
       // 기존 도장 이미지 삭제
       if (business.sealImage) {
-        const oldImagePath = path.join(__dirname, '../../', business.sealImage);
+        const oldImagePath = path.join(process.cwd(), business.sealImage);
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
         }
       }
 
       // 새 도장 이미지 저장
-      const uploadsDir = path.join(__dirname, '../../uploads/seals');
+      const uploadsDir = path.join(process.cwd(), 'uploads/seals');
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
@@ -399,7 +403,7 @@ export class BusinessController {
       }
 
       if (business.sealImage) {
-        const imagePath = path.join(__dirname, '../../', business.sealImage);
+        const imagePath = path.join(process.cwd(), business.sealImage);
         if (fs.existsSync(imagePath)) {
           fs.unlinkSync(imagePath);
         }
