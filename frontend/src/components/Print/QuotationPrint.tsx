@@ -308,9 +308,9 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
             <tfoot>
               <tr style={{ backgroundColor: '#1a237e' }}>
                 <td colSpan={5} style={{ padding: 10, border: '1px solid #333', textAlign: 'center', fontWeight: 'bold', color: '#fff' }}>합 계</td>
-                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold', color: '#ff6b6b' }}>{formatNumber(data.supplyAmount)}</td>
-                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold', color: '#ff6b6b' }}>{formatNumber(data.vatAmount)}</td>
-                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold', color: '#ff6b6b' }}>{formatNumber(data.totalAmount)}</td>
+                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold', color: '#fff' }}>{formatNumber(data.supplyAmount)}</td>
+                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold', color: '#fff' }}>{formatNumber(data.vatAmount)}</td>
+                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold', color: '#fff' }}>{formatNumber(data.totalAmount)}</td>
               </tr>
             </tfoot>
           </table>
