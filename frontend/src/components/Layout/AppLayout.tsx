@@ -15,8 +15,6 @@ import {
   BellOutlined,
   BankOutlined,
   SolutionOutlined,
-  FileDoneOutlined,
-  AccountBookOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -149,18 +147,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       key: '/quotations',
       icon: <SolutionOutlined style={{ color: '#9254de' }} />,
       label: '견적서',
-      roles: ['admin'],
-    },
-    {
-      key: '/purchase-orders',
-      icon: <FileDoneOutlined style={{ color: '#ff7a45' }} />,
-      label: '발주서',
-      roles: ['admin'],
-    },
-    {
-      key: '/customer-balance',
-      icon: <AccountBookOutlined style={{ color: '#36cfc9' }} />,
-      label: '미수/미지급',
       roles: ['admin'],
     },
   ];

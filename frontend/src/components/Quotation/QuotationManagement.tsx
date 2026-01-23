@@ -85,6 +85,7 @@ interface QuotationItem {
   vatAmount: number;
   totalAmount: number;
   memo?: string;
+  taxType: 'taxable' | 'exempt';
 }
 
 interface Quotation {
@@ -125,7 +126,7 @@ const QuotationManagement: React.FC = () => {
     dayjs().endOf('month'),
   ]);
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([
-    { productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0 }
+    { productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'taxable' }
   ]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -210,15 +211,16 @@ const QuotationManagement: React.FC = () => {
   }, [quotations, activeTab, searchText]);
 
   // 품목 금액 계산
-  const calculateItemAmount = (index: number, field: string, value: number) => {
+  const calculateItemAmount = (index: number, field: string, value: number | string) => {
     const newItems = [...quotationItems];
     const item = newItems[index];
 
-    if (field === 'quantity') item.quantity = value;
-    if (field === 'unitPrice') item.unitPrice = value;
+    if (field === 'quantity') item.quantity = value as number;
+    if (field === 'unitPrice') item.unitPrice = value as number;
+    if (field === 'taxType') item.taxType = value as 'taxable' | 'exempt';
 
     item.supplyAmount = item.quantity * item.unitPrice;
-    item.vatAmount = Math.round(item.supplyAmount * 0.1);
+    item.vatAmount = item.taxType === 'exempt' ? 0 : Math.round(item.supplyAmount * 0.1);
     item.totalAmount = item.supplyAmount + item.vatAmount;
 
     setQuotationItems(newItems);
@@ -228,7 +230,7 @@ const QuotationManagement: React.FC = () => {
   const addItem = () => {
     setQuotationItems([...quotationItems, {
       productId: 0, productCode: '', productName: '', spec: '', unit: '',
-      quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0
+      quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'taxable'
     }]);
   };
 
@@ -286,7 +288,7 @@ const QuotationManagement: React.FC = () => {
         validUntil: dayjs().add(1, 'month'),
         status: 'draft',
       });
-      setQuotationItems([{ productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0 }]);
+      setQuotationItems([{ productId: 0, productCode: '', productName: '', spec: '', unit: '', quantity: 1, unitPrice: 0, supplyAmount: 0, vatAmount: 0, totalAmount: 0, taxType: 'taxable' }]);
     }
     setModalVisible(true);
   };
@@ -655,9 +657,22 @@ const QuotationManagement: React.FC = () => {
 
           <Divider>품목 목록</Divider>
 
+          {/* 헤더 */}
+          <Row gutter={4} style={{ marginBottom: 8, fontWeight: 'bold', fontSize: 12, color: isDark ? '#aaa' : '#666' }}>
+            <Col span={4}>품목</Col>
+            <Col span={2}>규격</Col>
+            <Col span={2}>단위</Col>
+            <Col span={2}>수량</Col>
+            <Col span={3}>단가</Col>
+            <Col span={3}>공급가액</Col>
+            <Col span={2}>세액</Col>
+            <Col span={3}>합계</Col>
+            <Col span={2}>면과세</Col>
+            <Col span={1}></Col>
+          </Row>
           {(quotationItems || []).map((item, index) => (
-            <Row gutter={8} key={index} style={{ marginBottom: 8 }}>
-              <Col xs={24} sm={6}>
+            <Row gutter={4} key={index} style={{ marginBottom: 8 }}>
+              <Col span={4}>
                 <Input
                   placeholder="품목명"
                   value={item.productName}
@@ -666,9 +681,10 @@ const QuotationManagement: React.FC = () => {
                     newItems[index].productName = e.target.value;
                     setQuotationItems(newItems);
                   }}
+                  size="small"
                 />
               </Col>
-              <Col xs={8} sm={3}>
+              <Col span={2}>
                 <Input
                   value={item.spec}
                   placeholder="규격"
@@ -677,35 +693,62 @@ const QuotationManagement: React.FC = () => {
                     newItems[index].spec = e.target.value;
                     setQuotationItems(newItems);
                   }}
+                  size="small"
                 />
               </Col>
-              <Col xs={8} sm={3}>
+              <Col span={2}>
+                <Input
+                  value={item.unit}
+                  placeholder="단위"
+                  onChange={(e) => {
+                    const newItems = [...quotationItems];
+                    newItems[index].unit = e.target.value;
+                    setQuotationItems(newItems);
+                  }}
+                  size="small"
+                />
+              </Col>
+              <Col span={2}>
                 <InputNumber
                   value={item.quantity}
                   onChange={(val) => calculateItemAmount(index, 'quantity', val || 0)}
                   min={1}
                   style={{ width: '100%' }}
-                  placeholder="수량"
+                  size="small"
                 />
               </Col>
-              <Col xs={8} sm={4}>
+              <Col span={3}>
                 <InputNumber
                   value={item.unitPrice}
                   onChange={(val) => calculateItemAmount(index, 'unitPrice', val || 0)}
                   formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                   parser={(v) => v?.replace(/,/g, '') as any}
                   style={{ width: '100%' }}
-                  placeholder="단가"
+                  size="small"
                 />
               </Col>
-              <Col xs={12} sm={4}>
-                <InputNumber value={item.supplyAmount} readOnly style={{ width: '100%' }} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+              <Col span={3}>
+                <InputNumber value={item.supplyAmount} readOnly style={{ width: '100%' }} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} size="small" />
               </Col>
-              <Col xs={10} sm={3}>
-                <InputNumber value={item.totalAmount} readOnly style={{ width: '100%' }} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+              <Col span={2}>
+                <InputNumber value={item.vatAmount} readOnly style={{ width: '100%' }} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} size="small" />
               </Col>
-              <Col xs={2} sm={1}>
-                <Button type="text" danger icon={<MinusCircleOutlined />} onClick={() => removeItem(index)} disabled={quotationItems.length === 1} />
+              <Col span={3}>
+                <InputNumber value={item.totalAmount} readOnly style={{ width: '100%' }} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} size="small" />
+              </Col>
+              <Col span={2}>
+                <Select
+                  value={item.taxType}
+                  onChange={(val) => calculateItemAmount(index, 'taxType', val)}
+                  style={{ width: '100%' }}
+                  size="small"
+                >
+                  <Option value="taxable">과세</Option>
+                  <Option value="exempt">면세</Option>
+                </Select>
+              </Col>
+              <Col span={1}>
+                <Button type="text" danger icon={<MinusCircleOutlined />} onClick={() => removeItem(index)} disabled={quotationItems.length === 1} size="small" />
               </Col>
             </Row>
           ))}
