@@ -44,6 +44,10 @@ const ActivityLog_1 = require("../entities/ActivityLog");
 const Notification_1 = require("../entities/Notification");
 const OTP_1 = require("../entities/OTP");
 const UserBusinessAccess_1 = require("../entities/UserBusinessAccess");
+const Quotation_1 = require("../entities/Quotation");
+const QuotationItem_1 = require("../entities/QuotationItem");
+const PurchaseOrder_1 = require("../entities/PurchaseOrder");
+const PurchaseOrderItem_1 = require("../entities/PurchaseOrderItem");
 const env = (0, envValidator_1.getValidatedEnv)();
 const baseConfig = {
     // ✅ synchronize 설정 (환경 변수로 제어 가능)
@@ -70,7 +74,11 @@ const baseConfig = {
         ActivityLog_1.ActivityLog,
         Notification_1.Notification,
         OTP_1.OTP,
-        UserBusinessAccess_1.UserBusinessAccess
+        UserBusinessAccess_1.UserBusinessAccess,
+        Quotation_1.Quotation,
+        QuotationItem_1.QuotationItem,
+        PurchaseOrder_1.PurchaseOrder,
+        PurchaseOrderItem_1.PurchaseOrderItem
     ],
     // 마이그레이션 파일 경로
     migrations: ['src/migrations/*.ts'],

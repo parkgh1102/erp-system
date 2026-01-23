@@ -13,6 +13,7 @@ interface SecurityEvent {
 }
 declare class SecurityLogger {
     private logPath;
+    private canWriteToFile;
     constructor();
     private ensureLogDirectory;
     private formatLogEntry;

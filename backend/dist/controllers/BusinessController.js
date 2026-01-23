@@ -259,15 +259,29 @@ class BusinessController {
                     message: '등록된 도장 이미지가 없습니다.'
                 });
             }
-            // 이미지 파일 경로
-            const imagePath = path_1.default.join(__dirname, '../../', business.sealImage);
+            // Base64 데이터인 경우 (data:image/로 시작)
+            if (business.sealImage.startsWith('data:')) {
+                const matches = business.sealImage.match(/^data:([^;]+);base64,(.+)$/);
+                if (matches) {
+                    const contentType = matches[1];
+                    const base64Data = matches[2];
+                    const buffer = Buffer.from(base64Data, 'base64');
+                    res.setHeader('Content-Type', contentType);
+                    res.setHeader('Content-Length', buffer.length);
+                    return res.send(buffer);
+                }
+            }
+            // 파일 경로인 경우 (레거시 지원)
+            const imagePath = path_1.default.join(process.cwd(), business.sealImage);
             if (!fs_1.default.existsSync(imagePath)) {
+                console.warn(`Seal image file not found: ${imagePath}, clearing DB reference`);
+                business.sealImage = undefined;
+                await businessRepository.save(business);
                 return res.status(404).json({
                     success: false,
                     message: '도장 이미지 파일을 찾을 수 없습니다.'
                 });
             }
-            // 파일 확장자에 따른 Content-Type 설정
             const ext = path_1.default.extname(imagePath).toLowerCase();
             let contentType = 'image/png';
             if (ext === '.jpg' || ext === '.jpeg') {
@@ -309,21 +323,25 @@ class BusinessController {
             }
             // 기존 도장 이미지 삭제
             if (business.sealImage) {
-                const oldImagePath = path_1.default.join(__dirname, '../../', business.sealImage);
-                if (fs_1.default.existsSync(oldImagePath)) {
-                    fs_1.default.unlinkSync(oldImagePath);
+                try {
+                    const oldImagePath = path_1.default.join(process.cwd(), business.sealImage);
+                    if (fs_1.default.existsSync(oldImagePath)) {
+                        fs_1.default.unlinkSync(oldImagePath);
+                    }
+                }
+                catch (err) {
+                    console.warn('Failed to delete old seal image:', err);
                 }
             }
-            // 새 도장 이미지 저장
-            const uploadsDir = path_1.default.join(__dirname, '../../uploads/seals');
-            if (!fs_1.default.existsSync(uploadsDir)) {
-                fs_1.default.mkdirSync(uploadsDir, { recursive: true });
-            }
-            const ext = path_1.default.extname(file.originalname);
-            const filename = `seal-${id}-${Date.now()}${ext}`;
-            const filepath = path_1.default.join(uploadsDir, filename);
-            fs_1.default.writeFileSync(filepath, file.buffer);
-            business.sealImage = `/uploads/seals/${filename}`;
+            // 새 도장 이미지 저장 - Base64로 DB에 저장
+            const ext = path_1.default.extname(file.originalname).toLowerCase();
+            let mimeType = 'image/png';
+            if (ext === '.jpg' || ext === '.jpeg')
+                mimeType = 'image/jpeg';
+            else if (ext === '.gif')
+                mimeType = 'image/gif';
+            const base64Data = `data:${mimeType};base64,${file.buffer.toString('base64')}`;
+            business.sealImage = base64Data;
             const updatedBusiness = await businessRepository.save(business);
             res.json({
                 success: true,
@@ -334,7 +352,7 @@ class BusinessController {
             });
         }
         catch (error) {
-            console.error('Error uploading seal image:', error);
+            console.error('Error uploading seal image:', error?.message || error);
             res.status(500).json({
                 success: false,
                 message: '도장 이미지 업로드 중 오류가 발생했습니다.'
@@ -355,9 +373,17 @@ class BusinessController {
                 });
             }
             if (business.sealImage) {
-                const imagePath = path_1.default.join(__dirname, '../../', business.sealImage);
-                if (fs_1.default.existsSync(imagePath)) {
-                    fs_1.default.unlinkSync(imagePath);
+                // 파일 경로인 경우에만 파일 삭제 시도 (Base64가 아닌 경우)
+                if (!business.sealImage.startsWith('data:')) {
+                    try {
+                        const imagePath = path_1.default.join(process.cwd(), business.sealImage);
+                        if (fs_1.default.existsSync(imagePath)) {
+                            fs_1.default.unlinkSync(imagePath);
+                        }
+                    }
+                    catch (err) {
+                        console.warn('Failed to delete seal image file:', err);
+                    }
                 }
                 business.sealImage = undefined;
                 await businessRepository.save(business);

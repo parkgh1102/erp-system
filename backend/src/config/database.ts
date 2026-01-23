@@ -37,6 +37,10 @@ import { ActivityLog } from '../entities/ActivityLog';
 import { Notification } from '../entities/Notification';
 import { OTP } from '../entities/OTP';
 import { UserBusinessAccess } from '../entities/UserBusinessAccess';
+import { Quotation } from '../entities/Quotation';
+import { QuotationItem } from '../entities/QuotationItem';
+import { PurchaseOrder } from '../entities/PurchaseOrder';
+import { PurchaseOrderItem } from '../entities/PurchaseOrderItem';
 
 const env = getValidatedEnv();
 
@@ -67,7 +71,11 @@ const baseConfig = {
     ActivityLog,
     Notification,
     OTP,
-    UserBusinessAccess
+    UserBusinessAccess,
+    Quotation,
+    QuotationItem,
+    PurchaseOrder,
+    PurchaseOrderItem
   ],
 
   // 마이그레이션 파일 경로

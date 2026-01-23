@@ -13,6 +13,8 @@ const PurchaseController_1 = require("../controllers/PurchaseController");
 const PaymentController_1 = require("../controllers/PaymentController");
 const DashboardController_1 = require("../controllers/DashboardController");
 const transactionLedgerController_1 = require("../controllers/transactionLedgerController");
+const QuotationController_1 = require("../controllers/QuotationController");
+const PurchaseOrderController_1 = require("../controllers/PurchaseOrderController");
 const auth_1 = require("../middleware/auth");
 const multer_1 = __importDefault(require("multer"));
 const router = (0, express_1.Router)();
@@ -83,4 +85,18 @@ router.get('/:businessId/dashboard/category-data', DashboardController_1.Dashboa
 router.get('/:businessId/dashboard/monthly-trend', DashboardController_1.DashboardController.getMonthlyTrend);
 router.get('/:businessId/dashboard/all-transactions', DashboardController_1.DashboardController.getAllTransactions);
 router.get('/:businessId/dashboard/top-customers', DashboardController_1.DashboardController.getTopCustomers);
+// 견적서 API 라우트
+router.get('/:businessId/quotations/next-number', QuotationController_1.QuotationController.getNextNumber);
+router.get('/:businessId/quotations', QuotationController_1.QuotationController.getAll);
+router.post('/:businessId/quotations', QuotationController_1.QuotationController.create);
+router.get('/:businessId/quotations/:id', QuotationController_1.QuotationController.getById);
+router.put('/:businessId/quotations/:id', QuotationController_1.QuotationController.update);
+router.delete('/:businessId/quotations/:id', QuotationController_1.QuotationController.delete);
+// 발주서 API 라우트
+router.get('/:businessId/purchase-orders/next-number', PurchaseOrderController_1.PurchaseOrderController.getNextNumber);
+router.get('/:businessId/purchase-orders', PurchaseOrderController_1.PurchaseOrderController.getAll);
+router.post('/:businessId/purchase-orders', PurchaseOrderController_1.PurchaseOrderController.create);
+router.get('/:businessId/purchase-orders/:id', PurchaseOrderController_1.PurchaseOrderController.getById);
+router.put('/:businessId/purchase-orders/:id', PurchaseOrderController_1.PurchaseOrderController.update);
+router.delete('/:businessId/purchase-orders/:id', PurchaseOrderController_1.PurchaseOrderController.delete);
 //# sourceMappingURL=businessRoutes.js.map

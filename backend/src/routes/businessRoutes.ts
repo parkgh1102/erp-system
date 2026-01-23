@@ -7,6 +7,8 @@ import { PurchaseController } from '../controllers/PurchaseController';
 import { PaymentController } from '../controllers/PaymentController';
 import { DashboardController } from '../controllers/DashboardController';
 import { transactionLedgerController } from '../controllers/transactionLedgerController';
+import { QuotationController } from '../controllers/QuotationController';
+import { PurchaseOrderController } from '../controllers/PurchaseOrderController';
 import { authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 
@@ -87,5 +89,21 @@ router.get('/:businessId/dashboard/category-data', DashboardController.getCatego
 router.get('/:businessId/dashboard/monthly-trend', DashboardController.getMonthlyTrend);
 router.get('/:businessId/dashboard/all-transactions', DashboardController.getAllTransactions);
 router.get('/:businessId/dashboard/top-customers', DashboardController.getTopCustomers);
+
+// 견적서 API 라우트
+router.get('/:businessId/quotations/next-number', QuotationController.getNextNumber);
+router.get('/:businessId/quotations', QuotationController.getAll);
+router.post('/:businessId/quotations', QuotationController.create);
+router.get('/:businessId/quotations/:id', QuotationController.getById);
+router.put('/:businessId/quotations/:id', QuotationController.update);
+router.delete('/:businessId/quotations/:id', QuotationController.delete);
+
+// 발주서 API 라우트
+router.get('/:businessId/purchase-orders/next-number', PurchaseOrderController.getNextNumber);
+router.get('/:businessId/purchase-orders', PurchaseOrderController.getAll);
+router.post('/:businessId/purchase-orders', PurchaseOrderController.create);
+router.get('/:businessId/purchase-orders/:id', PurchaseOrderController.getById);
+router.put('/:businessId/purchase-orders/:id', PurchaseOrderController.update);
+router.delete('/:businessId/purchase-orders/:id', PurchaseOrderController.delete);
 
 export { router as businessRoutes };

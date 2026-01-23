@@ -75,7 +75,7 @@ __decorate([
     __metadata("design:type", String)
 ], Business.prototype, "homepage", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ length: 500, nullable: true, comment: '도장 이미지 경로' }),
+    (0, typeorm_1.Column)({ type: 'text', nullable: true, comment: '도장 이미지 (Base64 또는 경로)' }),
     __metadata("design:type", String)
 ], Business.prototype, "sealImage", void 0);
 __decorate([

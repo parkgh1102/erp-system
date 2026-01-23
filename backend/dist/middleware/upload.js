@@ -7,12 +7,19 @@ exports.avatarUpload = void 0;
 const multer_1 = __importDefault(require("multer"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-// uploads 디렉토리가 없으면 생성
+// uploads 디렉토리가 없으면 생성 (실패 시 메모리 스토리지 사용)
+let useMemoryStorage = false;
 const uploadsDir = path_1.default.join(__dirname, '../../uploads/avatars');
-if (!fs_1.default.existsSync(uploadsDir)) {
-    fs_1.default.mkdirSync(uploadsDir, { recursive: true });
+try {
+    if (!fs_1.default.existsSync(uploadsDir)) {
+        fs_1.default.mkdirSync(uploadsDir, { recursive: true });
+    }
 }
-const storage = multer_1.default.diskStorage({
+catch (error) {
+    console.warn('Upload directory creation failed, using memory storage');
+    useMemoryStorage = true;
+}
+const diskStorage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadsDir);
     },
@@ -22,6 +29,7 @@ const storage = multer_1.default.diskStorage({
         cb(null, `avatar-${userId}-${Date.now()}${ext}`);
     }
 });
+const storage = useMemoryStorage ? multer_1.default.memoryStorage() : diskStorage;
 const fileFilter = (req, file, cb) => {
     // MIME 타입 체크
     const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
