@@ -658,7 +658,7 @@ const Profile: React.FC = () => {
                       >
                         {currentBusiness.sealImage ? (
                           <img
-                            src={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${currentBusiness.sealImage}`}
+                            src={currentBusiness.sealImage.startsWith('data:') ? currentBusiness.sealImage : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${currentBusiness.sealImage}`}
                             alt="도장"
                             style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                           />

@@ -358,7 +358,7 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
                     <div style={{ border: '1px solid #ddd', padding: data.supplier.sealImage ? 10 : 30, display: 'inline-block', minWidth: 120, minHeight: 80, textAlign: 'center' }}>
                       {data.supplier.sealImage ? (
                         <img
-                          src={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${data.supplier.sealImage}`}
+                          src={data.supplier.sealImage.startsWith('data:') ? data.supplier.sealImage : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${data.supplier.sealImage}`}
                           alt="도장"
                           style={{ maxWidth: 100, maxHeight: 100, objectFit: 'contain' }}
                         />

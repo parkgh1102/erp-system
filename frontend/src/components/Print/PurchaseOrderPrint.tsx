@@ -368,7 +368,7 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
                     <div style={{ border: '1px solid #ddd', padding: data.buyer.sealImage ? 10 : 30, display: 'inline-block', minWidth: 120, minHeight: 80, textAlign: 'center' }}>
                       {data.buyer.sealImage ? (
                         <img
-                          src={`${import.meta.env.VITE_API_URL?.replace('/api', '')}${data.buyer.sealImage}`}
+                          src={data.buyer.sealImage.startsWith('data:') ? data.buyer.sealImage : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${data.buyer.sealImage}`}
                           alt="도장"
                           style={{ maxWidth: 100, maxHeight: 100, objectFit: 'contain' }}
                         />
