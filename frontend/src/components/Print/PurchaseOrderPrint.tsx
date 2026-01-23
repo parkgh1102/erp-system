@@ -193,6 +193,7 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
         open={open}
         onCancel={onClose}
         width={850}
+        styles={{ body: { backgroundColor: '#f5f5f5', padding: 20 } }}
         footer={
           <Space className="print-modal-footer">
             <Dropdown menu={{ items: downloadMenuItems }} placement="topLeft">
@@ -306,11 +307,11 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
               ))}
             </tbody>
             <tfoot>
-              <tr style={{ backgroundColor: '#fff3e0' }}>
-                <td colSpan={5} style={{ padding: 10, border: '1px solid #333', textAlign: 'center', fontWeight: 'bold' }}>합 계</td>
-                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold' }}>{formatNumber(data.supplyAmount)}</td>
-                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold' }}>{formatNumber(data.vatAmount)}</td>
-                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold' }}>{formatNumber(data.totalAmount)}</td>
+              <tr style={{ backgroundColor: '#e65100' }}>
+                <td colSpan={5} style={{ padding: 10, border: '1px solid #333', textAlign: 'center', fontWeight: 'bold', color: '#fff' }}>합 계</td>
+                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold', color: '#ff6b6b' }}>{formatNumber(data.supplyAmount)}</td>
+                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold', color: '#ff6b6b' }}>{formatNumber(data.vatAmount)}</td>
+                <td style={{ padding: 10, border: '1px solid #333', textAlign: 'right', fontWeight: 'bold', color: '#ff6b6b' }}>{formatNumber(data.totalAmount)}</td>
               </tr>
             </tfoot>
           </table>

@@ -196,6 +196,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
         open={open}
         onCancel={onClose}
         width={850}
+        styles={{ body: { backgroundColor: '#f5f5f5', padding: 20 } }}
         footer={
           <Space className="print-modal-footer">
             <Dropdown menu={{ items: downloadMenuItems }} placement="topLeft">
