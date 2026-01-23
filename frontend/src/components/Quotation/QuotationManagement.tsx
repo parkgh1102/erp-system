@@ -40,7 +40,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { customerAPI, productAPI } from '../../utils/api';
+import { customerAPI, productAPI, quotationAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -130,51 +130,17 @@ const QuotationManagement: React.FC = () => {
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [autoSaveType, setAutoSaveType] = useState<'pdf' | 'png' | 'jpg' | 'clipboard' | null>(null);
-
-  // 샘플 데이터
-  const [sampleQuotations] = useState<Quotation[]>([
-    {
-      id: 1,
-      quotationNumber: 'QT-2026-0001',
-      quotationDate: '2026-01-15',
-      validUntil: '2026-02-15',
-      status: 'sent',
-      customerId: 1,
-      customer: { id: 1, customerCode: 'C001', name: '(주)테스트기업', businessNumber: '123-45-67890' },
-      items: [
-        { productId: 1, productCode: 'P001', productName: '상품A', spec: 'EA', unit: 'EA', quantity: 10, unitPrice: 10000, supplyAmount: 100000, vatAmount: 10000, totalAmount: 110000 }
-      ],
-      supplyAmount: 100000,
-      vatAmount: 10000,
-      totalAmount: 110000,
-      createdAt: '2026-01-15',
-    },
-    {
-      id: 2,
-      quotationNumber: 'QT-2026-0002',
-      quotationDate: '2026-01-18',
-      validUntil: '2026-02-18',
-      status: 'accepted',
-      customerId: 2,
-      customer: { id: 2, customerCode: 'C002', name: '삼성전자', businessNumber: '234-56-78901' },
-      items: [
-        { productId: 2, productCode: 'P002', productName: '상품B', spec: 'BOX', unit: 'BOX', quantity: 5, unitPrice: 50000, supplyAmount: 250000, vatAmount: 25000, totalAmount: 275000 }
-      ],
-      supplyAmount: 250000,
-      vatAmount: 25000,
-      totalAmount: 275000,
-      createdAt: '2026-01-18',
-    },
-  ]);
+  const [nextNumber, setNextNumber] = useState('');
 
   // 데이터 로드
   const fetchData = useCallback(async () => {
     if (!currentBusiness) return;
     setLoading(true);
     try {
-      const [customerRes, productRes] = await Promise.all([
+      const [customerRes, productRes, quotationRes] = await Promise.all([
         customerAPI.getAll(currentBusiness.id),
         productAPI.getAll(currentBusiness.id),
+        quotationAPI.getAll(currentBusiness.id),
       ]);
       if (customerRes.data.success) {
         const data = customerRes.data.data;
@@ -184,14 +150,33 @@ const QuotationManagement: React.FC = () => {
         const data = productRes.data.data;
         setProducts(Array.isArray(data) ? data : []);
       }
-      setQuotations(sampleQuotations);
+      if (quotationRes.data.success) {
+        const data = quotationRes.data.data;
+        setQuotations(Array.isArray(data) ? data.map((q: any) => ({
+          ...q,
+          items: (q.items || []).map((item: any) => ({
+            id: item.id,
+            productId: item.productId,
+            productCode: item.product?.productCode || '',
+            productName: item.itemName,
+            spec: item.specification,
+            unit: item.unit,
+            quantity: Number(item.quantity),
+            unitPrice: Number(item.unitPrice),
+            supplyAmount: Number(item.supplyAmount),
+            vatAmount: Number(item.vatAmount),
+            totalAmount: Number(item.supplyAmount) + Number(item.vatAmount),
+            memo: item.remark,
+          })),
+        })) : []);
+      }
     } catch (error) {
       console.error('데이터 로드 오류:', error);
       message.error('데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [currentBusiness, message, sampleQuotations]);
+  }, [currentBusiness, message]);
 
   useEffect(() => {
     fetchData();
@@ -273,7 +258,7 @@ const QuotationManagement: React.FC = () => {
   };
 
   // 모달 열기
-  const openModal = (quotation?: Quotation) => {
+  const openModal = async (quotation?: Quotation) => {
     if (quotation) {
       setEditingQuotation(quotation);
       form.setFieldsValue({
@@ -285,6 +270,17 @@ const QuotationManagement: React.FC = () => {
     } else {
       setEditingQuotation(null);
       form.resetFields();
+      // 새 견적번호 조회
+      if (currentBusiness) {
+        try {
+          const res = await quotationAPI.getNextNumber(currentBusiness.id);
+          if (res.data.success) {
+            setNextNumber(res.data.data.quotationNumber);
+          }
+        } catch (e) {
+          console.error('견적번호 조회 오류:', e);
+        }
+      }
       form.setFieldsValue({
         quotationDate: dayjs(),
         validUntil: dayjs().add(1, 'month'),
@@ -303,13 +299,45 @@ const QuotationManagement: React.FC = () => {
 
   // 저장
   const handleSave = async () => {
+    if (!currentBusiness) return;
     try {
-      await form.validateFields();
-      message.success(editingQuotation ? '견적서가 수정되었습니다.' : '견적서가 생성되었습니다.');
+      const values = await form.validateFields();
+      const payload = {
+        quotationNumber: editingQuotation ? editingQuotation.quotationNumber : nextNumber,
+        quotationDate: values.quotationDate.format('YYYY-MM-DD'),
+        validUntil: values.validUntil.format('YYYY-MM-DD'),
+        customerId: values.customerId || null,
+        supplyAmount: totals.supplyAmount,
+        vatAmount: totals.vatAmount,
+        totalAmount: totals.totalAmount,
+        memo: values.memo || '',
+        paymentTerms: values.paymentTerms || '',
+        deliveryTerms: values.deliveryTerms || '',
+        status: values.status || 'draft',
+        items: quotationItems.filter(item => item.productId || item.productName).map(item => ({
+          productId: item.productId || null,
+          itemName: item.productName,
+          specification: item.spec || '',
+          unit: item.unit || '',
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          supplyAmount: item.supplyAmount,
+          vatAmount: item.vatAmount,
+          remark: item.memo || '',
+        })),
+      };
+      if (editingQuotation) {
+        await quotationAPI.update(currentBusiness.id, editingQuotation.id, payload);
+        message.success('견적서가 수정되었습니다.');
+      } else {
+        await quotationAPI.create(currentBusiness.id, payload);
+        message.success('견적서가 생성되었습니다.');
+      }
       setModalVisible(false);
       fetchData();
     } catch (error) {
       console.error('저장 오류:', error);
+      message.error('저장에 실패했습니다.');
     }
   };
 
@@ -321,8 +349,15 @@ const QuotationManagement: React.FC = () => {
 
   // 삭제
   const handleDelete = async (id: number) => {
-    message.success('견적서가 삭제되었습니다.');
-    fetchData();
+    if (!currentBusiness) return;
+    try {
+      await quotationAPI.delete(currentBusiness.id, id);
+      message.success('견적서가 삭제되었습니다.');
+      fetchData();
+    } catch (error) {
+      console.error('삭제 오류:', error);
+      message.error('삭제에 실패했습니다.');
+    }
   };
 
   // 금액 포맷

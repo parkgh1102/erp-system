@@ -40,7 +40,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { customerAPI, productAPI } from '../../utils/api';
+import { customerAPI, productAPI, purchaseOrderAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -125,51 +125,17 @@ const PurchaseOrderManagement: React.FC = () => {
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [autoSaveType, setAutoSaveType] = useState<'pdf' | 'png' | 'jpg' | 'clipboard' | null>(null);
-
-  // 샘플 데이터
-  const [sampleOrders] = useState<PurchaseOrder[]>([
-    {
-      id: 1,
-      orderNumber: 'PO-2026-0001',
-      orderDate: '2026-01-10',
-      deliveryDate: '2026-01-20',
-      status: 'ordered',
-      supplierId: 1,
-      supplier: { id: 1, customerCode: 'S001', name: '(주)공급업체A', businessNumber: '111-22-33333' },
-      items: [
-        { productId: 1, productCode: 'P001', productName: '원자재A', spec: 'KG', unit: 'KG', quantity: 100, unitPrice: 5000, supplyAmount: 500000, vatAmount: 50000, totalAmount: 550000 }
-      ],
-      supplyAmount: 500000,
-      vatAmount: 50000,
-      totalAmount: 550000,
-      createdAt: '2026-01-10',
-    },
-    {
-      id: 2,
-      orderNumber: 'PO-2026-0002',
-      orderDate: '2026-01-15',
-      deliveryDate: '2026-01-25',
-      status: 'completed',
-      supplierId: 2,
-      supplier: { id: 2, customerCode: 'S002', name: '(주)공급업체B', businessNumber: '222-33-44444' },
-      items: [
-        { productId: 2, productCode: 'P002', productName: '원자재B', spec: 'BOX', unit: 'BOX', quantity: 50, unitPrice: 20000, supplyAmount: 1000000, vatAmount: 100000, totalAmount: 1100000 }
-      ],
-      supplyAmount: 1000000,
-      vatAmount: 100000,
-      totalAmount: 1100000,
-      createdAt: '2026-01-15',
-    },
-  ]);
+  const [nextNumber, setNextNumber] = useState('');
 
   // 데이터 로드
   const fetchData = useCallback(async () => {
     if (!currentBusiness) return;
     setLoading(true);
     try {
-      const [customerRes, productRes] = await Promise.all([
+      const [customerRes, productRes, orderRes] = await Promise.all([
         customerAPI.getAll(currentBusiness.id),
         productAPI.getAll(currentBusiness.id),
+        purchaseOrderAPI.getAll(currentBusiness.id),
       ]);
       if (customerRes.data.success) {
         const data = customerRes.data.data;
@@ -179,14 +145,31 @@ const PurchaseOrderManagement: React.FC = () => {
         const data = productRes.data.data;
         setProducts(Array.isArray(data) ? data : []);
       }
-      setOrders(sampleOrders);
+      if (orderRes.data.success) {
+        const data = orderRes.data.data;
+        setOrders(Array.isArray(data) ? data.map((o: any) => ({
+          ...o,
+          items: (o.items || []).map((item: any) => ({
+            productId: item.productId,
+            productCode: item.product?.productCode || '',
+            productName: item.itemName,
+            spec: item.specification,
+            unit: item.unit,
+            quantity: Number(item.quantity),
+            unitPrice: Number(item.unitPrice),
+            supplyAmount: Number(item.supplyAmount),
+            vatAmount: Number(item.vatAmount),
+            totalAmount: Number(item.supplyAmount) + Number(item.vatAmount),
+          })),
+        })) : []);
+      }
     } catch (error) {
       console.error('데이터 로드 오류:', error);
       message.error('데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [currentBusiness, message, sampleOrders]);
+  }, [currentBusiness, message]);
 
   useEffect(() => {
     fetchData();
@@ -261,7 +244,7 @@ const PurchaseOrderManagement: React.FC = () => {
   };
 
   // 모달 열기
-  const openModal = (order?: PurchaseOrder) => {
+  const openModal = async (order?: PurchaseOrder) => {
     if (order) {
       setEditingOrder(order);
       form.setFieldsValue({
@@ -273,6 +256,17 @@ const PurchaseOrderManagement: React.FC = () => {
     } else {
       setEditingOrder(null);
       form.resetFields();
+      // 새 발주번호 조회
+      if (currentBusiness) {
+        try {
+          const res = await purchaseOrderAPI.getNextNumber(currentBusiness.id);
+          if (res.data.success) {
+            setNextNumber(res.data.data.orderNumber);
+          }
+        } catch (e) {
+          console.error('발주번호 조회 오류:', e);
+        }
+      }
       form.setFieldsValue({
         orderDate: dayjs(),
         deliveryDate: dayjs().add(7, 'day'),
@@ -291,13 +285,45 @@ const PurchaseOrderManagement: React.FC = () => {
 
   // 저장
   const handleSave = async () => {
+    if (!currentBusiness) return;
     try {
-      await form.validateFields();
-      message.success(editingOrder ? '발주서가 수정되었습니다.' : '발주서가 생성되었습니다.');
+      const values = await form.validateFields();
+      const payload = {
+        orderNumber: editingOrder ? editingOrder.orderNumber : nextNumber,
+        orderDate: values.orderDate.format('YYYY-MM-DD'),
+        deliveryDate: values.deliveryDate.format('YYYY-MM-DD'),
+        supplierId: values.supplierId || null,
+        supplyAmount: totals.supplyAmount,
+        vatAmount: totals.vatAmount,
+        totalAmount: totals.totalAmount,
+        memo: values.memo || '',
+        deliveryLocation: values.deliveryLocation || '',
+        paymentTerms: values.paymentTerms || '',
+        status: values.status || 'draft',
+        items: orderItems.filter(item => item.productId || item.productName).map(item => ({
+          productId: item.productId || null,
+          itemName: item.productName,
+          specification: item.spec || '',
+          unit: item.unit || '',
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          supplyAmount: item.supplyAmount,
+          vatAmount: item.vatAmount,
+          remark: '',
+        })),
+      };
+      if (editingOrder) {
+        await purchaseOrderAPI.update(currentBusiness.id, editingOrder.id, payload);
+        message.success('발주서가 수정되었습니다.');
+      } else {
+        await purchaseOrderAPI.create(currentBusiness.id, payload);
+        message.success('발주서가 생성되었습니다.');
+      }
       setModalVisible(false);
       fetchData();
     } catch (error) {
       console.error('저장 오류:', error);
+      message.error('저장에 실패했습니다.');
     }
   };
 
@@ -309,8 +335,15 @@ const PurchaseOrderManagement: React.FC = () => {
 
   // 삭제
   const handleDelete = async (id: number) => {
-    message.success('발주서가 삭제되었습니다.');
-    fetchData();
+    if (!currentBusiness) return;
+    try {
+      await purchaseOrderAPI.delete(currentBusiness.id, id);
+      message.success('발주서가 삭제되었습니다.');
+      fetchData();
+    } catch (error) {
+      console.error('삭제 오류:', error);
+      message.error('삭제에 실패했습니다.');
+    }
   };
 
   // 금액 포맷

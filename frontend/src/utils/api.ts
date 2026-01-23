@@ -337,6 +337,36 @@ export const activityLogAPI = {
     api.delete(`/activity-logs/${logId}`),
 };
 
+export const quotationAPI = {
+  getAll: (businessId: number, params?: PaginationQuery) =>
+    api.get(`/businesses/${businessId}/quotations`, { params }),
+  getById: (businessId: number, id: number) =>
+    api.get(`/businesses/${businessId}/quotations/${id}`),
+  create: (businessId: number, data: any) =>
+    api.post(`/businesses/${businessId}/quotations`, data),
+  update: (businessId: number, id: number, data: any) =>
+    api.put(`/businesses/${businessId}/quotations/${id}`, data),
+  delete: (businessId: number, id: number) =>
+    api.delete(`/businesses/${businessId}/quotations/${id}`),
+  getNextNumber: (businessId: number) =>
+    api.get(`/businesses/${businessId}/quotations/next-number`),
+};
+
+export const purchaseOrderAPI = {
+  getAll: (businessId: number, params?: PaginationQuery) =>
+    api.get(`/businesses/${businessId}/purchase-orders`, { params }),
+  getById: (businessId: number, id: number) =>
+    api.get(`/businesses/${businessId}/purchase-orders/${id}`),
+  create: (businessId: number, data: any) =>
+    api.post(`/businesses/${businessId}/purchase-orders`, data),
+  update: (businessId: number, id: number, data: any) =>
+    api.put(`/businesses/${businessId}/purchase-orders/${id}`, data),
+  delete: (businessId: number, id: number) =>
+    api.delete(`/businesses/${businessId}/purchase-orders/${id}`),
+  getNextNumber: (businessId: number) =>
+    api.get(`/businesses/${businessId}/purchase-orders/next-number`),
+};
+
 export const excelAPI = {
   // 템플릿 다운로드
   downloadCustomerTemplate: () =>
