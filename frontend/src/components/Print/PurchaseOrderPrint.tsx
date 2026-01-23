@@ -58,7 +58,33 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
   const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(num);
 
   const handlePrint = () => {
-    window.print();
+    if (!printRef.current) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      message.error('팝업이 차단되었습니다. 팝업을 허용해주세요.');
+      return;
+    }
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>발주서 인쇄</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Malgun Gothic', sans-serif; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>${printRef.current.outerHTML}</body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      printWindow.print();
+      printWindow.close();
+    };
   };
 
   const handleDownloadPNG = async () => {
