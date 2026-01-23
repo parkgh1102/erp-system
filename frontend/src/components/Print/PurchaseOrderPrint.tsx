@@ -165,37 +165,30 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
     <>
       <style>{`
         @media print {
-          body > *:not(.ant-modal-root) {
-            display: none !important;
+          html, body {
+            height: auto !important;
+            overflow: visible !important;
+            background: #fff !important;
           }
-          .ant-modal-mask {
-            display: none !important;
+          body * {
+            visibility: hidden;
           }
+          .print-content, .print-content * {
+            visibility: visible;
+          }
+          .print-content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          .ant-modal-mask,
+          .ant-modal-wrap,
           .print-modal-footer,
           .ant-modal-footer,
           .ant-modal-close,
           .ant-modal-header {
             display: none !important;
-          }
-          .ant-modal-content {
-            box-shadow: none !important;
-            border: none !important;
-          }
-          .ant-modal-wrap {
-            position: absolute !important;
-            overflow: visible !important;
-          }
-          .ant-modal {
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            max-width: 100% !important;
-            width: 100% !important;
-          }
-          .ant-modal-body {
-            padding: 0 !important;
           }
         }
       `}</style>
@@ -215,7 +208,7 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
           </Space>
         }
       >
-        <div ref={printRef} style={{ padding: 30, backgroundColor: '#fff', fontFamily: 'Malgun Gothic, sans-serif', color: '#000', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties}>
+        <div ref={printRef} className="print-content" style={{ padding: 30, backgroundColor: '#fff', fontFamily: 'Malgun Gothic, sans-serif', color: '#000', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' } as React.CSSProperties}>
           {/* 제목 */}
           <div style={{ textAlign: 'center', marginBottom: 30 }}>
             <h1 style={{ fontSize: 32, fontWeight: 'bold', margin: 0, letterSpacing: 12, color: '#e65100' }}>발 주 서</h1>
