@@ -221,7 +221,12 @@
       "WebFetch(domain:webapperp.vercel.app)",
       "Bash(ssh-keygen:*)",
       "Bash(ssh:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(pm2 restart:*)",
+      "Bash(npx pm2 restart all)",
+      "Bash(npx pm2 list)",
+      "Bash(npx pm2:*)",
+      "Bash(cmd //c \"taskkill /F /PID 3024\")"
     ],
     "deny": [],
     "ask": []

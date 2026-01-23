@@ -13,7 +13,6 @@ import {
   Col,
   InputNumber,
   Typography,
-  Tooltip,
   Statistic,
   Popconfirm,
   Divider,
@@ -25,9 +24,7 @@ import {
   DownloadOutlined,
   PrinterOutlined,
   SolutionOutlined,
-  EditOutlined,
   DeleteOutlined,
-  EyeOutlined,
   MinusCircleOutlined,
   FilePdfOutlined,
   FileImageOutlined,
@@ -392,26 +389,6 @@ const QuotationManagement: React.FC = () => {
       align: 'right' as const,
       render: (val: number) => <Text strong>{formatCurrency(val)}</Text>,
     },
-    {
-      title: '관리',
-      key: 'action',
-      width: 120,
-      render: (_: any, record: Quotation) => (
-        <Space size="small">
-          <Tooltip title="상세보기">
-            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
-          </Tooltip>
-          <Tooltip title="수정">
-            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openModal(record)} />
-          </Tooltip>
-          <Popconfirm title="삭제하시겠습니까?" onConfirm={() => handleDelete(record.id)} okText="삭제" cancelText="취소">
-            <Tooltip title="삭제">
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
-    },
   ];
 
 
@@ -489,15 +466,21 @@ const QuotationManagement: React.FC = () => {
           <Popconfirm
             title={<span style={{ fontSize: 16, fontWeight: 600 }}>선택한 항목을 삭제하시겠습니까?</span>}
             description={<span style={{ fontSize: 14 }}>{selectedRowKeys.length}건의 견적서가 삭제됩니다.</span>}
-            onConfirm={() => {
+            onConfirm={async () => {
               if (selectedRowKeys.length === 0) {
                 message.warning('삭제할 항목을 선택해주세요.');
                 return;
               }
-              // TODO: 실제 API 연동 시 bulk delete 구현
-              message.success(`${selectedRowKeys.length}건의 견적서가 삭제되었습니다.`);
-              setSelectedRowKeys([]);
-              fetchData();
+              if (!currentBusiness) return;
+              try {
+                await Promise.all(selectedRowKeys.map(id => quotationAPI.delete(currentBusiness.id, id as number)));
+                message.success(`${selectedRowKeys.length}건의 견적서가 삭제되었습니다.`);
+                setSelectedRowKeys([]);
+                fetchData();
+              } catch (error) {
+                console.error('삭제 오류:', error);
+                message.error('삭제에 실패했습니다.');
+              }
             }}
             okText="삭제"
             cancelText="취소"
