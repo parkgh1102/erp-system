@@ -12,7 +12,6 @@ const LoginForm = lazy(() => import('./components/Auth/LoginForm'));
 const SignupForm = lazy(() => import('./components/Auth/SignupForm'));
 const PasswordReset = lazy(() => import('./components/Auth/PasswordReset'));
 const PasswordChange = lazy(() => import('./components/Auth/PasswordChange'));
-const OTPPage = lazy(() => import('./components/Auth/OTPPage').then(m => ({ default: m.OTPPage })));
 const Dashboard = lazy(() => import('./components/Dashboard/Dashboard'));
 const CustomerManagement = lazy(() => import('./components/Customer/CustomerManagement'));
 const ProductManagement = lazy(() => import('./components/Product/ProductManagement'));
@@ -103,7 +102,7 @@ const ThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const { getThemeConfig } = useThemeStore();
 
   // 공개 페이지 경로 목록 (다크모드 비활성화)
-  const publicPaths = ['/login', '/signup', '/otp', '/password-reset', '/password-change'];
+  const publicPaths = ['/login', '/signup', '/password-reset', '/password-change'];
   const isPublicPage = publicPaths.includes(location.pathname);
 
   // 공개 페이지는 항상 라이트 테마 사용
@@ -158,7 +157,6 @@ const App: React.FC = () => {
               </PublicRoute>
             }
           />
-          <Route path="/otp" element={<OTPPage />} />
           <Route
             path="/signup"
             element={

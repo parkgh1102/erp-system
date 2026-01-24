@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Form, Input, Button, Typography, Alert, Divider, Segmented } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
-import { api, authAPI, settingsAPI } from '../../utils/api';
+import { authAPI } from '../../utils/api';
 import { useAuthStore } from '../../stores/authStore';
 import { AxiosErrorResponse } from '../../types';
 
@@ -21,35 +21,24 @@ const LoginFormContent: React.FC = () => {
     setError(null);
 
     try {
-      // 로그인 API 호출 (보안 설정 정보 포함) - 속도 개선!
+      // 로그인 API 호출
       const loginData = loginType === 'email'
         ? { email: values.email, password: values.password }
         : { phone: values.phone, password: values.password };
       const loginResponse = await authAPI.login(loginData);
       const { user, token, security } = loginResponse.data.data;
 
-      // 보안 설정에서 2FA 및 세션 타임아웃 정보 가져오기
-      const twoFactorEnabled = security?.twoFactorAuth || false;
+      // 세션 타임아웃 저장
       const sessionTimeout = security?.sessionTimeout || '24h';
+      localStorage.setItem('sessionTimeout', sessionTimeout);
 
-      if (twoFactorEnabled) {
-        // 2단계 인증 ON: OTP 전송 후 OTP 페이지로 이동
-        const otpData = loginType === 'email' ? { email: values.email } : { phone: values.phone };
-        await api.post('/otp/send', otpData);
-        navigate('/otp', { state: { credentials: loginData, sessionTimeout } });
+      setAuth(user, token);
+
+      // 역할에 따라 다른 페이지로 이동
+      if (user.role === 'admin') {
+        navigate('/dashboard');
       } else {
-        // 2단계 인증 OFF: 바로 로그인 처리
-        // 세션 타임아웃 저장
-        localStorage.setItem('sessionTimeout', sessionTimeout);
-
-        setAuth(user, token);
-
-        // 역할에 따라 다른 페이지로 이동
-        if (user.role === 'admin') {
-          navigate('/dashboard');
-        } else {
-          navigate('/sales');
-        }
+        navigate('/sales');
       }
     } catch (error: unknown) {
       const axiosError = error as AxiosErrorResponse;

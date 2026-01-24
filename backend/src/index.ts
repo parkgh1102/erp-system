@@ -21,7 +21,6 @@ import settingsRoutes from './routes/settings';
 import activityLogRoutes from './routes/activityLogRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import userRoutes from './routes/userRoutes';
-import otpRoutes from './routes/otpRoutes';
 import chatbotRoutes from './routes/chatbotRoutes';
 import excelRoutes from './routes/excelRoutes';
 
@@ -166,7 +165,6 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/auth', authRateLimit, authRoutes);
-app.use('/api/otp', otpRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api/businesses', userRoutes);
 app.use('/api/transaction-ledger', transactionLedgerRoutes);
