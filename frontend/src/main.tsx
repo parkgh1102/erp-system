@@ -4,6 +4,7 @@ import App from './App.tsx'
 import 'antd/dist/reset.css'
 import './index.css'
 import './styles/mobile.css'
+import './styles/responsive-tables.css'
 import { message } from 'antd'
 
 // 전역 메시지 설정: 모든 토스트 알림을 2초로 통일

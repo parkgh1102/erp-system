@@ -41,6 +41,8 @@ import { Quotation } from '../entities/Quotation';
 import { QuotationItem } from '../entities/QuotationItem';
 import { PurchaseOrder } from '../entities/PurchaseOrder';
 import { PurchaseOrderItem } from '../entities/PurchaseOrderItem';
+import { BackupConfig } from '../entities/BackupConfig';
+import { BackupHistory } from '../entities/BackupHistory';
 
 const env = getValidatedEnv();
 
@@ -75,7 +77,9 @@ const baseConfig = {
     Quotation,
     QuotationItem,
     PurchaseOrder,
-    PurchaseOrderItem
+    PurchaseOrderItem,
+    BackupConfig,
+    BackupHistory
   ],
 
   // 마이그레이션 파일 경로

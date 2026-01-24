@@ -1,0 +1,351 @@
+/* Responsive Table Styles */
+
+/* Mobile Card List View */
+.responsive-table-mobile {
+  padding: 0;
+}
+
+.responsive-card {
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease;
+}
+
+.responsive-card:active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.responsive-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.responsive-card-title-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.responsive-card-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.responsive-card-description {
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.responsive-card-extra {
+  flex-shrink: 0;
+}
+
+.responsive-card-badges {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.responsive-card-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.responsive-card-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.responsive-table-empty {
+  padding: 40px 16px;
+  text-align: center;
+}
+
+.responsive-table-pagination {
+  margin-top: 16px;
+}
+
+.responsive-table-pagination .ant-table-thead {
+  display: none;
+}
+
+.responsive-table-pagination .ant-table-tbody {
+  display: none;
+}
+
+/* Dark mode support */
+.dark .responsive-card {
+  background: #1f1f1f;
+  border-color: #303030;
+}
+
+.dark .responsive-card-badges,
+.dark .responsive-card-details {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Desktop Table Enhancements */
+.responsive-table .ant-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.responsive-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.dark .responsive-table .ant-table-thead > tr > th {
+  background: #1d1d1d;
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 768px) and (max-width: 991px) {
+  .responsive-table .ant-table-cell {
+    padding: 10px 8px !important;
+    font-size: 13px;
+  }
+
+  .responsive-table .ant-btn-sm {
+    padding: 2px 6px;
+    font-size: 12px;
+  }
+}
+
+/* Mobile-specific table adjustments */
+@media (max-width: 767px) {
+  .responsive-table-mobile .ant-card-body {
+    padding: 12px !important;
+  }
+
+  /* Ensure touch targets are large enough */
+  .responsive-card-extra .ant-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Improve tap experience */
+  .responsive-card {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Mobile Drawer Styles */
+.mobile-drawer {
+  /* Full screen on mobile */
+}
+
+@media (max-width: 767px) {
+  .mobile-drawer .ant-drawer-content-wrapper {
+    height: 100% !important;
+  }
+
+  .mobile-drawer .ant-drawer-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-drawer .ant-drawer-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: inherit;
+  }
+
+  .mobile-drawer .ant-drawer-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: inherit;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* Form layout improvements for mobile */
+@media (max-width: 767px) {
+  .mobile-drawer .ant-form-item {
+    margin-bottom: 16px;
+  }
+
+  .mobile-drawer .ant-form-item-label {
+    padding-bottom: 4px;
+  }
+
+  .mobile-drawer .ant-form-item-label > label {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .mobile-drawer .ant-input,
+  .mobile-drawer .ant-input-number,
+  .mobile-drawer .ant-select-selector,
+  .mobile-drawer .ant-picker {
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+
+  .mobile-drawer .ant-btn {
+    min-height: 44px;
+    font-size: 15px;
+  }
+}
+
+/* Grid layout adjustments for mobile forms */
+@media (max-width: 767px) {
+  .mobile-drawer .ant-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .mobile-drawer .ant-col {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+/* Action buttons area for mobile */
+.mobile-action-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background: #fff;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  display: flex;
+  gap: 8px;
+}
+
+.dark .mobile-action-area {
+  background: #1f1f1f;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-action-area .ant-btn {
+  flex: 1;
+  min-height: 44px;
+}
+
+/* Responsive table scroll indicators */
+.responsive-table-scroll-hint {
+  position: relative;
+}
+
+.responsive-table-scroll-hint::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 30px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.9));
+  pointer-events: none;
+}
+
+.dark .responsive-table-scroll-hint::after {
+  background: linear-gradient(to right, transparent, rgba(31, 31, 31, 0.9));
+}
+
+/* Selection checkbox improvements */
+@media (max-width: 767px) {
+  .responsive-card .ant-checkbox-wrapper {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+  }
+
+  .responsive-card .ant-checkbox-inner {
+    width: 22px;
+    height: 22px;
+  }
+
+  .responsive-card .ant-checkbox-inner::after {
+    width: 7px;
+    height: 12px;
+  }
+}
+
+/* Loading state for mobile */
+.responsive-table-mobile .ant-skeleton {
+  padding: 4px 0;
+}
+
+/* Empty state styling */
+.responsive-table-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #8c8c8c;
+}
+
+.dark .responsive-table-empty {
+  color: #6c6c6c;
+}
+
+/* Amount/Price formatting */
+.responsive-card .amount-display {
+  font-weight: 600;
+  color: #1890ff;
+}
+
+.dark .responsive-card .amount-display {
+  color: #40a9ff;
+}
+
+/* Date display formatting */
+.responsive-card .date-display {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+/* Status badges in cards */
+.responsive-card .ant-tag {
+  margin-right: 0;
+}
+
+/* Swipe actions hint (for future implementation) */
+.responsive-card-swipeable {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animation for card appearance */
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.responsive-table-mobile .responsive-card {
+  animation: cardFadeIn 0.2s ease-out;
+}
+
+/* Prevent text selection on mobile cards for better UX */
+@media (max-width: 767px) {
+  .responsive-card {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .responsive-card .ant-typography {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+}

@@ -38,6 +38,7 @@ import { useNotificationStore } from '../../stores/notificationStore';
 import { useMessage } from '../../hooks/useMessage';
 import { settingsAPI, activityLogAPI } from '../../utils/api';
 import UserManagement from './UserManagement';
+import BackupSettings from './BackupSettings';
 
 const { Title, Text } = Typography;
 
@@ -899,6 +900,13 @@ const Settings: React.FC = () => {
             </Col>
           </Row>
         )
+      },
+      {
+        key: 'backup',
+        label: '백업 관리',
+        icon: <DatabaseOutlined />,
+        roles: ['admin'], // admin만 접근 가능
+        children: <BackupSettings />
       },
       {
         key: 'users',

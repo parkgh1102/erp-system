@@ -48,6 +48,8 @@ const Quotation_1 = require("../entities/Quotation");
 const QuotationItem_1 = require("../entities/QuotationItem");
 const PurchaseOrder_1 = require("../entities/PurchaseOrder");
 const PurchaseOrderItem_1 = require("../entities/PurchaseOrderItem");
+const BackupConfig_1 = require("../entities/BackupConfig");
+const BackupHistory_1 = require("../entities/BackupHistory");
 const env = (0, envValidator_1.getValidatedEnv)();
 const baseConfig = {
     // ✅ synchronize 설정 (환경 변수로 제어 가능)
@@ -78,7 +80,9 @@ const baseConfig = {
         Quotation_1.Quotation,
         QuotationItem_1.QuotationItem,
         PurchaseOrder_1.PurchaseOrder,
-        PurchaseOrderItem_1.PurchaseOrderItem
+        PurchaseOrderItem_1.PurchaseOrderItem,
+        BackupConfig_1.BackupConfig,
+        BackupHistory_1.BackupHistory
     ],
     // 마이그레이션 파일 경로
     migrations: ['src/migrations/*.ts'],

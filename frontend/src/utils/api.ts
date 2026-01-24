@@ -367,6 +367,29 @@ export const purchaseOrderAPI = {
     api.get(`/businesses/${businessId}/purchase-orders/next-number`),
 };
 
+export const backupAPI = {
+  getConfig: (businessId: number) =>
+    api.get(`/backup/${businessId}/config`),
+  updateConfig: (businessId: number, data: {
+    enabled?: boolean;
+    scheduleType?: string;
+    scheduleTime?: string;
+    scheduleDay?: number;
+    retentionCount?: number;
+  }) =>
+    api.put(`/backup/${businessId}/config`, data),
+  getHistory: (businessId: number, params?: { page?: number; limit?: number }) =>
+    api.get(`/backup/${businessId}/history`, { params }),
+  createBackup: (businessId: number) =>
+    api.post(`/backup/${businessId}/backup`),
+  restoreBackup: (businessId: number, historyId: number) =>
+    api.post(`/backup/${businessId}/restore/${historyId}`),
+  downloadBackup: (businessId: number, historyId: number) =>
+    api.get(`/backup/${businessId}/download/${historyId}`, { responseType: 'blob' }),
+  deleteBackup: (businessId: number, historyId: number) =>
+    api.delete(`/backup/${businessId}/history/${historyId}`),
+};
+
 export const excelAPI = {
   // 템플릿 다운로드
   downloadCustomerTemplate: () =>

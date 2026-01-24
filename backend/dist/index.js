@@ -28,6 +28,8 @@ const notificationRoutes_1 = __importDefault(require("./routes/notificationRoute
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const chatbotRoutes_1 = __importDefault(require("./routes/chatbotRoutes"));
 const excelRoutes_1 = __importDefault(require("./routes/excelRoutes"));
+const backupRoutes_1 = __importDefault(require("./routes/backupRoutes"));
+const BackupSchedulerService_1 = require("./services/BackupSchedulerService");
 dotenv_1.default.config({ path: path_1.default.join(__dirname, '../.env') });
 const validatedEnv = (0, envValidator_1.getValidatedEnv)();
 const app = (0, express_1.default)();
@@ -169,6 +171,7 @@ app.use('/api/activity-logs', activityLogRoutes_1.default);
 app.use('/api/notifications', notificationRoutes_1.default);
 app.use('/api/chatbot', chatbotRoutes_1.default);
 app.use('/api/excel', excelRoutes_1.default);
+app.use('/api/backup', backupRoutes_1.default);
 // 데이터베이스 연결 상태 추적
 let isDatabaseConnected = false;
 // Health check endpoints - 프로덕션에서는 민감 정보 제한
@@ -244,6 +247,9 @@ async function bootstrap() {
             isDatabaseConnected = true;
             connected = true;
             console.log('✅ Database connected successfully');
+            // Initialize backup scheduler
+            await BackupSchedulerService_1.backupSchedulerService.initialize();
+            console.log('✅ Backup scheduler initialized');
         }
         catch (error) {
             retries--;

@@ -36,6 +36,7 @@ keys/
 *.sqlite3
 database/
 backup/
+backups/
 dumps/
 
 # Log files
@@ -94,6 +95,9 @@ jspm_packages/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Test screenshots
+screenshot*.png
 
 # Uploads and user data
 uploads/
@@ -154,3 +158,6 @@ azure-logs/
 *.zip
 *.cwd
 tmpclaude-*
+
+# Windows null device files
+nul

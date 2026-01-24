@@ -23,6 +23,8 @@ import notificationRoutes from './routes/notificationRoutes';
 import userRoutes from './routes/userRoutes';
 import chatbotRoutes from './routes/chatbotRoutes';
 import excelRoutes from './routes/excelRoutes';
+import backupRoutes from './routes/backupRoutes';
+import { backupSchedulerService } from './services/BackupSchedulerService';
 
 dotenv.config({ path: path.join(__dirname, '../.env') });
 const validatedEnv = getValidatedEnv();
@@ -178,6 +180,7 @@ app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/excel', excelRoutes);
+app.use('/api/backup', backupRoutes);
 
 // 데이터베이스 연결 상태 추적
 let isDatabaseConnected = false;
@@ -260,6 +263,10 @@ async function bootstrap() {
       isDatabaseConnected = true;
       connected = true;
       console.log('✅ Database connected successfully');
+
+      // Initialize backup scheduler
+      await backupSchedulerService.initialize();
+      console.log('✅ Backup scheduler initialized');
     } catch (error) {
       retries--;
       console.error(`❌ Database connection failed (attempts remaining: ${retries}):`, error);
