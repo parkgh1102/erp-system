@@ -15,20 +15,42 @@ import { Payment } from '../entities/Payment';
 class BackupSchedulerService {
   private scheduledJobs: Map<number, cron.ScheduledTask> = new Map();
   private backupDir: string;
+  private isInitialized: boolean = false;
 
   constructor() {
-    this.backupDir = path.join(__dirname, '../../backups');
-    this.ensureBackupDirectory();
+    // Azure App Service uses /home for persistent storage
+    const baseDir = process.env.HOME || process.env.APPDATA || __dirname;
+    this.backupDir = process.env.BACKUP_DIR || path.join(baseDir, 'backups');
   }
 
   private ensureBackupDirectory() {
-    if (!fs.existsSync(this.backupDir)) {
-      fs.mkdirSync(this.backupDir, { recursive: true });
+    try {
+      if (!fs.existsSync(this.backupDir)) {
+        fs.mkdirSync(this.backupDir, { recursive: true });
+      }
+      this.isInitialized = true;
+      console.log(`Backup directory ready: ${this.backupDir}`);
+    } catch (error) {
+      console.error('Failed to create backup directory:', error);
+      // Fallback to temp directory
+      this.backupDir = path.join(process.env.TEMP || '/tmp', 'erp-backups');
+      try {
+        if (!fs.existsSync(this.backupDir)) {
+          fs.mkdirSync(this.backupDir, { recursive: true });
+        }
+        this.isInitialized = true;
+        console.log(`Using fallback backup directory: ${this.backupDir}`);
+      } catch (fallbackError) {
+        console.error('Failed to create fallback backup directory:', fallbackError);
+      }
     }
   }
 
   async initialize() {
     try {
+      // Ensure backup directory exists
+      this.ensureBackupDirectory();
+
       const configRepo = AppDataSource.getRepository(BackupConfig);
       const configs = await configRepo.find({ where: { enabled: true } });
 
@@ -39,6 +61,7 @@ class BackupSchedulerService {
       console.log(`Backup scheduler initialized with ${configs.length} active schedules`);
     } catch (error) {
       console.error('Failed to initialize backup scheduler:', error);
+      // Don't throw - let the app continue without backup scheduling
     }
   }
 
@@ -91,6 +114,11 @@ class BackupSchedulerService {
   }
 
   async performBackup(businessId: number, backupType: 'scheduled' | 'manual' = 'manual'): Promise<BackupHistory> {
+    // Ensure backup directory exists before backup
+    if (!this.isInitialized) {
+      this.ensureBackupDirectory();
+    }
+
     const historyRepo = AppDataSource.getRepository(BackupHistory);
     const configRepo = AppDataSource.getRepository(BackupConfig);
 

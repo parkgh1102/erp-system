@@ -3,6 +3,7 @@ import { BackupHistory } from '../entities/BackupHistory';
 declare class BackupSchedulerService {
     private scheduledJobs;
     private backupDir;
+    private isInitialized;
     constructor();
     private ensureBackupDirectory;
     initialize(): Promise<void>;
