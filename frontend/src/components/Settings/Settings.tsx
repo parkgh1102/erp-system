@@ -77,9 +77,8 @@ const Settings: React.FC = () => {
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsModalVisible, setLogsModalVisible] = useState(false);
 
-  // 보안 설정 상태 (기본값: 2단계 인증 ON)
+  // 보안 설정 상태
   const [securitySettings, setSecuritySettings] = useState({
-    twoFactorAuth: true,
     sessionTimeout: '8h',
     ipRestriction: false,
     loginNotification: false,
@@ -108,9 +107,8 @@ const Settings: React.FC = () => {
         const response = await settingsAPI.getSettings(currentBusiness.id);
         if (response.data.success) {
           const data = response.data.data;
-          // 보안 설정 (설정이 없으면 기본값 2단계 인증 ON)
+          // 보안 설정
           setSecuritySettings({
-            twoFactorAuth: data.twoFactorAuth === undefined ? true : data.twoFactorAuth === 'true',
             sessionTimeout: data.sessionTimeout || '8h',
             ipRestriction: data.ipRestriction === 'true',
             loginNotification: data.loginNotification === 'true',
@@ -218,7 +216,6 @@ const Settings: React.FC = () => {
       // 모든 설정을 서버에 저장
       const settingsToSave = {
         // 보안 설정
-        twoFactorAuth: String(securitySettings.twoFactorAuth),
         sessionTimeout: securitySettings.sessionTimeout,
         ipRestriction: String(securitySettings.ipRestriction),
         loginNotification: String(securitySettings.loginNotification),
@@ -723,18 +720,6 @@ const Settings: React.FC = () => {
             <Col xs={24} lg={12}>
               <Card title="보안 설정">
                 <Form layout="vertical">
-                  <Form.Item label="2단계 인증">
-                    <Space>
-                      <Switch
-                        checked={securitySettings.twoFactorAuth}
-                        onChange={(checked) => setSecuritySettings(prev => ({ ...prev, twoFactorAuth: checked }))}
-                      />
-                      <Text type="secondary">
-                        로그인 시 추가 인증을 요구합니다
-                      </Text>
-                    </Space>
-                  </Form.Item>
-
                   <Form.Item label="세션 유지 시간">
                     <Radio.Group
                       value={securitySettings.sessionTimeout}
