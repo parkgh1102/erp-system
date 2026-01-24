@@ -181,6 +181,7 @@ export const AuthController = {
   },
 
   async login(req: Request, res: Response) {
+    const loginStart = Date.now();
     try {
       const { error, value } = loginSchema.validate(req.body);
       if (error) {
@@ -194,6 +195,7 @@ export const AuthController = {
       const env = getValidatedEnv();
 
       // 1단계: 사용자 검색 (relations 없이 빠르게)
+      const step1Start = Date.now();
       let user: User | null = null;
       if (email) {
         user = await userRepository.findOne({
@@ -209,6 +211,7 @@ export const AuthController = {
           .andWhere('REPLACE(REPLACE(REPLACE(user.phone, \'-\', \'\'), \' \', \'\'), \'.\', \'\') = :phone', { phone: cleanPhone })
           .getOne();
       }
+      logger.info(`[LOGIN TIMING] Step1 사용자조회: ${Date.now() - step1Start}ms (${email || phone})`);
 
       if (!user) {
         securityLogger.logAuthFailure(req, 'Login failed: User not found', { email, phone });
@@ -219,7 +222,9 @@ export const AuthController = {
       }
 
       // 2단계: 비밀번호 검증 (가장 CPU 집약적)
+      const step2Start = Date.now();
       const isPasswordValid = await bcrypt.compare(password, user.password);
+      logger.info(`[LOGIN TIMING] Step2 비밀번호검증: ${Date.now() - step2Start}ms`);
       if (!isPasswordValid) {
         securityLogger.logAuthFailure(req, 'Login failed: Invalid password', { email, phone, userId: user.id });
         return res.status(401).json({
@@ -232,6 +237,7 @@ export const AuthController = {
       securityLogger.logAuthSuccess(req, user.id);
 
       // 3단계: 병렬 쿼리 실행 (businesses + settings + sales_viewer 권한)
+      const step3Start = Date.now();
       const businessId = user.businessId || 0;
       const accessRepository = AppDataSource.getRepository(UserBusinessAccess);
 
@@ -266,8 +272,10 @@ export const AuthController = {
       ];
 
       const [businesses, settings, accessList] = await Promise.all(parallelQueries);
+      logger.info(`[LOGIN TIMING] Step3 병렬쿼리: ${Date.now() - step3Start}ms (role: ${user.role})`);
 
       // 비즈니스 설정
+      const step4Start = Date.now();
       if (user.role === 'admin') {
         user.businesses = businesses;
       } else if (user.role === 'sales_viewer') {
@@ -282,6 +290,7 @@ export const AuthController = {
           user.businesses = [];
         }
       }
+      logger.info(`[LOGIN TIMING] Step4 비즈니스설정: ${Date.now() - step4Start}ms`);
 
       // businessId 최종 결정
       const finalBusinessId = user.businessId || user.businesses?.[0]?.id || 0;
@@ -353,6 +362,8 @@ export const AuthController = {
       //   // 보안 설정 조회 실패 시 기본값 사용
       //   logger.error('Security settings query error:', err);
       // }
+
+      logger.info(`[LOGIN TIMING] 전체: ${Date.now() - loginStart}ms (${email || phone})`);
 
       res.json({
         success: true,
