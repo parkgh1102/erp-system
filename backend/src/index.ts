@@ -144,8 +144,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(securityMiddleware);
 
-// 정적 파일 제공 (uploads) - 먼저 설정하여 JSON 헤더 영향 받지 않음
+// 정적 파일 제공 (uploads) - 보안 설정 강화
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
+  dotfiles: 'deny',        // .로 시작하는 파일 접근 차단
+  index: false,            // 디렉토리 인덱싱 비활성화
+  maxAge: '1d',            // 캐시 1일
   setHeaders: (res, filePath) => {
     // 이미지 파일 MIME 타입 자동 설정
     if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
@@ -153,6 +156,8 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
     } else if (filePath.endsWith('.png')) {
       res.setHeader('Content-Type', 'image/png');
     }
+    // 다운로드 방지 (브라우저에서 직접 표시)
+    res.setHeader('X-Content-Type-Options', 'nosniff');
   }
 }));
 
@@ -177,38 +182,54 @@ app.use('/api/excel', excelRoutes);
 // 데이터베이스 연결 상태 추적
 let isDatabaseConnected = false;
 
-// Health check endpoints - 서버가 먼저 시작되어야 함
+// Health check endpoints - 프로덕션에서는 민감 정보 제한
 app.get('/health', (req, res) => {
-  const memoryUsage = process.memoryUsage();
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: validatedEnv.NODE_ENV,
-    database: isDatabaseConnected ? 'connected' : 'connecting',
-    uptime: Math.floor(process.uptime()),
-    memory: {
-      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
-      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB',
-      rss: Math.round(memoryUsage.rss / 1024 / 1024) + 'MB'
-    }
-  });
+  // 프로덕션 환경에서는 최소 정보만 반환
+  if (validatedEnv.NODE_ENV === 'production') {
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    const memoryUsage = process.memoryUsage();
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      environment: validatedEnv.NODE_ENV,
+      database: isDatabaseConnected ? 'connected' : 'connecting',
+      uptime: Math.floor(process.uptime()),
+      memory: {
+        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB',
+        rss: Math.round(memoryUsage.rss / 1024 / 1024) + 'MB'
+      }
+    });
+  }
 });
 
 app.get('/api/health', (req, res) => {
-  // Render 헬스체크용 - 서버가 살아있으면 OK 응답
-  const memoryUsage = process.memoryUsage();
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: validatedEnv.NODE_ENV,
-    service: 'erp-backend',
-    database: isDatabaseConnected ? 'connected' : 'connecting',
-    uptime: Math.floor(process.uptime()),
-    memory: {
-      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
-      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB'
-    }
-  });
+  // Render 헬스체크용 - 프로덕션에서는 최소 정보만 반환
+  if (validatedEnv.NODE_ENV === 'production') {
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      service: 'erp-backend'
+    });
+  } else {
+    const memoryUsage = process.memoryUsage();
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      environment: validatedEnv.NODE_ENV,
+      service: 'erp-backend',
+      database: isDatabaseConnected ? 'connected' : 'connecting',
+      uptime: Math.floor(process.uptime()),
+      memory: {
+        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB'
+      }
+    });
+  }
 });
 
 app.use('*', (req, res) => {

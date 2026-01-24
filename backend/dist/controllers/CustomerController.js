@@ -460,8 +460,8 @@ exports.CustomerController = {
                     message: '사업자 정보를 찾을 수 없습니다.'
                 });
             }
-            // 해당 business의 모든 거래처 삭제
-            const result = await customerRepository.delete({ businessId: business.id });
+            // 해당 business의 모든 거래처 소프트 삭제 (복구 가능)
+            const result = await customerRepository.update({ businessId: business.id, isActive: true }, { isActive: false });
             res.json({
                 success: true,
                 message: `${result.affected || 0}개의 거래처가 삭제되었습니다.`,

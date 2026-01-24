@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.authenticateToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const envValidator_1 = require("../config/envValidator");
+const tokenBlacklist_1 = require("../utils/tokenBlacklist");
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
     let token = authHeader && authHeader.split(' ')[1];
@@ -17,6 +18,13 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({
             success: false,
             message: '토큰이 필요합니다.'
+        });
+    }
+    // 블랙리스트 확인 (로그아웃된 토큰)
+    if (tokenBlacklist_1.tokenBlacklist.isBlacklisted(token)) {
+        return res.status(401).json({
+            success: false,
+            message: '로그아웃된 토큰입니다. 다시 로그인해주세요.'
         });
     }
     try {

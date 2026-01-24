@@ -445,25 +445,132 @@ export const transactionLedgerController = {
   // 거래원장 상세 내역 조회
   async getLedgerDetails(req: Request, res: Response) {
     try {
-      // const { businessId: _businessId } = req.params;
-      // const { customerId: _customerId, startDate: _startDate, endDate: _endDate, type: _type } = req.query;
+      const { businessId } = req.params;
+      const { customerId, startDate, endDate, type } = req.query;
 
-      // 간단한 mock 데이터 반환
-      const mockDetails = [
-        {
-          id: 1,
-          date: dayjs().format('YYYY-MM-DD'),
-          type: 'sales',
-          description: '매출',
-          amount: 1000000,
-          balance: 1000000,
-          memo: '거래완료'
+      const salesRepository = AppDataSource.getRepository(Sales);
+      const purchaseRepository = AppDataSource.getRepository(Purchase);
+      const paymentRepository = AppDataSource.getRepository(Payment);
+
+      // 날짜 범위 설정
+      const start = startDate ? dayjs(startDate as string) : dayjs().startOf('month');
+      const end = endDate ? dayjs(endDate as string) : dayjs().endOf('month');
+
+      const details: Array<{
+        id: number;
+        date: string;
+        type: string;
+        description: string;
+        customerName: string;
+        amount: number;
+        supplyAmount: number;
+        vatAmount: number;
+        memo?: string;
+      }> = [];
+
+      // 매출 데이터 조회
+      if (!type || type === 'sales') {
+        const salesQuery = salesRepository.createQueryBuilder('sales')
+          .leftJoinAndSelect('sales.customer', 'customer')
+          .where('sales.businessId = :businessId', { businessId: Number(businessId) })
+          .andWhere('sales.transactionDate >= :start', { start: start.format('YYYY-MM-DD') })
+          .andWhere('sales.transactionDate <= :end', { end: end.format('YYYY-MM-DD') });
+
+        if (customerId) {
+          salesQuery.andWhere('sales.customerId = :customerId', { customerId: Number(customerId) });
         }
-      ];
+
+        const sales = await salesQuery.getMany();
+
+        sales.forEach(sale => {
+          const supplyAmount = Number(sale.totalAmount) || 0;
+          const vatAmount = Number(sale.vatAmount) || 0;
+          details.push({
+            id: sale.id,
+            date: dayjs(sale.transactionDate).format('YYYY-MM-DD'),
+            type: 'sales',
+            description: sale.description || '매출',
+            customerName: sale.customer?.name || '',
+            amount: supplyAmount + vatAmount,
+            supplyAmount,
+            vatAmount,
+            memo: sale.memo || undefined
+          });
+        });
+      }
+
+      // 매입 데이터 조회
+      if (!type || type === 'purchase') {
+        const purchaseQuery = purchaseRepository.createQueryBuilder('purchase')
+          .leftJoinAndSelect('purchase.customer', 'customer')
+          .where('purchase.businessId = :businessId', { businessId: Number(businessId) })
+          .andWhere('purchase.purchaseDate >= :start', { start: start.format('YYYY-MM-DD') })
+          .andWhere('purchase.purchaseDate <= :end', { end: end.format('YYYY-MM-DD') });
+
+        if (customerId) {
+          purchaseQuery.andWhere('purchase.customerId = :customerId', { customerId: Number(customerId) });
+        }
+
+        const purchases = await purchaseQuery.getMany();
+
+        purchases.forEach(purchase => {
+          const supplyAmount = Number(purchase.totalAmount) || 0;
+          const vatAmount = Number(purchase.vatAmount) || 0;
+          details.push({
+            id: purchase.id,
+            date: dayjs(purchase.purchaseDate).format('YYYY-MM-DD'),
+            type: 'purchase',
+            description: purchase.memo || '매입',
+            customerName: purchase.customer?.name || '',
+            amount: supplyAmount + vatAmount,
+            supplyAmount,
+            vatAmount
+          });
+        });
+      }
+
+      // 수금/지급 데이터 조회
+      if (!type || type === 'receipt' || type === 'payment') {
+        const paymentQuery = paymentRepository.createQueryBuilder('payment')
+          .leftJoinAndSelect('payment.customer', 'customer')
+          .where('payment.businessId = :businessId', { businessId: Number(businessId) })
+          .andWhere('payment.paymentDate >= :start', { start: start.format('YYYY-MM-DD') })
+          .andWhere('payment.paymentDate <= :end', { end: end.format('YYYY-MM-DD') });
+
+        if (customerId) {
+          paymentQuery.andWhere('payment.customerId = :customerId', { customerId: Number(customerId) });
+        }
+
+        if (type === 'receipt') {
+          paymentQuery.andWhere('payment.paymentType = :paymentType', { paymentType: '수금' });
+        } else if (type === 'payment') {
+          paymentQuery.andWhere('payment.paymentType = :paymentType', { paymentType: '지급' });
+        }
+
+        const payments = await paymentQuery.getMany();
+
+        payments.forEach(payment => {
+          const amount = Number(payment.amount) || 0;
+          details.push({
+            id: payment.id,
+            date: dayjs(payment.paymentDate).format('YYYY-MM-DD'),
+            type: payment.paymentType === '수금' ? 'receipt' : 'payment',
+            description: payment.paymentType,
+            customerName: payment.customer?.name || '',
+            amount,
+            supplyAmount: amount,
+            vatAmount: 0,
+            memo: payment.memo || undefined
+          });
+        });
+      }
+
+      // 날짜순 정렬
+      details.sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
 
       res.json({
         success: true,
-        data: mockDetails
+        data: details
       });
     } catch (error) {
       console.error('거래원장 상세 조회 오류:', error);
@@ -477,22 +584,103 @@ export const transactionLedgerController = {
   // 거래원장 요약 정보 조회
   async getLedgerSummary(req: Request, res: Response) {
     try {
-      // const { businessId: _businessId } = req.params;
-      // const { customerId: _customerId, startDate: _startDate, endDate: _endDate } = req.query;
+      const { businessId } = req.params;
+      const { customerId, startDate, endDate } = req.query;
 
-      // 간단한 mock 데이터 반환
-      const mockSummary = {
-        totalSales: 5000000,
-        totalPurchase: 2000000,
-        totalReceipt: 3000000,
-        totalPayment: 1000000,
-        finalBalance: 1000000,
-        transactionCount: 15
-      };
+      const salesRepository = AppDataSource.getRepository(Sales);
+      const purchaseRepository = AppDataSource.getRepository(Purchase);
+      const paymentRepository = AppDataSource.getRepository(Payment);
+
+      // 날짜 범위 설정
+      const start = startDate ? dayjs(startDate as string) : dayjs().startOf('month');
+      const end = endDate ? dayjs(endDate as string) : dayjs().endOf('month');
+
+      // 매출 합계
+      const salesQuery = salesRepository.createQueryBuilder('sales')
+        .select('COALESCE(SUM(sales.totalAmount), 0)', 'totalSupply')
+        .addSelect('COALESCE(SUM(sales.vatAmount), 0)', 'totalVat')
+        .addSelect('COUNT(sales.id)', 'count')
+        .where('sales.businessId = :businessId', { businessId: Number(businessId) })
+        .andWhere('sales.transactionDate >= :start', { start: start.format('YYYY-MM-DD') })
+        .andWhere('sales.transactionDate <= :end', { end: end.format('YYYY-MM-DD') });
+
+      if (customerId) {
+        salesQuery.andWhere('sales.customerId = :customerId', { customerId: Number(customerId) });
+      }
+
+      const salesResult = await salesQuery.getRawOne();
+      const totalSales = (Number(salesResult?.totalSupply) || 0) + (Number(salesResult?.totalVat) || 0);
+      const salesCount = Number(salesResult?.count) || 0;
+
+      // 매입 합계
+      const purchaseQuery = purchaseRepository.createQueryBuilder('purchase')
+        .select('COALESCE(SUM(purchase.totalAmount), 0)', 'totalSupply')
+        .addSelect('COALESCE(SUM(purchase.vatAmount), 0)', 'totalVat')
+        .addSelect('COUNT(purchase.id)', 'count')
+        .where('purchase.businessId = :businessId', { businessId: Number(businessId) })
+        .andWhere('purchase.purchaseDate >= :start', { start: start.format('YYYY-MM-DD') })
+        .andWhere('purchase.purchaseDate <= :end', { end: end.format('YYYY-MM-DD') });
+
+      if (customerId) {
+        purchaseQuery.andWhere('purchase.customerId = :customerId', { customerId: Number(customerId) });
+      }
+
+      const purchaseResult = await purchaseQuery.getRawOne();
+      const totalPurchase = (Number(purchaseResult?.totalSupply) || 0) + (Number(purchaseResult?.totalVat) || 0);
+      const purchaseCount = Number(purchaseResult?.count) || 0;
+
+      // 수금 합계
+      const receiptQuery = paymentRepository.createQueryBuilder('payment')
+        .select('COALESCE(SUM(payment.amount), 0)', 'total')
+        .addSelect('COUNT(payment.id)', 'count')
+        .where('payment.businessId = :businessId', { businessId: Number(businessId) })
+        .andWhere('payment.paymentType = :paymentType', { paymentType: '수금' })
+        .andWhere('payment.paymentDate >= :start', { start: start.format('YYYY-MM-DD') })
+        .andWhere('payment.paymentDate <= :end', { end: end.format('YYYY-MM-DD') });
+
+      if (customerId) {
+        receiptQuery.andWhere('payment.customerId = :customerId', { customerId: Number(customerId) });
+      }
+
+      const receiptResult = await receiptQuery.getRawOne();
+      const totalReceipt = Number(receiptResult?.total) || 0;
+      const receiptCount = Number(receiptResult?.count) || 0;
+
+      // 지급 합계
+      const paymentQuery = paymentRepository.createQueryBuilder('payment')
+        .select('COALESCE(SUM(payment.amount), 0)', 'total')
+        .addSelect('COUNT(payment.id)', 'count')
+        .where('payment.businessId = :businessId', { businessId: Number(businessId) })
+        .andWhere('payment.paymentType = :paymentType', { paymentType: '지급' })
+        .andWhere('payment.paymentDate >= :start', { start: start.format('YYYY-MM-DD') })
+        .andWhere('payment.paymentDate <= :end', { end: end.format('YYYY-MM-DD') });
+
+      if (customerId) {
+        paymentQuery.andWhere('payment.customerId = :customerId', { customerId: Number(customerId) });
+      }
+
+      const paymentResult = await paymentQuery.getRawOne();
+      const totalPayment = Number(paymentResult?.total) || 0;
+      const paymentCount = Number(paymentResult?.count) || 0;
+
+      // 잔액 계산: 매출 - 매입 - 수금 + 지급
+      const finalBalance = totalSales - totalPurchase - totalReceipt + totalPayment;
+      const transactionCount = salesCount + purchaseCount + receiptCount + paymentCount;
 
       res.json({
         success: true,
-        data: mockSummary
+        data: {
+          totalSales,
+          totalPurchase,
+          totalReceipt,
+          totalPayment,
+          finalBalance,
+          transactionCount,
+          period: {
+            start: start.format('YYYY-MM-DD'),
+            end: end.format('YYYY-MM-DD')
+          }
+        }
       });
     } catch (error) {
       console.error('거래원장 요약 조회 오류:', error);

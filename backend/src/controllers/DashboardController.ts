@@ -204,18 +204,11 @@ export class DashboardController {
       const purchaseRepo = AppDataSource.getRepository(Purchase);
 
       let months = 6; // 기본 6개월
-      // Unused variables - commenting out
-      // const dateFormat = 'YYYY-MM';
-      // const labelFormat = 'MM월';
 
       if (period === 'year') {
         months = 12;
-        // dateFormat = 'YYYY-MM';
-        // labelFormat = 'MM월';
       } else if (period === 'week') {
         months = 8; // 8주
-        // dateFormat = 'YYYY-WW';
-        // labelFormat = 'WW주';
       }
 
       const endDate = dayjs().endOf('month');
@@ -364,7 +357,6 @@ export class DashboardController {
   static async getMonthlyTrend(req: Request, res: Response) {
     try {
       const { businessId } = req.params;
-      // const { period: _period = 'month' } = req.query;
 
       const salesRepo = AppDataSource.getRepository(Sales);
 

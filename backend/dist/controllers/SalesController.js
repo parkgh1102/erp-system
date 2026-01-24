@@ -12,10 +12,10 @@ const SalesItem_1 = require("../entities/SalesItem");
 const User_1 = require("../entities/User");
 const Notification_1 = require("../entities/Notification");
 const UserBusinessAccess_1 = require("../entities/UserBusinessAccess");
-// import { Product } from '../entities/Product';
 const joi_1 = __importDefault(require("joi"));
 const AlimtalkService_1 = require("../services/AlimtalkService");
 const CloudinaryService_1 = require("../services/CloudinaryService");
+const logger_1 = require("../utils/logger");
 const salesRepository = database_1.AppDataSource.getRepository(Sales_1.Sales);
 const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
 const customerRepository = database_1.AppDataSource.getRepository(Customer_1.Customer);
@@ -23,7 +23,6 @@ const salesItemRepository = database_1.AppDataSource.getRepository(SalesItem_1.S
 const userRepository = database_1.AppDataSource.getRepository(User_1.User);
 const notificationRepository = database_1.AppDataSource.getRepository(Notification_1.Notification);
 const userBusinessAccessRepository = database_1.AppDataSource.getRepository(UserBusinessAccess_1.UserBusinessAccess);
-// const productRepository = AppDataSource.getRepository(Product);
 const salesSchema = joi_1.default.object({
     customerId: joi_1.default.number().integer().min(1).allow(null),
     customer: joi_1.default.object({
@@ -120,7 +119,7 @@ class SalesController {
             });
         }
         catch (error) {
-            console.error('Sales getAll error:', error);
+            logger_1.logger.error('Sales getAll error:', error);
             res.status(500).json({ success: false, message: '매출 목록 조회 중 오류가 발생했습니다.' });
         }
     }
@@ -184,7 +183,7 @@ class SalesController {
             });
         }
         catch (error) {
-            console.error('Sales getById error:', error);
+            logger_1.logger.error('Sales getById error:', error);
             res.status(500).json({ success: false, message: '매출 조회 중 오류가 발생했습니다.' });
         }
     }
@@ -306,7 +305,7 @@ class SalesController {
             });
         }
         catch (error) {
-            console.error('Sales create error:', error);
+            logger_1.logger.error('Sales create error:', error);
             res.status(500).json({ success: false, message: '매출 등록 중 오류가 발생했습니다.' });
         }
     }
@@ -425,7 +424,7 @@ class SalesController {
             });
         }
         catch (error) {
-            console.error('Sales update error:', error);
+            logger_1.logger.error('Sales update error:', error);
             res.status(500).json({ success: false, message: '매출 수정 중 오류가 발생했습니다.' });
         }
     }
@@ -490,7 +489,7 @@ class SalesController {
             });
         }
         catch (error) {
-            console.error('Sales delete error:', error);
+            logger_1.logger.error('Sales delete error:', error);
             res.status(500).json({ success: false, message: '매출 삭제 중 오류가 발생했습니다.' });
         }
     }
@@ -616,7 +615,7 @@ class SalesController {
             });
         }
         catch (error) {
-            console.error('Sales sign error:', error);
+            logger_1.logger.error('Sales sign error:', error);
             res.status(500).json({ success: false, message: '전자서명 중 오류가 발생했습니다.' });
         }
     }
@@ -636,12 +635,30 @@ class SalesController {
             if (req.file.buffer[0] !== 0xFF || req.file.buffer[1] !== 0xD8 || req.file.buffer[2] !== 0xFF) {
                 return res.status(400).json({ success: false, message: 'JPG 파일 형식이 올바르지 않습니다.' });
             }
-            // 사업체 조회
-            const business = await businessRepository.findOne({
-                where: { id: parseInt(businessId) }
-            });
+            // 사용자 조회
+            const user = await userRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+            }
+            // 역할에 따른 business 접근 권한 체크
+            let business;
+            if (user.role === 'admin') {
+                business = await businessRepository.findOne({
+                    where: { id: parseInt(businessId), userId }
+                });
+            }
+            else if (user.role === 'sales_viewer') {
+                const hasAccess = await userBusinessAccessRepository.findOne({
+                    where: { userId: user.id, businessId: parseInt(businessId) }
+                });
+                if (hasAccess || user.businessId === parseInt(businessId)) {
+                    business = await businessRepository.findOne({
+                        where: { id: parseInt(businessId) }
+                    });
+                }
+            }
             if (!business) {
-                return res.status(404).json({ success: false, message: '사업체를 찾을 수 없습니다.' });
+                return res.status(404).json({ success: false, message: '사업체를 찾을 수 없거나 접근 권한이 없습니다.' });
             }
             // 매출 조회
             const sales = await salesRepository.findOne({
@@ -666,7 +683,7 @@ class SalesController {
             });
         }
         catch (error) {
-            console.error('Statement upload error:', error);
+            logger_1.logger.error('Statement upload error:', error);
             res.status(500).json({ success: false, message: '이미지 업로드 중 오류가 발생했습니다.' });
         }
     }
@@ -682,13 +699,32 @@ class SalesController {
             if (!imageUrl) {
                 return res.status(400).json({ success: false, message: '이미지 URL이 필요합니다.' });
             }
-            // 사업체 조회
-            const business = await businessRepository.findOne({
-                where: { id: parseInt(businessId) },
-                relations: ['user']
-            });
+            // 사용자 조회
+            const user = await userRepository.findOne({ where: { id: userId } });
+            if (!user) {
+                return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+            }
+            // 역할에 따른 business 접근 권한 체크
+            let business;
+            if (user.role === 'admin') {
+                business = await businessRepository.findOne({
+                    where: { id: parseInt(businessId), userId },
+                    relations: ['user']
+                });
+            }
+            else if (user.role === 'sales_viewer') {
+                const hasAccess = await userBusinessAccessRepository.findOne({
+                    where: { userId: user.id, businessId: parseInt(businessId) }
+                });
+                if (hasAccess || user.businessId === parseInt(businessId)) {
+                    business = await businessRepository.findOne({
+                        where: { id: parseInt(businessId) },
+                        relations: ['user']
+                    });
+                }
+            }
             if (!business) {
-                return res.status(404).json({ success: false, message: '사업체를 찾을 수 없습니다.' });
+                return res.status(404).json({ success: false, message: '사업체를 찾을 수 없거나 접근 권한이 없습니다.' });
             }
             // 매출 조회
             const sales = await salesRepository.findOne({
@@ -731,7 +767,7 @@ class SalesController {
             }
         }
         catch (error) {
-            console.error('Alimtalk send error:', error);
+            logger_1.logger.error('Alimtalk send error:', error);
             res.status(500).json({ success: false, message: '알림톡 전송 중 오류가 발생했습니다.' });
         }
     }

@@ -4,6 +4,7 @@ import { AppDataSource } from '../config/database';
 import { Business } from '../entities/Business';
 import { User } from '../entities/User';
 import { UserBusinessAccess } from '../entities/UserBusinessAccess';
+import { logger } from '../utils/logger';
 
 export const businessAccessMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -79,7 +80,7 @@ export const businessAccessMiddleware = async (req: AuthRequest, res: Response, 
 
     next();
   } catch (error) {
-    console.error('사업자 접근 권한 확인 오류:', error);
+    logger.error('사업자 접근 권한 확인 오류:', error as Error);
     return res.status(500).json({
       success: false,
       message: '사업자 접근 권한 확인 중 오류가 발생했습니다.'

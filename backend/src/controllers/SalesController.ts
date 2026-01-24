@@ -7,10 +7,10 @@ import { SalesItem } from '../entities/SalesItem';
 import { User } from '../entities/User';
 import { Notification } from '../entities/Notification';
 import { UserBusinessAccess } from '../entities/UserBusinessAccess';
-// import { Product } from '../entities/Product';
 import Joi from 'joi';
 import { AlimtalkService } from '../services/AlimtalkService';
 import { CloudinaryService } from '../services/CloudinaryService';
+import { logger } from '../utils/logger';
 
 const salesRepository = AppDataSource.getRepository(Sales);
 const businessRepository = AppDataSource.getRepository(Business);
@@ -19,7 +19,6 @@ const salesItemRepository = AppDataSource.getRepository(SalesItem);
 const userRepository = AppDataSource.getRepository(User);
 const notificationRepository = AppDataSource.getRepository(Notification);
 const userBusinessAccessRepository = AppDataSource.getRepository(UserBusinessAccess);
-// const productRepository = AppDataSource.getRepository(Product);
 
 const salesSchema = Joi.object({
   customerId: Joi.number().integer().min(1).allow(null),
@@ -126,7 +125,7 @@ export class SalesController {
         }
       });
     } catch (error) {
-      console.error('Sales getAll error:', error);
+      logger.error('Sales getAll error:', error as Error);
       res.status(500).json({ success: false, message: '매출 목록 조회 중 오류가 발생했습니다.' });
     }
   }
@@ -198,7 +197,7 @@ export class SalesController {
         data: sales
       });
     } catch (error) {
-      console.error('Sales getById error:', error);
+      logger.error('Sales getById error:', error as Error);
       res.status(500).json({ success: false, message: '매출 조회 중 오류가 발생했습니다.' });
     }
   }
@@ -337,7 +336,7 @@ export class SalesController {
         data: result
       });
     } catch (error) {
-      console.error('Sales create error:', error);
+      logger.error('Sales create error:', error as Error);
       res.status(500).json({ success: false, message: '매출 등록 중 오류가 발생했습니다.' });
     }
   }
@@ -473,7 +472,7 @@ export class SalesController {
         data: result
       });
     } catch (error) {
-      console.error('Sales update error:', error);
+      logger.error('Sales update error:', error as Error);
       res.status(500).json({ success: false, message: '매출 수정 중 오류가 발생했습니다.' });
     }
   }
@@ -547,7 +546,7 @@ export class SalesController {
         message: '매출이 삭제되었습니다.'
       });
     } catch (error) {
-      console.error('Sales delete error:', error);
+      logger.error('Sales delete error:', error as Error);
       res.status(500).json({ success: false, message: '매출 삭제 중 오류가 발생했습니다.' });
     }
   }
@@ -687,7 +686,7 @@ export class SalesController {
         data: result
       });
     } catch (error) {
-      console.error('Sales sign error:', error);
+      logger.error('Sales sign error:', error as Error);
       res.status(500).json({ success: false, message: '전자서명 중 오류가 발생했습니다.' });
     }
   }
@@ -712,13 +711,31 @@ export class SalesController {
         return res.status(400).json({ success: false, message: 'JPG 파일 형식이 올바르지 않습니다.' });
       }
 
-      // 사업체 조회
-      const business = await businessRepository.findOne({
-        where: { id: parseInt(businessId) }
-      });
+      // 사용자 조회
+      const user = await userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+      }
+
+      // 역할에 따른 business 접근 권한 체크
+      let business;
+      if (user.role === 'admin') {
+        business = await businessRepository.findOne({
+          where: { id: parseInt(businessId), userId }
+        });
+      } else if (user.role === 'sales_viewer') {
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+        if (hasAccess || user.businessId === parseInt(businessId)) {
+          business = await businessRepository.findOne({
+            where: { id: parseInt(businessId) }
+          });
+        }
+      }
 
       if (!business) {
-        return res.status(404).json({ success: false, message: '사업체를 찾을 수 없습니다.' });
+        return res.status(404).json({ success: false, message: '사업체를 찾을 수 없거나 접근 권한이 없습니다.' });
       }
 
       // 매출 조회
@@ -747,7 +764,7 @@ export class SalesController {
         imageUrl
       });
     } catch (error) {
-      console.error('Statement upload error:', error);
+      logger.error('Statement upload error:', error as Error);
       res.status(500).json({ success: false, message: '이미지 업로드 중 오류가 발생했습니다.' });
     }
   }
@@ -767,14 +784,33 @@ export class SalesController {
         return res.status(400).json({ success: false, message: '이미지 URL이 필요합니다.' });
       }
 
-      // 사업체 조회
-      const business = await businessRepository.findOne({
-        where: { id: parseInt(businessId) },
-        relations: ['user']
-      });
+      // 사용자 조회
+      const user = await userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+      }
+
+      // 역할에 따른 business 접근 권한 체크
+      let business;
+      if (user.role === 'admin') {
+        business = await businessRepository.findOne({
+          where: { id: parseInt(businessId), userId },
+          relations: ['user']
+        });
+      } else if (user.role === 'sales_viewer') {
+        const hasAccess = await userBusinessAccessRepository.findOne({
+          where: { userId: user.id, businessId: parseInt(businessId) }
+        });
+        if (hasAccess || user.businessId === parseInt(businessId)) {
+          business = await businessRepository.findOne({
+            where: { id: parseInt(businessId) },
+            relations: ['user']
+          });
+        }
+      }
 
       if (!business) {
-        return res.status(404).json({ success: false, message: '사업체를 찾을 수 없습니다.' });
+        return res.status(404).json({ success: false, message: '사업체를 찾을 수 없거나 접근 권한이 없습니다.' });
       }
 
       // 매출 조회
@@ -828,7 +864,7 @@ export class SalesController {
         });
       }
     } catch (error) {
-      console.error('Alimtalk send error:', error);
+      logger.error('Alimtalk send error:', error as Error);
       res.status(500).json({ success: false, message: '알림톡 전송 중 오류가 발생했습니다.' });
     }
   }

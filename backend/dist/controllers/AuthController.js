@@ -18,6 +18,8 @@ const logger_1 = require("../utils/logger");
 const envValidator_1 = require("../config/envValidator");
 const ActivityLogController_1 = require("./ActivityLogController");
 const AlimtalkService_1 = require("../services/AlimtalkService");
+const tokenBlacklist_1 = require("../utils/tokenBlacklist");
+const maskingUtils_1 = require("../utils/maskingUtils");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const userRepository = database_1.AppDataSource.getRepository(User_1.User);
@@ -74,7 +76,8 @@ exports.AuthController = {
                     message: '이미 등록된 사업자번호입니다.'
                 });
             }
-            const hashedPassword = await bcryptjs_1.default.hash(password, 12);
+            const env = (0, envValidator_1.getValidatedEnv)();
+            const hashedPassword = await bcryptjs_1.default.hash(password, env.BCRYPT_ROUNDS);
             const user = userRepository.create({
                 email,
                 password: hashedPassword,
@@ -94,15 +97,13 @@ exports.AuthController = {
                 fax: businessInfo.fax
             });
             await businessRepository.save(business);
-            // 기본 보안 설정 저장 (2단계 인증 기본값: ON)
-            const defaultSettings = [
-                { businessId: business.id, settingKey: 'twoFactorAuth', settingValue: 'true' },
-                { businessId: business.id, settingKey: 'sessionTimeout', settingValue: '8h' }
-            ];
-            for (const setting of defaultSettings) {
-                const newSetting = companySettingsRepository.create(setting);
-                await companySettingsRepository.save(newSetting);
-            }
+            // 기본 보안 설정 저장
+            const sessionSetting = companySettingsRepository.create({
+                businessId: business.id,
+                settingKey: 'sessionTimeout',
+                settingValue: '8h'
+            });
+            await companySettingsRepository.save(sessionSetting);
             // 회원가입 환영 알림톡 전송 (비동기로 처리하여 응답 지연 방지)
             AlimtalkService_1.AlimtalkService.sendWelcome(savedUser.phone, savedUser.name, businessInfo.companyName)
                 .then((sent) => {
@@ -116,7 +117,6 @@ exports.AuthController = {
                 .catch((error) => {
                 logger_1.logger.error('회원가입 환영 알림톡 전송 중 오류', error);
             });
-            const env = (0, envValidator_1.getValidatedEnv)();
             const token = jsonwebtoken_1.default.sign({ userId: savedUser.id, email: savedUser.email, businessId: business.id }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
             const refreshToken = jsonwebtoken_1.default.sign({ userId: savedUser.id, email: savedUser.email, businessId: business.id, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
             logger_1.logger.info('Signup completed successfully');
@@ -156,6 +156,7 @@ exports.AuthController = {
         }
     },
     async login(req, res) {
+        const loginStart = Date.now();
         try {
             const { error, value } = loginSchema.validate(req.body);
             if (error) {
@@ -167,6 +168,7 @@ exports.AuthController = {
             const { email, phone, password } = value;
             const env = (0, envValidator_1.getValidatedEnv)();
             // 1단계: 사용자 검색 (relations 없이 빠르게)
+            const step1Start = Date.now();
             let user = null;
             if (email) {
                 user = await userRepository.findOne({
@@ -183,17 +185,21 @@ exports.AuthController = {
                     .andWhere('REPLACE(REPLACE(REPLACE(user.phone, \'-\', \'\'), \' \', \'\'), \'.\', \'\') = :phone', { phone: cleanPhone })
                     .getOne();
             }
-            if (!user) {
-                securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: User not found', { email, phone });
-                return res.status(401).json({
-                    success: false,
-                    message: '아이디 또는 비밀번호가 틀립니다.'
-                });
-            }
+            logger_1.logger.info(`[LOGIN TIMING] Step1 사용자조회: ${Date.now() - step1Start}ms`);
             // 2단계: 비밀번호 검증 (가장 CPU 집약적)
-            const isPasswordValid = await bcryptjs_1.default.compare(password, user.password);
-            if (!isPasswordValid) {
-                securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: Invalid password', { email, phone, userId: user.id });
+            // 타이밍 공격 방지: 사용자가 없어도 bcrypt 비교 수행
+            const step2Start = Date.now();
+            // 더미 해시: 사용자가 없을 때도 동일한 시간이 소요되도록 함
+            const dummyHash = '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.eAj6lEH7yKjS2.';
+            const passwordToCompare = user?.password || dummyHash;
+            const isPasswordValid = await bcryptjs_1.default.compare(password, passwordToCompare);
+            logger_1.logger.info(`[LOGIN TIMING] Step2 비밀번호검증: ${Date.now() - step2Start}ms`);
+            // 사용자가 없거나 비밀번호가 틀린 경우
+            if (!user || !isPasswordValid) {
+                securityLogger_1.securityLogger.logAuthFailure(req, 'Login failed: Invalid credentials', {
+                    hasUser: !!user,
+                    identifier: email ? (0, maskingUtils_1.maskEmail)(email) : (0, maskingUtils_1.maskPhone)(phone || '')
+                });
                 return res.status(401).json({
                     success: false,
                     message: '아이디 또는 비밀번호가 틀립니다.'
@@ -202,21 +208,22 @@ exports.AuthController = {
             // 로그인 성공 로깅 (비동기)
             securityLogger_1.securityLogger.logAuthSuccess(req, user.id);
             // 3단계: 병렬 쿼리 실행 (businesses + settings + sales_viewer 권한)
+            const step3Start = Date.now();
             const businessId = user.businessId || 0;
             const accessRepository = database_1.AppDataSource.getRepository(UserBusinessAccess_1.UserBusinessAccess);
-            // 병렬 Promise 배열 구성
+            // 병렬 Promise 배열 구성 (최적화: 모든 쿼리 병렬 실행)
             const parallelQueries = [
                 // 비즈니스 조회 (admin용)
                 user.role === 'admin'
                     ? businessRepository.find({ where: { userId: user.id, isActive: true } })
                     : Promise.resolve([]),
-                // 보안 설정 조회
+                // 보안 설정 조회 (sessionTimeout만)
                 companySettingsRepository
                     .createQueryBuilder('settings')
                     .where('settings.businessId = :businessId', { businessId: businessId || 1 })
-                    .andWhere('settings.settingKey IN (:...keys)', { keys: ['sessionTimeout', 'twoFactorAuth'] })
-                    .getMany()
-                    .catch(() => []),
+                    .andWhere('settings.settingKey = :key', { key: 'sessionTimeout' })
+                    .getOne()
+                    .catch(() => null),
                 // sales_viewer 권한 조회
                 user.role === 'sales_viewer'
                     ? accessRepository
@@ -231,10 +238,16 @@ exports.AuthController = {
                         'business.address', 'business.phone', 'business.fax'
                     ])
                         .getMany()
-                    : Promise.resolve([])
+                    : Promise.resolve([]),
+                // sales_viewer의 기본 비즈니스 조회 (병렬로 이동)
+                (user.role === 'sales_viewer' && user.businessId)
+                    ? businessRepository.findOne({ where: { id: user.businessId, isActive: true } })
+                    : Promise.resolve(null)
             ];
-            const [businesses, settings, accessList] = await Promise.all(parallelQueries);
-            // 비즈니스 설정
+            const [businesses, sessionSetting, accessList, fallbackBusiness] = await Promise.all(parallelQueries);
+            logger_1.logger.info(`[LOGIN TIMING] Step3 병렬쿼리: ${Date.now() - step3Start}ms (role: ${user.role})`);
+            // 비즈니스 설정 (추가 쿼리 없음)
+            const step4Start = Date.now();
             if (user.role === 'admin') {
                 user.businesses = businesses;
             }
@@ -242,35 +255,26 @@ exports.AuthController = {
                 if (accessList.length > 0) {
                     user.businesses = accessList.map((a) => a.business).filter((b) => b);
                 }
-                else if (user.businessId) {
-                    const business = await businessRepository.findOne({
-                        where: { id: user.businessId, isActive: true }
-                    });
-                    user.businesses = business ? [business] : [];
+                else if (fallbackBusiness) {
+                    user.businesses = [fallbackBusiness];
                 }
                 else {
                     user.businesses = [];
                 }
             }
+            logger_1.logger.info(`[LOGIN TIMING] Step4 비즈니스설정: ${Date.now() - step4Start}ms`);
             // businessId 최종 결정
             const finalBusinessId = user.businessId || user.businesses?.[0]?.id || 0;
-            // 보안 설정 파싱
+            // 보안 설정 파싱 (최적화: 단일 값만 조회)
             let sessionTimeoutHours = 8;
-            let twoFactorAuth = true;
             let sessionTimeout = '8h';
-            const MAX_SESSION_TIMEOUT_HOURS = 24; // 최대 24시간
-            const settingsMap = new Map(settings.map((s) => [s.settingKey, s.settingValue]));
-            const timeoutValue = settingsMap.get('sessionTimeout');
-            if (timeoutValue) {
-                sessionTimeout = timeoutValue;
-                const hours = parseInt(timeoutValue.replace('h', ''));
+            const MAX_SESSION_TIMEOUT_HOURS = 24;
+            if (sessionSetting?.settingValue) {
+                sessionTimeout = sessionSetting.settingValue;
+                const hours = parseInt(sessionTimeout.replace('h', ''));
                 if (!isNaN(hours) && hours > 0) {
                     sessionTimeoutHours = Math.min(hours, MAX_SESSION_TIMEOUT_HOURS);
                 }
-            }
-            const twoFactorValue = settingsMap.get('twoFactorAuth');
-            if (twoFactorValue !== undefined) {
-                twoFactorAuth = twoFactorValue === 'true';
             }
             // 활동 로그 기록 (비동기 - 응답 차단 안함)
             (0, ActivityLogController_1.logActivity)('login', 'user', user.id, '사용자가 로그인했습니다.', req, { email: user.email })
@@ -291,20 +295,7 @@ exports.AuthController = {
                 sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax',
                 maxAge: cookieMaxAge * 2
             });
-            // try {
-            //   const SecuritySettings = (await import('../entities/SecuritySettings')).SecuritySettings;
-            //   const securitySettingsRepo = AppDataSource.getRepository(SecuritySettings);
-            //   const settings = await securitySettingsRepo.findOne({
-            //     where: { userId: user.id }
-            //   });
-            //   if (settings) {
-            //     twoFactorAuth = settings.twoFactorAuth;
-            //     sessionTimeout = settings.sessionTimeout || '24h';
-            //   }
-            // } catch (err) {
-            //   // 보안 설정 조회 실패 시 기본값 사용
-            //   logger.error('Security settings query error:', err);
-            // }
+            logger_1.logger.info(`[LOGIN TIMING] 전체: ${Date.now() - loginStart}ms`);
             res.json({
                 success: true,
                 message: '로그인되었습니다.',
@@ -319,7 +310,6 @@ exports.AuthController = {
                         businesses: user.businesses
                     },
                     security: {
-                        twoFactorAuth,
                         sessionTimeout
                     }
                 }
@@ -437,7 +427,7 @@ exports.AuthController = {
                     message: '현재 비밀번호가 올바르지 않습니다.'
                 });
             }
-            const hashedNewPassword = await bcryptjs_1.default.hash(newPassword, 12);
+            const hashedNewPassword = await bcryptjs_1.default.hash(newPassword, 10);
             user.password = hashedNewPassword;
             await userRepository.save(user);
             res.json({
@@ -530,6 +520,36 @@ exports.AuthController = {
     },
     async logout(req, res) {
         try {
+            const env = (0, envValidator_1.getValidatedEnv)();
+            // 현재 토큰을 블랙리스트에 추가
+            const authToken = req.cookies.authToken ||
+                (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+            const refreshToken = req.cookies.refreshToken;
+            if (authToken) {
+                try {
+                    const decoded = jsonwebtoken_1.default.verify(authToken, env.JWT_SECRET);
+                    // 토큰 만료까지 남은 시간 계산
+                    const expiresIn = (decoded.exp || 0) * 1000 - Date.now();
+                    if (expiresIn > 0) {
+                        tokenBlacklist_1.tokenBlacklist.add(authToken, expiresIn);
+                    }
+                }
+                catch {
+                    // 이미 만료된 토큰은 무시
+                }
+            }
+            if (refreshToken) {
+                try {
+                    const decoded = jsonwebtoken_1.default.verify(refreshToken, env.JWT_REFRESH_SECRET);
+                    const expiresIn = (decoded.exp || 0) * 1000 - Date.now();
+                    if (expiresIn > 0) {
+                        tokenBlacklist_1.tokenBlacklist.add(refreshToken, expiresIn);
+                    }
+                }
+                catch {
+                    // 이미 만료된 토큰은 무시
+                }
+            }
             // 쿠키 삭제
             res.clearCookie('authToken');
             res.clearCookie('refreshToken');
@@ -677,7 +697,6 @@ exports.AuthController = {
                 success: true,
                 data: {
                     email: maskedEmail,
-                    fullEmail: email,
                     name: business.user.name
                 }
             });
@@ -694,7 +713,12 @@ exports.AuthController = {
     async verifyPasswordReset(req, res) {
         try {
             const { email, companyName, businessNumber, phone } = req.body;
-            logger_1.logger.info('Password reset verification request', { email, companyName, businessNumber, hasPhone: !!phone });
+            logger_1.logger.info('Password reset verification request', {
+                email: (0, maskingUtils_1.maskEmail)(email || ''),
+                companyName,
+                businessNumber: (0, maskingUtils_1.maskBusinessNumber)(businessNumber || ''),
+                hasPhone: !!phone
+            });
             if (!email || !companyName || !businessNumber) {
                 return res.status(400).json({
                     success: false,
@@ -707,7 +731,7 @@ exports.AuthController = {
                 relations: ['businesses']
             });
             if (!user) {
-                logger_1.logger.warn('User not found for password reset', { email });
+                logger_1.logger.warn('User not found for password reset', { email: (0, maskingUtils_1.maskEmail)(email) });
                 return res.status(404).json({
                     success: false,
                     message: '입력하신 정보와 일치하는 계정을 찾을 수 없습니다.'
@@ -715,11 +739,7 @@ exports.AuthController = {
             }
             logger_1.logger.info('User found, checking businesses', {
                 userId: user.id,
-                businessCount: user.businesses.length,
-                businesses: user.businesses.map(b => ({
-                    companyName: b.companyName,
-                    businessNumber: b.businessNumber
-                }))
+                businessCount: user.businesses.length
             });
             // 사업자 정보 확인
             const cleanedBusinessNumber = businessNumber.replace(/[^0-9]/g, '');
@@ -735,10 +755,10 @@ exports.AuthController = {
             });
             if (!business) {
                 logger_1.logger.warn('Business not matched for password reset', {
-                    email,
+                    email: (0, maskingUtils_1.maskEmail)(email),
                     companyName,
-                    businessNumber: cleanedBusinessNumber,
-                    phone: cleanedPhone
+                    businessNumber: (0, maskingUtils_1.maskBusinessNumber)(cleanedBusinessNumber),
+                    hasPhone: !!cleanedPhone
                 });
                 return res.status(404).json({
                     success: false,
@@ -786,6 +806,13 @@ exports.AuthController = {
             // 토큰 검증
             const env = (0, envValidator_1.getValidatedEnv)();
             let decoded;
+            // 토큰이 이미 사용되었는지 확인 (블랙리스트)
+            if (tokenBlacklist_1.tokenBlacklist.isBlacklisted(resetToken)) {
+                return res.status(401).json({
+                    success: false,
+                    message: '이미 사용된 토큰입니다. 비밀번호 재설정을 다시 요청해주세요.'
+                });
+            }
             try {
                 decoded = jsonwebtoken_1.default.verify(resetToken, env.JWT_SECRET);
             }
@@ -806,9 +833,11 @@ exports.AuthController = {
                 });
             }
             // 새 비밀번호 해시화 및 저장
-            const hashedPassword = await bcryptjs_1.default.hash(newPassword, 12);
+            const hashedPassword = await bcryptjs_1.default.hash(newPassword, env.BCRYPT_ROUNDS);
             user.password = hashedPassword;
             await userRepository.save(user);
+            // 사용된 토큰을 블랙리스트에 추가 (5분 유효기간)
+            tokenBlacklist_1.tokenBlacklist.add(resetToken, 5 * 60 * 1000);
             securityLogger_1.securityLogger.logPasswordReset(user.id, user.email);
             logger_1.logger.info('Password reset successfully', { userId: user.id });
             res.json({

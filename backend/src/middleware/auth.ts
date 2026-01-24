@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JwtPayload } from '../types';
 import { getValidatedEnv } from '../config/envValidator';
+import { tokenBlacklist } from '../utils/tokenBlacklist';
 
 export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -16,6 +17,14 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     return res.status(401).json({
       success: false,
       message: '토큰이 필요합니다.'
+    });
+  }
+
+  // 블랙리스트 확인 (로그아웃된 토큰)
+  if (tokenBlacklist.isBlacklisted(token)) {
+    return res.status(401).json({
+      success: false,
+      message: '로그아웃된 토큰입니다. 다시 로그인해주세요.'
     });
   }
 

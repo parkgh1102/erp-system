@@ -5,6 +5,7 @@ const database_1 = require("../config/database");
 const Business_1 = require("../entities/Business");
 const User_1 = require("../entities/User");
 const UserBusinessAccess_1 = require("../entities/UserBusinessAccess");
+const logger_1 = require("../utils/logger");
 const businessAccessMiddleware = async (req, res, next) => {
     try {
         const { businessId } = req.params;
@@ -72,7 +73,7 @@ const businessAccessMiddleware = async (req, res, next) => {
         next();
     }
     catch (error) {
-        console.error('사업자 접근 권한 확인 오류:', error);
+        logger_1.logger.error('사업자 접근 권한 확인 오류:', error);
         return res.status(500).json({
             success: false,
             message: '사업자 접근 권한 확인 중 오류가 발생했습니다.'

@@ -14,6 +14,8 @@ import { getValidatedEnv } from '../config/envValidator';
 import { JwtPayload } from '../types';
 import { logActivity } from './ActivityLogController';
 import { AlimtalkService } from '../services/AlimtalkService';
+import { tokenBlacklist } from '../utils/tokenBlacklist';
+import { maskEmail, maskBusinessNumber, maskPhone } from '../utils/maskingUtils';
 import fs from 'fs';
 import path from 'path';
 
@@ -79,7 +81,8 @@ export const AuthController = {
         });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const env = getValidatedEnv();
+      const hashedPassword = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
 
       const user = userRepository.create({
         email,
@@ -125,7 +128,6 @@ export const AuthController = {
           logger.error('회원가입 환영 알림톡 전송 중 오류', error);
         });
 
-      const env = getValidatedEnv();
       const token = jwt.sign(
         { userId: savedUser.id, email: savedUser.email, businessId: business.id },
         env.JWT_SECRET,
@@ -208,22 +210,23 @@ export const AuthController = {
           .andWhere('REPLACE(REPLACE(REPLACE(user.phone, \'-\', \'\'), \' \', \'\'), \'.\', \'\') = :phone', { phone: cleanPhone })
           .getOne();
       }
-      logger.info(`[LOGIN TIMING] Step1 사용자조회: ${Date.now() - step1Start}ms (${email || phone})`);
-
-      if (!user) {
-        securityLogger.logAuthFailure(req, 'Login failed: User not found', { email, phone });
-        return res.status(401).json({
-          success: false,
-          message: '아이디 또는 비밀번호가 틀립니다.'
-        });
-      }
+      logger.info(`[LOGIN TIMING] Step1 사용자조회: ${Date.now() - step1Start}ms`);
 
       // 2단계: 비밀번호 검증 (가장 CPU 집약적)
+      // 타이밍 공격 방지: 사용자가 없어도 bcrypt 비교 수행
       const step2Start = Date.now();
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      // 더미 해시: 사용자가 없을 때도 동일한 시간이 소요되도록 함
+      const dummyHash = '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.eAj6lEH7yKjS2.';
+      const passwordToCompare = user?.password || dummyHash;
+      const isPasswordValid = await bcrypt.compare(password, passwordToCompare);
       logger.info(`[LOGIN TIMING] Step2 비밀번호검증: ${Date.now() - step2Start}ms`);
-      if (!isPasswordValid) {
-        securityLogger.logAuthFailure(req, 'Login failed: Invalid password', { email, phone, userId: user.id });
+
+      // 사용자가 없거나 비밀번호가 틀린 경우
+      if (!user || !isPasswordValid) {
+        securityLogger.logAuthFailure(req, 'Login failed: Invalid credentials', {
+          hasUser: !!user,
+          identifier: email ? maskEmail(email) : maskPhone(phone || '')
+        });
         return res.status(401).json({
           success: false,
           message: '아이디 또는 비밀번호가 틀립니다.'
@@ -338,23 +341,7 @@ export const AuthController = {
         maxAge: cookieMaxAge * 2
       });
 
-      // try {
-      //   const SecuritySettings = (await import('../entities/SecuritySettings')).SecuritySettings;
-      //   const securitySettingsRepo = AppDataSource.getRepository(SecuritySettings);
-      //   const settings = await securitySettingsRepo.findOne({
-      //     where: { userId: user.id }
-      //   });
-
-      //   if (settings) {
-      //     twoFactorAuth = settings.twoFactorAuth;
-      //     sessionTimeout = settings.sessionTimeout || '24h';
-      //   }
-      // } catch (err) {
-      //   // 보안 설정 조회 실패 시 기본값 사용
-      //   logger.error('Security settings query error:', err);
-      // }
-
-      logger.info(`[LOGIN TIMING] 전체: ${Date.now() - loginStart}ms (${email || phone})`);
+      logger.info(`[LOGIN TIMING] 전체: ${Date.now() - loginStart}ms`);
 
       res.json({
         success: true,
@@ -615,6 +602,38 @@ export const AuthController = {
 
   async logout(req: Request, res: Response) {
     try {
+      const env = getValidatedEnv();
+
+      // 현재 토큰을 블랙리스트에 추가
+      const authToken = req.cookies.authToken ||
+        (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+      const refreshToken = req.cookies.refreshToken;
+
+      if (authToken) {
+        try {
+          const decoded = jwt.verify(authToken, env.JWT_SECRET) as JwtPayload;
+          // 토큰 만료까지 남은 시간 계산
+          const expiresIn = (decoded.exp || 0) * 1000 - Date.now();
+          if (expiresIn > 0) {
+            tokenBlacklist.add(authToken, expiresIn);
+          }
+        } catch {
+          // 이미 만료된 토큰은 무시
+        }
+      }
+
+      if (refreshToken) {
+        try {
+          const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as JwtPayload;
+          const expiresIn = (decoded.exp || 0) * 1000 - Date.now();
+          if (expiresIn > 0) {
+            tokenBlacklist.add(refreshToken, expiresIn);
+          }
+        } catch {
+          // 이미 만료된 토큰은 무시
+        }
+      }
+
       // 쿠키 삭제
       res.clearCookie('authToken');
       res.clearCookie('refreshToken');
@@ -785,7 +804,6 @@ export const AuthController = {
         success: true,
         data: {
           email: maskedEmail,
-          fullEmail: email,
           name: business.user.name
         }
       });
@@ -803,7 +821,12 @@ export const AuthController = {
     try {
       const { email, companyName, businessNumber, phone } = req.body;
 
-      logger.info('Password reset verification request', { email, companyName, businessNumber, hasPhone: !!phone });
+      logger.info('Password reset verification request', {
+        email: maskEmail(email || ''),
+        companyName,
+        businessNumber: maskBusinessNumber(businessNumber || ''),
+        hasPhone: !!phone
+      });
 
       if (!email || !companyName || !businessNumber) {
         return res.status(400).json({
@@ -819,7 +842,7 @@ export const AuthController = {
       });
 
       if (!user) {
-        logger.warn('User not found for password reset', { email });
+        logger.warn('User not found for password reset', { email: maskEmail(email) });
         return res.status(404).json({
           success: false,
           message: '입력하신 정보와 일치하는 계정을 찾을 수 없습니다.'
@@ -828,11 +851,7 @@ export const AuthController = {
 
       logger.info('User found, checking businesses', {
         userId: user.id,
-        businessCount: user.businesses.length,
-        businesses: user.businesses.map(b => ({
-          companyName: b.companyName,
-          businessNumber: b.businessNumber
-        }))
+        businessCount: user.businesses.length
       });
 
       // 사업자 정보 확인
@@ -853,10 +872,10 @@ export const AuthController = {
 
       if (!business) {
         logger.warn('Business not matched for password reset', {
-          email,
+          email: maskEmail(email),
           companyName,
-          businessNumber: cleanedBusinessNumber,
-          phone: cleanedPhone
+          businessNumber: maskBusinessNumber(cleanedBusinessNumber),
+          hasPhone: !!cleanedPhone
         });
         return res.status(404).json({
           success: false,
@@ -914,6 +933,15 @@ export const AuthController = {
       // 토큰 검증
       const env = getValidatedEnv();
       let decoded: JwtPayload;
+
+      // 토큰이 이미 사용되었는지 확인 (블랙리스트)
+      if (tokenBlacklist.isBlacklisted(resetToken)) {
+        return res.status(401).json({
+          success: false,
+          message: '이미 사용된 토큰입니다. 비밀번호 재설정을 다시 요청해주세요.'
+        });
+      }
+
       try {
         decoded = jwt.verify(resetToken, env.JWT_SECRET) as JwtPayload;
       } catch (err) {
@@ -936,9 +964,12 @@ export const AuthController = {
       }
 
       // 새 비밀번호 해시화 및 저장
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword, env.BCRYPT_ROUNDS);
       user.password = hashedPassword;
       await userRepository.save(user);
+
+      // 사용된 토큰을 블랙리스트에 추가 (5분 유효기간)
+      tokenBlacklist.add(resetToken, 5 * 60 * 1000);
 
       securityLogger.logPasswordReset(user.id, user.email);
       logger.info('Password reset successfully', { userId: user.id });
