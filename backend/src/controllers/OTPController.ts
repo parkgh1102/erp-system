@@ -12,15 +12,26 @@ export class OTPController {
    */
   static async sendOTP(req: Request, res: Response) {
     try {
-      const { email } = req.body;
+      const { email, phone } = req.body;
 
-      if (!email) {
-        return res.status(400).json({ message: '이메일을 입력해주세요.' });
+      if (!email && !phone) {
+        return res.status(400).json({ message: '이메일 또는 전화번호를 입력해주세요.' });
       }
 
-      // 사용자 확인
+      // 사용자 확인 (이메일 또는 전화번호로 조회)
       const userRepository = AppDataSource.getRepository(User);
-      const user = await userRepository.findOne({ where: { email } });
+      let user: User | null = null;
+
+      if (email) {
+        user = await userRepository.findOne({ where: { email } });
+      } else if (phone) {
+        // 전화번호 정규화 후 검색
+        const cleanPhone = phone.replace(/[^0-9]/g, '');
+        user = await userRepository
+          .createQueryBuilder('user')
+          .where('REPLACE(REPLACE(REPLACE(user.phone, \'-\', \'\'), \' \', \'\'), \'.\', \'\') = :phone', { phone: cleanPhone })
+          .getOne();
+      }
 
       if (!user) {
         return res.status(404).json({ message: '존재하지 않는 사용자입니다.' });
@@ -33,10 +44,10 @@ export class OTPController {
       const otpRepository = AppDataSource.getRepository(OTP);
       const now = new Date();
 
-      // 최근 OTP 조회 (같은 이메일)
+      // 최근 OTP 조회 (사용자 이메일 기준)
       const recentOTP = await otpRepository.findOne({
         where: {
-          email,
+          email: user.email,
           verified: false,
         },
         order: { createdAt: 'DESC' },
@@ -58,7 +69,7 @@ export class OTPController {
       } else {
         // 새 OTP 생성
         otp = otpRepository.create({
-          email,
+          email: user.email,
           phone: user.phone,
           code: otpCode,
           expiresAt,
@@ -94,19 +105,37 @@ export class OTPController {
    */
   static async verifyOTP(req: Request, res: Response) {
     try {
-      const { email, code } = req.body;
+      const { email, phone, code } = req.body;
 
-      if (!email || !code) {
-        return res.status(400).json({ message: '이메일과 OTP 코드를 입력해주세요.' });
+      if ((!email && !phone) || !code) {
+        return res.status(400).json({ message: '이메일(또는 전화번호)과 OTP 코드를 입력해주세요.' });
       }
 
       const otpRepository = AppDataSource.getRepository(OTP);
+      const userRepository = AppDataSource.getRepository(User);
       const now = new Date();
+
+      // 사용자 조회 (이메일 또는 전화번호로)
+      let userEmail = email;
+      if (!userEmail && phone) {
+        const cleanPhone = phone.replace(/[^0-9]/g, '');
+        const user = await userRepository
+          .createQueryBuilder('user')
+          .where('REPLACE(REPLACE(REPLACE(user.phone, \'-\', \'\'), \' \', \'\'), \'.\', \'\') = :phone', { phone: cleanPhone })
+          .getOne();
+        if (user) {
+          userEmail = user.email;
+        }
+      }
+
+      if (!userEmail) {
+        return res.status(404).json({ message: '존재하지 않는 사용자입니다.' });
+      }
 
       // 가장 최근 OTP 조회
       const otp = await otpRepository.findOne({
         where: {
-          email,
+          email: userEmail,
           verified: false,
         },
         order: { createdAt: 'DESC' },
