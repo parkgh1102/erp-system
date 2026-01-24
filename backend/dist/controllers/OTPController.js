@@ -66,7 +66,6 @@ class OTPController {
                 console.error('알림톡 전송 실패');
                 return res.status(500).json({ message: 'OTP 전송에 실패했습니다.' });
             }
-            console.log('OTP 전송 성공:', { email, sendCount: otp.sendCount, expiresAt: otp.expiresAt });
             return res.json({
                 message: 'OTP가 전송되었습니다.',
                 expiresAt: otp.expiresAt,

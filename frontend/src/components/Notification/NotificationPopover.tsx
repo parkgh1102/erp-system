@@ -139,6 +139,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
                 size="small"
                 icon={<CheckOutlined />}
                 onClick={handleMarkAllAsRead}
+                aria-label="모든 알림을 읽음으로 표시"
                 style={{ fontSize: isMobile ? '12px' : '14px' }}
               >
                 모두 읽음
@@ -149,6 +150,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
                 danger
                 icon={<DeleteOutlined />}
                 onClick={handleDeleteAll}
+                aria-label="모든 알림 삭제"
                 style={{ fontSize: isMobile ? '12px' : '14px' }}
               >
                 모두 삭제
@@ -160,6 +162,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
             size="small"
             icon={<CloseOutlined />}
             onClick={() => setOpen(false)}
+            aria-label="알림 팝오버 닫기"
             style={{ fontSize: isMobile ? '12px' : '14px' }}
           >
             닫기
@@ -210,6 +213,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
                     size="small"
                     danger
                     icon={<DeleteOutlined />}
+                    aria-label={`${notification.title} 알림 삭제`}
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteNotification(notification.id);

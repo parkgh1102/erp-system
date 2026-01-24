@@ -216,7 +216,6 @@ const TransactionLedgerManagement: React.FC = () => {
         customer.name.toLowerCase().includes(customerSearchText.toLowerCase()) ||
         customer.customerCode.toLowerCase().includes(customerSearchText.toLowerCase())
       );
-      console.log('🔍 검색어:', customerSearchText, '/ 기간 내 거래 업체 중 결과:', filtered.length, '개');
       setFilteredCustomers(filtered);
     } else {
       setFilteredCustomers([]);
@@ -273,7 +272,6 @@ const TransactionLedgerManagement: React.FC = () => {
       // 모든 거래처를 가져오기 위해 limit을 크게 설정
       const response = await customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 });
       const customerList = response.data.data.customers || [];
-      console.log('📋 거래처 목록 로드:', customerList.length, '개');
       setCustomers(customerList);
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -296,7 +294,6 @@ const TransactionLedgerManagement: React.FC = () => {
         endDate: endDate.format('YYYY-MM-DD')
       });
       const customerList = response.data.data?.customers || [];
-      console.log('📋 기간 내 거래 업체 로드:', customerList.length, '개', `(${startDate.format('YYYY-MM-DD')} ~ ${endDate.format('YYYY-MM-DD')})`);
       setCustomersWithTransactions(customerList);
     } catch (error: any) {
       console.error('기간 내 거래 업체 조회 오류:', error);
@@ -317,89 +314,23 @@ const TransactionLedgerManagement: React.FC = () => {
         endDate: endDate.format('YYYY-MM-DD')
       };
 
-      console.log('🔍 거래원장 조회 요청:', {
-        businessId: currentBusiness.id,
-        params
-      });
-
       // 거래원장 데이터 조회
       const response = await transactionLedgerAPI.getLedger(currentBusiness.id, params);
-      console.log('📊 거래원장 응답:', response.data);
 
       if (response.data.success && response.data.data.entries) {
         setLedgerEntries(response.data.data.entries);
         setLedgerData(response.data.data);
       } else {
-        // 임시로 mock 데이터 생성 (백엔드 데이터가 없을 때)
-        const mockEntries: LedgerEntry[] = [
-          {
-            id: 1,
-            date: dayjs().format('YYYY-MM-DD'),
-            type: 'sales',
-            description: '매출',
-            customerName: customers.find(c => c.id === selectedCustomer)?.name || '',
-            amount: 1000000,
-            balance: 1000000,
-            memo: '거래완료'
-          },
-          {
-            id: 2,
-            date: dayjs().subtract(1, 'day').format('YYYY-MM-DD'),
-            type: 'receipt',
-            description: '수금',
-            customerName: customers.find(c => c.id === selectedCustomer)?.name || '',
-            amount: 500000,
-            balance: 500000,
-            memo: '부분수금'
-          }
-        ];
-        setLedgerEntries(mockEntries);
-
-        // Mock 데이터에 대한 ledgerData 생성
-        const customer = customers.find(c => c.id === selectedCustomer);
-        const mockLedgerData = {
-          companyName: customer?.name || '',
-          companyAddress: customer?.address,
-          fromCompany: {
-            name: '가온에프에스유한회사',
-            businessNumber: '818-87-01513',
-            representative: '이수연',
-            address: '경기도 남양주시 오남읍 양지로125번길 6, 에이동',
-            phone: '',
-            fax: '',
-            email: 'business@gaonfscorp.com'
-          },
-          toCompany: {
-            name: customer?.name || '',
-            businessNumber: customer?.businessNumber || '',
-            representative: customer?.representative || '',
-            address: customer?.address || '',
-            phone: customer?.phone || '',
-            email: customer?.email || ''
-          },
-          period: {
-            start: startDate.format('YYYY-MM-DD'),
-            end: endDate.format('YYYY-MM-DD')
-          },
-          previousBalance: 0,
-          entries: mockEntries,
-          totalPurchase: 0,
-          totalPayment: 0,
-          totalSales: 1500000,
-          totalReceipt: 500000,
-          finalBalance: 1000000,
-          transactionCount: mockEntries.length,
-          totalQuantity: 0
-        };
-        setLedgerData(mockLedgerData);
+        setLedgerEntries([]);
+        setLedgerData(null);
       }
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError.response?.status === 404) {
         setLedgerEntries([]);
       } else {
         message.error('거래원장 데이터를 불러오는데 실패했습니다.');
       }
-      console.error('Ledger fetch error:', error);
     } finally {
       setLoading(false);
     }

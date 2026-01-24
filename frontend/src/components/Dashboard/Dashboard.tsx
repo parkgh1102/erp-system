@@ -35,6 +35,25 @@ import logger from '../../utils/logger';
 const { Title: AntTitle, Text } = Typography;
 const { RangePicker } = DatePicker;
 
+// 대시보드 통계 타입
+interface DashboardStatsData {
+  totalSales: number;
+  totalPurchases: number;
+  totalCustomers: number;
+  totalProducts: number;
+  salesGrowth: number;
+  purchaseGrowth: number;
+}
+
+// 거래 내역 타입
+interface TransactionRecord {
+  id: number;
+  type: string;
+  customer: string;
+  amount: number;
+  date: string;
+  status: string;
+}
 
 const Dashboard: React.FC = () => {
   const message = useMessage();
@@ -45,15 +64,15 @@ const Dashboard: React.FC = () => {
     dayjs().endOf('month')
   ]);
   const [loading, setLoading] = useState(false);
-  const [dashboardStats, setDashboardStats] = useState<any>(null);
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStatsData | null>(null);
+  const [recentTransactions, setRecentTransactions] = useState<TransactionRecord[]>([]);
   const [transactionModalVisible, setTransactionModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [modalDateRange, setModalDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
     dayjs().subtract(30, 'day'),
     dayjs()
   ]);
-  const [allTransactions, setAllTransactions] = useState<any[]>([]);
+  const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
 
   const { currentBusiness, isNewUser, clearNewUserFlag } = useAuthStore();
   const navigate = useNavigate();
@@ -166,7 +185,7 @@ const Dashboard: React.FC = () => {
   // 현재 사용할 데이터 (실제 데이터가 있으면 사용, 없으면 기본값)
   const currentStats = dashboardStats || defaultStats;
 
-  const defaultRecentTransactions: any[] = [];
+  const defaultRecentTransactions: TransactionRecord[] = [];
 
   // 현재 사용할 거래 내역 데이터
   const currentTransactions = recentTransactions.length > 0 ? recentTransactions : defaultRecentTransactions;

@@ -35,8 +35,7 @@ const LoginFormContent: React.FC = () => {
       if (twoFactorEnabled) {
         // 2단계 인증 ON: OTP 전송 후 OTP 페이지로 이동
         const otpData = loginType === 'email' ? { email: values.email } : { phone: values.phone };
-        const response = await api.post('/otp/send', otpData);
-        console.log('OTP 전송 성공:', response.data);
+        await api.post('/otp/send', otpData);
         navigate('/otp', { state: { credentials: loginData, sessionTimeout } });
       } else {
         // 2단계 인증 OFF: 바로 로그인 처리
@@ -54,7 +53,6 @@ const LoginFormContent: React.FC = () => {
       }
     } catch (error: unknown) {
       const axiosError = error as AxiosErrorResponse;
-      console.error('로그인 실패:', axiosError.response?.data, axiosError.message);
       const errorMessage = axiosError.response?.data?.message || '로그인에 실패했습니다.';
       setError(errorMessage);
     } finally {

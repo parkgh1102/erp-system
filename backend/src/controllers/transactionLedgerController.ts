@@ -79,11 +79,6 @@ export const transactionLedgerController = {
   // 거래원장 조회
   async getLedger(req: Request, res: Response) {
     try {
-      console.log('📊 거래원장 조회 요청:', {
-        params: req.params,
-        query: req.query
-      });
-
       const { businessId } = req.params;
       const { customerId, startDate, endDate } = req.query;
 
@@ -107,11 +102,6 @@ export const transactionLedgerController = {
       // 날짜 범위 설정
       const start = startDate ? dayjs(startDate as string) : dayjs().startOf('month');
       const end = endDate ? dayjs(endDate as string) : dayjs().endOf('month');
-
-      console.log('📅 날짜 범위:', {
-        startDate: start.format('YYYY-MM-DD'),
-        endDate: end.format('YYYY-MM-DD')
-      });
 
       // 전잔금 계산 (조회 시작일 이전의 잔액)
       let previousBalance = 0;
@@ -171,11 +161,6 @@ export const transactionLedgerController = {
         }
       });
 
-      console.log('💰 전잔금 계산 완료:', {
-        previousBalance,
-        beforeDate: start.subtract(1, 'day').format('YYYY-MM-DD')
-      });
-
       // 매출 데이터 조회 (날짜 범위 포함) - items.product 포함하여 taxType 확인
       const allSales = await salesRepository.find({
         where: {
@@ -190,8 +175,6 @@ export const transactionLedgerController = {
         const saleDate = dayjs(sale.transactionDate);
         return saleDate.isSameOrAfter(start, 'day') && saleDate.isSameOrBefore(end, 'day');
       });
-
-      console.log(`📊 매출 데이터: 전체 ${allSales.length}건, 필터링 후 ${sales.length}건`);
 
       // 매입 데이터 조회 (날짜 범위 포함) - items.product 포함하여 taxType 확인
       const allPurchases = await purchaseRepository.find({
@@ -208,8 +191,6 @@ export const transactionLedgerController = {
         return purchaseDate.isSameOrAfter(start, 'day') && purchaseDate.isSameOrBefore(end, 'day');
       });
 
-      console.log(`📊 매입 데이터: 전체 ${allPurchases.length}건, 필터링 후 ${purchases.length}건`);
-
       // 지급/수금 데이터 조회 (날짜 범위 포함)
       const allPayments = await paymentRepository.find({
         where: {
@@ -224,8 +205,6 @@ export const transactionLedgerController = {
         const paymentDate = dayjs(payment.paymentDate);
         return paymentDate.isSameOrAfter(start, 'day') && paymentDate.isSameOrBefore(end, 'day');
       });
-
-      console.log(`📊 수금/지급 데이터: 전체 ${allPayments.length}건, 필터링 후 ${payments.length}건`);
 
       // 거래원장 엔트리 생성
       const entries: LedgerEntry[] = [];
@@ -454,8 +433,7 @@ export const transactionLedgerController = {
         data: ledgerData
       });
     } catch (error: any) {
-      console.error('❌ 거래원장 조회 오류:', error);
-      console.error('Error stack:', error.stack);
+      console.error('거래원장 조회 오류:', error.message);
       res.status(500).json({
         success: false,
         message: '거래원장 조회 중 오류가 발생했습니다.',
@@ -531,8 +509,6 @@ export const transactionLedgerController = {
       const { businessId, customerId } = req.params;
       const { beforeDate, excludeSaleId, excludePurchaseId } = req.query; // 특정 날짜 이전의 잔액 조회용 + 제외할 거래 ID
 
-      console.log(`📊 전잔금 조회 - businessId: ${businessId}, customerId: ${customerId}, beforeDate: ${beforeDate}, excludeSaleId: ${excludeSaleId}, excludePurchaseId: ${excludePurchaseId}`);
-
       const customerRepository = AppDataSource.getRepository(Customer);
       const salesRepository = AppDataSource.getRepository(Sales);
       const purchaseRepository = AppDataSource.getRepository(Purchase);
@@ -583,12 +559,6 @@ export const transactionLedgerController = {
       let balance = 0;
       let lastTransactionDate = null;
 
-      console.log(`\n===== 잔액 계산 시작 (customerId: ${customerId}, beforeDate: ${beforeDate}) =====`);
-      console.log(`🔍 발견된 payment 레코드 수: ${payments.length}`);
-      payments.forEach((p, idx) => {
-        console.log(`  Payment ${idx + 1}: id=${p.id}, date=${p.paymentDate}, type=${p.paymentType}, amount=${p.amount}`);
-      });
-
       // 매출 합산 (날짜가 beforeDate 이전 또는 같은 날, 현재 거래 제외)
       // decimal 타입은 문자열로 반환되므로 Number()로 변환 필수
       const excludeSaleIdNum = excludeSaleId ? Number(excludeSaleId) : null;
@@ -614,7 +584,6 @@ export const transactionLedgerController = {
       sales.forEach(sale => {
         // 현재 거래는 제외
         if (excludeSaleIdNum && sale.id === excludeSaleIdNum) {
-          console.log(`매출 제외 (현재 거래): id=${sale.id}`);
           return;
         }
 
@@ -624,7 +593,6 @@ export const transactionLedgerController = {
         // 같은 날인 경우: 현재 거래보다 먼저 생성된 거래만 포함
         const isSameDay = saleDate.isSame(endDate, 'day');
         if (isSameDay && currentSaleCreatedAt && saleCreatedAt.isAfter(currentSaleCreatedAt)) {
-          console.log(`매출 제외 (같은 날 이후 거래): id=${sale.id}, createdAt=${saleCreatedAt.format('YYYY-MM-DD HH:mm:ss')}`);
           return;
         }
 
@@ -632,7 +600,6 @@ export const transactionLedgerController = {
         if (saleDate.isSameOrBefore(endDate, 'day')) {
           const totalAmount = (Number(sale.totalAmount) || 0) + (Number(sale.vatAmount) || 0);
           balance += totalAmount; // 매출은 +
-          console.log(`매출 추가: 날짜=${saleDate.format('YYYY-MM-DD')}, 공급가액=${sale.totalAmount}, 세액=${sale.vatAmount}, 합계=${totalAmount}, 누적잔액=${balance}`);
           if (!lastTransactionDate || saleDate.isAfter(dayjs(lastTransactionDate))) {
             lastTransactionDate = saleDate.format('YYYY-MM-DD');
           }
@@ -644,7 +611,6 @@ export const transactionLedgerController = {
       purchases.forEach(purchase => {
         // 현재 거래는 제외
         if (excludePurchaseIdNum && purchase.id === excludePurchaseIdNum) {
-          console.log(`매입 제외 (현재 거래): id=${purchase.id}`);
           return;
         }
 
@@ -654,7 +620,6 @@ export const transactionLedgerController = {
         // 같은 날인 경우: 현재 거래보다 먼저 생성된 거래만 포함
         const isSameDay = purchaseDate.isSame(endDate, 'day');
         if (isSameDay && currentPurchaseCreatedAt && purchaseCreatedAt.isAfter(currentPurchaseCreatedAt)) {
-          console.log(`매입 제외 (같은 날 이후 거래): id=${purchase.id}, createdAt=${purchaseCreatedAt.format('YYYY-MM-DD HH:mm:ss')}`);
           return;
         }
 
@@ -663,7 +628,6 @@ export const transactionLedgerController = {
           // 매입의 totalAmount는 이미 공급가액이고, vatAmount는 세액
           const totalAmount = (Number(purchase.totalAmount) || 0) + (Number(purchase.vatAmount) || 0);
           balance -= totalAmount; // 매입은 -
-          console.log(`매입 차감: 날짜=${purchaseDate.format('YYYY-MM-DD')}, 공급가액=${purchase.totalAmount}, 세액=${purchase.vatAmount}, 합계=${totalAmount}, 누적잔액=${balance}`);
           if (!lastTransactionDate || purchaseDate.isAfter(dayjs(lastTransactionDate))) {
             lastTransactionDate = purchaseDate.format('YYYY-MM-DD');
           }
@@ -679,20 +643,16 @@ export const transactionLedgerController = {
           // 수금: 거래처로부터 돈을 받음 (받을 돈 감소)
           if (payment.paymentType === '수금') {
             balance -= paymentAmount;
-            console.log(`수금 차감: 날짜=${paymentDate.format('YYYY-MM-DD')}, 금액=${paymentAmount}, 누적잔액=${balance}`);
           }
           // 지급: 거래처에 돈을 지급 (갚을 돈 감소 = 잔액 증가)
           else if (payment.paymentType === '지급') {
             balance += paymentAmount;
-            console.log(`지급 추가: 날짜=${paymentDate.format('YYYY-MM-DD')}, 금액=${paymentAmount}, 누적잔액=${balance}`);
           }
           if (!lastTransactionDate || paymentDate.isAfter(dayjs(lastTransactionDate))) {
             lastTransactionDate = paymentDate.format('YYYY-MM-DD');
           }
         }
       });
-
-      console.log(`===== 최종 잔액: ${balance} =====\n`);
 
       res.json({
         success: true,
@@ -717,8 +677,6 @@ export const transactionLedgerController = {
     try {
       const { businessId } = req.params;
       const { startDate, endDate } = req.query;
-
-      console.log(`📊 기간 내 거래 업체 조회 - businessId: ${businessId}, startDate: ${startDate}, endDate: ${endDate}`);
 
       const salesRepository = AppDataSource.getRepository(Sales);
       const purchaseRepository = AppDataSource.getRepository(Purchase);
@@ -778,8 +736,6 @@ export const transactionLedgerController = {
           .orderBy('customer.name', 'ASC')
           .getMany();
       }
-
-      console.log(`✅ 기간 내 거래 업체 수: ${customers.length}`);
 
       res.json({
         success: true,

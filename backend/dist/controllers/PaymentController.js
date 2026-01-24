@@ -111,10 +111,8 @@ class PaymentController {
     }
     static async create(req, res) {
         try {
-            console.log('📊 Payment create - request body:', JSON.stringify(req.body, null, 2));
             const { error, value } = paymentSchema.validate(req.body);
             if (error) {
-                console.log('❌ Payment validation failed:', error.details.map(detail => detail.message));
                 return res.status(400).json({
                     success: false,
                     message: '입력 정보를 확인해주세요.',

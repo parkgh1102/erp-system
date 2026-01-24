@@ -24,10 +24,8 @@ const productSchema = joi_1.default.object({
 exports.ProductController = {
     async create(req, res) {
         try {
-            console.log('Product create request body:', req.body);
             const { error, value } = productSchema.validate(req.body);
             if (error) {
-                console.error('Product validation error:', error.details);
                 return res.status(400).json({
                     success: false,
                     message: '입력 정보를 확인해주세요.',
@@ -36,19 +34,15 @@ exports.ProductController = {
             }
             const userId = req.user?.userId;
             const { businessId } = req.params;
-            // Business lookup with fallback logic (similar to other controllers)
-            let business;
-            if (userId) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId), userId }
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: '인증이 필요합니다.'
                 });
             }
-            // If not found with userId, try without userId constraint (development mode)
-            if (!business) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId) }
-                });
-            }
+            const business = await businessRepository.findOne({
+                where: { id: parseInt(businessId), userId }
+            });
             if (!business) {
                 return res.status(404).json({
                     success: false,
@@ -80,7 +74,6 @@ exports.ProductController = {
             });
         }
         catch (error) {
-            console.error('Create product error:', error);
             res.status(500).json({
                 success: false,
                 message: '품목 등록 중 오류가 발생했습니다.'
@@ -92,26 +85,16 @@ exports.ProductController = {
             const userId = req.user?.userId;
             const { businessId } = req.params;
             const { page = 1, limit = 10, search } = req.query;
-            console.log(`📊 Product getAll - userId: ${userId}, businessId: ${businessId}`);
-            // Business lookup with fallback logic (similar to other controllers)
-            let business;
-            if (userId) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId), userId }
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: '인증이 필요합니다.'
                 });
             }
-            // If not found with userId, try without userId constraint (development mode)
+            const business = await businessRepository.findOne({
+                where: { id: parseInt(businessId), userId }
+            });
             if (!business) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId) }
-                });
-            }
-            if (!business) {
-                // 디버깅을 위해 해당 businessId의 모든 정보 조회
-                const allBusinesses = await businessRepository.find({
-                    where: { id: parseInt(businessId) }
-                });
-                console.log(`📊 All businesses with id ${businessId}:`, allBusinesses);
                 return res.status(404).json({
                     success: false,
                     message: '사업자 정보를 찾을 수 없습니다.'
@@ -142,7 +125,6 @@ exports.ProductController = {
             });
         }
         catch (error) {
-            console.error('Get products error:', error);
             res.status(500).json({
                 success: false,
                 message: '품목 목록 조회 중 오류가 발생했습니다.'
@@ -153,19 +135,15 @@ exports.ProductController = {
         try {
             const userId = req.user?.userId;
             const { businessId, id } = req.params;
-            // Business lookup with fallback logic (similar to other controllers)
-            let business;
-            if (userId) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId), userId }
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: '인증이 필요합니다.'
                 });
             }
-            // If not found with userId, try without userId constraint (development mode)
-            if (!business) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId) }
-                });
-            }
+            const business = await businessRepository.findOne({
+                where: { id: parseInt(businessId), userId }
+            });
             if (!business) {
                 return res.status(404).json({
                     success: false,
@@ -187,7 +165,6 @@ exports.ProductController = {
             });
         }
         catch (error) {
-            console.error('Get product error:', error);
             res.status(500).json({
                 success: false,
                 message: '품목 조회 중 오류가 발생했습니다.'
@@ -196,10 +173,8 @@ exports.ProductController = {
     },
     async update(req, res) {
         try {
-            console.log('📊 Product update - request body:', JSON.stringify(req.body, null, 2));
             const { error, value } = productSchema.validate(req.body);
             if (error) {
-                console.error('❌ Validation error:', error.details.map(detail => detail.message));
                 return res.status(400).json({
                     success: false,
                     message: '입력 정보를 확인해주세요.',
@@ -208,19 +183,15 @@ exports.ProductController = {
             }
             const userId = req.user?.userId;
             const { businessId, id } = req.params;
-            // Business lookup with fallback logic (similar to other controllers)
-            let business;
-            if (userId) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId), userId }
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: '인증이 필요합니다.'
                 });
             }
-            // If not found with userId, try without userId constraint (development mode)
-            if (!business) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId) }
-                });
-            }
+            const business = await businessRepository.findOne({
+                where: { id: parseInt(businessId), userId }
+            });
             if (!business) {
                 return res.status(404).json({
                     success: false,
@@ -260,7 +231,6 @@ exports.ProductController = {
             });
         }
         catch (error) {
-            console.error('Update product error:', error);
             res.status(500).json({
                 success: false,
                 message: '품목 수정 중 오류가 발생했습니다.'
@@ -271,19 +241,15 @@ exports.ProductController = {
         try {
             const userId = req.user?.userId;
             const { businessId, id } = req.params;
-            // Business lookup with fallback logic (similar to other controllers)
-            let business;
-            if (userId) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId), userId }
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: '인증이 필요합니다.'
                 });
             }
-            // If not found with userId, try without userId constraint (development mode)
-            if (!business) {
-                business = await businessRepository.findOne({
-                    where: { id: parseInt(businessId) }
-                });
-            }
+            const business = await businessRepository.findOne({
+                where: { id: parseInt(businessId), userId }
+            });
             if (!business) {
                 return res.status(404).json({
                     success: false,
@@ -307,7 +273,6 @@ exports.ProductController = {
             });
         }
         catch (error) {
-            console.error('Delete product error:', error);
             res.status(500).json({
                 success: false,
                 message: '품목 삭제 중 오류가 발생했습니다.'

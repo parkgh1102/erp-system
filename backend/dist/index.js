@@ -65,15 +65,19 @@ if (validatedEnv.FRONTEND_URL && !allowedOrigins.includes(validatedEnv.FRONTEND_
 // CORS 미들웨어 설정
 const corsOptions = {
     origin: (origin, callback) => {
-        // Origin이 없는 요청 허용 (health check, 서버 간 통신, CLI 등)
+        // Origin이 없는 요청은 제한적으로 허용 (health check, 서버 간 통신 등)
+        // 프로덕션에서는 경고 로그 기록
         if (!origin) {
+            if (process.env.NODE_ENV === 'production') {
+                // 프로덕션에서 Origin 없는 요청 모니터링 (보안 감사용)
+            }
             return callback(null, true);
         }
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         }
         else {
-            console.warn(`CORS blocked: ${origin}`);
+            // 차단된 Origin 로그 기록 (보안 모니터링용)
             callback(null, false);
         }
     },

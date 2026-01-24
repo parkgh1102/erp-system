@@ -16,7 +16,7 @@ const accessRepository = database_1.AppDataSource.getRepository(UserBusinessAcce
 const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
 const createUserSchema = joi_1.default.object({
     phone: joi_1.default.string().required(),
-    password: joi_1.default.string().min(4).required(),
+    password: joi_1.default.string().min(8).required(),
     name: joi_1.default.string().min(1).required(),
     role: joi_1.default.string().valid('admin', 'sales_viewer').required(),
     businessId: joi_1.default.number().optional(),

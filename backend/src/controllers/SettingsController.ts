@@ -22,9 +22,16 @@ const businessRepository = AppDataSource.getRepository(Business);
 
 export const SettingsController = {
   // 이메일로 보안 설정 조회 (로그인 전 - 인증 불필요)
+  // 보안: 사용자 존재 여부를 노출하지 않도록 항상 동일한 응답 구조 반환
   async getSecuritySettingsByEmail(req: Request, res: Response) {
     try {
       const { email } = req.params;
+
+      // 기본 보안 설정 (사용자가 없거나 비즈니스가 없을 때 반환)
+      const defaultSettings = {
+        twoFactorAuth: true,
+        sessionTimeout: '8h'
+      };
 
       // 사용자 찾기
       const user = await userRepository.findOne({
@@ -32,10 +39,11 @@ export const SettingsController = {
         relations: ['businesses']
       });
 
+      // 사용자가 없어도 기본값 반환 (사용자 열거 공격 방지)
       if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: '사용자를 찾을 수 없습니다.'
+        return res.json({
+          success: true,
+          data: defaultSettings
         });
       }
 
@@ -51,10 +59,7 @@ export const SettingsController = {
         // 비즈니스가 없으면 기본값 반환 (2단계 인증 ON)
         return res.json({
           success: true,
-          data: {
-            twoFactorAuth: true,
-            sessionTimeout: '8h'
-          }
+          data: defaultSettings
         });
       }
 
@@ -78,9 +83,13 @@ export const SettingsController = {
       });
     } catch (error: unknown) {
       logger.error('Get security settings by email error', error instanceof Error ? error : new Error(String(error)));
-      res.status(500).json({
-        success: false,
-        message: '보안 설정 조회 중 오류가 발생했습니다.'
+      // 에러 시에도 기본값 반환 (사용자 열거 공격 방지)
+      res.json({
+        success: true,
+        data: {
+          twoFactorAuth: true,
+          sessionTimeout: '8h'
+        }
       });
     }
   },

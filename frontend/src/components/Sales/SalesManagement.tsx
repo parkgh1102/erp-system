@@ -272,15 +272,6 @@ const SalesManagement: React.FC = () => {
 
       const salesData = salesRes.data.data.sales || [];
 
-      // 서명 정보가 있는 매출 로그 (개발 환경에서만)
-      if (process.env.NODE_ENV === 'development') {
-        const signedSales = salesData.filter((s: Sale) => s.signatureImage);
-        console.log('📊 매출 데이터 로드:', {
-          전체매출수: salesData.length,
-          서명된매출수: signedSales.length
-        });
-      }
-
       setSales(salesData);
       setCustomers(customersRes.data.data.customers || []);
       setProducts(productsRes.data.data.products || []);
@@ -524,15 +515,6 @@ const SalesManagement: React.FC = () => {
         return;
       }
 
-      // 서명 정보 디버깅 (개발 환경에서만)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📝 전자서명 모달 열기:', {
-          id: selectedSale.id,
-          hasSignature: !!selectedSale.signatureImage,
-          signedBy: selectedSale.signedBy
-        });
-      }
-
       let balanceAmount = 0;
 
       // 거래처가 있는 경우에만 전잔금 조회
@@ -550,12 +532,9 @@ const SalesManagement: React.FC = () => {
           if (response.data.success) {
             balanceAmount = response.data.data.balance || 0;
           }
-        } catch (error) {
-          console.error('❌ 전잔금 조회 실패:', error);
+        } catch {
           // 실패해도 0으로 계속 진행
         }
-      } else {
-        console.log('⚠️ 거래처 ID가 없어 전잔금 조회를 건너뜁니다.');
       }
 
       // TransactionData 형식으로 변환
@@ -775,22 +754,12 @@ const SalesManagement: React.FC = () => {
                 }
               }
             );
-            console.log('💰 전잔금 API 응답:', {
-              customerId: sale.customerId,
-              beforeDate: sale.transactionDate || sale.saleDate,
-              excludeSaleId: sale.id,
-              response: response.data
-            });
             if (response.data.success) {
               balanceAmount = response.data.data.balance || 0;
-              console.log('✅ 전잔금 설정:', balanceAmount);
             }
-          } catch (error) {
-            console.error('❌ 전잔금 조회 실패:', error);
+          } catch {
             // 실패해도 0으로 계속 진행
           }
-        } else {
-          console.log('⚠️ 거래처 ID가 없어 전잔금 조회를 건너뜁니다.');
         }
 
         // TransactionData 형식으로 변환

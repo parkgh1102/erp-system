@@ -130,11 +130,12 @@ const Settings: React.FC = () => {
         }
       } catch (error) {
         console.error('설정 조회 실패:', error);
+        showError('설정을 불러오는데 실패했습니다.');
       }
     };
 
     fetchSettings();
-  }, [currentBusiness]);
+  }, [currentBusiness, showError]);
 
   // localStorage에서 알림 설정 불러오기
   useEffect(() => {
@@ -163,6 +164,7 @@ const Settings: React.FC = () => {
       }
     } catch (error) {
       console.error('활동 로그 조회 실패:', error);
+      showError('활동 로그를 불러오는데 실패했습니다.');
     } finally {
       setLogsLoading(false);
     }

@@ -292,6 +292,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               size="small"
               checkedChildren="🌙"
               unCheckedChildren="☀️"
+              aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
               style={{
                 background: isDark ? '#1677ff' : '#1890ff',
               }}
@@ -311,6 +312,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!collapsed)}
+              aria-label={collapsed ? '메뉴 펼치기' : '메뉴 접기'}
               style={{
                 color: isDark ? '#d1d5db' : '#000000',
                 width: collapsed ? '100%' : 'auto',
@@ -364,6 +366,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               type="text"
               icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
               onClick={() => setCollapsed(!collapsed)}
+              aria-label={collapsed ? '메뉴 펼치기' : '메뉴 접기'}
               style={{
                 fontSize: '16px',
                 width: 64,

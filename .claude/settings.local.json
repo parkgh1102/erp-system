@@ -226,7 +226,9 @@
       "Bash(npx pm2 restart all)",
       "Bash(npx pm2 list)",
       "Bash(npx pm2:*)",
-      "Bash(cmd //c \"taskkill /F /PID 3024\")"
+      "Bash(cmd //c \"taskkill /F /PID 3024\")",
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -20 \"\"{}\"\"')",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

@@ -71,14 +71,6 @@ export class SalesController {
         return res.status(401).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
       }
 
-      console.log('🔍 Sales getAll - User info:', {
-        userId: user.id,
-        role: user.role,
-        userBusinessId: user.businessId,
-        requestedBusinessId: parseInt(businessId),
-        match: user.businessId === parseInt(businessId)
-      });
-
       // 역할에 따른 business 접근 권한 체크
       let business;
       if (user.role === 'admin') {
@@ -120,18 +112,6 @@ export class SalesController {
         if (sale.items) {
           sale.items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
         }
-      });
-
-      // 서명 이미지 조회 로그
-      const signedSales = sales.filter(s => s.signatureImage);
-      console.log('📊 매출 조회 완료:', {
-        전체매출수: sales.length,
-        서명된매출수: signedSales.length,
-        서명된매출들: signedSales.map(s => ({
-          id: s.id,
-          signedBy: s.signedBy,
-          signatureImageLength: s.signatureImage?.length || 0
-        }))
       });
 
       res.json({
@@ -364,22 +344,15 @@ export class SalesController {
 
   static async update(req: Request, res: Response) {
     try {
-      console.log('📊 ====== SALES UPDATE START ======');
-      console.log('📊 Request body:', JSON.stringify(req.body, null, 2));
-      console.log('📊 Items in request:', req.body.items);
-
       const { error, value } = salesSchema.validate(req.body);
 
       if (error) {
-        console.log('❌ VALIDATION FAILED:', error.details.map(detail => detail.message));
         return res.status(400).json({
           success: false,
           message: '입력 정보를 확인해주세요.',
           errors: error.details.map(detail => detail.message)
         });
       }
-
-      console.log('✅ Validation passed');
 
       const { id, businessId } = req.params;
       const userId = req.user?.userId;
@@ -645,14 +618,6 @@ export class SalesController {
       }
 
       // 전자서명 정보 업데이트
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('📝 전자서명 저장:', {
-          salesId: parseInt(id),
-          signedBy: userId,
-          hasSignatureImage: !!signatureImage
-        });
-      }
-
       await salesRepository.update(parseInt(id), {
         signedBy: userId,
         signedAt: new Date(),
@@ -742,18 +707,8 @@ export class SalesController {
         return res.status(400).json({ success: false, message: '이미지 파일이 필요합니다.' });
       }
 
-      // 디버깅: 파일 정보 로깅
-      console.log('📤 업로드된 파일 정보:', {
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-        bufferLength: req.file.buffer.length,
-        first20Bytes: Array.from(req.file.buffer.slice(0, 20)).map(b => b.toString(16).padStart(2, '0')).join(' ')
-      });
-
       // JPG 파일 시그니처 검증 (FF D8 FF)
       if (req.file.buffer[0] !== 0xFF || req.file.buffer[1] !== 0xD8 || req.file.buffer[2] !== 0xFF) {
-        console.error('❌ 잘못된 JPG 헤더:', Array.from(req.file.buffer.slice(0, 10)).map(b => b.toString(16).padStart(2, '0')).join(' '));
         return res.status(400).json({ success: false, message: 'JPG 파일 형식이 올바르지 않습니다.' });
       }
 
@@ -785,8 +740,6 @@ export class SalesController {
           message: 'Cloudinary 이미지 업로드에 실패했습니다. 환경변수를 확인하세요.'
         });
       }
-
-      console.log('✅ Cloudinary 업로드 완료:', { imageUrl, fileName });
 
       res.json({
         success: true,

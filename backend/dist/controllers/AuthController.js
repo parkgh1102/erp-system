@@ -74,7 +74,7 @@ exports.AuthController = {
                     message: '이미 등록된 사업자번호입니다.'
                 });
             }
-            const hashedPassword = await bcryptjs_1.default.hash(password, 10);
+            const hashedPassword = await bcryptjs_1.default.hash(password, 12);
             const user = userRepository.create({
                 email,
                 password: hashedPassword,
@@ -258,13 +258,14 @@ exports.AuthController = {
             let sessionTimeoutHours = 8;
             let twoFactorAuth = true;
             let sessionTimeout = '8h';
+            const MAX_SESSION_TIMEOUT_HOURS = 24; // 최대 24시간
             const settingsMap = new Map(settings.map((s) => [s.settingKey, s.settingValue]));
             const timeoutValue = settingsMap.get('sessionTimeout');
             if (timeoutValue) {
                 sessionTimeout = timeoutValue;
                 const hours = parseInt(timeoutValue.replace('h', ''));
                 if (!isNaN(hours) && hours > 0) {
-                    sessionTimeoutHours = hours;
+                    sessionTimeoutHours = Math.min(hours, MAX_SESSION_TIMEOUT_HOURS);
                 }
             }
             const twoFactorValue = settingsMap.get('twoFactorAuth');
@@ -436,7 +437,7 @@ exports.AuthController = {
                     message: '현재 비밀번호가 올바르지 않습니다.'
                 });
             }
-            const hashedNewPassword = await bcryptjs_1.default.hash(newPassword, 10);
+            const hashedNewPassword = await bcryptjs_1.default.hash(newPassword, 12);
             user.password = hashedNewPassword;
             await userRepository.save(user);
             res.json({
@@ -481,7 +482,6 @@ exports.AuthController = {
             }
             // businessId 결정: sales_viewer는 user.businessId, admin은 첫 번째 비즈니스
             const businessId = user.businessId || user.businesses[0]?.id || 0;
-            console.log('🔐 JWT 토큰 갱신:', { userId: user.id, email: user.email, businessId });
             // 세션 타임아웃 설정 조회
             let sessionTimeoutHours = 8; // 기본값 8시간
             if (businessId) {
@@ -497,7 +497,6 @@ exports.AuthController = {
                     }
                 }
             }
-            console.log(`🕐 세션 타임아웃 설정: ${sessionTimeoutHours}시간`);
             const newToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId }, env.JWT_SECRET, { expiresIn: `${sessionTimeoutHours}h` });
             const newRefreshToken = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email, businessId, type: 'refresh' }, env.JWT_REFRESH_SECRET, { expiresIn: env.JWT_REFRESH_EXPIRES_IN });
             // HttpOnly 쿠키로 새 토큰 설정 (세션 타임아웃 반영)
@@ -807,7 +806,7 @@ exports.AuthController = {
                 });
             }
             // 새 비밀번호 해시화 및 저장
-            const hashedPassword = await bcryptjs_1.default.hash(newPassword, 10);
+            const hashedPassword = await bcryptjs_1.default.hash(newPassword, 12);
             user.password = hashedPassword;
             await userRepository.save(user);
             securityLogger_1.securityLogger.logPasswordReset(user.id, user.email);

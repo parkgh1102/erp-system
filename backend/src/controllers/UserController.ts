@@ -14,7 +14,7 @@ const businessRepository = AppDataSource.getRepository(Business);
 
 const createUserSchema = Joi.object({
   phone: Joi.string().required(),
-  password: Joi.string().min(4).required(),
+  password: Joi.string().min(8).required(),
   name: Joi.string().min(1).required(),
   role: Joi.string().valid('admin', 'sales_viewer').required(),
   businessId: Joi.number().optional(),

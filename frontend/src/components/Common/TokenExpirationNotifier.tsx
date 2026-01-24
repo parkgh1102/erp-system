@@ -70,7 +70,6 @@ export const TokenExpirationNotifier: React.FC = () => {
 
       // 이미 만료된 경우
       if (now >= expirationTime) {
-        console.log('토큰이 만료되었습니다. 로그아웃 처리합니다.');
         handleLogout();
         return;
       }
@@ -94,7 +93,6 @@ export const TokenExpirationNotifier: React.FC = () => {
     let expirationTimer: NodeJS.Timeout | null = null;
     if (timeUntilExpiration > 0) {
       expirationTimer = setTimeout(() => {
-        console.log('토큰이 만료되었습니다. 자동 로그아웃합니다.');
         handleLogout();
       }, timeUntilExpiration);
     }

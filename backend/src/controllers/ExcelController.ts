@@ -309,9 +309,6 @@ export const uploadCustomers = async (req: Request, res: Response) => {
 
     for (const row of data as any[]) {
       try {
-        // 디버깅: 컬럼명 확인
-        console.log('업로드 row 키:', Object.keys(row));
-
         // 거래처구분 매핑
         let customerType = CustomerType.OTHER;
         if (row['거래처구분'] === '매출처') customerType = CustomerType.SALES;
@@ -322,7 +319,6 @@ export const uploadCustomers = async (req: Request, res: Response) => {
 
         // 담당자 연락처 - 여러 가지 컬럼명 시도
         const managerContact = row['담당자 연락처'] || row['담당자연락처'] || row['담당자 휴대폰'] || row['담당자휴대폰'] || row['휴대폰'] || row['핸드폰'] || null;
-        console.log('담당자 연락처 값:', managerContact, '| row 담당자 연락처:', row['담당자 연락처']);
 
         // 기존 거래처 코드가 있는지 확인
         let customer = await customerRepo.findOne({
@@ -399,10 +395,6 @@ export const uploadProducts = async (req: Request, res: Response) => {
 
     for (const row of data as any[]) {
       try {
-        // 디버깅: 컬럼명 확인
-        console.log('품목 업로드 row 키:', Object.keys(row));
-        console.log('세금구분 원본값:', row['세금구분']);
-
         // 세금구분 매핑 (한글 -> 영문 코드) - 기본값은 과세별도(tax_separate)
         let taxType = 'tax_separate';
         const rawTaxType = (row['세금구분'] || '').toString().trim();
@@ -425,8 +417,6 @@ export const uploadProducts = async (req: Request, res: Response) => {
         }
         // 과세별도 (기본값) - 명시적 체크도 추가
         // tax_separate, 과세10%별도, 과세별도, 별도 등은 모두 기본값(tax_separate)으로 처리됨
-
-        console.log('매핑된 taxType:', taxType);
 
         // 품목 코드
         const productCode = String(row['품목코드'] || '').trim();
