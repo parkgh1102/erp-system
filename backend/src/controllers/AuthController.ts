@@ -79,7 +79,7 @@ export const AuthController = {
         });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 12);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       const user = userRepository.create({
         email,
@@ -104,16 +104,13 @@ export const AuthController = {
 
       await businessRepository.save(business);
 
-      // 기본 보안 설정 저장 (2단계 인증 기본값: ON)
-      const defaultSettings = [
-        { businessId: business.id, settingKey: 'twoFactorAuth', settingValue: 'true' },
-        { businessId: business.id, settingKey: 'sessionTimeout', settingValue: '8h' }
-      ];
-
-      for (const setting of defaultSettings) {
-        const newSetting = companySettingsRepository.create(setting);
-        await companySettingsRepository.save(newSetting);
-      }
+      // 기본 보안 설정 저장
+      const sessionSetting = companySettingsRepository.create({
+        businessId: business.id,
+        settingKey: 'sessionTimeout',
+        settingValue: '8h'
+      });
+      await companySettingsRepository.save(sessionSetting);
 
       // 회원가입 환영 알림톡 전송 (비동기로 처리하여 응답 지연 방지)
       AlimtalkService.sendWelcome(savedUser.phone, savedUser.name, businessInfo.companyName)
@@ -241,19 +238,19 @@ export const AuthController = {
       const businessId = user.businessId || 0;
       const accessRepository = AppDataSource.getRepository(UserBusinessAccess);
 
-      // 병렬 Promise 배열 구성
+      // 병렬 Promise 배열 구성 (최적화: 모든 쿼리 병렬 실행)
       const parallelQueries: Promise<any>[] = [
         // 비즈니스 조회 (admin용)
         user.role === 'admin'
           ? businessRepository.find({ where: { userId: user.id, isActive: true } })
           : Promise.resolve([]),
-        // 보안 설정 조회
+        // 보안 설정 조회 (sessionTimeout만)
         companySettingsRepository
           .createQueryBuilder('settings')
           .where('settings.businessId = :businessId', { businessId: businessId || 1 })
-          .andWhere('settings.settingKey IN (:...keys)', { keys: ['sessionTimeout', 'twoFactorAuth'] })
-          .getMany()
-          .catch(() => []),
+          .andWhere('settings.settingKey = :key', { key: 'sessionTimeout' })
+          .getOne()
+          .catch(() => null),
         // sales_viewer 권한 조회
         user.role === 'sales_viewer'
           ? accessRepository
@@ -268,24 +265,25 @@ export const AuthController = {
                 'business.address', 'business.phone', 'business.fax'
               ])
               .getMany()
-          : Promise.resolve([])
+          : Promise.resolve([]),
+        // sales_viewer의 기본 비즈니스 조회 (병렬로 이동)
+        (user.role === 'sales_viewer' && user.businessId)
+          ? businessRepository.findOne({ where: { id: user.businessId, isActive: true } })
+          : Promise.resolve(null)
       ];
 
-      const [businesses, settings, accessList] = await Promise.all(parallelQueries);
+      const [businesses, sessionSetting, accessList, fallbackBusiness] = await Promise.all(parallelQueries);
       logger.info(`[LOGIN TIMING] Step3 병렬쿼리: ${Date.now() - step3Start}ms (role: ${user.role})`);
 
-      // 비즈니스 설정
+      // 비즈니스 설정 (추가 쿼리 없음)
       const step4Start = Date.now();
       if (user.role === 'admin') {
         user.businesses = businesses;
       } else if (user.role === 'sales_viewer') {
         if (accessList.length > 0) {
           user.businesses = accessList.map((a: any) => a.business).filter((b: any) => b);
-        } else if (user.businessId) {
-          const business = await businessRepository.findOne({
-            where: { id: user.businessId, isActive: true }
-          });
-          user.businesses = business ? [business] : [];
+        } else if (fallbackBusiness) {
+          user.businesses = [fallbackBusiness];
         } else {
           user.businesses = [];
         }
@@ -295,24 +293,17 @@ export const AuthController = {
       // businessId 최종 결정
       const finalBusinessId = user.businessId || user.businesses?.[0]?.id || 0;
 
-      // 보안 설정 파싱
+      // 보안 설정 파싱 (최적화: 단일 값만 조회)
       let sessionTimeoutHours = 8;
-      let twoFactorAuth = true;
       let sessionTimeout = '8h';
-      const MAX_SESSION_TIMEOUT_HOURS = 24; // 최대 24시간
+      const MAX_SESSION_TIMEOUT_HOURS = 24;
 
-      const settingsMap = new Map<string, string>(settings.map((s: any) => [s.settingKey, s.settingValue]));
-      const timeoutValue = settingsMap.get('sessionTimeout');
-      if (timeoutValue) {
-        sessionTimeout = timeoutValue;
-        const hours = parseInt(timeoutValue.replace('h', ''));
+      if (sessionSetting?.settingValue) {
+        sessionTimeout = sessionSetting.settingValue;
+        const hours = parseInt(sessionTimeout.replace('h', ''));
         if (!isNaN(hours) && hours > 0) {
           sessionTimeoutHours = Math.min(hours, MAX_SESSION_TIMEOUT_HOURS);
         }
-      }
-      const twoFactorValue = settingsMap.get('twoFactorAuth');
-      if (twoFactorValue !== undefined) {
-        twoFactorAuth = twoFactorValue === 'true';
       }
 
       // 활동 로그 기록 (비동기 - 응답 차단 안함)
@@ -379,7 +370,6 @@ export const AuthController = {
             businesses: user.businesses
           },
           security: {
-            twoFactorAuth,
             sessionTimeout
           }
         }
@@ -510,7 +500,7 @@ export const AuthController = {
         });
       }
 
-      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
       user.password = hashedNewPassword;
 
       await userRepository.save(user);
@@ -946,7 +936,7 @@ export const AuthController = {
       }
 
       // 새 비밀번호 해시화 및 저장
-      const hashedPassword = await bcrypt.hash(newPassword, 12);
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
       user.password = hashedPassword;
       await userRepository.save(user);
 

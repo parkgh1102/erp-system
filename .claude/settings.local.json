@@ -228,7 +228,8 @@
       "Bash(npx pm2:*)",
       "Bash(cmd //c \"taskkill /F /PID 3024\")",
       "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -20 \"\"{}\"\"')",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(az --version:*)"
     ],
     "deny": [],
     "ask": []

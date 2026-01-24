@@ -118,7 +118,7 @@ export const UserController = {
       }
 
       // 비밀번호 해싱
-      const hashedPassword = await bcrypt.hash(password, 12);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
       // 사용자 생성 (전화번호를 이메일로 사용)
       const user = userRepository.create({
