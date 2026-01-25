@@ -27,7 +27,7 @@ const updateUserSchema = Joi.object({
   email: Joi.string().email().optional(),
   name: Joi.string().min(2).optional(),
   phone: Joi.string().pattern(/^[0-9-+\s()]+$/).allow('').optional(),
-  password: Joi.string().pattern(/^\d{4}$/).optional().messages({
+  password: Joi.string().pattern(/^\d{4}$/).allow('', null).optional().messages({
     'string.pattern.base': '비밀번호는 숫자 4자리여야 합니다.'
   }),
   role: Joi.string().valid('admin', 'sales_viewer').optional(),
@@ -213,9 +213,11 @@ export const UserController = {
         delete value.businessIds; // User 엔티티에는 저장하지 않음
       }
 
-      // 비밀번호가 있으면 해싱
-      if (value.password) {
+      // 비밀번호가 있으면 해싱, 빈 문자열이면 제거
+      if (value.password && value.password.trim()) {
         value.password = await bcrypt.hash(value.password, 10);
+      } else {
+        delete value.password;
       }
 
       // 사용자 정보 업데이트
