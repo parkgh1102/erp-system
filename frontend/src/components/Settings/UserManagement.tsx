@@ -333,19 +333,21 @@ const UserManagement: React.FC = () => {
               />
             </Form.Item>
 
-            {!editingUser && (
-              <Form.Item
-                label="비밀번호"
-                name="password"
-                rules={[
-                  { required: true, message: '비밀번호를 입력해주세요.' },
-                  { min: 4, message: '비밀번호는 최소 4자리 이상이어야 합니다.' },
-                ]}
-                extra="숫자 4자리 이상"
-              >
-                <Input.Password prefix={<LockOutlined />} placeholder="비밀번호" />
-              </Form.Item>
-            )}
+            <Form.Item
+              label="비밀번호"
+              name="password"
+              rules={[
+                { required: !editingUser, message: '비밀번호를 입력해주세요.' },
+                { pattern: /^\d{4}$/, message: '비밀번호는 숫자 4자리여야 합니다.' },
+              ]}
+              extra={editingUser ? "변경 시에만 입력 (숫자 4자리)" : "숫자 4자리"}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder={editingUser ? "변경할 비밀번호 입력" : "비밀번호"}
+                maxLength={4}
+              />
+            </Form.Item>
 
             <Form.Item
               label="이름"

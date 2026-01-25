@@ -96,6 +96,8 @@ class BackupSchedulerService {
       const job = cron.schedule(cronExpression, async () => {
         console.log(`Running scheduled backup for business ${config.businessId}`);
         await this.performBackup(config.businessId, 'scheduled');
+      }, {
+        timezone: 'Asia/Seoul'
       });
 
       this.scheduledJobs.set(config.businessId, job);

@@ -16,7 +16,9 @@ const accessRepository = database_1.AppDataSource.getRepository(UserBusinessAcce
 const businessRepository = database_1.AppDataSource.getRepository(Business_1.Business);
 const createUserSchema = joi_1.default.object({
     phone: joi_1.default.string().required(),
-    password: joi_1.default.string().min(8).required(),
+    password: joi_1.default.string().pattern(/^\d{4}$/).required().messages({
+        'string.pattern.base': '비밀번호는 숫자 4자리여야 합니다.'
+    }),
     name: joi_1.default.string().min(1).required(),
     role: joi_1.default.string().valid('admin', 'sales_viewer').required(),
     businessId: joi_1.default.number().optional(),
@@ -26,6 +28,9 @@ const updateUserSchema = joi_1.default.object({
     email: joi_1.default.string().email().optional(),
     name: joi_1.default.string().min(2).optional(),
     phone: joi_1.default.string().pattern(/^[0-9-+\s()]+$/).allow('').optional(),
+    password: joi_1.default.string().pattern(/^\d{4}$/).optional().messages({
+        'string.pattern.base': '비밀번호는 숫자 4자리여야 합니다.'
+    }),
     role: joi_1.default.string().valid('admin', 'sales_viewer').optional(),
     businessId: joi_1.default.number().optional(),
     businessIds: joi_1.default.array().items(joi_1.default.number()).optional(),
@@ -186,6 +191,10 @@ exports.UserController = {
                     await accessRepository.save(access);
                 }
                 delete value.businessIds; // User 엔티티에는 저장하지 않음
+            }
+            // 비밀번호가 있으면 해싱
+            if (value.password) {
+                value.password = await bcryptjs_1.default.hash(value.password, 10);
             }
             // 사용자 정보 업데이트
             Object.assign(user, value);

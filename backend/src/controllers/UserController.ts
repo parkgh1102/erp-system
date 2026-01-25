@@ -14,7 +14,9 @@ const businessRepository = AppDataSource.getRepository(Business);
 
 const createUserSchema = Joi.object({
   phone: Joi.string().required(),
-  password: Joi.string().min(8).required(),
+  password: Joi.string().pattern(/^\d{4}$/).required().messages({
+    'string.pattern.base': '비밀번호는 숫자 4자리여야 합니다.'
+  }),
   name: Joi.string().min(1).required(),
   role: Joi.string().valid('admin', 'sales_viewer').required(),
   businessId: Joi.number().optional(),
@@ -25,6 +27,9 @@ const updateUserSchema = Joi.object({
   email: Joi.string().email().optional(),
   name: Joi.string().min(2).optional(),
   phone: Joi.string().pattern(/^[0-9-+\s()]+$/).allow('').optional(),
+  password: Joi.string().pattern(/^\d{4}$/).optional().messages({
+    'string.pattern.base': '비밀번호는 숫자 4자리여야 합니다.'
+  }),
   role: Joi.string().valid('admin', 'sales_viewer').optional(),
   businessId: Joi.number().optional(),
   businessIds: Joi.array().items(Joi.number()).optional(),
@@ -206,6 +211,11 @@ export const UserController = {
           await accessRepository.save(access);
         }
         delete value.businessIds; // User 엔티티에는 저장하지 않음
+      }
+
+      // 비밀번호가 있으면 해싱
+      if (value.password) {
+        value.password = await bcrypt.hash(value.password, 10);
       }
 
       // 사용자 정보 업데이트
