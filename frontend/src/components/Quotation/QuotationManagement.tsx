@@ -412,9 +412,6 @@ const QuotationManagement: React.FC = () => {
           <SolutionOutlined style={{ marginRight: 8, color: '#9254de' }} />
           견적서 관리
         </Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
-          {!isMobile && '견적서 작성'}
-        </Button>
       </div>
 
       {/* 통계 카드 */}
@@ -447,6 +444,9 @@ const QuotationManagement: React.FC = () => {
             style={{ width: isMobile ? '100%' : 200 }}
             allowClear
           />
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
+            {!isMobile && '견적서 작성'}
+          </Button>
           <Dropdown
             menu={{
               items: [
