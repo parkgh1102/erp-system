@@ -546,9 +546,109 @@ const TransactionLedgerManagement: React.FC = () => {
     },
   ];
 
+  // 내보내기용 컬럼 정의 (expandedEntries 데이터 구조에 맞춤)
+  const exportColumns = [
+    {
+      title: '일자',
+      dataIndex: 'date',
+      key: 'date',
+      render: (text: string, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return '';
+        return dayjs(text).format('YYYY-MM-DD');
+      },
+    },
+    {
+      title: '거래처',
+      dataIndex: 'customerName',
+      key: 'customerName',
+      render: (text: string, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return '';
+        return text || '';
+      },
+    },
+    {
+      title: '구분',
+      dataIndex: 'type',
+      key: 'type',
+      render: (type: string, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return '';
+        if (record.isCarryOver) return '이월';
+        const typeMap: Record<string, string> = {
+          'sales': '매출',
+          'purchase': '매입',
+          'receipt': '수금',
+          'payment': '지급'
+        };
+        return typeMap[type] || type || '';
+      },
+    },
+    {
+      title: '품목명',
+      dataIndex: 'description',
+      key: 'description',
+      render: (description: string, record: ExpandedLedgerEntry) => {
+        if (record.type === 'receipt' || record.type === 'payment') {
+          return description || '';
+        }
+        if (record.currentItemInfo) {
+          return record.currentItemInfo.itemName || '';
+        }
+        return description || '';
+      },
+    },
+    {
+      title: '공급가액',
+      dataIndex: 'supplyAmount',
+      key: 'supplyAmount',
+      render: (supplyAmount: number, record: ExpandedLedgerEntry) => {
+        if (record.isCarryOver) return '';
+        const displayAmount = record.currentItemInfo?.amount ?? supplyAmount ?? 0;
+        return `${Math.round(displayAmount).toLocaleString()}원`;
+      },
+    },
+    {
+      title: '세액',
+      dataIndex: 'vatAmount',
+      key: 'vatAmount',
+      render: (vatAmount: number, record: ExpandedLedgerEntry) => {
+        if (record.isCarryOver) return '';
+        const displayTax = record.currentItemInfo?.taxAmount ?? vatAmount ?? 0;
+        return `${Math.round(displayTax).toLocaleString()}원`;
+      },
+    },
+    {
+      title: '합계',
+      dataIndex: 'totalAmount',
+      key: 'totalAmount',
+      render: (totalAmount: number, record: ExpandedLedgerEntry) => {
+        if (record.isCarryOver) return '';
+        const displayTotal = record.currentItemInfo?.totalAmount ?? totalAmount ?? 0;
+        return `${Math.round(displayTotal).toLocaleString()}원`;
+      },
+    },
+    {
+      title: '잔액',
+      dataIndex: 'balance',
+      key: 'balance',
+      render: (balance: number, record: ExpandedLedgerEntry) => {
+        const displayBalance = record.cumulativeBalance ?? balance ?? 0;
+        return `${Math.round(displayBalance).toLocaleString()}원`;
+      },
+    },
+    {
+      title: '비고',
+      dataIndex: 'memo',
+      key: 'memo',
+      render: (memo: string, record: ExpandedLedgerEntry) => {
+        if (!record.isFirstRow) return '';
+        return memo || '-';
+      },
+    },
+  ];
+
   const actionMenuItems = createExportMenuItems(
-    ledgerEntries,
-    columns,
+    expandedEntries,
+    exportColumns,
     '거래원장_목록',
     'transaction-ledger-table'
   );
