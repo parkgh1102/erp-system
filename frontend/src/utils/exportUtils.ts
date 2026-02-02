@@ -642,3 +642,271 @@ export const createExportMenuItems = (
     },
   ];
 };
+
+// 거래원장 전용 인터페이스
+export interface TransactionLedgerExportOptions {
+  filename: string;
+  title: string;
+  customer: {
+    name: string;
+    customerCode: string;
+    businessNumber?: string;
+    representative?: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+  };
+  dateRange: {
+    start: string;
+    end: string;
+  };
+  previousBalance: number;
+  entries: any[];  // ExpandedLedgerEntry[]
+  ledgerEntries: any[];  // LedgerEntry[]
+}
+
+// 거래원장 전용 PDF 내보내기 (인쇄 화면과 동일한 형식)
+export const exportTransactionLedgerToPDF = async (options: TransactionLedgerExportOptions) => {
+  try {
+    const { filename, title, customer, dateRange, previousBalance, entries, ledgerEntries } = options;
+
+    if (!entries || entries.length === 0) {
+      message.warning('내보낼 데이터가 없습니다.');
+      return;
+    }
+
+    // 집계 계산
+    const totalSalesSupply = ledgerEntries.filter((e: any) => e.type === 'sales').reduce((sum: number, e: any) => sum + (e.supplyAmount || 0), 0);
+    const totalSalesVat = ledgerEntries.filter((e: any) => e.type === 'sales').reduce((sum: number, e: any) => sum + (e.vatAmount || 0), 0);
+    const totalSalesAmount = ledgerEntries.filter((e: any) => e.type === 'sales').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0);
+
+    const totalPurchaseSupply = ledgerEntries.filter((e: any) => e.type === 'purchase').reduce((sum: number, e: any) => sum + (e.supplyAmount || 0), 0);
+    const totalPurchaseVat = ledgerEntries.filter((e: any) => e.type === 'purchase').reduce((sum: number, e: any) => sum + (e.vatAmount || 0), 0);
+    const totalPurchaseAmount = ledgerEntries.filter((e: any) => e.type === 'purchase').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0);
+
+    const totalReceiptAmount = ledgerEntries.filter((e: any) => e.type === 'receipt').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0);
+    const totalPaymentAmount = ledgerEntries.filter((e: any) => e.type === 'payment').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0);
+
+    const finalBalance = ledgerEntries.length > 0 ? ledgerEntries[ledgerEntries.length - 1].balance : 0;
+
+    // 사업자번호 포맷팅
+    const formatBusinessNumber = (num?: string) => {
+      if (!num) return '미등록';
+      return num.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
+    };
+
+    // 임시 HTML 생성
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px';
+    tempDiv.style.top = '-9999px';
+    tempDiv.style.width = '1100px';
+    tempDiv.style.backgroundColor = 'white';
+    tempDiv.style.padding = '20px';
+    tempDiv.style.fontFamily = '"Malgun Gothic", "맑은 고딕", Arial, sans-serif';
+
+    // 이월잔액 행 HTML
+    const carryOverRow = previousBalance !== 0 ? `
+      <tr style="background-color: #fffbe6;">
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${dateRange.start}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${customer.name}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center; color: #faad14;">이월</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">전잔금</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: right;"></td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: right;"></td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: right;"></td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; color: ${previousBalance >= 0 ? '#1890ff' : '#ff4d4f'};">${previousBalance.toLocaleString()}원</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">-</td>
+      </tr>
+    ` : '';
+
+    // 거래 내역 행 HTML 생성
+    const dataRows = entries.filter((e: any) => !e.isCarryOver).map((entry: any) => {
+      const { isFirstRow, currentItemInfo, cumulativeBalance } = entry;
+
+      // 품목명
+      let itemDisplay = '';
+      if (entry.type === 'receipt' || entry.type === 'payment') {
+        itemDisplay = entry.description || '';
+      } else if (currentItemInfo) {
+        itemDisplay = currentItemInfo.itemName || '';
+      } else {
+        itemDisplay = entry.description || '';
+      }
+
+      // 공급가액
+      const displaySupplyAmount = currentItemInfo?.amount ?? (isFirstRow ? entry.supplyAmount : null);
+      const supplyAmountHtml = displaySupplyAmount !== null && displaySupplyAmount !== undefined
+        ? `<span style="color: ${displaySupplyAmount < 0 ? '#ff4d4f' : (entry.type === 'sales' ? '#1890ff' : '#000')}">${displaySupplyAmount.toLocaleString()}원</span>`
+        : '';
+
+      // 세액
+      const displayTax = currentItemInfo?.taxAmount ?? (isFirstRow ? entry.vatAmount : null);
+      const taxAmountHtml = displayTax !== null && displayTax !== undefined
+        ? `<span style="color: ${displayTax < 0 ? '#ff4d4f' : '#000'}">${displayTax.toLocaleString()}원</span>`
+        : '';
+
+      // 합계
+      const displayTotal = currentItemInfo?.totalAmount ?? (isFirstRow ? entry.totalAmount : null);
+      const totalAmountHtml = displayTotal !== null && displayTotal !== undefined
+        ? `<span style="color: ${displayTotal < 0 ? '#ff4d4f' : '#000'}; font-weight: bold;">${displayTotal.toLocaleString()}원</span>`
+        : '';
+
+      // 구분 색상
+      const typeColorMap: Record<string, string> = {
+        'sales': '#1890ff',
+        'purchase': '#000',
+        'receipt': '#52c41a',
+        'payment': '#fa8c16'
+      };
+      const typeNameMap: Record<string, string> = {
+        'sales': '매출',
+        'purchase': '매입',
+        'receipt': '수금',
+        'payment': '지급'
+      };
+
+      // 날짜 포맷
+      const dateStr = entry.date ? entry.date.substring(0, 10) : '';
+
+      return `
+        <tr>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${isFirstRow ? dateStr : ''}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${isFirstRow ? (entry.customerName || customer.name) : ''}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center; color: ${typeColorMap[entry.type] || '#000'};">${isFirstRow ? (typeNameMap[entry.type] || '') : ''}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${itemDisplay}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: right;">${supplyAmountHtml}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: right;">${taxAmountHtml}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: right;">${totalAmountHtml}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; color: ${(cumulativeBalance ?? 0) >= 0 ? '#1890ff' : '#ff4d4f'};">${(cumulativeBalance ?? 0).toLocaleString()}원</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 9px;">${isFirstRow ? (entry.memo || '-') : ''}</td>
+        </tr>
+      `;
+    }).join('');
+
+    tempDiv.innerHTML = `
+      <div style="font-family: 'Malgun Gothic', sans-serif; font-size: 10pt; line-height: 1.4; color: #000;">
+        <!-- 제목 -->
+        <div style="font-size: 22pt; font-weight: bold; text-align: left; margin-bottom: 20px;">
+          ${title}
+        </div>
+
+        <!-- 거래처 정보 -->
+        <div style="background-color: #f8f9fa; padding: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; font-size: 10pt;">
+          <div style="display: flex; margin-bottom: 6px;">
+            <div style="flex: 1;"><strong>거래처명:</strong> ${customer.name}</div>
+            <div style="flex: 1;"><strong>거래처코드:</strong> ${customer.customerCode}</div>
+            <div style="flex: 1;"><strong>사업자번호:</strong> ${formatBusinessNumber(customer.businessNumber)}</div>
+            <div style="flex: 1;"><strong>대표자:</strong> ${customer.representative || '미등록'}</div>
+          </div>
+          <div style="display: flex;">
+            <div style="flex: 1.5;"><strong>주소:</strong> ${customer.address || '미등록'}</div>
+            <div style="flex: 1;"><strong>전화번호:</strong> ${customer.phone || '미등록'}</div>
+            <div style="flex: 1;"><strong>이메일:</strong> ${customer.email || '미등록'}</div>
+            <div style="flex: 1;"><strong>조회기간:</strong> ${dateRange.start} ~ ${dateRange.end}</div>
+          </div>
+        </div>
+
+        <!-- 거래 내역 테이블 -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 9pt; border: 1px solid #000;">
+          <thead>
+            <tr style="background-color: #f0f0f0;">
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 85px;">일자</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 80px;">거래처</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 50px;">구분</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">품목명</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 90px;">공급가액</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 70px;">세액</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 90px;">합계</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 90px;">잔액</th>
+              <th style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold; width: 60px;">비고</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${carryOverRow}
+            ${dataRows}
+
+            <!-- 합계 행 -->
+            <tr style="background-color: #fafafa; font-weight: bold;">
+              <td colspan="4" style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">합계</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center;">-</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center;">-</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center;">-</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold; color: ${finalBalance >= 0 ? '#1890ff' : '#ff4d4f'};">${finalBalance.toLocaleString()}원</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center;">-</td>
+            </tr>
+
+            <!-- 매출 합계 / 수금 합계 -->
+            <tr style="background-color: #f0f0f0;">
+              <td colspan="4" style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">매출 합계</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; color: #1890ff; font-weight: bold;">${totalSalesSupply.toLocaleString()}원</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; color: #1890ff; font-weight: bold;">${totalSalesVat.toLocaleString()}원</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; color: #1890ff; font-weight: bold;">${totalSalesAmount.toLocaleString()}원</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">수금 합계</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; color: #ff4d4f; font-weight: bold;">${totalReceiptAmount.toLocaleString()}원</td>
+            </tr>
+
+            <!-- 매입 합계 / 지급 합계 -->
+            <tr style="background-color: #f0f0f0;">
+              <td colspan="4" style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">매입 합계</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">${totalPurchaseSupply.toLocaleString()}원</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">${totalPurchaseVat.toLocaleString()}원</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">${totalPurchaseAmount.toLocaleString()}원</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">지급 합계</td>
+              <td style="border: 1px solid #000; padding: 8px; text-align: right; font-weight: bold;">${totalPaymentAmount.toLocaleString()}원</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    document.body.appendChild(tempDiv);
+
+    // HTML을 캔버스로 변환
+    const canvas = await html2canvas(tempDiv, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      scale: 2,  // 고해상도
+      width: 1100,
+      height: tempDiv.scrollHeight
+    } as any);
+
+    document.body.removeChild(tempDiv);
+
+    // PDF 생성 (가로 방향)
+    const pdf = new jsPDF('l', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+
+    // 비율 계산
+    const ratio = Math.min((pdfWidth - 20) / imgWidth, (pdfHeight - 20) / imgHeight);
+    const imgX = (pdfWidth - imgWidth * ratio) / 2;
+    const imgY = 10;
+
+    // 페이지가 넘어가는 경우 처리
+    const scaledHeight = imgHeight * ratio;
+    const pageHeight = pdfHeight - 20;
+
+    if (scaledHeight <= pageHeight) {
+      // 한 페이지에 들어가는 경우
+      pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, scaledHeight);
+    } else {
+      // 여러 페이지인 경우 (간단히 첫 페이지만)
+      pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, scaledHeight);
+    }
+
+    // PDF 다운로드
+    const fileName = `${filename}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    pdf.save(fileName);
+
+    message.success('거래원장 PDF가 다운로드되었습니다.');
+  } catch (error) {
+    console.error('Transaction Ledger PDF export error:', error);
+    message.error(`PDF 내보내기에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+  }
+};

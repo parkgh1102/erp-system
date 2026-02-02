@@ -4,7 +4,7 @@ import { SearchOutlined, PrinterOutlined, FilePdfOutlined, ExportOutlined, Dolla
 import { useReactToPrint } from 'react-to-print';
 import SignatureEditModal from './SignatureEditModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
-import { createExportMenuItems } from '../../utils/exportUtils';
+import { createExportMenuItems, exportTransactionLedgerToPDF } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { customerAPI, transactionLedgerAPI } from '../../utils/api';
@@ -666,13 +666,57 @@ const TransactionLedgerManagement: React.FC = () => {
     email: selectedCustomerInfo.email
   } : undefined;
 
-  const actionMenuItems = createExportMenuItems(
+  // 거래원장 전용 PDF 내보내기 핸들러
+  const handleExportLedgerPDF = () => {
+    if (!selectedCustomerInfo) {
+      message.warning('거래처를 선택해주세요.');
+      return;
+    }
+    if (expandedEntries.length === 0) {
+      message.warning('내보낼 데이터가 없습니다.');
+      return;
+    }
+
+    exportTransactionLedgerToPDF({
+      filename: `거래원장_${selectedCustomerInfo.name}`,
+      title: '거래원장',
+      customer: {
+        name: selectedCustomerInfo.name,
+        customerCode: selectedCustomerInfo.customerCode,
+        businessNumber: selectedCustomerInfo.businessNumber,
+        representative: selectedCustomerInfo.representative,
+        address: selectedCustomerInfo.address,
+        phone: selectedCustomerInfo.phone,
+        email: selectedCustomerInfo.email
+      },
+      dateRange: {
+        start: dateRange[0].format('YYYY-MM-DD'),
+        end: dateRange[1].format('YYYY-MM-DD')
+      },
+      previousBalance: ledgerData?.previousBalance || 0,
+      entries: expandedEntries,
+      ledgerEntries: ledgerEntries
+    });
+  };
+
+  // 기존 엑셀 내보내기 메뉴 + 거래원장 전용 PDF 메뉴
+  const excelMenuItems = createExportMenuItems(
     expandedEntries,
     exportColumns,
     '거래원장_목록',
     'transaction-ledger-table',
     exportCompanyInfo
   );
+
+  // 엑셀만 사용하고 PDF는 거래원장 전용으로 대체
+  const actionMenuItems = [
+    excelMenuItems[0],  // 엑셀로 내보내기
+    {
+      key: 'ledger-pdf',
+      label: 'PDF로 내보내기 (거래원장 형식)',
+      onClick: handleExportLedgerPDF
+    }
+  ];
 
   // 모바일 액션 드로어 내용
   const mobileActionDrawerContent = (
