@@ -910,3 +910,350 @@ export const exportTransactionLedgerToPDF = async (options: TransactionLedgerExp
     message.error(`PDF 내보내기에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
   }
 };
+
+// 거래원장 전용 엑셀 내보내기 (인쇄 화면과 동일한 형식)
+export const exportTransactionLedgerToExcel = async (options: TransactionLedgerExportOptions) => {
+  try {
+    const { filename, title, customer, dateRange, previousBalance, entries, ledgerEntries } = options;
+
+    if (!entries || entries.length === 0) {
+      message.warning('내보낼 데이터가 없습니다.');
+      return;
+    }
+
+    // 집계 계산
+    const totalSalesSupply = ledgerEntries.filter((e: any) => e.type === 'sales').reduce((sum: number, e: any) => sum + (e.supplyAmount || 0), 0);
+    const totalSalesVat = ledgerEntries.filter((e: any) => e.type === 'sales').reduce((sum: number, e: any) => sum + (e.vatAmount || 0), 0);
+    const totalSalesAmount = ledgerEntries.filter((e: any) => e.type === 'sales').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0);
+
+    const totalPurchaseSupply = ledgerEntries.filter((e: any) => e.type === 'purchase').reduce((sum: number, e: any) => sum + (e.supplyAmount || 0), 0);
+    const totalPurchaseVat = ledgerEntries.filter((e: any) => e.type === 'purchase').reduce((sum: number, e: any) => sum + (e.vatAmount || 0), 0);
+    const totalPurchaseAmount = ledgerEntries.filter((e: any) => e.type === 'purchase').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0);
+
+    const totalReceiptAmount = ledgerEntries.filter((e: any) => e.type === 'receipt').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0);
+    const totalPaymentAmount = ledgerEntries.filter((e: any) => e.type === 'payment').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0);
+
+    const finalBalance = ledgerEntries.length > 0 ? ledgerEntries[ledgerEntries.length - 1].balance : 0;
+
+    // 사업자번호 포맷팅
+    const formatBusinessNumber = (num?: string) => {
+      if (!num) return '미등록';
+      return num.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
+    };
+
+    // 워크북 생성
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(title);
+
+    // 컬럼 너비 설정
+    worksheet.columns = [
+      { width: 14 },  // A: 일자
+      { width: 12 },  // B: 거래처
+      { width: 8 },   // C: 구분
+      { width: 30 },  // D: 품목명
+      { width: 14 },  // E: 공급가액
+      { width: 12 },  // F: 세액
+      { width: 14 },  // G: 합계
+      { width: 14 },  // H: 잔액
+    ];
+
+    // 제목 행
+    worksheet.mergeCells('A1:H1');
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = title;
+    titleCell.font = { bold: true, size: 18 };
+    titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+    worksheet.getRow(1).height = 30;
+
+    // 거래처 정보 - 1행
+    worksheet.mergeCells('A3:B3');
+    worksheet.getCell('A3').value = `거래처명: ${customer.name}`;
+    worksheet.mergeCells('C3:D3');
+    worksheet.getCell('C3').value = `거래처코드: ${customer.customerCode}`;
+    worksheet.mergeCells('E3:F3');
+    worksheet.getCell('E3').value = `사업자번호: ${formatBusinessNumber(customer.businessNumber)}`;
+    worksheet.mergeCells('G3:H3');
+    worksheet.getCell('G3').value = `대표자: ${customer.representative || '미등록'}`;
+
+    // 거래처 정보 - 2행
+    worksheet.mergeCells('A4:C4');
+    worksheet.getCell('A4').value = `주소: ${customer.address || '미등록'}`;
+    worksheet.mergeCells('D4:E4');
+    worksheet.getCell('D4').value = `전화번호: ${customer.phone || '미등록'}`;
+    worksheet.mergeCells('F4:H4');
+    worksheet.getCell('F4').value = `조회기간: ${dateRange.start} ~ ${dateRange.end}`;
+
+    // 거래처 정보 배경색
+    ['A3', 'C3', 'E3', 'G3', 'A4', 'D4', 'F4'].forEach(cell => {
+      worksheet.getCell(cell).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF8F9FA' }
+      };
+    });
+
+    // 헤더 행 (6행)
+    const headerRow = worksheet.getRow(6);
+    const headers = ['일자', '거래처', '구분', '품목명', '공급가액', '세액', '합계', '잔액'];
+    headers.forEach((header, index) => {
+      const cell = headerRow.getCell(index + 1);
+      cell.value = header;
+      cell.font = { bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF0F0F0' }
+      };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    let currentRow = 7;
+
+    // 이월잔액 행
+    if (previousBalance !== 0) {
+      const carryOverRow = worksheet.getRow(currentRow);
+      carryOverRow.getCell(1).value = dateRange.start;
+      carryOverRow.getCell(2).value = customer.name;
+      carryOverRow.getCell(3).value = '이월';
+      carryOverRow.getCell(3).font = { color: { argb: 'FFFAAD14' } };
+      carryOverRow.getCell(4).value = '이월잔액';
+      carryOverRow.getCell(5).value = '';
+      carryOverRow.getCell(6).value = '';
+      carryOverRow.getCell(7).value = '';
+      carryOverRow.getCell(8).value = `${previousBalance.toLocaleString()}원`;
+      carryOverRow.getCell(8).font = { bold: true, color: { argb: previousBalance >= 0 ? 'FF1890FF' : 'FFFF4D4F' } };
+
+      // 이월 행 배경색
+      for (let i = 1; i <= 8; i++) {
+        carryOverRow.getCell(i).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFBE6' }
+        };
+        carryOverRow.getCell(i).border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        carryOverRow.getCell(i).alignment = { horizontal: 'center', vertical: 'middle' };
+      }
+      carryOverRow.getCell(8).alignment = { horizontal: 'right', vertical: 'middle' };
+      currentRow++;
+    }
+
+    // 색상 맵
+    const typeColorMap: Record<string, string> = {
+      'sales': 'FF1890FF',
+      'purchase': 'FF000000',
+      'receipt': 'FF52C41A',
+      'payment': 'FFFA8C16'
+    };
+    const typeNameMap: Record<string, string> = {
+      'sales': '매출',
+      'purchase': '매입',
+      'receipt': '수금',
+      'payment': '지급'
+    };
+
+    // 거래 내역 데이터
+    entries.filter((e: any) => !e.isCarryOver).forEach((entry: any) => {
+      const row = worksheet.getRow(currentRow);
+      const { isFirstRow, currentItemInfo, cumulativeBalance } = entry;
+
+      // 일자
+      row.getCell(1).value = isFirstRow ? (entry.date?.substring(0, 10) || '') : '';
+
+      // 거래처
+      row.getCell(2).value = isFirstRow ? (entry.customerName || customer.name) : '';
+
+      // 구분
+      row.getCell(3).value = isFirstRow ? (typeNameMap[entry.type] || '') : '';
+      if (isFirstRow) {
+        row.getCell(3).font = { color: { argb: typeColorMap[entry.type] || 'FF000000' } };
+      }
+
+      // 품목명
+      let itemDisplay = '';
+      if (entry.type === 'receipt' || entry.type === 'payment') {
+        itemDisplay = entry.description || '';
+      } else if (currentItemInfo) {
+        itemDisplay = currentItemInfo.itemName || '';
+      } else {
+        itemDisplay = entry.description || '';
+      }
+      row.getCell(4).value = itemDisplay;
+
+      // 공급가액
+      const displaySupplyAmount = currentItemInfo?.amount ?? (isFirstRow ? entry.supplyAmount : null);
+      if (displaySupplyAmount !== null && displaySupplyAmount !== undefined) {
+        row.getCell(5).value = `${displaySupplyAmount.toLocaleString()}원`;
+        row.getCell(5).font = { color: { argb: displaySupplyAmount < 0 ? 'FFFF4D4F' : (entry.type === 'sales' ? 'FF1890FF' : 'FF000000') } };
+      }
+
+      // 세액
+      const displayTax = currentItemInfo?.taxAmount ?? (isFirstRow ? entry.vatAmount : null);
+      if (displayTax !== null && displayTax !== undefined) {
+        row.getCell(6).value = `${displayTax.toLocaleString()}원`;
+        if (displayTax < 0) {
+          row.getCell(6).font = { color: { argb: 'FFFF4D4F' } };
+        }
+      }
+
+      // 합계
+      const displayTotal = currentItemInfo?.totalAmount ?? (isFirstRow ? entry.totalAmount : null);
+      if (displayTotal !== null && displayTotal !== undefined) {
+        row.getCell(7).value = `${displayTotal.toLocaleString()}원`;
+        row.getCell(7).font = { bold: true };
+        if (displayTotal < 0) {
+          row.getCell(7).font = { bold: true, color: { argb: 'FFFF4D4F' } };
+        }
+      }
+
+      // 잔액
+      const balance = cumulativeBalance ?? 0;
+      row.getCell(8).value = `${balance.toLocaleString()}원`;
+      row.getCell(8).font = { bold: true, color: { argb: balance >= 0 ? 'FF1890FF' : 'FFFF4D4F' } };
+
+      // 테두리 및 정렬
+      for (let i = 1; i <= 8; i++) {
+        row.getCell(i).border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        row.getCell(i).alignment = {
+          horizontal: i >= 5 ? 'right' : 'center',
+          vertical: 'middle'
+        };
+      }
+
+      currentRow++;
+    });
+
+    // 합계 행
+    const summaryRow = worksheet.getRow(currentRow);
+    worksheet.mergeCells(`A${currentRow}:D${currentRow}`);
+    summaryRow.getCell(1).value = '합계';
+    summaryRow.getCell(1).font = { bold: true };
+    summaryRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    summaryRow.getCell(5).value = '-';
+    summaryRow.getCell(6).value = '-';
+    summaryRow.getCell(7).value = '-';
+    summaryRow.getCell(8).value = `${finalBalance.toLocaleString()}원`;
+    summaryRow.getCell(8).font = { bold: true, color: { argb: finalBalance >= 0 ? 'FF1890FF' : 'FFFF4D4F' } };
+
+    for (let i = 1; i <= 8; i++) {
+      summaryRow.getCell(i).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFAFAFA' }
+      };
+      summaryRow.getCell(i).border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      summaryRow.getCell(i).alignment = {
+        horizontal: i >= 5 ? 'right' : 'center',
+        vertical: 'middle'
+      };
+    }
+    currentRow++;
+
+    // 매출 합계 행
+    const salesSummaryRow = worksheet.getRow(currentRow);
+    worksheet.mergeCells(`A${currentRow}:D${currentRow}`);
+    salesSummaryRow.getCell(1).value = '매출 합계';
+    salesSummaryRow.getCell(1).font = { bold: true };
+    salesSummaryRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    salesSummaryRow.getCell(5).value = `${totalSalesSupply.toLocaleString()}원`;
+    salesSummaryRow.getCell(5).font = { bold: true, color: { argb: 'FF1890FF' } };
+    salesSummaryRow.getCell(6).value = `${totalSalesVat.toLocaleString()}원`;
+    salesSummaryRow.getCell(6).font = { bold: true, color: { argb: 'FF1890FF' } };
+    salesSummaryRow.getCell(7).value = `${totalSalesAmount.toLocaleString()}원`;
+    salesSummaryRow.getCell(7).font = { bold: true, color: { argb: 'FF1890FF' } };
+    salesSummaryRow.getCell(8).value = `수금 합계: ${totalReceiptAmount.toLocaleString()}원`;
+    salesSummaryRow.getCell(8).font = { bold: true, color: { argb: 'FFFF4D4F' } };
+
+    for (let i = 1; i <= 8; i++) {
+      salesSummaryRow.getCell(i).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF0F0F0' }
+      };
+      salesSummaryRow.getCell(i).border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      salesSummaryRow.getCell(i).alignment = {
+        horizontal: i >= 5 ? 'right' : 'center',
+        vertical: 'middle'
+      };
+    }
+    currentRow++;
+
+    // 매입 합계 행
+    const purchaseSummaryRow = worksheet.getRow(currentRow);
+    worksheet.mergeCells(`A${currentRow}:D${currentRow}`);
+    purchaseSummaryRow.getCell(1).value = '매입 합계';
+    purchaseSummaryRow.getCell(1).font = { bold: true };
+    purchaseSummaryRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    purchaseSummaryRow.getCell(5).value = `${totalPurchaseSupply.toLocaleString()}원`;
+    purchaseSummaryRow.getCell(5).font = { bold: true };
+    purchaseSummaryRow.getCell(6).value = `${totalPurchaseVat.toLocaleString()}원`;
+    purchaseSummaryRow.getCell(6).font = { bold: true };
+    purchaseSummaryRow.getCell(7).value = `${totalPurchaseAmount.toLocaleString()}원`;
+    purchaseSummaryRow.getCell(7).font = { bold: true };
+    purchaseSummaryRow.getCell(8).value = `지급 합계: ${totalPaymentAmount.toLocaleString()}원`;
+    purchaseSummaryRow.getCell(8).font = { bold: true };
+
+    for (let i = 1; i <= 8; i++) {
+      purchaseSummaryRow.getCell(i).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF0F0F0' }
+      };
+      purchaseSummaryRow.getCell(i).border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+      purchaseSummaryRow.getCell(i).alignment = {
+        horizontal: i >= 5 ? 'right' : 'center',
+        vertical: 'middle'
+      };
+    }
+
+    // 파일 생성 및 다운로드
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    message.success('거래원장 엑셀 파일이 다운로드되었습니다.');
+  } catch (error) {
+    console.error('Transaction Ledger Excel export error:', error);
+    message.error(`엑셀 내보내기에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+  }
+};

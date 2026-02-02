@@ -4,7 +4,7 @@ import { SearchOutlined, PrinterOutlined, FilePdfOutlined, ExportOutlined, Dolla
 import { useReactToPrint } from 'react-to-print';
 import SignatureEditModal from './SignatureEditModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
-import { createExportMenuItems, exportTransactionLedgerToPDF } from '../../utils/exportUtils';
+import { exportTransactionLedgerToPDF, exportTransactionLedgerToExcel } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { customerAPI, transactionLedgerAPI } from '../../utils/api';
@@ -546,126 +546,6 @@ const TransactionLedgerManagement: React.FC = () => {
     },
   ];
 
-  // 내보내기용 컬럼 정의 (expandedEntries 데이터 구조에 맞춤)
-  const exportColumns = [
-    {
-      title: '일자',
-      dataIndex: 'date',
-      key: 'date',
-      render: (text: string, record: ExpandedLedgerEntry) => {
-        if (!record.isFirstRow) return '';
-        // 날짜 유효성 검사
-        if (!text) return '';
-        const parsed = dayjs(text);
-        if (!parsed.isValid()) return '';
-        return parsed.format('YYYY-MM-DD');
-      },
-    },
-    {
-      title: '거래처',
-      dataIndex: 'customerName',
-      key: 'customerName',
-      render: (text: string, record: ExpandedLedgerEntry) => {
-        if (!record.isFirstRow) return '';
-        return text || '';
-      },
-    },
-    {
-      title: '구분',
-      dataIndex: 'type',
-      key: 'type',
-      render: (type: string, record: ExpandedLedgerEntry) => {
-        if (!record.isFirstRow) return '';
-        if (record.isCarryOver) return '이월';
-        const typeMap: Record<string, string> = {
-          'sales': '매출',
-          'purchase': '매입',
-          'receipt': '수금',
-          'payment': '지급'
-        };
-        return typeMap[type] || type || '';
-      },
-    },
-    {
-      title: '품목명',
-      dataIndex: 'description',
-      key: 'description',
-      render: (description: string, record: ExpandedLedgerEntry) => {
-        if (record.type === 'receipt' || record.type === 'payment') {
-          return description || '';
-        }
-        if (record.currentItemInfo) {
-          return record.currentItemInfo.itemName || '';
-        }
-        return description || '';
-      },
-    },
-    {
-      title: '공급가액',
-      dataIndex: 'supplyAmount',
-      key: 'supplyAmount',
-      render: (supplyAmount: number, record: ExpandedLedgerEntry) => {
-        if (record.isCarryOver) return '';
-        // 수금/지급은 공급가액 없음
-        if (record.type === 'receipt' || record.type === 'payment') return '';
-        const displayAmount = record.currentItemInfo?.amount ?? supplyAmount;
-        if (displayAmount === undefined || displayAmount === null || isNaN(displayAmount)) return '0원';
-        return `${Math.round(displayAmount).toLocaleString()}원`;
-      },
-    },
-    {
-      title: '세액',
-      dataIndex: 'vatAmount',
-      key: 'vatAmount',
-      render: (vatAmount: number, record: ExpandedLedgerEntry) => {
-        if (record.isCarryOver) return '';
-        // 수금/지급은 세액 없음
-        if (record.type === 'receipt' || record.type === 'payment') return '';
-        const displayTax = record.currentItemInfo?.taxAmount ?? vatAmount;
-        if (displayTax === undefined || displayTax === null || isNaN(displayTax)) return '0원';
-        return `${Math.round(displayTax).toLocaleString()}원`;
-      },
-    },
-    {
-      title: '합계',
-      dataIndex: 'totalAmount',
-      key: 'totalAmount',
-      render: (totalAmount: number, record: ExpandedLedgerEntry) => {
-        if (record.isCarryOver) return '';
-        const displayTotal = record.currentItemInfo?.totalAmount ?? totalAmount ?? record.amount;
-        if (displayTotal === undefined || displayTotal === null || isNaN(displayTotal)) return '0원';
-        return `${Math.round(displayTotal).toLocaleString()}원`;
-      },
-    },
-    {
-      title: '잔액',
-      dataIndex: 'balance',
-      key: 'balance',
-      render: (balance: number, record: ExpandedLedgerEntry) => {
-        const displayBalance = record.cumulativeBalance ?? balance;
-        if (displayBalance === undefined || displayBalance === null || isNaN(displayBalance)) return '0원';
-        return `${Math.round(displayBalance).toLocaleString()}원`;
-      },
-    },
-    {
-      title: '비고',
-      dataIndex: 'memo',
-      key: 'memo',
-      render: (memo: string, record: ExpandedLedgerEntry) => {
-        if (!record.isFirstRow) return '';
-        return memo || '-';
-      },
-    },
-  ];
-
-  // 공급받는자(거래처) 정보로 내보내기
-  const exportCompanyInfo = selectedCustomerInfo ? {
-    name: selectedCustomerInfo.name,
-    businessNumber: selectedCustomerInfo.businessNumber,
-    phone: selectedCustomerInfo.phone,
-    email: selectedCustomerInfo.email
-  } : undefined;
-
   // 거래원장 전용 PDF 내보내기 핸들러
   const handleExportLedgerPDF = () => {
     if (!selectedCustomerInfo) {
@@ -699,18 +579,46 @@ const TransactionLedgerManagement: React.FC = () => {
     });
   };
 
-  // 기존 엑셀 내보내기 메뉴 + 거래원장 전용 PDF 메뉴
-  const excelMenuItems = createExportMenuItems(
-    expandedEntries,
-    exportColumns,
-    '거래원장_목록',
-    'transaction-ledger-table',
-    exportCompanyInfo
-  );
+  // 거래원장 전용 엑셀 내보내기 핸들러
+  const handleExportLedgerExcel = () => {
+    if (!selectedCustomerInfo) {
+      message.warning('거래처를 선택해주세요.');
+      return;
+    }
+    if (expandedEntries.length === 0) {
+      message.warning('내보낼 데이터가 없습니다.');
+      return;
+    }
 
-  // 엑셀만 사용하고 PDF는 거래원장 전용으로 대체
+    exportTransactionLedgerToExcel({
+      filename: `거래원장_${selectedCustomerInfo.name}`,
+      title: '거래원장',
+      customer: {
+        name: selectedCustomerInfo.name,
+        customerCode: selectedCustomerInfo.customerCode,
+        businessNumber: selectedCustomerInfo.businessNumber,
+        representative: selectedCustomerInfo.representative,
+        address: selectedCustomerInfo.address,
+        phone: selectedCustomerInfo.phone,
+        email: selectedCustomerInfo.email
+      },
+      dateRange: {
+        start: dateRange[0].format('YYYY-MM-DD'),
+        end: dateRange[1].format('YYYY-MM-DD')
+      },
+      previousBalance: ledgerData?.previousBalance || 0,
+      entries: expandedEntries,
+      ledgerEntries: ledgerEntries
+    });
+  };
+
+  // 거래원장 전용 내보내기 메뉴
   const actionMenuItems = [
-    excelMenuItems[0],  // 엑셀로 내보내기
+    {
+      key: 'ledger-excel',
+      label: '엑셀로 내보내기 (거래원장 형식)',
+      onClick: handleExportLedgerExcel
+    },
     {
       key: 'ledger-pdf',
       label: 'PDF로 내보내기 (거래원장 형식)',
