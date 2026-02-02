@@ -229,7 +229,21 @@
       "Bash(cmd //c \"taskkill /F /PID 3024\")",
       "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && head -20 \"\"{}\"\"')",
       "Bash(git mv:*)",
-      "Bash(az --version:*)"
+      "Bash(az --version:*)",
+      "Bash(xargs cat:*)",
+      "Bash(wc:*)",
+      "Bash(__NEW_LINE_73680ef4c5c24bd8__ echo \"=== TypeScript check for backup components ===\")",
+      "Bash(__NEW_LINE_9acb1f06258ca3a2__ echo \"\")",
+      "Bash(__NEW_LINE_1b7417dadf28feb5__ echo \"=== Check backupAPI definition ===\")",
+      "Bash(echo \"폴더 없음\" echo \"\" echo \"=== 4. 루트 디렉토리 임시 파일 ===\" ls -la *.png *.json)",
+      "Bash(echo \"스크린샷 없음\" echo \"\" echo \"=== 6. 데이터베이스 테스트 계정 확인 ===\" node -e \" const Database = require\\(''better-sqlite3''\\); const db = new Database\\(''./backend/database/erp_system.db''\\); console.log\\(''=== Users in DB ===''\\); const users = db.prepare\\(''SELECT id, email, name, role FROM users''\\).all\\(\\); users.forEach\\(u => console.log\\(''ID:'', u.id, ''| Email:'', u.email, ''| Name:'', u.name, ''| Role:'', u.role\\)\\); db.close\\(\\); \" echo \"\" echo \"=== 7. .env 파일 확인 ===\" echo \"Backend .env:\" cat backend/.env)",
+      "Bash(git status:*)",
+      "WebFetch(domain:white-ocean-03a1f7000.3.azurestaticapps.net)",
+      "Bash(xargs basename:*)",
+      "Bash(ping:*)",
+      "Bash(npx expo start:*)",
+      "Bash(git rm:*)",
+      "WebFetch(domain:erp-backend-9c8v.onrender.com)"
     ],
     "deny": [],
     "ask": []

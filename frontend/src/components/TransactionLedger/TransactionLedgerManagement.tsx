@@ -554,7 +554,11 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'date',
       render: (text: string, record: ExpandedLedgerEntry) => {
         if (!record.isFirstRow) return '';
-        return dayjs(text).format('YYYY-MM-DD');
+        // 날짜 유효성 검사
+        if (!text) return '';
+        const parsed = dayjs(text);
+        if (!parsed.isValid()) return '';
+        return parsed.format('YYYY-MM-DD');
       },
     },
     {
@@ -602,7 +606,10 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'supplyAmount',
       render: (supplyAmount: number, record: ExpandedLedgerEntry) => {
         if (record.isCarryOver) return '';
-        const displayAmount = record.currentItemInfo?.amount ?? supplyAmount ?? 0;
+        // 수금/지급은 공급가액 없음
+        if (record.type === 'receipt' || record.type === 'payment') return '';
+        const displayAmount = record.currentItemInfo?.amount ?? supplyAmount;
+        if (displayAmount === undefined || displayAmount === null || isNaN(displayAmount)) return '0원';
         return `${Math.round(displayAmount).toLocaleString()}원`;
       },
     },
@@ -612,7 +619,10 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'vatAmount',
       render: (vatAmount: number, record: ExpandedLedgerEntry) => {
         if (record.isCarryOver) return '';
-        const displayTax = record.currentItemInfo?.taxAmount ?? vatAmount ?? 0;
+        // 수금/지급은 세액 없음
+        if (record.type === 'receipt' || record.type === 'payment') return '';
+        const displayTax = record.currentItemInfo?.taxAmount ?? vatAmount;
+        if (displayTax === undefined || displayTax === null || isNaN(displayTax)) return '0원';
         return `${Math.round(displayTax).toLocaleString()}원`;
       },
     },
@@ -622,7 +632,8 @@ const TransactionLedgerManagement: React.FC = () => {
       key: 'totalAmount',
       render: (totalAmount: number, record: ExpandedLedgerEntry) => {
         if (record.isCarryOver) return '';
-        const displayTotal = record.currentItemInfo?.totalAmount ?? totalAmount ?? 0;
+        const displayTotal = record.currentItemInfo?.totalAmount ?? totalAmount ?? record.amount;
+        if (displayTotal === undefined || displayTotal === null || isNaN(displayTotal)) return '0원';
         return `${Math.round(displayTotal).toLocaleString()}원`;
       },
     },
@@ -631,7 +642,8 @@ const TransactionLedgerManagement: React.FC = () => {
       dataIndex: 'balance',
       key: 'balance',
       render: (balance: number, record: ExpandedLedgerEntry) => {
-        const displayBalance = record.cumulativeBalance ?? balance ?? 0;
+        const displayBalance = record.cumulativeBalance ?? balance;
+        if (displayBalance === undefined || displayBalance === null || isNaN(displayBalance)) return '0원';
         return `${Math.round(displayBalance).toLocaleString()}원`;
       },
     },
@@ -646,11 +658,20 @@ const TransactionLedgerManagement: React.FC = () => {
     },
   ];
 
+  // 공급받는자(거래처) 정보로 내보내기
+  const exportCompanyInfo = selectedCustomerInfo ? {
+    name: selectedCustomerInfo.name,
+    businessNumber: selectedCustomerInfo.businessNumber,
+    phone: selectedCustomerInfo.phone,
+    email: selectedCustomerInfo.email
+  } : undefined;
+
   const actionMenuItems = createExportMenuItems(
     expandedEntries,
     exportColumns,
     '거래원장_목록',
-    'transaction-ledger-table'
+    'transaction-ledger-table',
+    exportCompanyInfo
   );
 
   // 모바일 액션 드로어 내용

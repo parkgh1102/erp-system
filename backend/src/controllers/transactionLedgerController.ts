@@ -933,7 +933,10 @@ export const transactionLedgerController = {
             name: c.name,
             customerCode: c.customerCode,
             businessNumber: c.businessNumber,
-            representative: c.representative
+            representative: c.representative,
+            address: c.address,
+            phone: c.phone,
+            email: c.email
           }))
         }
       });

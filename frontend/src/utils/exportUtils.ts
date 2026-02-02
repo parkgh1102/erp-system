@@ -11,12 +11,20 @@ export interface ExportColumn {
   render?: (value: any, record: any) => string;
 }
 
+export interface CompanyInfo {
+  name?: string;
+  businessNumber?: string;
+  phone?: string;
+  email?: string;
+}
+
 export interface ExportOptions {
   filename: string;
   title?: string;
   columns: ExportColumn[];
   data: any[];
   selectedRowKeys?: React.Key[];
+  companyInfo?: CompanyInfo;  // 문서에 표시할 회사 정보 (공급받는자)
 }
 
 // 엑셀 내보내기 (ExcelJS 사용 - 보안 강화)
@@ -136,7 +144,7 @@ export const exportToExcel = async (options: ExportOptions) => {
 // PDF 내보내기 (HTML to Canvas 방식으로 한글 지원)
 export const exportToPDF = async (options: ExportOptions) => {
     try {
-    const { filename, title, columns, data, selectedRowKeys } = options;
+    const { filename, title, columns, data, selectedRowKeys, companyInfo } = options;
 
     // 선택된 행만 필터링
     const exportData = selectedRowKeys && selectedRowKeys.length > 0
@@ -189,15 +197,23 @@ export const exportToPDF = async (options: ExportOptions) => {
       return `<tr>${cells}</tr>`;
     }).join('');
 
+    // 회사 정보 (companyInfo가 없으면 기본값 사용)
+    const company = companyInfo || {
+      name: '가온에프에스유한회사',
+      businessNumber: '818-87-01513',
+      phone: '031-527-3564',
+      email: 'business@gaonfscorp.com'
+    };
+
     tempDiv.innerHTML = `
       <div style="margin-bottom: 20px;">
         <h1 style="text-align: center; margin: 0 0 15px 0; font-size: 20px; font-weight: bold; color: #333;">${title || '문서 출력'}</h1>
         <div style="text-align: right; font-size: 11px; color: #666; margin-bottom: 15px;">출력일자: ${today} ${new Date().toLocaleTimeString('ko-KR')}</div>
         <div style="font-size: 11px; margin-bottom: 20px; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd;">
-          <strong>회사명:</strong> 가온에프에스유한회사 |
-          <strong>사업자번호:</strong> 818-87-01513 |
-          <strong>연락처:</strong> 031-527-3564 |
-          <strong>이메일:</strong> business@gaonfscorp.com
+          <strong>회사명:</strong> ${company.name || '-'} |
+          <strong>사업자번호:</strong> ${company.businessNumber || '-'} |
+          <strong>연락처:</strong> ${company.phone || '-'} |
+          <strong>이메일:</strong> ${company.email || '-'}
         </div>
       </div>
       <table style="width: 100%; border-collapse: collapse; border: 2px solid #333; background: white;">
@@ -536,7 +552,8 @@ export const createExportMenuItems = (
   dataOrHandler: any[] | ((type: 'excel' | 'pdf') => void),
   columns?: any[],
   filename?: string,
-  _tableId?: string
+  _tableId?: string,
+  companyInfo?: CompanyInfo  // 문서에 표시할 회사 정보
 ) => {
   // 콜백 함수 형태로 호출된 경우 (레거시 지원)
   if (typeof dataOrHandler === 'function') {
@@ -606,6 +623,7 @@ export const createExportMenuItems = (
           title: filename || '데이터 목록',
           columns: exportColumns,
           data: data,
+          companyInfo: companyInfo,
         });
       },
     },
@@ -618,6 +636,7 @@ export const createExportMenuItems = (
           title: filename || '데이터 목록',
           columns: exportColumns,
           data: data,
+          companyInfo: companyInfo,
         });
       },
     },
