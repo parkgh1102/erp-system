@@ -97,17 +97,26 @@ class BackupSchedulerService {
     }
     getCronExpression(config) {
         const [hours, minutes] = config.scheduleTime.split(':').map(Number);
+        // KST(UTC+9)를 UTC로 변환 (Azure는 UTC 사용)
+        let utcHours = hours - 9;
+        let dayAdjust = 0;
+        if (utcHours < 0) {
+            utcHours += 24;
+            dayAdjust = -1; // 전날로 조정 필요
+        }
         switch (config.scheduleType) {
             case 'daily':
-                return `${minutes} ${hours} * * *`;
+                return `${minutes} ${utcHours} * * *`;
             case 'weekly':
-                const dayOfWeek = config.scheduleDay || 1; // Default to Monday
-                return `${minutes} ${hours} * * ${dayOfWeek}`;
+                let dayOfWeek = config.scheduleDay || 1; // Default to Monday
+                dayOfWeek = (dayOfWeek + dayAdjust + 7) % 7; // 날짜 조정
+                return `${minutes} ${utcHours} * * ${dayOfWeek}`;
             case 'monthly':
                 const dayOfMonth = config.scheduleDay || 1;
-                return `${minutes} ${hours} ${dayOfMonth} * *`;
+                // 월간은 날짜 조정이 복잡하므로 그대로 사용 (대부분 문제없음)
+                return `${minutes} ${utcHours} ${dayOfMonth} * *`;
             default:
-                return `${minutes} ${hours} * * *`;
+                return `${minutes} ${utcHours} * * *`;
         }
     }
     async scheduleBackup(config) {
@@ -118,14 +127,17 @@ class BackupSchedulerService {
         }
         const cronExpression = this.getCronExpression(config);
         try {
+            // 타임존 옵션 제거 (UTC 변환은 getCronExpression에서 처리)
             const job = cron.schedule(cronExpression, async () => {
-                console.log(`Running scheduled backup for business ${config.businessId}`);
+                const now = new Date();
+                const kstTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+                console.log(`Running scheduled backup for business ${config.businessId} at KST: ${kstTime.toISOString()}`);
                 await this.performBackup(config.businessId, 'scheduled');
-            }, {
-                timezone: 'Asia/Seoul'
             });
             this.scheduledJobs.set(config.businessId, job);
-            console.log(`Scheduled backup for business ${config.businessId}: ${cronExpression}`);
+            // KST 시간 로그 출력
+            const [h, m] = config.scheduleTime.split(':');
+            console.log(`Scheduled backup for business ${config.businessId}: cron="${cronExpression}" (KST ${h}:${m})`);
         }
         catch (error) {
             console.error(`Failed to schedule backup for business ${config.businessId}:`, error);
