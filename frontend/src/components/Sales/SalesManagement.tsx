@@ -3,7 +3,7 @@ import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfir
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
-import { createExportMenuItems } from '../../utils/exportUtils';
+import { createExportMenuItems, exportNTSInvoiceExcel } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import api, { salesAPI, customerAPI, productAPI } from '../../utils/api';
@@ -59,6 +59,8 @@ interface Customer {
   email?: string;
   address?: string;
   representative?: string;
+  businessType?: string;
+  businessItem?: string;
 }
 
 interface User {
@@ -854,6 +856,113 @@ const SalesManagement: React.FC = () => {
     }
   };
 
+  // 국세청 면세계산서 양식 다운로드
+  const handleNTSInvoiceExport = async () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('계산서를 발행할 매출을 선택해주세요.', 2);
+      return;
+    }
+
+    if (!currentBusiness) {
+      message.error('사업장 정보가 없습니다.', 2);
+      return;
+    }
+
+    // 선택된 매출 데이터
+    const selectedSales = sales.filter(s => selectedRowKeys.includes(s.id));
+
+    // 사업자번호가 없는 거래처 확인
+    const missingBusinessNumber = selectedSales.filter(
+      s => !s.customer?.businessNumber
+    );
+
+    if (missingBusinessNumber.length > 0) {
+      const customerNames = missingBusinessNumber
+        .map(s => s.customer?.name || '알 수 없음')
+        .filter((name, index, self) => self.indexOf(name) === index)
+        .slice(0, 3)
+        .join(', ');
+
+      message.warning(
+        `사업자번호가 없는 거래처가 있습니다: ${customerNames}${missingBusinessNumber.length > 3 ? ' 외' : ''}`,
+        3
+      );
+    }
+
+    // 거래처 + 월별로 그룹핑하여 합산
+    const groupedSales = new Map<string, {
+      customer: Customer;
+      yearMonth: string;
+      lastDayOfMonth: string;
+      totalAmount: number;
+      salesCount: number;
+    }>();
+
+    selectedSales.forEach(sale => {
+      if (!sale.customer) return;
+
+      const date = dayjs(sale.transactionDate);
+      const yearMonth = date.format('YYYY-MM');
+      const lastDayOfMonth = date.endOf('month').format('YYYY-MM-DD');
+      const key = `${sale.customer.id}-${yearMonth}`;
+
+      if (groupedSales.has(key)) {
+        const existing = groupedSales.get(key)!;
+        existing.totalAmount += sale.totalAmount;
+        existing.salesCount += 1;
+      } else {
+        groupedSales.set(key, {
+          customer: sale.customer,
+          yearMonth,
+          lastDayOfMonth,
+          totalAmount: sale.totalAmount,
+          salesCount: 1,
+        });
+      }
+    });
+
+    // 합산된 데이터를 국세청 양식으로 변환
+    const consolidatedSales = Array.from(groupedSales.values()).map(group => ({
+      transactionDate: group.lastDayOfMonth,  // 월말 기준
+      customer: {
+        businessNumber: group.customer.businessNumber,
+        name: group.customer.name || '',
+        representative: group.customer.representative,
+        address: group.customer.address,
+        businessType: group.customer.businessType,
+        businessItem: group.customer.businessItem,
+        email: group.customer.email,
+      },
+      totalAmount: group.totalAmount,
+      memo: `${group.yearMonth} 합산 (${group.salesCount}건)`,
+      items: [{
+        itemName: group.salesCount > 1 ? '농산물 외' : '농산물',
+        specification: '',
+        quantity: 1,
+        unitPrice: group.totalAmount,
+        supplyAmount: group.totalAmount,
+        remark: '',
+      }],
+    }));
+
+    // 국세청 양식 데이터 생성
+    await exportNTSInvoiceExcel({
+      supplier: {
+        businessNumber: currentBusiness.businessNumber,
+        companyName: currentBusiness.companyName,
+        representative: currentBusiness.representative,
+        address: currentBusiness.address,
+        businessType: currentBusiness.businessType,
+        businessItem: currentBusiness.businessItem,
+        email: currentBusiness.email,
+      },
+      sales: consolidatedSales,
+      invoiceType: '02',  // 청구
+    });
+
+    message.info(`${selectedSales.length}건 → ${consolidatedSales.length}건으로 합산됨`, 3);
+  };
+
   const handleBulkDelete = async () => {
     if (selectedRowKeys.length === 0) {
       message.warning('삭제할 항목을 선택해주세요.', 2);
@@ -1619,6 +1728,14 @@ const SalesManagement: React.FC = () => {
         </Button>
       </Dropdown>
       <Button
+        onClick={() => { handleNTSInvoiceExport(); setMobileActionDrawerVisible(false); }}
+        block
+        size="large"
+        style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16', color: 'white', justifyContent: 'flex-start' }}
+      >
+        국세청 계산서 ({selectedRowKeys.length})
+      </Button>
+      <Button
         onClick={() => { handleSelectAll(); setMobileActionDrawerVisible(false); }}
         block
         size="large"
@@ -1760,6 +1877,15 @@ const SalesManagement: React.FC = () => {
                       파일저장
                     </Button>
                   </Dropdown>
+                  <Tooltip title="선택한 매출을 국세청 홈택스 업로드용 엑셀로 다운로드">
+                    <Button
+                      onClick={handleNTSInvoiceExport}
+                      size="middle"
+                      style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16', color: 'white' }}
+                    >
+                      국세청 계산서 ({selectedRowKeys.length})
+                    </Button>
+                  </Tooltip>
                   <Button
                     onClick={handleSelectAll}
                     type="default"
@@ -1826,6 +1952,8 @@ const SalesManagement: React.FC = () => {
                   </Dropdown>
                 </>
               )}
+            </Space>
+            <Space size="small" wrap>
               <Button
                 icon={<EditOutlined />}
                 size="middle"
@@ -1834,10 +1962,10 @@ const SalesManagement: React.FC = () => {
               >
                 전자서명
               </Button>
+              <DateRangeFilter
+                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+              />
             </Space>
-            <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-            />
             </Space>
           </Col>
         </Row>

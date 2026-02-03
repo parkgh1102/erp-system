@@ -1257,3 +1257,282 @@ export const exportTransactionLedgerToExcel = async (options: TransactionLedgerE
     message.error(`엑셀 내보내기에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
   }
 };
+
+// ============================================
+// 국세청 면세계산서 양식 엑셀 내보내기
+// ============================================
+
+export interface NTSInvoiceExportOptions {
+  // 공급자 정보 (사업장)
+  supplier: {
+    businessNumber: string;      // 사업자번호
+    companyName: string;         // 상호
+    representative: string;      // 대표자
+    address?: string;            // 주소
+    businessType?: string;       // 업태
+    businessItem?: string;       // 종목
+    email?: string;              // 이메일
+  };
+  // 매출 데이터
+  sales: Array<{
+    transactionDate: string;     // 거래일자
+    customer: {
+      businessNumber?: string;   // 공급받는자 사업자번호
+      name: string;              // 공급받는자 상호
+      representative?: string;   // 공급받는자 대표자
+      address?: string;          // 공급받는자 주소
+      businessType?: string;     // 공급받는자 업태
+      businessItem?: string;     // 공급받는자 종목
+      email?: string;            // 공급받는자 이메일
+    };
+    totalAmount: number;         // 공급가액 합계
+    memo?: string;               // 비고
+    items: Array<{
+      itemName: string;          // 품목명
+      specification?: string;    // 규격
+      quantity: number;          // 수량
+      unitPrice: number;         // 단가
+      supplyAmount: number;      // 공급가액
+      remark?: string;           // 품목비고
+    }>;
+  }>;
+  // 옵션
+  invoiceType?: '01' | '02';     // 01: 영수, 02: 청구 (기본: 02)
+}
+
+// 국세청 면세계산서 양식 엑셀 다운로드
+export const exportNTSInvoiceExcel = async (options: NTSInvoiceExportOptions) => {
+  try {
+    const { supplier, sales, invoiceType = '02' } = options;
+
+    if (!sales || sales.length === 0) {
+      message.warning('내보낼 매출 데이터가 없습니다.');
+      return;
+    }
+
+    // 사업자번호에서 하이픈 제거
+    const cleanBusinessNumber = (num?: string) => {
+      if (!num) return '';
+      return num.replace(/-/g, '');
+    };
+
+    // 워크북 생성
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('엑셀업로드양식');
+
+    // 국세청 양식 헤더 (6행에 위치)
+    const headers = [
+      '전자(세금)계산서 종류\n(05::일반)',           // 1
+      '작성일자',                                    // 2
+      '공급자 등록번호\n("-" 없이 입력)',            // 3
+      '공급자\n 종사업장번호',                       // 4
+      '공급자 상호',                                 // 5
+      '공급자 성명',                                 // 6
+      '공급자 사업장주소',                           // 7
+      '공급자 업태',                                 // 8
+      '공급자 종목',                                 // 9
+      '공급자 이메일',                               // 10
+      '공급받는자 등록번호\n("-" 없이 입력)',        // 11
+      '공급받는자 \n종사업장번호',                   // 12
+      '공급받는자 상호',                             // 13
+      '공급받는자 성명',                             // 14
+      '공급받는자 사업장주소',                       // 15
+      '공급받는자 업태',                             // 16
+      '공급받는자 종목',                             // 17
+      '공급받는자 이메일1',                          // 18
+      '공급받는자 이메일2',                          // 19
+      '공급가액\n합계',                              // 20
+      '비고',                                        // 21
+      '일자1\n(2자리, 작성년월 제외)',               // 22
+      '품목1',                                       // 23
+      '규격1',                                       // 24
+      '수량1',                                       // 25
+      '단가1',                                       // 26
+      '공급가액1',                                   // 27
+      '품목비고1',                                   // 28
+      '일자2\n(2자리, 작성년월 제외)',               // 29
+      '품목2',                                       // 30
+      '규격2',                                       // 31
+      '수량2',                                       // 32
+      '단가2',                                       // 33
+      '공급가액2',                                   // 34
+      '품목비고2',                                   // 35
+      '일자3\n(2자리, 작성년월 제외)',               // 36
+      '품목3',                                       // 37
+      '규격3',                                       // 38
+      '수량3',                                       // 39
+      '단가3',                                       // 40
+      '공급가액3',                                   // 41
+      '품목비고3',                                   // 42
+      '일자4\n(2자리, 작성년월 제외)',               // 43
+      '품목4',                                       // 44
+      '규격4',                                       // 45
+      '수량4',                                       // 46
+      '단가4',                                       // 47
+      '공급가액4',                                   // 48
+      '품목비고4',                                   // 49
+      '현금',                                        // 50
+      '수표',                                        // 51
+      '어음',                                        // 52
+      '외상미수금',                                  // 53
+      '영수(01),\n청구(02)',                         // 54
+    ];
+
+    // 제목 행 (1행) - 병합
+    worksheet.mergeCells('A1:G1');
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = '엑셀 업로드 양식(전자계산서-일반)';
+    titleCell.font = { bold: true, size: 14 };
+    titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    // 안내 행 (2-5행) - 국세청 양식과 동일하게 병합 처리
+    worksheet.mergeCells('A2:L2');
+    worksheet.getCell('A2').value = '* 주황색은 필수 항목입니다.';
+    worksheet.getCell('A2').font = { color: { argb: 'FFFF6600' } };
+
+    worksheet.mergeCells('A3:L3');
+    worksheet.getCell('A3').value = '* 전자(세금)계산서 종류는 일반(05)만 입력 가능합니다.';
+
+    worksheet.mergeCells('A4:L4');
+    worksheet.getCell('A4').value = '* 작성일자는 YYYYMMDD 형식으로 입력해주세요. (예: 20260203)';
+
+    worksheet.mergeCells('A5:L5');
+    worksheet.getCell('A5').value = '* 품목은 최대 4개까지 입력 가능합니다.';
+
+    // 헤더 행 (6행)
+    const headerRow = worksheet.getRow(6);
+    headers.forEach((header, index) => {
+      const cell = headerRow.getCell(index + 1);
+      cell.value = header;
+      cell.font = { bold: true, size: 9 };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+
+      // 필수 항목 주황색 배경 (컬럼 1, 2, 3, 11, 20)
+      const requiredColumns = [1, 2, 3, 11, 20];
+      if (requiredColumns.includes(index + 1)) {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFC000' }  // 주황색
+        };
+      } else {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF0F0F0' }  // 회색
+        };
+      }
+    });
+    headerRow.height = 40;
+
+    // 컬럼 너비 설정
+    const columnWidths = [
+      12, 12, 14, 8, 20, 12, 30, 12, 12, 25,  // 1-10
+      14, 8, 20, 12, 30, 12, 12, 25, 25, 14,  // 11-20
+      15, 6, 20, 10, 8, 12, 12, 15,           // 21-28 (품목1)
+      6, 20, 10, 8, 12, 12, 15,               // 29-35 (품목2)
+      6, 20, 10, 8, 12, 12, 15,               // 36-42 (품목3)
+      6, 20, 10, 8, 12, 12, 15,               // 43-49 (품목4)
+      12, 12, 12, 12, 10                       // 50-54
+    ];
+    columnWidths.forEach((width, index) => {
+      worksheet.getColumn(index + 1).width = width;
+    });
+
+    // 데이터 행 추가 (7행부터)
+    let currentRow = 7;
+    for (const sale of sales) {
+      const row = worksheet.getRow(currentRow);
+
+      // 작성일자 포맷팅 (YYYYMMDD)
+      const dateStr = sale.transactionDate.replace(/-/g, '').substring(0, 8);
+      const dayStr = dateStr.substring(6, 8);  // 일자 2자리
+
+      // 기본 정보
+      row.getCell(1).value = '05';  // 전자계산서 종류 (일반)
+      row.getCell(2).value = dateStr;  // 작성일자
+      row.getCell(3).value = cleanBusinessNumber(supplier.businessNumber);  // 공급자 사업자번호
+      row.getCell(4).value = '';  // 공급자 종사업장번호
+      row.getCell(5).value = supplier.companyName;  // 공급자 상호
+      row.getCell(6).value = supplier.representative;  // 공급자 성명
+      row.getCell(7).value = supplier.address || '';  // 공급자 주소
+      row.getCell(8).value = supplier.businessType || '';  // 공급자 업태
+      row.getCell(9).value = supplier.businessItem || '';  // 공급자 종목
+      row.getCell(10).value = supplier.email || '';  // 공급자 이메일
+
+      row.getCell(11).value = cleanBusinessNumber(sale.customer.businessNumber);  // 공급받는자 사업자번호
+      row.getCell(12).value = '';  // 공급받는자 종사업장번호
+      row.getCell(13).value = sale.customer.name;  // 공급받는자 상호
+      row.getCell(14).value = sale.customer.representative || '';  // 공급받는자 성명
+      row.getCell(15).value = sale.customer.address || '';  // 공급받는자 주소
+      row.getCell(16).value = sale.customer.businessType || '';  // 공급받는자 업태
+      row.getCell(17).value = sale.customer.businessItem || '';  // 공급받는자 종목
+      row.getCell(18).value = sale.customer.email || '';  // 공급받는자 이메일1
+      row.getCell(19).value = '';  // 공급받는자 이메일2
+
+      row.getCell(20).value = Math.round(sale.totalAmount);  // 공급가액 합계
+      row.getCell(21).value = sale.memo || '';  // 비고
+
+      // 품목 정보 (최대 4개)
+      const items = sale.items.slice(0, 4);
+      items.forEach((item, itemIndex) => {
+        const baseCol = 22 + (itemIndex * 7);  // 품목1: 22, 품목2: 29, 품목3: 36, 품목4: 43
+
+        row.getCell(baseCol).value = dayStr;  // 일자
+        row.getCell(baseCol + 1).value = item.itemName;  // 품목
+        row.getCell(baseCol + 2).value = item.specification || '';  // 규격
+        row.getCell(baseCol + 3).value = item.quantity;  // 수량
+        row.getCell(baseCol + 4).value = Math.round(item.unitPrice);  // 단가
+        row.getCell(baseCol + 5).value = Math.round(item.supplyAmount);  // 공급가액
+        row.getCell(baseCol + 6).value = item.remark || '';  // 품목비고
+      });
+
+      // 결제 정보
+      row.getCell(50).value = '';  // 현금
+      row.getCell(51).value = '';  // 수표
+      row.getCell(52).value = '';  // 어음
+      row.getCell(53).value = Math.round(sale.totalAmount);  // 외상미수금
+      row.getCell(54).value = invoiceType;  // 영수(01)/청구(02)
+
+      // 셀 스타일
+      for (let i = 1; i <= 54; i++) {
+        const cell = row.getCell(i);
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      }
+
+      currentRow++;
+    }
+
+    // 파일 생성 및 다운로드
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `국세청_면세계산서_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    message.success(`국세청 면세계산서 양식이 다운로드되었습니다. (${sales.length}건)`);
+  } catch (error) {
+    console.error('NTS Invoice Excel export error:', error);
+    message.error(`엑셀 내보내기에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+  }
+};
