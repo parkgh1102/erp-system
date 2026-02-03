@@ -68,6 +68,7 @@ const PaymentManagement: React.FC = () => {
   const [bulkModalVisible, setBulkModalVisible] = useState(false);
   const [bulkForm] = Form.useForm();
   const [mobileActionDrawerVisible, setMobileActionDrawerVisible] = useState(false);
+  const [pageSize, setPageSize] = useState(10);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
@@ -1099,10 +1100,13 @@ const PaymentManagement: React.FC = () => {
                     style: { cursor: 'pointer' }
                   })}
                   pagination={{
-                    pageSize: isMobile ? 5 : 10,
-                    pageSizeOptions: ['5', '10', '20', '50'],
+                    pageSize: pageSize,
+                    pageSizeOptions: ['10', '20', '50', '100'],
                     showSizeChanger: true,
-                    showQuickJumper: window.innerWidth > 768,
+                    showQuickJumper: !isMobile,
+                    onChange: (page, size) => {
+                      if (size !== pageSize) setPageSize(size);
+                    },
                     showTotal: (total, range) => {
                       const searchInfo = searchText ? ` (전체 ${payments.filter(p => p.type === 'receipt').length}건 중 검색결과)` : '';
                       return isMobile
@@ -1134,10 +1138,13 @@ const PaymentManagement: React.FC = () => {
                     style: { cursor: 'pointer' }
                   })}
                   pagination={{
-                    pageSize: isMobile ? 5 : 10,
-                    pageSizeOptions: ['5', '10', '20', '50'],
+                    pageSize: pageSize,
+                    pageSizeOptions: ['10', '20', '50', '100'],
                     showSizeChanger: true,
-                    showQuickJumper: window.innerWidth > 768,
+                    showQuickJumper: !isMobile,
+                    onChange: (page, size) => {
+                      if (size !== pageSize) setPageSize(size);
+                    },
                     showTotal: (total, range) => {
                       const searchInfo = searchText ? ` (전체 ${payments.filter(p => p.type === 'payment').length}건 중 검색결과)` : '';
                       return isMobile
