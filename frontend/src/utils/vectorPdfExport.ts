@@ -173,7 +173,7 @@ export const exportToVectorPdf = async (options: VectorPdfOptions): Promise<void
       headStyles: {
         fillColor: [54, 96, 146],
         textColor: [255, 255, 255],
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         fontSize: 10,
       },
       alternateRowStyles: {
@@ -385,7 +385,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       headStyles: {
         fillColor: [240, 240, 240],
         textColor: [0, 0, 0],
-        fontStyle: 'bold',
+        fontStyle: 'normal',
         fontSize: 9,
       },
       columnStyles: {
@@ -410,27 +410,27 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       startY: summaryY,
       body: [
         [
-          { content: '합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold', fillColor: [250, 250, 250] } },
+          { content: '합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'normal', fillColor: [250, 250, 250] } },
           { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
           { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
           { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
-          { content: finalBalance.toLocaleString() + '원', styles: { halign: 'right', fontStyle: 'bold', textColor: finalBalance >= 0 ? [24, 144, 255] : [255, 77, 79], fillColor: [250, 250, 250] } },
+          { content: finalBalance.toLocaleString() + '원', styles: { halign: 'right', fontStyle: 'normal', textColor: finalBalance >= 0 ? [24, 144, 255] : [255, 77, 79], fillColor: [250, 250, 250] } },
           { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
         ],
         [
-          { content: '매출 합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold', fillColor: [240, 240, 240] } },
+          { content: '매출 합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'normal', fillColor: [240, 240, 240] } },
           { content: totalSalesSupply.toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255], fillColor: [240, 240, 240] } },
           { content: totalSalesVat.toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255], fillColor: [240, 240, 240] } },
           { content: totalSalesAmount.toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255], fillColor: [240, 240, 240] } },
-          { content: '수금 합계', styles: { halign: 'center', fontStyle: 'bold', fillColor: [240, 240, 240] } },
+          { content: '수금 합계', styles: { halign: 'center', fontStyle: 'normal', fillColor: [240, 240, 240] } },
           { content: totalReceiptAmount.toLocaleString() + '원', styles: { halign: 'right', textColor: [255, 77, 79], fillColor: [240, 240, 240] } },
         ],
         [
-          { content: '매입 합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold', fillColor: [240, 240, 240] } },
+          { content: '매입 합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'normal', fillColor: [240, 240, 240] } },
           { content: totalPurchaseSupply.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },
           { content: totalPurchaseVat.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },
           { content: totalPurchaseAmount.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },
-          { content: '지급 합계', styles: { halign: 'center', fontStyle: 'bold', fillColor: [240, 240, 240] } },
+          { content: '지급 합계', styles: { halign: 'center', fontStyle: 'normal', fillColor: [240, 240, 240] } },
           { content: totalPaymentAmount.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },
         ],
       ],
@@ -596,7 +596,7 @@ export const exportDocumentToVectorPdf = async (options: DocumentVectorPdfOption
       headStyles: {
         fillColor: [54, 96, 146],
         textColor: [255, 255, 255],
-        fontStyle: 'bold',
+        fontStyle: 'normal',
       },
       columnStyles: {
         0: { cellWidth: 12 },
