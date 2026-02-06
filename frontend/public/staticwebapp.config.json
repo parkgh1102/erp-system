@@ -1,12 +1,19 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif,ico}", "/*.{css,scss,js}"]
+    "exclude": ["/images/*.{png,jpg,gif,ico}", "/*.{css,scss,js}", "/fonts/*", "/*.{ttf,woff,woff2,eot,otf}"]
   },
   "routes": [
     {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/fonts/*",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Access-Control-Allow-Origin": "*"
+      }
     },
     {
       "route": "/assets/*",
@@ -24,6 +31,13 @@
       "route": "/*.{jpg,jpeg,png,gif,svg,ico,webp}",
       "headers": {
         "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "route": "/*.{ttf,woff,woff2,eot,otf}",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Access-Control-Allow-Origin": "*"
       }
     },
     {
@@ -47,6 +61,11 @@
   "mimeTypes": {
     ".json": "application/json",
     ".js": "text/javascript",
-    ".css": "text/css"
+    ".css": "text/css",
+    ".ttf": "font/ttf",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".eot": "application/vnd.ms-fontobject",
+    ".otf": "font/otf"
   }
 }
