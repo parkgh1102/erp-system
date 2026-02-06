@@ -404,7 +404,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         fontSize: 9,
       },
       columnStyles: {
-        0: { cellWidth: 22 },  // 일자
+        0: { cellWidth: 26 },  // 일자
         1: { cellWidth: 30 },  // 거래처
         2: { cellWidth: 18 },  // 구분
         3: { cellWidth: 'auto' },  // 품목명
@@ -456,7 +456,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         cellPadding: 2,
       },
       columnStyles: {
-        0: { cellWidth: 22 },
+        0: { cellWidth: 26 },
         1: { cellWidth: 30 },
         2: { cellWidth: 18 },
         3: { cellWidth: 'auto' },
@@ -464,7 +464,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         5: { cellWidth: 22 },
         6: { cellWidth: 28 },
         7: { cellWidth: 28 },
-        8: { cellWidth: 25 },
+        8: { cellWidth: 21 },
       },
       margin: { left: margin, right: margin },
     });
