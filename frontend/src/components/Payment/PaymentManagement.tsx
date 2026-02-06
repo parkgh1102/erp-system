@@ -1188,7 +1188,7 @@ const PaymentManagement: React.FC = () => {
           </Form.Item>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="customerId"
                 label="거래처"
@@ -1200,6 +1200,8 @@ const PaymentManagement: React.FC = () => {
                   allowClear
                   virtual={true}
                   listHeight={256}
+                  popupMatchSelectWidth={false}
+                  styles={{ popup: { root: { minWidth: isMobile ? 'min(90vw, 300px)' : 300, maxWidth: isMobile ? '90vw' : 'none' } } }}
                   filterOption={(input, option: any) => {
                     if (!input) return true;
                     const label = String(option?.label || '');
@@ -1214,7 +1216,7 @@ const PaymentManagement: React.FC = () => {
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="paymentDate"
                 label={form.getFieldValue('type') === 'receipt' ? '수금일자' : '지급일자'}
@@ -1226,7 +1228,7 @@ const PaymentManagement: React.FC = () => {
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="amount"
                 label={form.getFieldValue('type') === 'receipt' ? '수금금액' : '지급금액'}

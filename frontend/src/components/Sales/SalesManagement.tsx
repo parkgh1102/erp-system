@@ -2135,302 +2135,578 @@ const SalesManagement: React.FC = () => {
           </Row>
 
           <Card title="매출 품목" style={{ marginBottom: 16 }}>
-            <Row gutter={8} style={{ marginBottom: 8, fontWeight: 'bold' }}>
-              <Col span={4}>품목명</Col>
-              <Col span={2}>규격</Col>
-              <Col span={2}>단위</Col>
-              <Col span={2}>과세</Col>
-              <Col span={2}>수량</Col>
-              <Col span={2}>단가</Col>
-              <Col span={3}>공급가액</Col>
-              <Col span={2}>세액</Col>
-              <Col span={3}>합계금액</Col>
-              <Col span={2}>작업</Col>
-            </Row>
-            {saleItems.map((item, index) => (
-              <Row key={index} gutter={8} style={{ marginBottom: 8 }}>
-                <Col span={4}>
-                  <Select
-                    id={`sale-product-select-${index}`}
-                    placeholder="품목 선택"
-                    value={item.productId || undefined}
-                    onChange={(value) => handleItemChange(index, 'productId', value)}
-                    style={{ width: '100%' }}
-                    showSearch
-                    optionFilterProp="children"
-                    popupMatchSelectWidth={false}
-                    styles={{ popup: { root: { minWidth: 400 } } }}
-                    filterOption={(input, option) => {
-                      try {
-                        const children = option?.children;
-                        if (Array.isArray(children)) {
-                          return children.join('').toLowerCase().includes(input.toLowerCase());
-                        }
-                        return String(children || '').toLowerCase().includes(input.toLowerCase());
-                      } catch (error) {
-                        return false;
-                      }
-                    }}
-                  >
-                    {products.map(product => (
-                      <Option key={product.id} value={product.id}>
-                        {product.name} ({product.productCode})
-                      </Option>
-                    ))}
-                  </Select>
-                </Col>
-                <Col span={2}>
-                  <Select
-                    value={item.spec || undefined}
-                    onChange={(value) => handleItemChange(index, 'spec', value)}
-                    placeholder="규격"
-                    allowClear
-                    showSearch
-                    style={{ width: '100%' }}
-                    popupRender={(menu) => (
-                      <>
-                        {menu}
-                        <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
-                          <Input
-                            placeholder="새 규격 추가"
-                            size="small"
-                            onPressEnter={(e) => {
-                              const value = (e.target as HTMLInputElement).value.trim();
-                              if (value && !specOptions.includes(value)) {
-                                setSpecOptions([...specOptions, value]);
-                                handleItemChange(index, 'spec', value);
-                                (e.target as HTMLInputElement).value = '';
-                              }
-                            }}
-                          />
-                        </div>
-                      </>
-                    )}
-                  >
-                    {specOptions.map(spec => (
-                      <Option key={spec} value={spec}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span>{spec}</span>
-                          <Button
-                            type="text"
-                            size="small"
-                            icon={<CloseOutlined />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSpecOptions(specOptions.filter(s => s !== spec));
-                            }}
-                            style={{ color: '#ff4d4f', padding: '0 4px' }}
-                          />
-                        </div>
-                      </Option>
-                    ))}
-                  </Select>
-                </Col>
-                <Col span={2}>
-                  <Select
-                    value={item.unit || undefined}
-                    onChange={(value) => handleItemChange(index, 'unit', value)}
-                    placeholder="단위"
-                    allowClear
-                    showSearch
-                    style={{ width: '100%' }}
-                    popupRender={(menu) => (
-                      <>
-                        {menu}
-                        <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
-                          <Input
-                            placeholder="새 단위 추가"
-                            size="small"
-                            onPressEnter={(e) => {
-                              const value = (e.target as HTMLInputElement).value.trim();
-                              if (value && !unitOptions.includes(value)) {
-                                setUnitOptions([...unitOptions, value]);
-                                handleItemChange(index, 'unit', value);
-                                (e.target as HTMLInputElement).value = '';
-                              }
-                            }}
-                          />
-                        </div>
-                      </>
-                    )}
-                  >
-                    {unitOptions.map(unit => (
-                      <Option key={unit} value={unit}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span>{unit}</span>
-                          <Button
-                            type="text"
-                            size="small"
-                            icon={<CloseOutlined />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setUnitOptions(unitOptions.filter(u => u !== unit));
-                            }}
-                            style={{ color: '#ff4d4f', padding: '0 4px' }}
-                          />
-                        </div>
-                      </Option>
-                    ))}
-                  </Select>
-                </Col>
-                <Col span={2}>
-                  <div style={{
-                    padding: '4px 8px',
-                    height: '32px',
-                    lineHeight: '24px',
-                    backgroundColor: item.productId ?
-                      (() => {
-                        const taxType = products.find(p => p.id === item.productId)?.taxType;
-                        if (isDark) {
-                          switch (taxType) {
-                            case 'tax_separate': return '#1f4e79';
-                            case 'tax_inclusive': return '#2d5016';
-                            case 'tax_free': return '#5c3317';
-                            default: return '#2f2f2f';
-                          }
-                        } else {
-                          switch (taxType) {
-                            case 'tax_separate': return '#e6f7ff';
-                            case 'tax_inclusive': return '#f6ffed';
-                            case 'tax_free': return '#fff2e8';
-                            default: return '#f5f5f5';
-                          }
-                        }
-                      })() : (isDark ? '#2f2f2f' : '#f5f5f5'),
-                    border: `1px solid ${isDark ? '#424242' : '#d9d9d9'}`,
-                    borderRadius: '6px',
-                    textAlign: 'center',
-                    fontSize: '12px',
-                    width: '100%',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {item.productId ?
-                      (() => {
-                        const taxType = products.find(p => p.id === item.productId)?.taxType;
-                        switch (taxType) {
-                          case 'tax_separate': return '과세';
-                          case 'tax_inclusive': return '포함';
-                          case 'tax_free': return '면세';
-                          default: return '-';
-                        }
-                      })() : '-'}
-                  </div>
-                </Col>
-                <Col span={2}>
-                  <InputNumber
-                    placeholder="수량"
-                    value={item.quantity}
-                    onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
-                    style={{ width: '100%' }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const nextIndex = saleItems.length;
-                        addItem();
-                        setTimeout(() => {
-                          const nextSelect = document.querySelector(`#sale-product-select-${nextIndex}`) as HTMLElement;
-                          if (nextSelect) nextSelect.click();
-                        }, 150);
-                      }
-                    }}
-                  />
-                </Col>
-                <Col span={2}>
-                  <InputNumber
-                    placeholder="단가"
-                    value={item.unitPrice}
-                    onChange={(value) => handleItemChange(index, 'unitPrice', value || 0)}
-                    style={{ width: '100%' }}
-                    formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
-                  />
-                </Col>
-                <Col span={3}>
-                  <InputNumber
-                    placeholder="공급가액"
-                    value={item.supplyAmount}
-                    onChange={(value) => handleItemChange(index, 'supplyAmount', value || 0)}
-                    style={{ width: '100%' }}
-                    formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
-                  />
-                </Col>
-                <Col span={2}>
-                  <InputNumber
-                    placeholder="세액"
-                    value={item.vatAmount}
-                    onChange={(value) => handleItemChange(index, 'vatAmount', value || 0)}
-                    style={{ width: '100%' }}
-                    formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
-                  />
-                </Col>
-                <Col span={3}>
-                  <InputNumber
-                    placeholder="합계금액"
-                    value={item.totalAmount}
-                    onChange={(value) => handleItemChange(index, 'totalAmount', value || 0)}
-                    style={{ width: '100%' }}
-                    formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const nextIndex = saleItems.length;
-                        addItem();
-                        setTimeout(() => {
-                          const nextSelect = document.querySelector(`#sale-product-select-${nextIndex}`) as HTMLElement;
-                          if (nextSelect) nextSelect.click();
-                        }, 150);
-                      }
-                    }}
-                  />
-                </Col>
-                <Col span={2}>
-                  <Button
-                    type="dashed"
-                    icon={<PlusOutlined />}
+            {isMobile ? (
+              /* 모바일 레이아웃: 카드 형태 */
+              <>
+                {saleItems.map((item, index) => (
+                  <Card
+                    key={index}
                     size="small"
-                    onClick={addItem}
-                    htmlType="button"
-                    style={{ marginRight: 4 }}
-                  />
-                  {saleItems.length > 1 && (
-                    <Button
-                      type="primary"
-                      danger
-                      icon={<MinusCircleOutlined />}
-                      size="small"
-                      onClick={() => removeItem(index)}
-                      htmlType="button"
-                    />
-                  )}
-                </Col>
-              </Row>
-            ))}
+                    style={{ marginBottom: 12, border: '1px solid #d9d9d9' }}
+                    extra={
+                      <Space>
+                        <Button
+                          type="dashed"
+                          icon={<PlusOutlined />}
+                          size="small"
+                          onClick={addItem}
+                          htmlType="button"
+                        />
+                        {saleItems.length > 1 && (
+                          <Button
+                            type="primary"
+                            danger
+                            icon={<MinusCircleOutlined />}
+                            size="small"
+                            onClick={() => removeItem(index)}
+                            htmlType="button"
+                          />
+                        )}
+                      </Space>
+                    }
+                    title={`품목 ${index + 1}`}
+                  >
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>품목명</div>
+                      <Select
+                        id={`sale-product-select-${index}`}
+                        placeholder="품목 선택"
+                        value={item.productId || undefined}
+                        onChange={(value) => handleItemChange(index, 'productId', value)}
+                        style={{ width: '100%' }}
+                        showSearch
+                        optionFilterProp="children"
+                        popupMatchSelectWidth={false}
+                        listHeight={300}
+                        styles={{ popup: { root: { minWidth: 'min(90vw, 350px)', maxWidth: '90vw' } } }}
+                        filterOption={(input, option) => {
+                          try {
+                            const children = option?.children;
+                            if (Array.isArray(children)) {
+                              return children.join('').toLowerCase().includes(input.toLowerCase());
+                            }
+                            return String(children || '').toLowerCase().includes(input.toLowerCase());
+                          } catch (error) {
+                            return false;
+                          }
+                        }}
+                      >
+                        {products.map(product => (
+                          <Option key={product.id} value={product.id}>
+                            {product.name} ({product.productCode})
+                          </Option>
+                        ))}
+                      </Select>
+                    </div>
+                    <Row gutter={8} style={{ marginBottom: 12 }}>
+                      <Col span={8}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>규격</div>
+                        <Select
+                          value={item.spec || undefined}
+                          onChange={(value) => handleItemChange(index, 'spec', value)}
+                          placeholder="규격"
+                          allowClear
+                          showSearch
+                          style={{ width: '100%' }}
+                          popupMatchSelectWidth={false}
+                          styles={{ popup: { root: { minWidth: 'min(70vw, 200px)' } } }}
+                          popupRender={(menu) => (
+                            <>
+                              {menu}
+                              <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                                <Input
+                                  placeholder="새 규격"
+                                  size="small"
+                                  onPressEnter={(e) => {
+                                    const value = (e.target as HTMLInputElement).value.trim();
+                                    if (value && !specOptions.includes(value)) {
+                                      setSpecOptions([...specOptions, value]);
+                                      handleItemChange(index, 'spec', value);
+                                      (e.target as HTMLInputElement).value = '';
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </>
+                          )}
+                        >
+                          {specOptions.map(spec => (
+                            <Option key={spec} value={spec}>{spec}</Option>
+                          ))}
+                        </Select>
+                      </Col>
+                      <Col span={8}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>단위</div>
+                        <Select
+                          value={item.unit || undefined}
+                          onChange={(value) => handleItemChange(index, 'unit', value)}
+                          placeholder="단위"
+                          allowClear
+                          showSearch
+                          style={{ width: '100%' }}
+                          popupMatchSelectWidth={false}
+                          styles={{ popup: { root: { minWidth: 'min(70vw, 200px)' } } }}
+                          popupRender={(menu) => (
+                            <>
+                              {menu}
+                              <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                                <Input
+                                  placeholder="새 단위"
+                                  size="small"
+                                  onPressEnter={(e) => {
+                                    const value = (e.target as HTMLInputElement).value.trim();
+                                    if (value && !unitOptions.includes(value)) {
+                                      setUnitOptions([...unitOptions, value]);
+                                      handleItemChange(index, 'unit', value);
+                                      (e.target as HTMLInputElement).value = '';
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </>
+                          )}
+                        >
+                          {unitOptions.map(unit => (
+                            <Option key={unit} value={unit}>{unit}</Option>
+                          ))}
+                        </Select>
+                      </Col>
+                      <Col span={8}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>과세</div>
+                        <div style={{
+                          padding: '4px 8px',
+                          height: '32px',
+                          lineHeight: '24px',
+                          backgroundColor: item.productId ?
+                            (() => {
+                              const taxType = products.find(p => p.id === item.productId)?.taxType;
+                              if (isDark) {
+                                switch (taxType) {
+                                  case 'tax_separate': return '#1f4e79';
+                                  case 'tax_inclusive': return '#2d5016';
+                                  case 'tax_free': return '#5c3317';
+                                  default: return '#2f2f2f';
+                                }
+                              } else {
+                                switch (taxType) {
+                                  case 'tax_separate': return '#e6f7ff';
+                                  case 'tax_inclusive': return '#f6ffed';
+                                  case 'tax_free': return '#fff2e8';
+                                  default: return '#f5f5f5';
+                                }
+                              }
+                            })() : (isDark ? '#2f2f2f' : '#f5f5f5'),
+                          border: `1px solid ${isDark ? '#424242' : '#d9d9d9'}`,
+                          borderRadius: '6px',
+                          textAlign: 'center',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {item.productId ?
+                            (() => {
+                              const taxType = products.find(p => p.id === item.productId)?.taxType;
+                              switch (taxType) {
+                                case 'tax_separate': return '과세';
+                                case 'tax_inclusive': return '포함';
+                                case 'tax_free': return '면세';
+                                default: return '-';
+                              }
+                            })() : '-'}
+                        </div>
+                      </Col>
+                    </Row>
+                    <Row gutter={8} style={{ marginBottom: 12 }}>
+                      <Col span={12}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>수량</div>
+                        <InputNumber
+                          placeholder="수량"
+                          value={item.quantity}
+                          onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
+                          style={{ width: '100%' }}
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>단가</div>
+                        <InputNumber
+                          placeholder="단가"
+                          value={item.unitPrice}
+                          onChange={(value) => handleItemChange(index, 'unitPrice', value || 0)}
+                          style={{ width: '100%' }}
+                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                        />
+                      </Col>
+                    </Row>
+                    <Row gutter={8}>
+                      <Col span={8}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>공급가액</div>
+                        <InputNumber
+                          placeholder="공급가액"
+                          value={item.supplyAmount}
+                          onChange={(value) => handleItemChange(index, 'supplyAmount', value || 0)}
+                          style={{ width: '100%' }}
+                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                        />
+                      </Col>
+                      <Col span={8}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>세액</div>
+                        <InputNumber
+                          placeholder="세액"
+                          value={item.vatAmount}
+                          onChange={(value) => handleItemChange(index, 'vatAmount', value || 0)}
+                          style={{ width: '100%' }}
+                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                        />
+                      </Col>
+                      <Col span={8}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>합계금액</div>
+                        <InputNumber
+                          placeholder="합계"
+                          value={item.totalAmount}
+                          onChange={(value) => handleItemChange(index, 'totalAmount', value || 0)}
+                          style={{ width: '100%' }}
+                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                        />
+                      </Col>
+                    </Row>
+                  </Card>
+                ))}
+                <Button
+                  type="dashed"
+                  icon={<PlusOutlined />}
+                  onClick={addItem}
+                  htmlType="button"
+                  block
+                  style={{ marginTop: 8 }}
+                >
+                  품목 추가
+                </Button>
+              </>
+            ) : (
+              /* 데스크톱 레이아웃: 테이블 형태 */
+              <>
+                <Row gutter={8} style={{ marginBottom: 8, fontWeight: 'bold' }}>
+                  <Col span={4}>품목명</Col>
+                  <Col span={2}>규격</Col>
+                  <Col span={2}>단위</Col>
+                  <Col span={2}>과세</Col>
+                  <Col span={2}>수량</Col>
+                  <Col span={2}>단가</Col>
+                  <Col span={3}>공급가액</Col>
+                  <Col span={2}>세액</Col>
+                  <Col span={3}>합계금액</Col>
+                  <Col span={2}>작업</Col>
+                </Row>
+                {saleItems.map((item, index) => (
+                  <Row key={index} gutter={8} style={{ marginBottom: 8 }}>
+                    <Col span={4}>
+                      <Select
+                        id={`sale-product-select-${index}`}
+                        placeholder="품목 선택"
+                        value={item.productId || undefined}
+                        onChange={(value) => handleItemChange(index, 'productId', value)}
+                        style={{ width: '100%' }}
+                        showSearch
+                        optionFilterProp="children"
+                        popupMatchSelectWidth={false}
+                        styles={{ popup: { root: { minWidth: 400 } } }}
+                        filterOption={(input, option) => {
+                          try {
+                            const children = option?.children;
+                            if (Array.isArray(children)) {
+                              return children.join('').toLowerCase().includes(input.toLowerCase());
+                            }
+                            return String(children || '').toLowerCase().includes(input.toLowerCase());
+                          } catch (error) {
+                            return false;
+                          }
+                        }}
+                      >
+                        {products.map(product => (
+                          <Option key={product.id} value={product.id}>
+                            {product.name} ({product.productCode})
+                          </Option>
+                        ))}
+                      </Select>
+                    </Col>
+                    <Col span={2}>
+                      <Select
+                        value={item.spec || undefined}
+                        onChange={(value) => handleItemChange(index, 'spec', value)}
+                        placeholder="규격"
+                        allowClear
+                        showSearch
+                        style={{ width: '100%' }}
+                        popupRender={(menu) => (
+                          <>
+                            {menu}
+                            <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                              <Input
+                                placeholder="새 규격 추가"
+                                size="small"
+                                onPressEnter={(e) => {
+                                  const value = (e.target as HTMLInputElement).value.trim();
+                                  if (value && !specOptions.includes(value)) {
+                                    setSpecOptions([...specOptions, value]);
+                                    handleItemChange(index, 'spec', value);
+                                    (e.target as HTMLInputElement).value = '';
+                                  }
+                                }}
+                              />
+                            </div>
+                          </>
+                        )}
+                      >
+                        {specOptions.map(spec => (
+                          <Option key={spec} value={spec}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span>{spec}</span>
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<CloseOutlined />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSpecOptions(specOptions.filter(s => s !== spec));
+                                }}
+                                style={{ color: '#ff4d4f', padding: '0 4px' }}
+                              />
+                            </div>
+                          </Option>
+                        ))}
+                      </Select>
+                    </Col>
+                    <Col span={2}>
+                      <Select
+                        value={item.unit || undefined}
+                        onChange={(value) => handleItemChange(index, 'unit', value)}
+                        placeholder="단위"
+                        allowClear
+                        showSearch
+                        style={{ width: '100%' }}
+                        popupRender={(menu) => (
+                          <>
+                            {menu}
+                            <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
+                              <Input
+                                placeholder="새 단위 추가"
+                                size="small"
+                                onPressEnter={(e) => {
+                                  const value = (e.target as HTMLInputElement).value.trim();
+                                  if (value && !unitOptions.includes(value)) {
+                                    setUnitOptions([...unitOptions, value]);
+                                    handleItemChange(index, 'unit', value);
+                                    (e.target as HTMLInputElement).value = '';
+                                  }
+                                }}
+                              />
+                            </div>
+                          </>
+                        )}
+                      >
+                        {unitOptions.map(unit => (
+                          <Option key={unit} value={unit}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span>{unit}</span>
+                              <Button
+                                type="text"
+                                size="small"
+                                icon={<CloseOutlined />}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setUnitOptions(unitOptions.filter(u => u !== unit));
+                                }}
+                                style={{ color: '#ff4d4f', padding: '0 4px' }}
+                              />
+                            </div>
+                          </Option>
+                        ))}
+                      </Select>
+                    </Col>
+                    <Col span={2}>
+                      <div style={{
+                        padding: '4px 8px',
+                        height: '32px',
+                        lineHeight: '24px',
+                        backgroundColor: item.productId ?
+                          (() => {
+                            const taxType = products.find(p => p.id === item.productId)?.taxType;
+                            if (isDark) {
+                              switch (taxType) {
+                                case 'tax_separate': return '#1f4e79';
+                                case 'tax_inclusive': return '#2d5016';
+                                case 'tax_free': return '#5c3317';
+                                default: return '#2f2f2f';
+                              }
+                            } else {
+                              switch (taxType) {
+                                case 'tax_separate': return '#e6f7ff';
+                                case 'tax_inclusive': return '#f6ffed';
+                                case 'tax_free': return '#fff2e8';
+                                default: return '#f5f5f5';
+                              }
+                            }
+                          })() : (isDark ? '#2f2f2f' : '#f5f5f5'),
+                        border: `1px solid ${isDark ? '#424242' : '#d9d9d9'}`,
+                        borderRadius: '6px',
+                        textAlign: 'center',
+                        fontSize: '12px',
+                        width: '100%',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {item.productId ?
+                          (() => {
+                            const taxType = products.find(p => p.id === item.productId)?.taxType;
+                            switch (taxType) {
+                              case 'tax_separate': return '과세';
+                              case 'tax_inclusive': return '포함';
+                              case 'tax_free': return '면세';
+                              default: return '-';
+                            }
+                          })() : '-'}
+                      </div>
+                    </Col>
+                    <Col span={2}>
+                      <InputNumber
+                        placeholder="수량"
+                        value={item.quantity}
+                        onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
+                        style={{ width: '100%' }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const nextIndex = saleItems.length;
+                            addItem();
+                            setTimeout(() => {
+                              const nextSelect = document.querySelector(`#sale-product-select-${nextIndex}`) as HTMLElement;
+                              if (nextSelect) nextSelect.click();
+                            }, 150);
+                          }
+                        }}
+                      />
+                    </Col>
+                    <Col span={2}>
+                      <InputNumber
+                        placeholder="단가"
+                        value={item.unitPrice}
+                        onChange={(value) => handleItemChange(index, 'unitPrice', value || 0)}
+                        style={{ width: '100%' }}
+                        formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                      />
+                    </Col>
+                    <Col span={3}>
+                      <InputNumber
+                        placeholder="공급가액"
+                        value={item.supplyAmount}
+                        onChange={(value) => handleItemChange(index, 'supplyAmount', value || 0)}
+                        style={{ width: '100%' }}
+                        formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                      />
+                    </Col>
+                    <Col span={2}>
+                      <InputNumber
+                        placeholder="세액"
+                        value={item.vatAmount}
+                        onChange={(value) => handleItemChange(index, 'vatAmount', value || 0)}
+                        style={{ width: '100%' }}
+                        formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                      />
+                    </Col>
+                    <Col span={3}>
+                      <InputNumber
+                        placeholder="합계금액"
+                        value={item.totalAmount}
+                        onChange={(value) => handleItemChange(index, 'totalAmount', value || 0)}
+                        style={{ width: '100%' }}
+                        formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                        parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const nextIndex = saleItems.length;
+                            addItem();
+                            setTimeout(() => {
+                              const nextSelect = document.querySelector(`#sale-product-select-${nextIndex}`) as HTMLElement;
+                              if (nextSelect) nextSelect.click();
+                            }, 150);
+                          }
+                        }}
+                      />
+                    </Col>
+                    <Col span={2}>
+                      <Button
+                        type="dashed"
+                        icon={<PlusOutlined />}
+                        size="small"
+                        onClick={addItem}
+                        htmlType="button"
+                        style={{ marginRight: 4 }}
+                      />
+                      {saleItems.length > 1 && (
+                        <Button
+                          type="primary"
+                          danger
+                          icon={<MinusCircleOutlined />}
+                          size="small"
+                          onClick={() => removeItem(index)}
+                          htmlType="button"
+                        />
+                      )}
+                    </Col>
+                  </Row>
+                ))}
+              </>
+            )}
           </Card>
 
           <Card size="small" style={{ marginBottom: 16 }}>
-            <Row gutter={16}>
-              <Col span={8}>
-                <strong>공급가액: {(totalAmount || 0).toLocaleString()}원</strong>
-              </Col>
-              <Col span={8}>
-                <strong>부가세: {(vatAmount || 0).toLocaleString()}원</strong>
-              </Col>
-              <Col span={8}>
-                <strong style={{ fontSize: '16px' }}>
-                  총 금액: {((totalAmount || 0) + (vatAmount || 0)).toLocaleString()}원
-                </strong>
-              </Col>
-            </Row>
+            {isMobile ? (
+              <Space direction="vertical" style={{ width: '100%' }} size={4}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>공급가액:</span>
+                  <strong>{(totalAmount || 0).toLocaleString()}원</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>부가세:</span>
+                  <strong>{(vatAmount || 0).toLocaleString()}원</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f0f0f0', paddingTop: 8, marginTop: 4 }}>
+                  <span style={{ fontSize: '16px', fontWeight: 600 }}>총 금액:</span>
+                  <strong style={{ fontSize: '16px', color: '#1890ff' }}>
+                    {((totalAmount || 0) + (vatAmount || 0)).toLocaleString()}원
+                  </strong>
+                </div>
+              </Space>
+            ) : (
+              <Row gutter={16}>
+                <Col span={8}>
+                  <strong>공급가액: {(totalAmount || 0).toLocaleString()}원</strong>
+                </Col>
+                <Col span={8}>
+                  <strong>부가세: {(vatAmount || 0).toLocaleString()}원</strong>
+                </Col>
+                <Col span={8}>
+                  <strong style={{ fontSize: '16px' }}>
+                    총 금액: {((totalAmount || 0) + (vatAmount || 0)).toLocaleString()}원
+                  </strong>
+                </Col>
+              </Row>
+            )}
           </Card>
 
           <Form.Item
