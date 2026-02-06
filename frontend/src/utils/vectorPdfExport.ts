@@ -310,12 +310,21 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
 
     currentY += 20;
 
-    // 구분명 매핑
+    // 구분명 매핑 및 색상
     const typeNameMap: Record<string, string> = {
       'sales': '매출',
       'purchase': '매입',
       'receipt': '수금',
       'payment': '지급'
+    };
+
+    // 구분별 색상 (RGB)
+    const typeColorMap: Record<string, [number, number, number]> = {
+      'sales': [24, 144, 255],      // 파랑 (매출)
+      'purchase': [250, 140, 22],   // 주황 (매입)
+      'receipt': [82, 196, 26],     // 초록 (수금)
+      'payment': [255, 77, 79],     // 빨강 (지급)
+      'carryover': [19, 194, 194],  // 청록 (이월)
     };
 
     // 테이블 데이터 준비
@@ -324,15 +333,15 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
     // 이월잔액 행
     if (previousBalance !== 0) {
       tableData.push([
-        dateRange.start,
-        customer.name,
-        '이월',
-        '이월잔액',
-        '',
-        '',
-        '',
-        previousBalance.toLocaleString() + '원',
-        '-'
+        { content: dateRange.start, styles: { halign: 'center' } },
+        { content: customer.name, styles: { halign: 'center' } },
+        { content: '이월', styles: { halign: 'center', textColor: typeColorMap['carryover'] } },
+        { content: '이월잔액', styles: { halign: 'center', textColor: typeColorMap['carryover'] } },
+        { content: '', styles: { halign: 'right' } },
+        { content: '', styles: { halign: 'right' } },
+        { content: '', styles: { halign: 'right' } },
+        { content: previousBalance.toLocaleString() + '원', styles: { halign: 'right', textColor: typeColorMap['carryover'] } },
+        { content: '-', styles: { halign: 'center' } }
       ]);
     }
 
@@ -355,16 +364,22 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       const displayTax = currentItemInfo?.taxAmount ?? (isFirstRow ? entry.vatAmount : null);
       const displayTotal = currentItemInfo?.totalAmount ?? (isFirstRow ? entry.totalAmount : null);
 
+      // 구분 색상
+      const typeColor = typeColorMap[entry.type] || [0, 0, 0];
+      // 금액 색상 (매출/수금은 파랑, 매입/지급은 주황/빨강)
+      const amountColor: [number, number, number] = (entry.type === 'sales' || entry.type === 'receipt')
+        ? [24, 144, 255] : [250, 140, 22];
+
       tableData.push([
-        isFirstRow ? (entry.date?.substring(0, 10) || '') : '',
-        isFirstRow ? (entry.customerName || customer.name) : '',
-        isFirstRow ? (typeNameMap[entry.type] || '') : '',
-        itemDisplay,
-        displaySupplyAmount !== null && displaySupplyAmount !== undefined ? displaySupplyAmount.toLocaleString() + '원' : '',
-        displayTax !== null && displayTax !== undefined ? displayTax.toLocaleString() + '원' : '',
-        displayTotal !== null && displayTotal !== undefined ? displayTotal.toLocaleString() + '원' : '',
-        (cumulativeBalance ?? 0).toLocaleString() + '원',
-        isFirstRow ? (entry.memo || '-') : ''
+        { content: isFirstRow ? (entry.date?.substring(0, 10) || '') : '', styles: { halign: 'center' } },
+        { content: isFirstRow ? (entry.customerName || customer.name) : '', styles: { halign: 'center' } },
+        { content: isFirstRow ? (typeNameMap[entry.type] || '') : '', styles: { halign: 'center', textColor: isFirstRow ? typeColor : [0, 0, 0] } },
+        { content: itemDisplay, styles: { halign: 'left' } },
+        { content: displaySupplyAmount !== null && displaySupplyAmount !== undefined ? displaySupplyAmount.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: amountColor } },
+        { content: displayTax !== null && displayTax !== undefined ? displayTax.toLocaleString() + '원' : '', styles: { halign: 'right' } },
+        { content: displayTotal !== null && displayTotal !== undefined ? displayTotal.toLocaleString() + '원' : '', styles: { halign: 'right' } },
+        { content: (cumulativeBalance ?? 0).toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255] } },
+        { content: isFirstRow ? (entry.memo || '-') : '', styles: { halign: 'center' } }
       ]);
     });
 
