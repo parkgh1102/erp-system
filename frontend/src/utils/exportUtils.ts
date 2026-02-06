@@ -227,20 +227,22 @@ export const exportToPDF = async (options: ExportOptions) => {
 
     document.body.appendChild(tempDiv);
 
-    // HTML을 캔버스로 변환
+    // HTML을 캔버스로 변환 (고해상도)
     const canvas = await html2canvas(tempDiv, {
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
+      scale: 3,  // 고해상도 (3배)
       width: 1200,
-      height: tempDiv.scrollHeight
+      height: tempDiv.scrollHeight,
+      logging: false
     } as any);
 
     // 임시 div 제거
     document.body.removeChild(tempDiv);
 
-    // PDF 생성
-    const imgData = canvas.toDataURL('image/jpeg', 0.8);
+    // PDF 생성 (PNG 사용으로 품질 향상)
+    const imgData = canvas.toDataURL('image/png', 1.0);
     const pdf = new jsPDF('l', 'mm', 'a4');
 
     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -251,7 +253,7 @@ export const exportToPDF = async (options: ExportOptions) => {
     const imgX = (pdfWidth - imgWidth * ratio) / 2;
     const imgY = 10;
 
-    pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+    pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
 
     // PDF 다운로드
     const fileName = `${filename}_${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -862,14 +864,15 @@ export const exportTransactionLedgerToPDF = async (options: TransactionLedgerExp
 
     document.body.appendChild(tempDiv);
 
-    // HTML을 캔버스로 변환
+    // HTML을 캔버스로 변환 (고해상도)
     const canvas = await html2canvas(tempDiv, {
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
-      scale: 2,  // 고해상도
+      scale: 3,  // 고해상도 (3배)
       width: 1100,
-      height: tempDiv.scrollHeight
+      height: tempDiv.scrollHeight,
+      logging: false
     } as any);
 
     document.body.removeChild(tempDiv);
@@ -879,7 +882,7 @@ export const exportTransactionLedgerToPDF = async (options: TransactionLedgerExp
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const imgData = canvas.toDataURL('image/png', 1.0);
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
 
@@ -894,10 +897,10 @@ export const exportTransactionLedgerToPDF = async (options: TransactionLedgerExp
 
     if (scaledHeight <= pageHeight) {
       // 한 페이지에 들어가는 경우
-      pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, scaledHeight);
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, scaledHeight);
     } else {
       // 여러 페이지인 경우 (간단히 첫 페이지만)
-      pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, scaledHeight);
+      pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, scaledHeight);
     }
 
     // PDF 다운로드

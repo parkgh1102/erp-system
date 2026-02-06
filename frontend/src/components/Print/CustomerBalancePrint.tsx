@@ -75,7 +75,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
   const handleDownloadPNG = async () => {
     if (!printRef.current || !data) return;
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#fff' });
+      const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const link = document.createElement('a');
       link.download = `미수미지급현황_${data.name}_${dayjs().format('YYYYMMDD')}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -89,7 +89,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
   const handleDownloadJPG = async () => {
     if (!printRef.current || !data) return;
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#fff' });
+      const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const link = document.createElement('a');
       link.download = `미수미지급현황_${data.name}_${dayjs().format('YYYYMMDD')}.jpg`;
       link.href = canvas.toDataURL('image/jpeg', 0.95);
@@ -103,7 +103,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
   const handleDownloadPDF = async () => {
     if (!printRef.current || !data) return;
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#fff' });
+      const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -119,7 +119,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
   const handleCopyToClipboard = async () => {
     if (!printRef.current) return;
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#fff' });
+      const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       canvas.toBlob(async (blob) => {
         if (blob) {
           try {
