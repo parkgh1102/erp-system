@@ -364,18 +364,15 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       const displayTax = currentItemInfo?.taxAmount ?? (isFirstRow ? entry.vatAmount : null);
       const displayTotal = currentItemInfo?.totalAmount ?? (isFirstRow ? entry.totalAmount : null);
 
-      // 구분 색상
+      // 구분 색상 (각 타입별 고유 색상)
       const typeColor = typeColorMap[entry.type] || [0, 0, 0];
-      // 금액 색상 (매출/수금은 파랑, 매입/지급은 주황/빨강)
-      const amountColor: [number, number, number] = (entry.type === 'sales' || entry.type === 'receipt')
-        ? [24, 144, 255] : [250, 140, 22];
 
       tableData.push([
         { content: isFirstRow ? (entry.date?.substring(0, 10) || '') : '', styles: { halign: 'center' } },
         { content: isFirstRow ? (entry.customerName || customer.name) : '', styles: { halign: 'center' } },
         { content: isFirstRow ? (typeNameMap[entry.type] || '') : '', styles: { halign: 'center', textColor: isFirstRow ? typeColor : [0, 0, 0] } },
         { content: itemDisplay, styles: { halign: 'left' } },
-        { content: displaySupplyAmount !== null && displaySupplyAmount !== undefined ? displaySupplyAmount.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: amountColor } },
+        { content: displaySupplyAmount !== null && displaySupplyAmount !== undefined ? displaySupplyAmount.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: typeColor } },
         { content: displayTax !== null && displayTax !== undefined ? displayTax.toLocaleString() + '원' : '', styles: { halign: 'right' } },
         { content: displayTotal !== null && displayTotal !== undefined ? displayTotal.toLocaleString() + '원' : '', styles: { halign: 'right' } },
         { content: (cumulativeBalance ?? 0).toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255] } },
