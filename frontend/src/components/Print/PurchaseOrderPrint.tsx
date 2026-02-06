@@ -3,7 +3,7 @@ import { Modal, Button, Space, message, Dropdown } from 'antd';
 import { PrinterOutlined, DownloadOutlined, FilePdfOutlined, FileImageOutlined, CopyOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { exportDocumentToVectorPdf } from '../../utils/vectorPdfExport';
 
 interface PurchaseOrderItem {
   productName: string;
@@ -116,16 +116,41 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
   };
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current || !data) return;
+    if (!data) return;
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`발주서_${data.orderNumber}_${dayjs().format('YYYYMMDD')}.pdf`);
-      message.success('PDF가 다운로드되었습니다.');
+      await exportDocumentToVectorPdf({
+        filename: `발주서_${data.orderNumber}`,
+        title: '발 주 서',
+        documentNumber: data.orderNumber,
+        date: dayjs(data.orderDate).format('YYYY-MM-DD'),
+        supplier: {
+          name: data.buyer.companyName,
+          businessNumber: data.buyer.businessNumber,
+          representative: data.buyer.representative,
+          address: data.buyer.address,
+          phone: data.buyer.phone,
+        },
+        customer: {
+          name: data.supplier.companyName,
+          businessNumber: data.supplier.businessNumber,
+          representative: data.supplier.representative,
+          address: data.supplier.address,
+        },
+        items: (data.items || []).map(item => ({
+          name: item.productName,
+          spec: item.spec,
+          unit: item.unit,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          amount: item.supplyAmount,
+          memo: '',
+        })),
+        totalAmount: data.supplyAmount,
+        vatAmount: data.vatAmount,
+        grandTotal: data.totalAmount,
+        memo: data.memo,
+        validUntil: dayjs(data.deliveryDate).format('YYYY-MM-DD'),
+      });
     } catch (error) {
       message.error('PDF 다운로드에 실패했습니다.');
     }
