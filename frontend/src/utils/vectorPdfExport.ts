@@ -318,12 +318,21 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       'payment': '지급'
     };
 
-    // 구분별 색상 (RGB)
+    // 구분 컬럼 색상 (RGB)
     const typeColorMap: Record<string, [number, number, number]> = {
       'sales': [24, 144, 255],      // 파랑 (매출)
-      'purchase': [250, 140, 22],   // 주황 (매입)
+      'purchase': [255, 77, 79],    // 빨강 (매입)
       'receipt': [82, 196, 26],     // 초록 (수금)
       'payment': [255, 77, 79],     // 빨강 (지급)
+      'carryover': [19, 194, 194],  // 청록 (이월)
+    };
+
+    // 공급가액 컬럼 색상 (웹과 동일)
+    const amountColorMap: Record<string, [number, number, number]> = {
+      'sales': [24, 144, 255],      // 파랑 (매출)
+      'purchase': [0, 0, 0],        // 검정 (매입)
+      'receipt': [255, 77, 79],     // 빨강 (수금)
+      'payment': [0, 0, 0],         // 검정 (지급)
       'carryover': [19, 194, 194],  // 청록 (이월)
     };
 
@@ -364,15 +373,17 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       const displayTax = currentItemInfo?.taxAmount ?? (isFirstRow ? entry.vatAmount : null);
       const displayTotal = currentItemInfo?.totalAmount ?? (isFirstRow ? entry.totalAmount : null);
 
-      // 구분 색상 (각 타입별 고유 색상)
+      // 구분 컬럼 색상
       const typeColor = typeColorMap[entry.type] || [0, 0, 0];
+      // 공급가액 컬럼 색상
+      const amountColor = amountColorMap[entry.type] || [0, 0, 0];
 
       tableData.push([
         { content: isFirstRow ? (entry.date?.substring(0, 10) || '') : '', styles: { halign: 'center' } },
         { content: isFirstRow ? (entry.customerName || customer.name) : '', styles: { halign: 'center' } },
         { content: isFirstRow ? (typeNameMap[entry.type] || '') : '', styles: { halign: 'center', textColor: isFirstRow ? typeColor : [0, 0, 0] } },
         { content: itemDisplay, styles: { halign: 'left' } },
-        { content: displaySupplyAmount !== null && displaySupplyAmount !== undefined ? displaySupplyAmount.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: typeColor } },
+        { content: displaySupplyAmount !== null && displaySupplyAmount !== undefined ? displaySupplyAmount.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: amountColor } },
         { content: displayTax !== null && displayTax !== undefined ? displayTax.toLocaleString() + '원' : '', styles: { halign: 'right' } },
         { content: displayTotal !== null && displayTotal !== undefined ? displayTotal.toLocaleString() + '원' : '', styles: { halign: 'right' } },
         { content: (cumulativeBalance ?? 0).toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255] } },
