@@ -324,7 +324,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       'purchase': [255, 77, 79],    // 빨강 (매입)
       'receipt': [82, 196, 26],     // 초록 (수금)
       'payment': [255, 77, 79],     // 빨강 (지급)
-      'carryover': [19, 194, 194],  // 청록 (이월)
+      'carryover': [250, 140, 22],  // 주황 (이월)
     };
 
     // 공급가액 컬럼 색상 (웹과 동일)
@@ -345,11 +345,11 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         { content: dateRange.start, styles: { halign: 'center' } },
         { content: customer.name, styles: { halign: 'center' } },
         { content: '이월', styles: { halign: 'center', textColor: typeColorMap['carryover'] } },
-        { content: '이월잔액', styles: { halign: 'center', textColor: typeColorMap['carryover'] } },
+        { content: '이월잔액', styles: { halign: 'center', textColor: [0, 0, 0] } },
         { content: '', styles: { halign: 'right' } },
         { content: '', styles: { halign: 'right' } },
         { content: '', styles: { halign: 'right' } },
-        { content: previousBalance.toLocaleString() + '원', styles: { halign: 'right', textColor: typeColorMap['carryover'] } },
+        { content: previousBalance.toLocaleString() + '원', styles: { halign: 'right', textColor: [19, 194, 194] } },
         { content: '-', styles: { halign: 'center' } }
       ]);
     }
@@ -358,10 +358,12 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
     entries.filter((e: any) => !e.isCarryOver).forEach((entry: any) => {
       const { isFirstRow, currentItemInfo, cumulativeBalance } = entry;
 
-      // 품목명
+      // 품목명 (수금은 "수금", 지급은 "출금", 매출/매입은 품목명)
       let itemDisplay = '';
-      if (entry.type === 'receipt' || entry.type === 'payment') {
-        itemDisplay = entry.description || '';
+      if (entry.type === 'receipt') {
+        itemDisplay = '수금';
+      } else if (entry.type === 'payment') {
+        itemDisplay = '출금';
       } else if (currentItemInfo) {
         itemDisplay = currentItemInfo.itemName || '';
       } else {
@@ -382,7 +384,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         { content: isFirstRow ? (entry.date?.substring(0, 10) || '') : '', styles: { halign: 'center' } },
         { content: isFirstRow ? (entry.customerName || customer.name) : '', styles: { halign: 'center' } },
         { content: isFirstRow ? (typeNameMap[entry.type] || '') : '', styles: { halign: 'center', textColor: isFirstRow ? typeColor : [0, 0, 0] } },
-        { content: itemDisplay, styles: { halign: 'left' } },
+        { content: itemDisplay, styles: { halign: 'center', textColor: [0, 0, 0] } },
         { content: displaySupplyAmount !== null && displaySupplyAmount !== undefined ? displaySupplyAmount.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: amountColor } },
         { content: displayTax !== null && displayTax !== undefined ? displayTax.toLocaleString() + '원' : '', styles: { halign: 'right' } },
         { content: displayTotal !== null && displayTotal !== undefined ? displayTotal.toLocaleString() + '원' : '', styles: { halign: 'right' } },

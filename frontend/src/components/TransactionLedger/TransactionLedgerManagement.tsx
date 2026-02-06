@@ -421,7 +421,7 @@ const TransactionLedgerManagement: React.FC = () => {
           'sales': 'blue',
           'purchase': 'red',
           'receipt': 'green',
-          'payment': 'orange'
+          'payment': 'red'
         };
         return <span style={{ color: colorMap[type as keyof typeof colorMap] }}>{typeMap[type as keyof typeof typeMap]}</span>;
       },
