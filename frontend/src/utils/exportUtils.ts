@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { message } from 'antd';
 import React from 'react';
+import { exportToVectorPdf, exportTransactionLedgerToVectorPdf, VectorPdfColumn } from './vectorPdfExport';
 
 export interface ExportColumn {
   key: string;
@@ -141,8 +142,36 @@ export const exportToExcel = async (options: ExportOptions) => {
   }
 };
 
-// PDF 내보내기 (HTML to Canvas 방식으로 한글 지원)
+// PDF 내보내기 (벡터 기반 - 텍스트 선택/편집 가능)
 export const exportToPDF = async (options: ExportOptions) => {
+  const { filename, title, columns, data, selectedRowKeys, companyInfo } = options;
+
+  // 선택된 행만 필터링
+  const exportData = selectedRowKeys && selectedRowKeys.length > 0
+    ? data.filter((item: any) => selectedRowKeys.includes(item.id))
+    : data;
+
+  // VectorPdfColumn 형식으로 변환
+  const vectorColumns: VectorPdfColumn[] = columns.map(col => ({
+    key: col.key,
+    title: col.title,
+    dataIndex: col.dataIndex,
+    render: col.render,
+  }));
+
+  // 벡터 PDF로 내보내기
+  await exportToVectorPdf({
+    filename,
+    title,
+    columns: vectorColumns,
+    data: exportData,
+    orientation: 'l',
+    companyInfo,
+  });
+};
+
+// PDF 내보내기 (레거시 - HTML to Canvas 방식, 이미지 기반)
+export const exportToPDFLegacy = async (options: ExportOptions) => {
     try {
     const { filename, title, columns, data, selectedRowKeys, companyInfo } = options;
 
@@ -667,8 +696,13 @@ export interface TransactionLedgerExportOptions {
   ledgerEntries: any[];  // LedgerEntry[]
 }
 
-// 거래원장 전용 PDF 내보내기 (인쇄 화면과 동일한 형식)
+// 거래원장 전용 PDF 내보내기 (벡터 기반 - 텍스트 선택/편집 가능)
 export const exportTransactionLedgerToPDF = async (options: TransactionLedgerExportOptions) => {
+  await exportTransactionLedgerToVectorPdf(options);
+};
+
+// 거래원장 전용 PDF 내보내기 (레거시 - HTML to Canvas 방식)
+export const exportTransactionLedgerToPDFLegacy = async (options: TransactionLedgerExportOptions) => {
   try {
     const { filename, title, customer, dateRange, previousBalance, entries, ledgerEntries } = options;
 
