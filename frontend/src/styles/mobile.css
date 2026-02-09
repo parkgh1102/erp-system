@@ -648,6 +648,23 @@
   }
 }
 
+/* 모바일 Select 드롭다운 위치/크기 최적화 */
+@media (max-width: 768px) {
+  /* 품목/거래처 등 긴 텍스트 드롭다운 - 화면 전체 너비 */
+  .mobile-full-dropdown.ant-select-dropdown {
+    left: 3vw !important;
+    min-width: 94vw !important;
+    max-width: 94vw !important;
+  }
+
+  /* 규격/단위 등 중간 크기 드롭다운 - 화면 중앙 */
+  .mobile-center-dropdown.ant-select-dropdown {
+    left: 10vw !important;
+    min-width: 80vw !important;
+    max-width: 80vw !important;
+  }
+}
+
 /* 통계 카드 모바일 */
 @media (max-width: 768px) {
   .stats-row {

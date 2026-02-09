@@ -1201,7 +1201,8 @@ const PaymentManagement: React.FC = () => {
                   virtual={true}
                   listHeight={256}
                   popupMatchSelectWidth={false}
-                  styles={{ popup: { root: { minWidth: isMobile ? 'min(90vw, 300px)' : 300, maxWidth: isMobile ? '90vw' : 'none' } } }}
+                  popupClassName={isMobile ? "mobile-full-dropdown" : undefined}
+                  styles={{ popup: { root: { minWidth: isMobile ? '94vw' : 300, maxWidth: isMobile ? '94vw' : 'none' } } }}
                   filterOption={(input, option: any) => {
                     if (!input) return true;
                     const label = String(option?.label || '');

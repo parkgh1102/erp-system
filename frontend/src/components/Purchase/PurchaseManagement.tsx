@@ -1598,8 +1598,8 @@ const PurchaseManagement: React.FC = () => {
                         showSearch
                         optionFilterProp="children"
                         popupMatchSelectWidth={false}
+                        popupClassName="mobile-full-dropdown"
                         listHeight={300}
-                        styles={{ popup: { root: { minWidth: 'min(90vw, 350px)', maxWidth: '90vw' } } }}
                         filterOption={(input, option) =>
                           (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
                         }
@@ -1622,7 +1622,7 @@ const PurchaseManagement: React.FC = () => {
                           showSearch
                           style={{ width: '100%' }}
                           popupMatchSelectWidth={false}
-                          styles={{ popup: { root: { minWidth: 'min(70vw, 200px)' } } }}
+                          popupClassName="mobile-center-dropdown"
                           popupRender={(menu) => (
                             <>
                               {menu}
@@ -1658,7 +1658,7 @@ const PurchaseManagement: React.FC = () => {
                           showSearch
                           style={{ width: '100%' }}
                           popupMatchSelectWidth={false}
-                          styles={{ popup: { root: { minWidth: 'min(70vw, 200px)' } } }}
+                          popupClassName="mobile-center-dropdown"
                           popupRender={(menu) => (
                             <>
                               {menu}
