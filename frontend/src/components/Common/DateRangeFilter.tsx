@@ -3,6 +3,7 @@ import { Button, Dropdown, Space, Menu } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import dayjs from 'dayjs';
+import { useThemeStore } from '../../stores/themeStore';
 
 interface DateRangeFilterProps {
   onDateRangeChange: (startDate: string, endDate: string) => void;
@@ -11,6 +12,7 @@ interface DateRangeFilterProps {
 }
 
 const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, onLimitChange, isMobile = false }) => {
+  const { isDark } = useThemeStore();
   const currentYear = dayjs().year();
   const lastYear = currentYear - 1;
   const currentMonth = dayjs().month() + 1;
@@ -79,19 +81,19 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
       gridTemplateColumns: '1fr 1fr',
       gap: '0',
       minWidth: '400px',
-      backgroundColor: '#fff',
-      border: '1px solid #d9d9d9',
+      backgroundColor: isDark ? '#1f1f1f' : '#fff',
+      border: `1px solid ${isDark ? '#424242' : '#d9d9d9'}`,
       borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+      boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.45)' : '0 2px 8px rgba(0,0,0,0.15)'
     }}>
       {/* 전년도 */}
-      <div style={{ padding: '8px', borderRight: '1px solid #f0f0f0' }}>
+      <div style={{ padding: '8px', borderRight: `1px solid ${isDark ? '#424242' : '#f0f0f0'}` }}>
         <div style={{
           padding: '8px 12px',
           fontWeight: 'bold',
           fontSize: '13px',
-          color: '#666',
-          borderBottom: '1px solid #f0f0f0',
+          color: isDark ? '#a0a0a0' : '#666',
+          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
           marginBottom: '4px'
         }}>
           전년도 ({lastYear}년)
@@ -104,12 +106,13 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
               padding: '8px 12px',
               cursor: 'pointer',
               fontSize: '13px',
+              color: isDark ? '#d1d5db' : 'inherit',
               transition: 'all 0.2s',
               borderRadius: '4px',
               margin: '2px 4px'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f0f0f0';
+              e.currentTarget.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
@@ -126,8 +129,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
           padding: '8px 12px',
           fontWeight: 'bold',
           fontSize: '13px',
-          color: '#1890ff',
-          borderBottom: '1px solid #f0f0f0',
+          color: isDark ? '#4da3ff' : '#1890ff',
+          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
           marginBottom: '4px'
         }}>
           이번년도 ({currentYear}년)
@@ -143,11 +146,11 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
               transition: 'all 0.2s',
               borderRadius: '4px',
               margin: '2px 4px',
-              color: i + 1 === currentMonth ? '#ff4d4f' : 'inherit',
+              color: i + 1 === currentMonth ? '#ff4d4f' : (isDark ? '#d1d5db' : 'inherit'),
               fontWeight: i + 1 === currentMonth ? 'bold' : 'normal'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#e6f7ff';
+              e.currentTarget.style.backgroundColor = isDark ? '#1a3a5c' : '#e6f7ff';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
@@ -164,10 +167,10 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
   const quarterMenuContent = (
     <div style={{
       minWidth: '280px',
-      backgroundColor: '#fff',
-      border: '1px solid #d9d9d9',
+      backgroundColor: isDark ? '#1f1f1f' : '#fff',
+      border: `1px solid ${isDark ? '#424242' : '#d9d9d9'}`,
       borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.45)' : '0 2px 8px rgba(0,0,0,0.15)',
       padding: '8px'
     }}>
       {/* 전년도 분기 */}
@@ -176,8 +179,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
           padding: '8px 12px',
           fontWeight: 'bold',
           fontSize: '13px',
-          color: '#666',
-          borderBottom: '1px solid #f0f0f0',
+          color: isDark ? '#a0a0a0' : '#666',
+          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
           marginBottom: '4px'
         }}>
           전년도 분기 ({lastYear}년)
@@ -190,12 +193,13 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
               padding: '8px 12px',
               cursor: 'pointer',
               fontSize: '13px',
+              color: isDark ? '#d1d5db' : 'inherit',
               transition: 'all 0.2s',
               borderRadius: '4px',
               margin: '2px 4px'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#f0f0f0';
+              e.currentTarget.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
@@ -212,8 +216,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
           padding: '8px 12px',
           fontWeight: 'bold',
           fontSize: '13px',
-          color: '#1890ff',
-          borderBottom: '1px solid #f0f0f0',
+          color: isDark ? '#4da3ff' : '#1890ff',
+          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
           marginBottom: '4px'
         }}>
           이번년도 분기 ({currentYear}년)
@@ -231,11 +235,11 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
                 transition: 'all 0.2s',
                 borderRadius: '4px',
                 margin: '2px 4px',
-                color: isCurrentQuarter ? '#ff4d4f' : 'inherit',
+                color: isCurrentQuarter ? '#ff4d4f' : (isDark ? '#d1d5db' : 'inherit'),
                 fontWeight: isCurrentQuarter ? 'bold' : 'normal'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#e6f7ff';
+                e.currentTarget.style.backgroundColor = isDark ? '#1a3a5c' : '#e6f7ff';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent';
@@ -248,7 +252,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
       </div>
 
       {/* 구분선 */}
-      <div style={{ borderTop: '1px solid #f0f0f0', margin: '8px 0' }} />
+      <div style={{ borderTop: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`, margin: '8px 0' }} />
 
       {/* 반기 */}
       <div>
@@ -256,8 +260,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
           padding: '8px 12px',
           fontWeight: 'bold',
           fontSize: '13px',
-          color: '#666',
-          borderBottom: '1px solid #f0f0f0',
+          color: isDark ? '#a0a0a0' : '#666',
+          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
           marginBottom: '4px'
         }}>
           반기
@@ -268,12 +272,13 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
             padding: '8px 12px',
             cursor: 'pointer',
             fontSize: '13px',
+            color: isDark ? '#d1d5db' : 'inherit',
             transition: 'all 0.2s',
             borderRadius: '4px',
             margin: '2px 4px'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f0f0f0';
+            e.currentTarget.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
@@ -287,12 +292,13 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
             padding: '8px 12px',
             cursor: 'pointer',
             fontSize: '13px',
+            color: isDark ? '#d1d5db' : 'inherit',
             transition: 'all 0.2s',
             borderRadius: '4px',
             margin: '2px 4px'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#f0f0f0';
+            e.currentTarget.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
@@ -306,12 +312,13 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
             padding: '8px 12px',
             cursor: 'pointer',
             fontSize: '13px',
+            color: isDark ? '#d1d5db' : 'inherit',
             transition: 'all 0.2s',
             borderRadius: '4px',
             margin: '2px 4px'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#e6f7ff';
+            e.currentTarget.style.backgroundColor = isDark ? '#1a3a5c' : '#e6f7ff';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
@@ -328,11 +335,11 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
             transition: 'all 0.2s',
             borderRadius: '4px',
             margin: '2px 4px',
-            color: currentMonth >= 7 ? '#ff4d4f' : 'inherit',
+            color: currentMonth >= 7 ? '#ff4d4f' : (isDark ? '#d1d5db' : 'inherit'),
             fontWeight: currentMonth >= 7 ? 'bold' : 'normal'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#e6f7ff';
+            e.currentTarget.style.backgroundColor = isDark ? '#1a3a5c' : '#e6f7ff';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
