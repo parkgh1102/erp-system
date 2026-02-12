@@ -22,16 +22,16 @@ const businessSchema = Joi.object({
 });
 
 const businessUpdateSchema = Joi.object({
-  businessNumber: Joi.string().length(12).pattern(/^[0-9-]+$/).optional(),
+  businessNumber: Joi.string().min(10).max(12).pattern(/^[0-9-]+$/).allow('', null).optional(),
   companyName: Joi.string().max(200).required(),
   representative: Joi.string().max(100).required(),
-  businessType: Joi.string().max(100).optional(),
-  businessItem: Joi.string().max(100).optional(),
-  address: Joi.string().max(500).optional(),
-  phone: Joi.string().max(20).optional(),
-  fax: Joi.string().max(20).optional(),
-  email: Joi.string().email().max(100).optional(),
-  homepage: Joi.string().uri().max(200).optional()
+  businessType: Joi.string().max(100).allow('', null).optional(),
+  businessItem: Joi.string().max(100).allow('', null).optional(),
+  address: Joi.string().max(500).allow('', null).optional(),
+  phone: Joi.string().max(20).allow('', null).optional(),
+  fax: Joi.string().max(20).allow('', null).optional(),
+  email: Joi.string().email().max(100).allow('', null).optional(),
+  homepage: Joi.string().max(200).allow('', null).optional()
 });
 
 export class BusinessController {

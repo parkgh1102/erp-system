@@ -176,7 +176,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
             </tr>
             <tr>
               <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none', whiteSpace: 'nowrap' }}>공급자주소:</td>
-              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none' }}>{supplierInfo?.address || '-'}</td>
+              <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none', whiteSpace: 'nowrap' }}>{supplierInfo?.address || '-'}</td>
               <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none', whiteSpace: 'nowrap' }}>공급자전화:</td>
               <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none', whiteSpace: 'nowrap' }}>{supplierInfo?.phone || '-'}</td>
               <td style={{ fontWeight: 'normal', padding: '1mm', border: 'none', whiteSpace: 'nowrap' }}>대표자명:</td>
@@ -649,7 +649,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               width: 200mm !important;
               height: 138mm !important;
               max-height: 138mm !important;
-              padding: 3mm 10mm 3mm 10mm !important;
+              padding: 3mm 5mm 3mm 5mm !important;
               margin: 0 !important;
               overflow: visible !important;
             }
@@ -665,7 +665,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           margin: '0 auto',
           backgroundColor: 'white',
           position: 'relative',
-          padding: printMode !== 'full' ? '3mm 15mm 3mm 15mm' : '0',
+          padding: printMode !== 'full' ? '3mm 5mm 3mm 5mm' : '0',
           overflow: 'visible'
         }}>
       {(printMode === 'full' || printMode === 'receiver') && (
