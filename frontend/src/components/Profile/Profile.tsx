@@ -122,9 +122,9 @@ const Profile: React.FC = () => {
     try {
       const response = await businessAPI.update(currentBusiness.id, values);
       if (response.data.success) {
+        setCurrentBusiness({ ...currentBusiness, ...values });
         message.success('사업체 정보가 성공적으로 업데이트되었습니다.');
         setBusinessEditing(false);
-        // TODO: authStore에서 currentBusiness 업데이트하는 함수 필요
       } else {
         throw new Error(response.data.message || '사업체 정보 업데이트에 실패했습니다.');
       }
