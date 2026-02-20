@@ -3,7 +3,6 @@ import { Modal, Button, Space, message, Dropdown } from 'antd';
 import { PrinterOutlined, DownloadOutlined, FilePdfOutlined, FileImageOutlined, CopyOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
-import { exportDocumentToVectorPdf } from '../../utils/vectorPdfExport';
 
 interface QuotationItem {
   productName: string;
@@ -55,7 +54,7 @@ interface QuotationPrintProps {
 const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, autoSaveType }) => {
   const printRef = useRef<HTMLDivElement>(null);
 
-  const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR').format(num);
+  const formatNumber = (num: number) => new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 }).format(Math.round(num));
 
   const handlePrint = () => {
     if (!printRef.current) return;
@@ -116,41 +115,24 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
   };
 
   const handleDownloadPDF = async () => {
-    if (!data) return;
+    if (!printRef.current || !data) return;
     try {
-      await exportDocumentToVectorPdf({
-        filename: `견적서_${data.quotationNumber}`,
-        title: '견 적 서',
-        documentNumber: data.quotationNumber,
-        date: dayjs(data.quotationDate).format('YYYY-MM-DD'),
-        supplier: {
-          name: data.supplier.companyName,
-          businessNumber: data.supplier.businessNumber,
-          representative: data.supplier.representative,
-          address: data.supplier.address,
-          phone: data.supplier.phone,
-          email: data.supplier.email,
-        },
-        customer: {
-          name: data.receiver.companyName,
-          representative: data.receiver.representative,
-          address: data.receiver.address,
-        },
-        items: (data.items || []).map(item => ({
-          name: item.productName,
-          spec: item.spec,
-          unit: item.unit,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          amount: item.supplyAmount,
-          memo: '',
-        })),
-        totalAmount: data.supplyAmount,
-        vatAmount: data.vatAmount,
-        grandTotal: data.totalAmount,
-        memo: data.memo,
-        validUntil: dayjs(data.validUntil).format('YYYY-MM-DD'),
+      const { default: jsPDF } = await import('jspdf');
+      const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false, useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      // A4 사이즈 (mm)
+      const pdfWidth = 210;
+      const pdfHeight = pdfWidth * imgHeight / imgWidth;
+      const pdf = new jsPDF({
+        orientation: pdfHeight > 297 ? 'p' : 'p',
+        unit: 'mm',
+        format: [pdfWidth, Math.max(pdfHeight, 297)],
       });
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`견적서_${data.quotationNumber}_${dayjs().format('YYYY-MM-DD')}.pdf`);
+      message.success('PDF가 다운로드되었습니다.');
     } catch (error) {
       message.error('PDF 다운로드에 실패했습니다.');
     }

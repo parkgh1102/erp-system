@@ -642,12 +642,12 @@ export const exportDocumentToVectorPdf = async (options: DocumentVectorPdfOption
     // 합계 정보
     const summaryX = pageWidth - margin - 80;
     doc.setFontSize(10);
-    doc.text(`공급가액: ${totalAmount.toLocaleString()}원`, summaryX, currentY);
+    doc.text(`공급가액: ${Math.round(totalAmount).toLocaleString()}원`, summaryX, currentY);
     currentY += 6;
-    doc.text(`부가세: ${vatAmount.toLocaleString()}원`, summaryX, currentY);
+    doc.text(`부가세: ${Math.round(vatAmount).toLocaleString()}원`, summaryX, currentY);
     currentY += 6;
     doc.setFontSize(12);
-    doc.text(`합계금액: ${grandTotal.toLocaleString()}원`, summaryX, currentY);
+    doc.text(`합계금액: ${Math.round(grandTotal).toLocaleString()}원`, summaryX, currentY);
     currentY += 10;
 
     // 메모
