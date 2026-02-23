@@ -283,6 +283,7 @@ const PurchaseManagement: React.FC = () => {
   };
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const generateAutoCompleteOptions = useCallback((keyword: string) => {
     if (keyword.length < 2) {
@@ -1447,6 +1448,25 @@ const PurchaseManagement: React.FC = () => {
         onRow={(record) => ({
           onClick: (e) => handleRowClick(record, e),
           onDoubleClick: () => handleEdit(record),
+          onTouchStart: () => {
+            if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = setTimeout(() => {
+              handleEdit(record);
+              longPressTimerRef.current = null;
+            }, 500);
+          },
+          onTouchEnd: () => {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+            }
+          },
+          onTouchMove: () => {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+            }
+          },
           style: { cursor: 'pointer' }
         })}
         scroll={{ x: isMobile ? 320 : 1200 }}

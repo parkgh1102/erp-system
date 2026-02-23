@@ -164,6 +164,7 @@ const SalesManagement: React.FC = () => {
   const [modalDragPosition, setModalDragPosition] = useState({ x: 0, y: 0 });
   const [isModalDragging, setIsModalDragging] = useState(false);
   const modalDragRef = useRef({ startX: 0, startY: 0, posX: 0, posY: 0 });
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 모달 열릴 때 위치 초기화
   useEffect(() => {
@@ -2012,7 +2013,26 @@ const SalesManagement: React.FC = () => {
         showSorterTooltip={false}
         onRow={(record) => ({
           onClick: (e) => handleRowClick(record, e),
-          onDoubleClick: () => openESignatureForRecord(record),
+          onDoubleClick: () => handleEdit(record),
+          onTouchStart: () => {
+            if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+            longPressTimerRef.current = setTimeout(() => {
+              handleEdit(record);
+              longPressTimerRef.current = null;
+            }, 500);
+          },
+          onTouchEnd: () => {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+            }
+          },
+          onTouchMove: () => {
+            if (longPressTimerRef.current) {
+              clearTimeout(longPressTimerRef.current);
+              longPressTimerRef.current = null;
+            }
+          },
           style: { cursor: 'pointer' }
         })}
         scroll={{ x: isMobile ? 320 : 1200 }}
