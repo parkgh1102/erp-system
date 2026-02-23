@@ -678,6 +678,7 @@ const QuotationManagement: React.FC = () => {
                   min={1}
                   style={{ width: '100%' }}
                   size="small"
+                  inputMode="numeric"
                 />
               </Col>
               <Col span={3}>
@@ -694,6 +695,7 @@ const QuotationManagement: React.FC = () => {
                   parser={(v) => v?.replace(/,/g, '') as any}
                   style={{ width: '100%' }}
                   size="small"
+                  inputMode="numeric"
                 />
               </Col>
               <Col span={3}>

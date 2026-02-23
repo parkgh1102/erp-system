@@ -129,6 +129,7 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
               <Input
                 placeholder="예: 123-45-67890"
                 maxLength={12}
+                inputMode="numeric"
                 onChange={handleBusinessNumberChange}
                 suffix={
                   businessNumberValidation.status === 'success' ? (
@@ -200,7 +201,7 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
                 { max: 20, message: '전화번호는 20자 이내로 입력해주세요.' }
               ]}
             >
-              <Input placeholder="예: 02-1234-5678" />
+              <Input placeholder="예: 02-1234-5678" inputMode="numeric" />
             </Form.Item>
           </Col>
         </Row>
@@ -214,7 +215,7 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
                 { max: 20, message: '팩스번호는 20자 이내로 입력해주세요.' }
               ]}
             >
-              <Input placeholder="예: 02-1234-5679" />
+              <Input placeholder="예: 02-1234-5679" inputMode="numeric" />
             </Form.Item>
           </Col>
           <Col span={12}>

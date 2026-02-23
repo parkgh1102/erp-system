@@ -2345,6 +2345,7 @@ const SalesManagement: React.FC = () => {
                           value={item.quantity}
                           onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
                           style={{ width: '100%' }}
+                          inputMode="numeric"
                         />
                       </Col>
                       <Col span={12}>
@@ -2356,6 +2357,7 @@ const SalesManagement: React.FC = () => {
                           style={{ width: '100%' }}
                           formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                           parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                          inputMode="numeric"
                         />
                       </Col>
                     </Row>
@@ -2369,6 +2371,7 @@ const SalesManagement: React.FC = () => {
                           style={{ width: '100%' }}
                           formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                           parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                          inputMode="numeric"
                         />
                       </Col>
                       <Col span={8}>
@@ -2380,6 +2383,7 @@ const SalesManagement: React.FC = () => {
                           style={{ width: '100%' }}
                           formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                           parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                          inputMode="numeric"
                         />
                       </Col>
                       <Col span={8}>
@@ -2391,6 +2395,7 @@ const SalesManagement: React.FC = () => {
                           style={{ width: '100%' }}
                           formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                           parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                          inputMode="numeric"
                         />
                       </Col>
                     </Row>

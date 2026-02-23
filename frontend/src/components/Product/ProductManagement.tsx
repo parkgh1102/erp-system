@@ -1009,6 +1009,7 @@ const ProductManagement: React.FC = () => {
                   placeholder="0"
                   addonAfter="원"
                   size={isMobile ? 'small' : 'middle'}
+                  inputMode="numeric"
                 />
               </Form.Item>
             </Col>
@@ -1025,6 +1026,7 @@ const ProductManagement: React.FC = () => {
                   placeholder="0"
                   addonAfter="원"
                   size={isMobile ? 'small' : 'middle'}
+                  inputMode="numeric"
                 />
               </Form.Item>
             </Col>

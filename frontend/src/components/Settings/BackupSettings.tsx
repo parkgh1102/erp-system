@@ -391,12 +391,12 @@ const BackupSettings: React.FC = () => {
 
                 {scheduleType === 'monthly' && (
                   <Form.Item name="scheduleDay" label="날짜">
-                    <InputNumber min={1} max={31} style={{ width: '100%' }} />
+                    <InputNumber min={1} max={31} style={{ width: '100%' }} inputMode="numeric" />
                   </Form.Item>
                 )}
 
                 <Form.Item name="retentionCount" label="백업 보관 개수">
-                  <InputNumber min={1} max={30} style={{ width: '100%' }} />
+                  <InputNumber min={1} max={30} style={{ width: '100%' }} inputMode="numeric" />
                 </Form.Item>
 
                 <Form.Item>

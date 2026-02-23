@@ -333,6 +333,7 @@ const SignupForm: React.FC = () => {
           prefix={<PhoneOutlined />}
           placeholder="전화번호"
           style={{ borderRadius: '8px' }}
+          inputMode="numeric"
           onChange={(e) => {
             const formatted = formatPhoneNumber(e.target.value);
             form.setFieldsValue({ phone: formatted });
@@ -368,6 +369,7 @@ const SignupForm: React.FC = () => {
           placeholder="사업자번호 (000-00-00000)"
           style={{ borderRadius: '8px' }}
           maxLength={12}
+          inputMode="numeric"
           onChange={(e) => {
             const formatted = formatBusinessNumber(e.target.value);
             form.setFieldsValue({ businessNumber: formatted });

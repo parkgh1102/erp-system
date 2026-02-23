@@ -672,6 +672,7 @@ const PurchaseOrderManagement: React.FC = () => {
                   min={1}
                   style={{ width: '100%' }}
                   placeholder="수량"
+                  inputMode="numeric"
                 />
               </Col>
               <Col xs={8} sm={4}>
@@ -682,6 +683,7 @@ const PurchaseOrderManagement: React.FC = () => {
                   parser={(v) => v?.replace(/,/g, '') as any}
                   style={{ width: '100%' }}
                   placeholder="단가"
+                  inputMode="numeric"
                 />
               </Col>
               <Col xs={12} sm={4}>

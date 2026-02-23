@@ -1113,6 +1113,7 @@ const CustomerManagement: React.FC = () => {
                 <Input
                   placeholder="000-00-00000"
                   size={isMobile ? 'small' : 'middle'}
+                  inputMode="numeric"
                   onChange={(e) => {
                     const formatted = formatBusinessNumber(e.target.value);
                     form.setFieldsValue({ businessNumber: formatted });
@@ -1148,6 +1149,7 @@ const CustomerManagement: React.FC = () => {
                 <Input
                   placeholder="전화번호 입력"
                   size={isMobile ? 'small' : 'middle'}
+                  inputMode="numeric"
                   onChange={(e) => {
                     const formatted = formatPhoneNumber(e.target.value);
                     form.setFieldsValue({ phone: formatted });
@@ -1166,6 +1168,7 @@ const CustomerManagement: React.FC = () => {
                 <Input
                   placeholder="팩스번호 입력"
                   size={isMobile ? 'small' : 'middle'}
+                  inputMode="numeric"
                   onChange={(e) => {
                     const formatted = formatPhoneNumber(e.target.value);
                     form.setFieldsValue({ fax: formatted });
@@ -1223,6 +1226,7 @@ const CustomerManagement: React.FC = () => {
               >
                 <Input
                   placeholder="담당자 연락처 입력"
+                  inputMode="numeric"
                   onChange={(e) => {
                     const formatted = formatPhoneNumber(e.target.value);
                     form.setFieldsValue({ managerContact: formatted });

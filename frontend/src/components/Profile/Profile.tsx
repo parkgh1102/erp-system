@@ -372,6 +372,7 @@ const Profile: React.FC = () => {
                   prefix={<PhoneOutlined />}
                   disabled={!editing}
                   placeholder="전화번호를 입력하세요"
+                  inputMode="numeric"
                 />
               </Form.Item>
 

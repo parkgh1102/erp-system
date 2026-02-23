@@ -1242,6 +1242,7 @@ const PaymentManagement: React.FC = () => {
                   min={0}
                   placeholder="0"
                   addonAfter="원"
+                  inputMode="numeric"
                 />
               </Form.Item>
             </Col>
@@ -1420,6 +1421,7 @@ const PaymentManagement: React.FC = () => {
                   min={0}
                   placeholder="0"
                   addonAfter="원"
+                  inputMode="numeric"
                 />
               </Form.Item>
             </Col>
