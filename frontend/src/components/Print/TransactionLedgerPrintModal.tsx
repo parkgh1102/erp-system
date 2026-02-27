@@ -234,6 +234,12 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                 padding: '8px',
                 textAlign: 'center',
                 fontWeight: 'bold'
+              }}>수량</th>
+              <th style={{
+                border: '1px solid #000',
+                padding: '8px',
+                textAlign: 'center',
+                fontWeight: 'bold'
               }}>공급가액</th>
               <th style={{
                 border: '1px solid #000',
@@ -294,6 +300,11 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                 }}>
                   이월잔액
                 </td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
+                  textAlign: 'center'
+                }}></td>
                 <td style={{
                   border: '1px solid #000',
                   padding: '6px',
@@ -378,6 +389,15 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                   <td style={{
                     border: '1px solid #000',
                     padding: '6px',
+                    textAlign: 'right'
+                  }}>
+                    {(entry.type !== 'receipt' && entry.type !== 'payment' && currentItemInfo?.quantity != null)
+                      ? currentItemInfo.quantity.toLocaleString()
+                      : ''}
+                  </td>
+                  <td style={{
+                    border: '1px solid #000',
+                    padding: '6px',
                     textAlign: 'right',
                     color: displaySupplyAmount < 0 ? '#ff4d4f' : (entry.type === 'sales' ? '#1890ff' : entry.type === 'receipt' ? '#ff4d4f' : '#000')
                   }}>
@@ -436,45 +456,59 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
             })}
 
             {/* 합계 행 */}
-            <tr style={{ backgroundColor: '#fafafa', fontWeight: 'bold' }}>
-              <td colSpan={4} style={{
-                border: '1px solid #000',
-                padding: '8px',
-                textAlign: 'center',
-                fontWeight: 'bold'
-              }}>
-                합계
-              </td>
-              <td style={{
-                border: '1px solid #000',
-                padding: '8px',
-                textAlign: 'center'
-              }}>-</td>
-              <td style={{
-                border: '1px solid #000',
-                padding: '8px',
-                textAlign: 'center'
-              }}>-</td>
-              <td style={{
-                border: '1px solid #000',
-                padding: '8px',
-                textAlign: 'center'
-              }}>-</td>
-              <td style={{
-                border: '1px solid #000',
-                padding: '8px',
-                textAlign: 'right',
-                fontWeight: 'bold',
-                color: finalBalance >= 0 ? '#1890ff' : '#ff4d4f'
-              }}>
-                {finalBalance.toLocaleString()}원
-              </td>
-              <td style={{
-                border: '1px solid #000',
-                padding: '8px',
-                textAlign: 'center'
-              }}>-</td>
-            </tr>
+            {(() => {
+              const totalQty = (expandedEntries || []).filter((e: any) => !e.isCarryOver && e.type !== 'receipt' && e.type !== 'payment')
+                .reduce((sum: number, e: any) => sum + (e.currentItemInfo?.quantity || 0), 0);
+              return (
+                <tr style={{ backgroundColor: '#fafafa', fontWeight: 'bold' }}>
+                  <td colSpan={4} style={{
+                    border: '1px solid #000',
+                    padding: '8px',
+                    textAlign: 'center',
+                    fontWeight: 'bold'
+                  }}>
+                    합계
+                  </td>
+                  <td style={{
+                    border: '1px solid #000',
+                    padding: '8px',
+                    textAlign: 'right',
+                    fontWeight: 'bold'
+                  }}>
+                    {totalQty > 0 ? totalQty.toLocaleString() : '-'}
+                  </td>
+                  <td style={{
+                    border: '1px solid #000',
+                    padding: '8px',
+                    textAlign: 'center'
+                  }}>-</td>
+                  <td style={{
+                    border: '1px solid #000',
+                    padding: '8px',
+                    textAlign: 'center'
+                  }}>-</td>
+                  <td style={{
+                    border: '1px solid #000',
+                    padding: '8px',
+                    textAlign: 'center'
+                  }}>-</td>
+                  <td style={{
+                    border: '1px solid #000',
+                    padding: '8px',
+                    textAlign: 'right',
+                    fontWeight: 'bold',
+                    color: finalBalance >= 0 ? '#1890ff' : '#ff4d4f'
+                  }}>
+                    {finalBalance.toLocaleString()}원
+                  </td>
+                  <td style={{
+                    border: '1px solid #000',
+                    padding: '8px',
+                    textAlign: 'center'
+                  }}>-</td>
+                </tr>
+              );
+            })()}
 
             {/* 매출 합계 / 수금 합계 */}
             <tr style={{ backgroundColor: '#f0f0f0' }}>

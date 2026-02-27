@@ -74,6 +74,10 @@ interface TransactionLedgerProps {
 
 export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type: _type }) => {
   // 집계 계산
+  const totalQuantity = data.entries
+    .filter(e => e.type !== 'receipt' && e.type !== 'payment')
+    .reduce((sum, e) => sum + (e.itemInfo?.quantity || 0), 0);
+
   const totalSalesSupply = data.entries.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.supplyAmount || 0), 0);
   const totalSalesVat = data.entries.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.vatAmount || 0), 0);
   const totalSalesAmount = data.entries.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
@@ -180,6 +184,12 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
               padding: '8px',
               textAlign: 'center',
               fontWeight: 'bold'
+            }}>수량</th>
+            <th style={{
+              border: '1px solid #000',
+              padding: '8px',
+              textAlign: 'center',
+              fontWeight: 'bold'
             }}>공급가액</th>
             <th style={{
               border: '1px solid #000',
@@ -242,6 +252,12 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
                 textAlign: 'center'
               }}>
                 -
+              </td>
+              <td style={{
+                border: '1px solid #000',
+                padding: '6px',
+                textAlign: 'right'
+              }}>
               </td>
               <td style={{
                 border: '1px solid #000',
@@ -333,6 +349,15 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
                 <td style={{
                   border: '1px solid #000',
                   padding: '6px',
+                  textAlign: 'right'
+                }}>
+                  {(entry.type !== 'receipt' && entry.type !== 'payment' && entry.itemInfo?.quantity != null)
+                    ? entry.itemInfo.quantity.toLocaleString()
+                    : ''}
+                </td>
+                <td style={{
+                  border: '1px solid #000',
+                  padding: '6px',
                   textAlign: 'right',
                   color: entry.type === 'sales' ? '#1890ff' : entry.type === 'receipt' ? '#ff4d4f' : '#000'
                 }}>
@@ -387,6 +412,14 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
             <td style={{
               border: '1px solid #000',
               padding: '8px',
+              textAlign: 'right',
+              fontWeight: 'bold'
+            }}>
+              {totalQuantity > 0 ? totalQuantity.toLocaleString() : '-'}
+            </td>
+            <td style={{
+              border: '1px solid #000',
+              padding: '8px',
               textAlign: 'center'
             }}>-</td>
             <td style={{
@@ -424,6 +457,12 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
               fontWeight: 'bold'
             }}>
               매출 합계
+            </td>
+            <td style={{
+              border: '1px solid #000',
+              padding: '8px',
+              textAlign: 'right'
+            }}>
             </td>
             <td style={{
               border: '1px solid #000',
@@ -481,6 +520,12 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
               fontWeight: 'bold'
             }}>
               매입 합계
+            </td>
+            <td style={{
+              border: '1px solid #000',
+              padding: '8px',
+              textAlign: 'right'
+            }}>
             </td>
             <td style={{
               border: '1px solid #000',

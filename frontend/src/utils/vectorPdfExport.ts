@@ -258,6 +258,9 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
     message.loading({ content: 'PDF 생성 중...', key: 'pdf-export' });
 
     // 집계 계산
+    const totalQuantity = entries
+      .filter((e: any) => !e.isCarryOver && e.type !== 'receipt' && e.type !== 'payment')
+      .reduce((sum: number, e: any) => sum + (e.currentItemInfo?.quantity || 0), 0);
     const totalSalesSupply = ledgerEntries.filter((e: any) => e.type === 'sales').reduce((sum: number, e: any) => sum + (e.supplyAmount || 0), 0);
     const totalSalesVat = ledgerEntries.filter((e: any) => e.type === 'sales').reduce((sum: number, e: any) => sum + (e.vatAmount || 0), 0);
     const totalSalesAmount = ledgerEntries.filter((e: any) => e.type === 'sales').reduce((sum: number, e: any) => sum + (e.totalAmount || 0), 0);
@@ -363,6 +366,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         { content: '', styles: { halign: 'right' } },
         { content: '', styles: { halign: 'right' } },
         { content: '', styles: { halign: 'right' } },
+        { content: '', styles: { halign: 'right' } },
         { content: previousBalance.toLocaleString() + '원', styles: { halign: 'right', textColor: previousBalance > 0 ? [24, 144, 255] : previousBalance < 0 ? [255, 77, 79] : [0, 0, 0] } },
         { content: '-', styles: { halign: 'center' } }
       ]);
@@ -399,6 +403,12 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         { content: isFirstRow ? (entry.customerName || customer.name) : '', styles: { halign: 'center' } },
         { content: isFirstRow ? (typeNameMap[entry.type] || '') : '', styles: { halign: 'center', textColor: isFirstRow ? typeColor : [0, 0, 0] } },
         { content: itemDisplay, styles: { halign: 'center', textColor: [0, 0, 0] } },
+        {
+          content: (entry.type !== 'receipt' && entry.type !== 'payment' && currentItemInfo?.quantity != null)
+            ? currentItemInfo.quantity.toLocaleString()
+            : '',
+          styles: { halign: 'right' }
+        },
         { content: displaySupplyAmount !== null && displaySupplyAmount !== undefined ? displaySupplyAmount.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: amountColor } },
         { content: displayTax !== null && displayTax !== undefined ? displayTax.toLocaleString() + '원' : '', styles: { halign: 'right' } },
         { content: displayTotal !== null && displayTotal !== undefined ? displayTotal.toLocaleString() + '원' : '', styles: { halign: 'right' } },
@@ -410,7 +420,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
     // autoTable로 메인 테이블 생성
     autoTable(doc, {
       startY: currentY,
-      head: [['일자', '거래처', '구분', '품목명', '공급가액', '세액', '합계', '잔액', '비고']],
+      head: [['일자', '거래처', '구분', '품목명', '수량', '공급가액', '세액', '합계', '잔액', '비고']],
       body: tableData,
       theme: 'grid',
       styles: {
@@ -432,11 +442,12 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         1: { cellWidth: 32 },  // 거래처
         2: { cellWidth: 18 },  // 구분
         3: { cellWidth: 'auto' },  // 품목명
-        4: { cellWidth: 30, halign: 'right' },  // 공급가액
-        5: { cellWidth: 23, halign: 'right' },  // 세액
-        6: { cellWidth: 30, halign: 'right' },  // 합계
-        7: { cellWidth: 30, halign: 'right' },  // 잔액
-        8: { cellWidth: 26 },  // 비고
+        4: { cellWidth: 16, halign: 'right' },  // 수량
+        5: { cellWidth: 28, halign: 'right' },  // 공급가액
+        6: { cellWidth: 21, halign: 'right' },  // 세액
+        7: { cellWidth: 28, halign: 'right' },  // 합계
+        8: { cellWidth: 28, halign: 'right' },  // 잔액
+        9: { cellWidth: 24 },  // 비고
       },
       margin: { left: margin, right: margin },
     });
@@ -450,6 +461,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       body: [
         [
           { content: '합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'normal', fillColor: [250, 250, 250] } },
+          { content: totalQuantity > 0 ? totalQuantity.toLocaleString() : '-', styles: { halign: 'right', fillColor: [250, 250, 250] } },
           { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
           { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
           { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
@@ -458,6 +470,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         ],
         [
           { content: '매출 합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'normal', fillColor: [240, 240, 240] } },
+          { content: '-', styles: { halign: 'center', fillColor: [240, 240, 240] } },
           { content: totalSalesSupply.toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255], fillColor: [240, 240, 240] } },
           { content: totalSalesVat.toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255], fillColor: [240, 240, 240] } },
           { content: totalSalesAmount.toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255], fillColor: [240, 240, 240] } },
@@ -466,6 +479,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         ],
         [
           { content: '매입 합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'normal', fillColor: [240, 240, 240] } },
+          { content: '-', styles: { halign: 'center', fillColor: [240, 240, 240] } },
           { content: totalPurchaseSupply.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },
           { content: totalPurchaseVat.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },
           { content: totalPurchaseAmount.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },
@@ -484,11 +498,12 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         1: { cellWidth: 32 },
         2: { cellWidth: 18 },
         3: { cellWidth: 'auto' },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 23 },
-        6: { cellWidth: 30 },
-        7: { cellWidth: 30 },
-        8: { cellWidth: 22 },
+        4: { cellWidth: 16 },
+        5: { cellWidth: 28 },
+        6: { cellWidth: 21 },
+        7: { cellWidth: 28 },
+        8: { cellWidth: 28 },
+        9: { cellWidth: 24 },
       },
       margin: { left: margin, right: margin },
     });

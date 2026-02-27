@@ -447,6 +447,18 @@ const TransactionLedgerManagement: React.FC = () => {
       },
     },
     {
+      title: '수량',
+      key: 'quantity',
+      width: 70,
+      align: 'right' as const,
+      render: (_: any, record: ExpandedLedgerEntry) => {
+        if (record.isCarryOver || record.type === 'receipt' || record.type === 'payment') return null;
+        const qty = record.currentItemInfo?.quantity;
+        if (qty === undefined || qty === null) return null;
+        return <span>{qty.toLocaleString()}</span>;
+      },
+    },
+    {
       title: '공급가액',
       dataIndex: 'supplyAmount',
       key: 'supplyAmount',
@@ -856,52 +868,61 @@ const TransactionLedgerManagement: React.FC = () => {
               // 합계 잔액은 전체 거래의 마지막 잔액을 표시
               const finalBalance = ledgerEntries.length > 0 ? ledgerEntries[ledgerEntries.length - 1].balance : 0;
 
+              // 전체 수량 합계
+              const totalQuantity = pageData.reduce((sum: number, e: ExpandedLedgerEntry) => {
+                if (e.isCarryOver || e.type === 'receipt' || e.type === 'payment') return sum;
+                return sum + (e.currentItemInfo?.quantity || 0);
+              }, 0);
+
               return (
                 <>
                   <Table.Summary.Row style={{ backgroundColor: isDark ? '#1f1f1f' : '#fafafa', fontWeight: 'bold' }}>
                     <Table.Summary.Cell index={0} colSpan={3} align="center">합계</Table.Summary.Cell>
                     <Table.Summary.Cell index={3} align="center">-</Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="right">-</Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} align="right">{totalQuantity > 0 ? totalQuantity.toLocaleString() : '-'}</Table.Summary.Cell>
                     <Table.Summary.Cell index={5} align="right">-</Table.Summary.Cell>
                     <Table.Summary.Cell index={6} align="right">-</Table.Summary.Cell>
-                    <Table.Summary.Cell index={7} align="right">
+                    <Table.Summary.Cell index={7} align="right">-</Table.Summary.Cell>
+                    <Table.Summary.Cell index={8} align="right">
                       <span style={{ color: finalBalance >= 0 ? (isDark ? '#40a9ff' : '#1890ff') : (isDark ? '#ff7875' : '#ff4d4f') }}>
                         {Math.round(finalBalance || 0).toLocaleString()}원
                       </span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={8}>-</Table.Summary.Cell>
+                    <Table.Summary.Cell index={9}>-</Table.Summary.Cell>
                   </Table.Summary.Row>
                   <Table.Summary.Row style={{ backgroundColor: isDark ? '#141414' : '#f0f0f0' }}>
                     <Table.Summary.Cell index={0} colSpan={3} align="center">매출 합계</Table.Summary.Cell>
                     <Table.Summary.Cell index={3} align="center">-</Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="right">
+                    <Table.Summary.Cell index={4} align="right">-</Table.Summary.Cell>
+                    <Table.Summary.Cell index={5} align="right">
                       <span style={{ color: isDark ? '#40a9ff' : '#1890ff' }}>{Math.round(totalSalesSupply).toLocaleString()}원</span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={5} align="right">
+                    <Table.Summary.Cell index={6} align="right">
                       <span style={{ color: isDark ? '#40a9ff' : '#1890ff' }}>{Math.round(totalSalesVat).toLocaleString()}원</span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={6} align="right">
+                    <Table.Summary.Cell index={7} align="right">
                       <span style={{ color: isDark ? '#40a9ff' : '#1890ff', fontWeight: 'bold' }}>{Math.round(totalSales).toLocaleString()}원</span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={7} colSpan={1} align="center">수금 합계</Table.Summary.Cell>
-                    <Table.Summary.Cell index={8} align="right">
+                    <Table.Summary.Cell index={8} colSpan={1} align="center">수금 합계</Table.Summary.Cell>
+                    <Table.Summary.Cell index={9} align="right">
                       <span style={{ color: isDark ? '#ff7875' : '#ff4d4f' }}>{Math.round(totalReceipt).toLocaleString()}원</span>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
                   <Table.Summary.Row style={{ backgroundColor: isDark ? '#141414' : '#f0f0f0' }}>
                     <Table.Summary.Cell index={0} colSpan={3} align="center">매입 합계</Table.Summary.Cell>
                     <Table.Summary.Cell index={3} align="center">-</Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="right">
+                    <Table.Summary.Cell index={4} align="right">-</Table.Summary.Cell>
+                    <Table.Summary.Cell index={5} align="right">
                       <span style={{ color: isDark ? '#d9d9d9' : '#000000' }}>{Math.round(totalPurchaseSupply).toLocaleString()}원</span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={5} align="right">
+                    <Table.Summary.Cell index={6} align="right">
                       <span style={{ color: isDark ? '#d9d9d9' : '#000000' }}>{Math.round(totalPurchaseVat).toLocaleString()}원</span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={6} align="right">
+                    <Table.Summary.Cell index={7} align="right">
                       <span style={{ color: isDark ? '#d9d9d9' : '#000000', fontWeight: 'bold' }}>{Math.round(totalPurchase).toLocaleString()}원</span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={7} colSpan={1} align="center">지급 합계</Table.Summary.Cell>
-                    <Table.Summary.Cell index={8} align="right">
+                    <Table.Summary.Cell index={8} colSpan={1} align="center">지급 합계</Table.Summary.Cell>
+                    <Table.Summary.Cell index={9} align="right">
                       <span style={{ color: isDark ? '#d9d9d9' : '#000000' }}>{Math.round(totalPayment).toLocaleString()}원</span>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
