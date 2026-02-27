@@ -937,7 +937,7 @@ const SalesManagement: React.FC = () => {
       totalAmount: group.totalAmount,
       memo: `${group.yearMonth} 합산 (${group.salesCount}건)`,
       items: [{
-        itemName: group.salesCount > 1 ? '농산물 외' : '농산물',
+        itemName: '농산물 외',
         specification: '',
         quantity: 1,
         unitPrice: group.totalAmount,
