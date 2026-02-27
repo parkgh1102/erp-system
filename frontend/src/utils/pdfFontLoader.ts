@@ -123,13 +123,21 @@ export const loadKoreanFont = async (doc: jsPDF): Promise<void> => {
 
 /**
  * 새로운 jsPDF 인스턴스 생성 (한글 폰트 포함)
+ * floatPrecision: 16 — 벡터 좌표를 최고 정밀도로 저장하여 모바일 줌 시 선명도 향상
+ * compress: false    — 스트림 압축 해제로 렌더러에게 원본 품질 전달
  */
 export const createPDFWithKoreanFont = async (
   orientation: 'p' | 'l' = 'p',
   unit: 'mm' | 'pt' | 'px' = 'mm',
   format: string | number[] = 'a4'
 ): Promise<jsPDF> => {
-  const doc = new jsPDF(orientation, unit, format);
+  const doc = new jsPDF({
+    orientation,
+    unit,
+    format,
+    floatPrecision: 16,
+    compress: false,
+  });
   await loadKoreanFont(doc);
   return doc;
 };
