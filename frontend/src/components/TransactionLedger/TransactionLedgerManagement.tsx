@@ -553,7 +553,7 @@ const TransactionLedgerManagement: React.FC = () => {
       align: 'center' as const,
       render: (memo: string, record: ExpandedLedgerEntry) => {
         if (!record.isFirstRow) return null;
-        return memo || '-';
+        return memo || '';
       },
     },
   ];
@@ -878,22 +878,22 @@ const TransactionLedgerManagement: React.FC = () => {
                 <>
                   <Table.Summary.Row style={{ backgroundColor: isDark ? '#1f1f1f' : '#fafafa', fontWeight: 'bold' }}>
                     <Table.Summary.Cell index={0} colSpan={3} align="center">합계</Table.Summary.Cell>
-                    <Table.Summary.Cell index={3} align="center">-</Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="right">{totalQuantity > 0 ? totalQuantity.toLocaleString() : '-'}</Table.Summary.Cell>
-                    <Table.Summary.Cell index={5} align="right">-</Table.Summary.Cell>
-                    <Table.Summary.Cell index={6} align="right">-</Table.Summary.Cell>
-                    <Table.Summary.Cell index={7} align="right">-</Table.Summary.Cell>
+                    <Table.Summary.Cell index={3} align="center"></Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} align="right">{totalQuantity > 0 ? totalQuantity.toLocaleString() : ''}</Table.Summary.Cell>
+                    <Table.Summary.Cell index={5} align="right"></Table.Summary.Cell>
+                    <Table.Summary.Cell index={6} align="right"></Table.Summary.Cell>
+                    <Table.Summary.Cell index={7} align="right"></Table.Summary.Cell>
                     <Table.Summary.Cell index={8} align="right">
                       <span style={{ color: finalBalance >= 0 ? (isDark ? '#40a9ff' : '#1890ff') : (isDark ? '#ff7875' : '#ff4d4f') }}>
                         {Math.round(finalBalance || 0).toLocaleString()}원
                       </span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={9}>-</Table.Summary.Cell>
+                    <Table.Summary.Cell index={9}></Table.Summary.Cell>
                   </Table.Summary.Row>
                   <Table.Summary.Row style={{ backgroundColor: isDark ? '#141414' : '#f0f0f0' }}>
                     <Table.Summary.Cell index={0} colSpan={3} align="center">매출 합계</Table.Summary.Cell>
-                    <Table.Summary.Cell index={3} align="center">-</Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="right">-</Table.Summary.Cell>
+                    <Table.Summary.Cell index={3} align="center"></Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} align="right"></Table.Summary.Cell>
                     <Table.Summary.Cell index={5} align="right">
                       <span style={{ color: isDark ? '#40a9ff' : '#1890ff' }}>{Math.round(totalSalesSupply).toLocaleString()}원</span>
                     </Table.Summary.Cell>
@@ -910,8 +910,8 @@ const TransactionLedgerManagement: React.FC = () => {
                   </Table.Summary.Row>
                   <Table.Summary.Row style={{ backgroundColor: isDark ? '#141414' : '#f0f0f0' }}>
                     <Table.Summary.Cell index={0} colSpan={3} align="center">매입 합계</Table.Summary.Cell>
-                    <Table.Summary.Cell index={3} align="center">-</Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="right">-</Table.Summary.Cell>
+                    <Table.Summary.Cell index={3} align="center"></Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} align="right"></Table.Summary.Cell>
                     <Table.Summary.Cell index={5} align="right">
                       <span style={{ color: isDark ? '#d9d9d9' : '#000000' }}>{Math.round(totalPurchaseSupply).toLocaleString()}원</span>
                     </Table.Summary.Cell>
