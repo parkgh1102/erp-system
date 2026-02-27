@@ -859,18 +859,18 @@ const SalesManagement: React.FC = () => {
 
   // 국세청 면세계산서 양식 다운로드
   const handleNTSInvoiceExport = async () => {
-    if (selectedRowKeys.length === 0) {
-      message.warning('계산서를 발행할 매출을 선택해주세요.', 2);
-      return;
-    }
-
     if (!currentBusiness) {
       message.error('사업장 정보가 없습니다.', 2);
       return;
     }
 
-    // 선택된 매출 데이터
-    const selectedSales = sales.filter(s => selectedRowKeys.includes(s.id));
+    if (filteredSales.length === 0) {
+      message.warning('해당 날짜 범위에 매출 데이터가 없습니다.', 2);
+      return;
+    }
+
+    // 날짜 범위 내 전체 매출 데이터
+    const selectedSales = filteredSales;
 
     // 사업자번호가 없는 거래처 확인
     const missingBusinessNumber = selectedSales.filter(
@@ -1734,7 +1734,7 @@ const SalesManagement: React.FC = () => {
         size="large"
         style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16', color: 'white', justifyContent: 'flex-start' }}
       >
-        국세청 계산서 ({selectedRowKeys.length})
+        국세청 계산서 ({filteredSales.length})
       </Button>
       <Button
         onClick={() => { handleSelectAll(); setMobileActionDrawerVisible(false); }}
@@ -1878,13 +1878,13 @@ const SalesManagement: React.FC = () => {
                       파일저장
                     </Button>
                   </Dropdown>
-                  <Tooltip title="선택한 매출을 국세청 홈택스 업로드용 엑셀로 다운로드">
+                  <Tooltip title="지정된 날짜 범위의 전체 매출을 국세청 홈택스 업로드용 엑셀로 다운로드">
                     <Button
                       onClick={handleNTSInvoiceExport}
                       size="middle"
                       style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16', color: 'white' }}
                     >
-                      국세청 계산서 ({selectedRowKeys.length})
+                      국세청 계산서 ({filteredSales.length})
                     </Button>
                   </Tooltip>
                   <Button
