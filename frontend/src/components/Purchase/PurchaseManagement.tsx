@@ -278,6 +278,11 @@ const PurchaseManagement: React.FC = () => {
     );
   }), [purchases, dateRange, searchText]);
 
+  const filteredTotalAmount = useMemo(() =>
+    filteredPurchases.reduce((sum, purchase) => sum + (Number(purchase.totalAmount) || 0), 0),
+    [filteredPurchases]
+  );
+
   const handleSearch = (value: string) => {
     setSearchText(value);
   };
@@ -1481,9 +1486,17 @@ const PurchaseManagement: React.FC = () => {
           total: filteredPurchases.length,
           showTotal: (total, range) => {
             const searchInfo = searchText ? ` (전체 ${purchases.length}건 중 검색결과)` : '';
+            const totalAmountStr = filteredTotalAmount.toLocaleString('ko-KR') + '원';
             return isMobile
               ? `${total}건`
-              : `${range[0]}-${range[1]} / ${total}건${searchInfo}`;
+              : (
+                <span>
+                  <span style={{ fontWeight: 'bold', color: '#1890ff', marginRight: 16 }}>
+                    합계: {totalAmountStr}
+                  </span>
+                  {`${range[0]}-${range[1]} / ${total}건${searchInfo}`}
+                </span>
+              );
           },
         }}
       />
