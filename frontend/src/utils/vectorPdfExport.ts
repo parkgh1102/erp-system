@@ -291,24 +291,38 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
     doc.setFontSize(9);
     doc.setDrawColor(200, 200, 200);
     doc.setFillColor(248, 249, 250);
-    doc.rect(margin, currentY, pageWidth - margin * 2, 16, 'FD');
 
     const col1X = margin + 3;
     const col2X = margin + 75;
     const col3X = margin + 145;
     const col4X = margin + 215;
 
+    // 주소 길이 체크: col2X 이전에 끝나지 않으면 단독 줄로 분리
+    const addressText = `주소: ${customer.address || '미등록'}`;
+    const addressWidth = doc.getTextWidth(addressText);
+    const addressNeedsWrap = addressWidth > (col2X - col1X - 5);
+
+    const boxHeight = addressNeedsWrap ? 22 : 16;
+    doc.rect(margin, currentY, pageWidth - margin * 2, boxHeight, 'FD');
+
     doc.text(`거래처명: ${customer.name}`, col1X, currentY + 5);
     doc.text(`거래처코드: ${customer.customerCode}`, col2X, currentY + 5);
     doc.text(`사업자번호: ${formatBusinessNumber(customer.businessNumber)}`, col3X, currentY + 5);
     doc.text(`대표자: ${customer.representative || '미등록'}`, col4X, currentY + 5);
 
-    doc.text(`주소: ${customer.address || '미등록'}`, col1X, currentY + 11);
-    doc.text(`전화번호: ${customer.phone || '미등록'}`, col2X, currentY + 11);
-    doc.text(`이메일: ${customer.email || '미등록'}`, col3X, currentY + 11);
-    doc.text(`조회기간: ${dateRange.start} ~ ${dateRange.end}`, col4X, currentY + 11);
+    if (addressNeedsWrap) {
+      doc.text(addressText, col1X, currentY + 11);
+      doc.text(`전화번호: ${customer.phone || '미등록'}`, col1X, currentY + 17);
+      doc.text(`이메일: ${customer.email || '미등록'}`, col3X, currentY + 17);
+      doc.text(`조회기간: ${dateRange.start} ~ ${dateRange.end}`, col4X, currentY + 17);
+    } else {
+      doc.text(addressText, col1X, currentY + 11);
+      doc.text(`전화번호: ${customer.phone || '미등록'}`, col2X, currentY + 11);
+      doc.text(`이메일: ${customer.email || '미등록'}`, col3X, currentY + 11);
+      doc.text(`조회기간: ${dateRange.start} ~ ${dateRange.end}`, col4X, currentY + 11);
+    }
 
-    currentY += 20;
+    currentY += (addressNeedsWrap ? 26 : 20);
 
     // 구분명 매핑 및 색상
     const typeNameMap: Record<string, string> = {
