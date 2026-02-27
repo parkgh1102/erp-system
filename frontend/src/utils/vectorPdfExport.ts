@@ -581,30 +581,30 @@ export const exportDocumentToVectorPdf = async (options: DocumentVectorPdfOption
 
     // 공급자/공급받는자 정보 (2열)
     const boxWidth = (pageWidth - margin * 3) / 2;
-    const boxHeight = 35;
+    const boxHeight = 38;
 
     // 공급자 (왼쪽)
     doc.setDrawColor(0, 0, 0);
     doc.setFillColor(255, 255, 255);
     doc.rect(margin, currentY, boxWidth, boxHeight, 'D');
+    doc.setFontSize(11);
+    doc.text('공 급 자', margin + boxWidth / 2, currentY + 6, { align: 'center' });
     doc.setFontSize(10);
-    doc.text('공 급 자', margin + boxWidth / 2, currentY + 5, { align: 'center' });
-    doc.setFontSize(9);
-    doc.text(`상호: ${supplier.name}`, margin + 3, currentY + 12);
-    doc.text(`대표자: ${supplier.representative || ''}`, margin + 3, currentY + 18);
-    doc.text(`사업자번호: ${supplier.businessNumber || ''}`, margin + 3, currentY + 24);
-    doc.text(`주소: ${(supplier.address || '').substring(0, 25)}`, margin + 3, currentY + 30);
+    doc.text(`상호: ${supplier.name}`, margin + 3, currentY + 13);
+    doc.text(`대표자: ${supplier.representative || ''}`, margin + 3, currentY + 19);
+    doc.text(`사업자번호: ${supplier.businessNumber || ''}`, margin + 3, currentY + 25);
+    doc.text(`주소: ${(supplier.address || '').substring(0, 25)}`, margin + 3, currentY + 31);
 
     // 공급받는자 (오른쪽)
     const rightBoxX = margin * 2 + boxWidth;
     doc.rect(rightBoxX, currentY, boxWidth, boxHeight, 'D');
+    doc.setFontSize(11);
+    doc.text('공급받는자', rightBoxX + boxWidth / 2, currentY + 6, { align: 'center' });
     doc.setFontSize(10);
-    doc.text('공급받는자', rightBoxX + boxWidth / 2, currentY + 5, { align: 'center' });
-    doc.setFontSize(9);
-    doc.text(`상호: ${customer.name}`, rightBoxX + 3, currentY + 12);
-    doc.text(`대표자: ${customer.representative || ''}`, rightBoxX + 3, currentY + 18);
-    doc.text(`사업자번호: ${customer.businessNumber || ''}`, rightBoxX + 3, currentY + 24);
-    doc.text(`주소: ${(customer.address || '').substring(0, 25)}`, rightBoxX + 3, currentY + 30);
+    doc.text(`상호: ${customer.name}`, rightBoxX + 3, currentY + 13);
+    doc.text(`대표자: ${customer.representative || ''}`, rightBoxX + 3, currentY + 19);
+    doc.text(`사업자번호: ${customer.businessNumber || ''}`, rightBoxX + 3, currentY + 25);
+    doc.text(`주소: ${(customer.address || '').substring(0, 25)}`, rightBoxX + 3, currentY + 31);
 
     currentY += boxHeight + 8;
 
@@ -636,6 +636,7 @@ export const exportDocumentToVectorPdf = async (options: DocumentVectorPdfOption
         fillColor: [54, 96, 146],
         textColor: [255, 255, 255],
         fontStyle: 'normal',
+        fontSize: 10,
       },
       columnStyles: {
         0: { cellWidth: 12 },
@@ -655,25 +656,25 @@ export const exportDocumentToVectorPdf = async (options: DocumentVectorPdfOption
 
     // 합계 정보
     const summaryX = pageWidth - margin - 80;
-    doc.setFontSize(10);
+    doc.setFontSize(11);
     doc.text(`공급가액: ${Math.round(totalAmount).toLocaleString()}원`, summaryX, currentY);
-    currentY += 6;
+    currentY += 7;
     doc.text(`부가세: ${Math.round(vatAmount).toLocaleString()}원`, summaryX, currentY);
-    currentY += 6;
-    doc.setFontSize(12);
+    currentY += 7;
+    doc.setFontSize(13);
     doc.text(`합계금액: ${Math.round(grandTotal).toLocaleString()}원`, summaryX, currentY);
-    currentY += 10;
+    currentY += 11;
 
     // 메모
     if (memo) {
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.text(`비고: ${memo}`, margin, currentY);
-      currentY += 6;
+      currentY += 7;
     }
 
     // 유효기간
     if (validUntil) {
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.text(`유효기간: ${validUntil}`, margin, currentY);
     }
 
