@@ -74,6 +74,7 @@ export const loadKoreanFont = async (doc: jsPDF): Promise<void> => {
     try {
       doc.addFileToVFS('NanumGothic.ttf', cachedFontBase64);
       doc.addFont('NanumGothic.ttf', 'NanumGothic', 'normal');
+      doc.addFont('NanumGothic.ttf', 'NanumGothic', 'bold');
       doc.setFont('NanumGothic', 'normal');
       return;
     } catch (e) {
@@ -108,10 +109,11 @@ export const loadKoreanFont = async (doc: jsPDF): Promise<void> => {
 
   const base64 = await fontLoadPromise;
 
-  // 현재 문서에 폰트 추가
+  // 현재 문서에 폰트 추가 (normal, bold 모두 동일 폰트 파일로 등록 - 가짜 bold 렌더링 방지)
   try {
     doc.addFileToVFS('NanumGothic.ttf', base64);
     doc.addFont('NanumGothic.ttf', 'NanumGothic', 'normal');
+    doc.addFont('NanumGothic.ttf', 'NanumGothic', 'bold');
     doc.setFont('NanumGothic', 'normal');
   } catch (error) {
     console.error('폰트 적용 실패:', error);

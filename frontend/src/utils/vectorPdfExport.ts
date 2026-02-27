@@ -283,12 +283,12 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
     let currentY = margin;
 
     // 제목
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     doc.text(title, margin, currentY + 5);
-    currentY += 12;
+    currentY += 13;
 
     // 거래처 정보 박스
-    doc.setFontSize(9);
+    doc.setFontSize(10);
     doc.setDrawColor(200, 200, 200);
     doc.setFillColor(248, 249, 250);
 
@@ -415,28 +415,28 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       theme: 'grid',
       styles: {
         font: 'NanumGothic',
-        fontSize: 8,
-        cellPadding: 2,
+        fontSize: 9,
+        cellPadding: 2.5,
         overflow: 'linebreak',
         halign: 'center',
         valign: 'middle',
       },
       headStyles: {
-        fillColor: [240, 240, 240],
-        textColor: [0, 0, 0],
+        fillColor: [41, 82, 136],
+        textColor: [255, 255, 255],
         fontStyle: 'normal',
-        fontSize: 9,
+        fontSize: 10,
       },
       columnStyles: {
-        0: { cellWidth: 26 },  // 일자
-        1: { cellWidth: 30 },  // 거래처
+        0: { cellWidth: 27 },  // 일자
+        1: { cellWidth: 32 },  // 거래처
         2: { cellWidth: 18 },  // 구분
         3: { cellWidth: 'auto' },  // 품목명
-        4: { cellWidth: 28, halign: 'right' },  // 공급가액
-        5: { cellWidth: 22, halign: 'right' },  // 세액
-        6: { cellWidth: 28, halign: 'right' },  // 합계
-        7: { cellWidth: 28, halign: 'right' },  // 잔액
-        8: { cellWidth: 25 },  // 비고
+        4: { cellWidth: 30, halign: 'right' },  // 공급가액
+        5: { cellWidth: 23, halign: 'right' },  // 세액
+        6: { cellWidth: 30, halign: 'right' },  // 합계
+        7: { cellWidth: 30, halign: 'right' },  // 잔액
+        8: { cellWidth: 26 },  // 비고
       },
       margin: { left: margin, right: margin },
     });
@@ -476,19 +476,19 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       theme: 'grid',
       styles: {
         font: 'NanumGothic',
-        fontSize: 8,
-        cellPadding: 2,
+        fontSize: 9,
+        cellPadding: 2.5,
       },
       columnStyles: {
-        0: { cellWidth: 26 },
-        1: { cellWidth: 30 },
+        0: { cellWidth: 27 },
+        1: { cellWidth: 32 },
         2: { cellWidth: 18 },
         3: { cellWidth: 'auto' },
-        4: { cellWidth: 28 },
-        5: { cellWidth: 22 },
-        6: { cellWidth: 28 },
-        7: { cellWidth: 28 },
-        8: { cellWidth: 21 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 23 },
+        6: { cellWidth: 30 },
+        7: { cellWidth: 30 },
+        8: { cellWidth: 22 },
       },
       margin: { left: margin, right: margin },
     });
