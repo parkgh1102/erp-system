@@ -835,11 +835,11 @@ export const exportTransactionLedgerToPDFLegacy = async (options: TransactionLed
             <div style="flex: 1;"><strong>사업자번호:</strong> ${formatBusinessNumber(customer.businessNumber)}</div>
             <div style="flex: 1;"><strong>대표자:</strong> ${customer.representative || '미등록'}</div>
           </div>
+          <div style="margin-bottom: 4px; word-break: break-word;"><strong>주소:</strong> ${customer.address || '미등록'}</div>
           <div style="display: flex;">
-            <div style="flex: 1.5;"><strong>주소:</strong> ${customer.address || '미등록'}</div>
             <div style="flex: 1;"><strong>전화번호:</strong> ${customer.phone || '미등록'}</div>
             <div style="flex: 1;"><strong>이메일:</strong> ${customer.email || '미등록'}</div>
-            <div style="flex: 1;"><strong>조회기간:</strong> ${dateRange.start} ~ ${dateRange.end}</div>
+            <div style="flex: 2;"><strong>조회기간:</strong> ${dateRange.start} ~ ${dateRange.end}</div>
           </div>
         </div>
 
