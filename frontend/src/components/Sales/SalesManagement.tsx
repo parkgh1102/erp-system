@@ -909,14 +909,14 @@ const SalesManagement: React.FC = () => {
 
       if (groupedSales.has(key)) {
         const existing = groupedSales.get(key)!;
-        existing.totalAmount += sale.totalAmount;
+        existing.totalAmount += Number(sale.totalAmount) || 0;
         existing.salesCount += 1;
       } else {
         groupedSales.set(key, {
           customer: sale.customer,
           yearMonth,
           lastDayOfMonth,
-          totalAmount: sale.totalAmount,
+          totalAmount: Number(sale.totalAmount) || 0,
           salesCount: 1,
         });
       }

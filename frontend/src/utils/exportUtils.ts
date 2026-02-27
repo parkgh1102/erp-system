@@ -1513,7 +1513,7 @@ export const exportNTSInvoiceExcel = async (options: NTSInvoiceExportOptions) =>
       row.getCell(18).value = sale.customer.email || '';  // 공급받는자 이메일1
       row.getCell(19).value = '';  // 공급받는자 이메일2
 
-      row.getCell(20).value = Math.round(sale.totalAmount);  // 공급가액 합계
+      row.getCell(20).value = Math.round(Number(sale.totalAmount) || 0);  // 공급가액 합계
       row.getCell(21).value = sale.memo || '';  // 비고
 
       // 품목 정보 (최대 4개)
@@ -1524,9 +1524,9 @@ export const exportNTSInvoiceExcel = async (options: NTSInvoiceExportOptions) =>
         row.getCell(baseCol).value = dayStr;  // 일자
         row.getCell(baseCol + 1).value = item.itemName;  // 품목
         row.getCell(baseCol + 2).value = item.specification || '';  // 규격
-        row.getCell(baseCol + 3).value = item.quantity;  // 수량
-        row.getCell(baseCol + 4).value = Math.round(item.unitPrice);  // 단가
-        row.getCell(baseCol + 5).value = Math.round(item.supplyAmount);  // 공급가액
+        row.getCell(baseCol + 3).value = '';  // 수량 (공란)
+        row.getCell(baseCol + 4).value = '';  // 단가 (공란)
+        row.getCell(baseCol + 5).value = '';  // 공급가액 (공란)
         row.getCell(baseCol + 6).value = item.remark || '';  // 품목비고
       });
 
@@ -1534,7 +1534,7 @@ export const exportNTSInvoiceExcel = async (options: NTSInvoiceExportOptions) =>
       row.getCell(50).value = '';  // 현금
       row.getCell(51).value = '';  // 수표
       row.getCell(52).value = '';  // 어음
-      row.getCell(53).value = Math.round(sale.totalAmount);  // 외상미수금
+      row.getCell(53).value = '';  // 외상미수금 (공란)
       row.getCell(54).value = invoiceType;  // 영수(01)/청구(02)
 
       // 셀 스타일
