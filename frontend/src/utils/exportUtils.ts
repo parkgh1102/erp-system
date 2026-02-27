@@ -815,7 +815,7 @@ export const exportTransactionLedgerToPDFLegacy = async (options: TransactionLed
           <td style="border: 1px solid #000; padding: 6px; text-align: right;">${taxAmountHtml}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: right;">${totalAmountHtml}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; color: ${(cumulativeBalance ?? 0) >= 0 ? '#1890ff' : '#ff4d4f'};">${(cumulativeBalance ?? 0).toLocaleString()}원</td>
-          <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 9px;">${isFirstRow ? (entry.memo || '-') : ''}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 9px;">${isFirstRow ? (entry.memo || '') : ''}</td>
         </tr>
       `;
     }).join('');
@@ -1194,11 +1194,11 @@ export const exportTransactionLedgerToExcel = async (options: TransactionLedgerE
     summaryRow.getCell(1).value = '합계';
     summaryRow.getCell(1).font = { bold: true };
     summaryRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
-    summaryRow.getCell(5).value = totalQuantity > 0 ? totalQuantity.toLocaleString() : '-';
+    summaryRow.getCell(5).value = totalQuantity > 0 ? totalQuantity.toLocaleString() : '';
     summaryRow.getCell(5).font = { bold: true };
-    summaryRow.getCell(6).value = '-';
-    summaryRow.getCell(7).value = '-';
-    summaryRow.getCell(8).value = '-';
+    summaryRow.getCell(6).value = '';
+    summaryRow.getCell(7).value = '';
+    summaryRow.getCell(8).value = '';
     summaryRow.getCell(9).value = `${finalBalance.toLocaleString()}원`;
     summaryRow.getCell(9).font = { bold: true, color: { argb: finalBalance >= 0 ? 'FF1890FF' : 'FFFF4D4F' } };
 
@@ -1227,7 +1227,7 @@ export const exportTransactionLedgerToExcel = async (options: TransactionLedgerE
     salesSummaryRow.getCell(1).value = '매출 합계';
     salesSummaryRow.getCell(1).font = { bold: true };
     salesSummaryRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
-    salesSummaryRow.getCell(5).value = '-';
+    salesSummaryRow.getCell(5).value = '';
     salesSummaryRow.getCell(5).font = { bold: true };
     salesSummaryRow.getCell(6).value = `${totalSalesSupply.toLocaleString()}원`;
     salesSummaryRow.getCell(6).font = { bold: true, color: { argb: 'FF1890FF' } };
@@ -1263,7 +1263,7 @@ export const exportTransactionLedgerToExcel = async (options: TransactionLedgerE
     purchaseSummaryRow.getCell(1).value = '매입 합계';
     purchaseSummaryRow.getCell(1).font = { bold: true };
     purchaseSummaryRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
-    purchaseSummaryRow.getCell(5).value = '-';
+    purchaseSummaryRow.getCell(5).value = '';
     purchaseSummaryRow.getCell(5).font = { bold: true };
     purchaseSummaryRow.getCell(6).value = `${totalPurchaseSupply.toLocaleString()}원`;
     purchaseSummaryRow.getCell(6).font = { bold: true };

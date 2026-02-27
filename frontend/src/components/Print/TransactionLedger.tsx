@@ -251,7 +251,6 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
                 padding: '6px',
                 textAlign: 'center'
               }}>
-                -
               </td>
               <td style={{
                 border: '1px solid #000',
@@ -393,7 +392,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
                   textAlign: 'center',
                   fontSize: '8pt'
                 }}>
-                  {entry.memo || '-'}
+                  {entry.memo || ''}
                 </td>
               </tr>
             );
@@ -415,23 +414,23 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
               textAlign: 'right',
               fontWeight: 'bold'
             }}>
-              {totalQuantity > 0 ? totalQuantity.toLocaleString() : '-'}
+              {totalQuantity > 0 ? totalQuantity.toLocaleString() : ''}
             </td>
             <td style={{
               border: '1px solid #000',
               padding: '8px',
               textAlign: 'center'
-            }}>-</td>
+            }}></td>
             <td style={{
               border: '1px solid #000',
               padding: '8px',
               textAlign: 'center'
-            }}>-</td>
+            }}></td>
             <td style={{
               border: '1px solid #000',
               padding: '8px',
               textAlign: 'center'
-            }}>-</td>
+            }}></td>
             <td style={{
               border: '1px solid #000',
               padding: '8px',
@@ -445,7 +444,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
               border: '1px solid #000',
               padding: '8px',
               textAlign: 'center'
-            }}>-</td>
+            }}></td>
           </tr>
 
           {/* 매출 합계 / 수금 합계 */}

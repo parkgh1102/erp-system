@@ -368,7 +368,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         { content: '', styles: { halign: 'right' } },
         { content: '', styles: { halign: 'right' } },
         { content: previousBalance.toLocaleString() + '원', styles: { halign: 'right', textColor: previousBalance > 0 ? [24, 144, 255] : previousBalance < 0 ? [255, 77, 79] : [0, 0, 0] } },
-        { content: '-', styles: { halign: 'center' } }
+        { content: '', styles: { halign: 'center' } }
       ]);
     }
 
@@ -413,7 +413,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         { content: displayTax !== null && displayTax !== undefined ? displayTax.toLocaleString() + '원' : '', styles: { halign: 'right' } },
         { content: displayTotal !== null && displayTotal !== undefined ? displayTotal.toLocaleString() + '원' : '', styles: { halign: 'right' } },
         { content: (cumulativeBalance ?? 0).toLocaleString() + '원', styles: { halign: 'right', textColor: (cumulativeBalance ?? 0) > 0 ? [24, 144, 255] : (cumulativeBalance ?? 0) < 0 ? [255, 77, 79] : [0, 0, 0] } },
-        { content: isFirstRow ? (entry.memo || '-') : '', styles: { halign: 'center' } }
+        { content: isFirstRow ? (entry.memo || '') : '', styles: { halign: 'center' } }
       ]);
     });
 
@@ -461,16 +461,16 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       body: [
         [
           { content: '합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'normal', fillColor: [250, 250, 250] } },
-          { content: totalQuantity > 0 ? totalQuantity.toLocaleString() : '-', styles: { halign: 'right', fillColor: [250, 250, 250] } },
-          { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
-          { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
-          { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
+          { content: totalQuantity > 0 ? totalQuantity.toLocaleString() : '', styles: { halign: 'right', fillColor: [250, 250, 250] } },
+          { content: '', styles: { halign: 'center', fillColor: [250, 250, 250] } },
+          { content: '', styles: { halign: 'center', fillColor: [250, 250, 250] } },
+          { content: '', styles: { halign: 'center', fillColor: [250, 250, 250] } },
           { content: finalBalance.toLocaleString() + '원', styles: { halign: 'right', fontStyle: 'normal', textColor: finalBalance > 0 ? [24, 144, 255] : finalBalance < 0 ? [255, 77, 79] : [0, 0, 0], fillColor: [250, 250, 250] } },
-          { content: '-', styles: { halign: 'center', fillColor: [250, 250, 250] } },
+          { content: '', styles: { halign: 'center', fillColor: [250, 250, 250] } },
         ],
         [
           { content: '매출 합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'normal', fillColor: [240, 240, 240] } },
-          { content: '-', styles: { halign: 'center', fillColor: [240, 240, 240] } },
+          { content: '', styles: { halign: 'center', fillColor: [240, 240, 240] } },
           { content: totalSalesSupply.toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255], fillColor: [240, 240, 240] } },
           { content: totalSalesVat.toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255], fillColor: [240, 240, 240] } },
           { content: totalSalesAmount.toLocaleString() + '원', styles: { halign: 'right', textColor: [24, 144, 255], fillColor: [240, 240, 240] } },
@@ -479,7 +479,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
         ],
         [
           { content: '매입 합계', colSpan: 4, styles: { halign: 'center', fontStyle: 'normal', fillColor: [240, 240, 240] } },
-          { content: '-', styles: { halign: 'center', fillColor: [240, 240, 240] } },
+          { content: '', styles: { halign: 'center', fillColor: [240, 240, 240] } },
           { content: totalPurchaseSupply.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },
           { content: totalPurchaseVat.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },
           { content: totalPurchaseAmount.toLocaleString() + '원', styles: { halign: 'right', fillColor: [240, 240, 240] } },

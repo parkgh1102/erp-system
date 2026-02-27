@@ -449,7 +449,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     textAlign: 'center',
                     fontSize: '8pt'
                   }}>
-                    {isFirstRow ? (entry.memo || '-') : ''}
+                    {isFirstRow ? (entry.memo || '') : ''}
                   </td>
                 </tr>
               );
@@ -475,23 +475,23 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     textAlign: 'right',
                     fontWeight: 'bold'
                   }}>
-                    {totalQty > 0 ? totalQty.toLocaleString() : '-'}
+                    {totalQty > 0 ? totalQty.toLocaleString() : ''}
                   </td>
                   <td style={{
                     border: '1px solid #000',
                     padding: '8px',
                     textAlign: 'center'
-                  }}>-</td>
+                  }}></td>
                   <td style={{
                     border: '1px solid #000',
                     padding: '8px',
                     textAlign: 'center'
-                  }}>-</td>
+                  }}></td>
                   <td style={{
                     border: '1px solid #000',
                     padding: '8px',
                     textAlign: 'center'
-                  }}>-</td>
+                  }}></td>
                   <td style={{
                     border: '1px solid #000',
                     padding: '8px',
@@ -505,7 +505,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     border: '1px solid #000',
                     padding: '8px',
                     textAlign: 'center'
-                  }}>-</td>
+                  }}></td>
                 </tr>
               );
             })()}
