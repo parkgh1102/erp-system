@@ -1545,7 +1545,7 @@ export const exportNTSInvoiceExcel = async (options: NTSInvoiceExportOptions) =>
         row.getCell(baseCol + 2).value = item.specification || '';  // 규격
         row.getCell(baseCol + 3).value = '';  // 수량 (공란)
         row.getCell(baseCol + 4).value = '';  // 단가 (공란)
-        row.getCell(baseCol + 5).value = '';  // 공급가액 (공란)
+        row.getCell(baseCol + 5).value = Math.round(Number(item.supplyAmount) || 0);  // 공급가액
         row.getCell(baseCol + 6).value = item.remark || '';  // 품목비고
       });
 
