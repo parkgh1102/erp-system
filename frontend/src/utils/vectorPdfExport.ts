@@ -439,15 +439,15 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       },
       columnStyles: {
         0: { cellWidth: 27 },  // 일자
-        1: { cellWidth: 32 },  // 거래처
-        2: { cellWidth: 18 },  // 구분
+        1: { cellWidth: 26 },  // 거래처
+        2: { cellWidth: 16 },  // 구분
         3: { cellWidth: 'auto' },  // 품목명
         4: { cellWidth: 16, halign: 'right' },  // 수량
         5: { cellWidth: 28, halign: 'right' },  // 공급가액
         6: { cellWidth: 21, halign: 'right' },  // 세액
         7: { cellWidth: 28, halign: 'right' },  // 합계
         8: { cellWidth: 28, halign: 'right' },  // 잔액
-        9: { cellWidth: 24 },  // 비고
+        9: { cellWidth: 32 },  // 비고
       },
       margin: { left: margin, right: margin },
     });
@@ -495,15 +495,15 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       },
       columnStyles: {
         0: { cellWidth: 27 },
-        1: { cellWidth: 32 },
-        2: { cellWidth: 18 },
+        1: { cellWidth: 26 },
+        2: { cellWidth: 16 },
         3: { cellWidth: 'auto' },
         4: { cellWidth: 16 },
         5: { cellWidth: 28 },
         6: { cellWidth: 21 },
         7: { cellWidth: 28 },
         8: { cellWidth: 28 },
-        9: { cellWidth: 24 },
+        9: { cellWidth: 32 },
       },
       margin: { left: margin, right: margin },
     });
@@ -700,6 +700,279 @@ export const exportDocumentToVectorPdf = async (options: DocumentVectorPdfOption
     message.success({ content: 'PDF가 다운로드되었습니다.', key: 'pdf-export' });
   } catch (error) {
     console.error('Document Vector PDF export error:', error);
+    message.error({ content: `PDF 내보내기에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, key: 'pdf-export' });
+  }
+};
+
+/**
+ * 견적서 전용 벡터 PDF - 화면 레이아웃 그대로 재현
+ */
+export interface QuotationVectorPdfOptions {
+  filename: string;
+  documentNumber: string;
+  date: string;
+  validUntil?: string;
+  supplier: {
+    name: string;
+    businessNumber?: string;
+    representative?: string;
+    address?: string;
+    phone?: string;
+    fax?: string;
+    sealImage?: string;
+  };
+  receiver: {
+    name: string;
+    representative?: string;
+    address?: string;
+    phone?: string;
+  };
+  items: Array<{
+    productName: string;
+    spec?: string;
+    unit?: string;
+    quantity: number;
+    unitPrice: number;
+    supplyAmount: number;
+    vatAmount: number;
+    totalAmount: number;
+  }>;
+  supplyAmount: number;
+  vatAmount: number;
+  totalAmount: number;
+  memo?: string;
+}
+
+export const exportQuotationToVectorPdf = async (options: QuotationVectorPdfOptions): Promise<void> => {
+  const { filename, documentNumber, date, validUntil, supplier, receiver, items, supplyAmount, vatAmount, totalAmount, memo } = options;
+
+  try {
+    message.loading({ content: 'PDF 생성 중...', key: 'pdf-export' });
+
+    const doc = await createPDFWithKoreanFont('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth(); // 210
+    const margin = 15;
+    const navy: [number, number, number] = [26, 35, 126];
+    const gray: [number, number, number] = [120, 120, 120];
+    const lightGray: [number, number, number] = [245, 245, 245];
+    const borderGray: [number, number, number] = [200, 200, 200];
+    const red: [number, number, number] = [211, 47, 47];
+    const fmt = (n: number) => new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 }).format(Math.round(n));
+
+    let y = margin;
+
+    // ── 1. 제목 ──────────────────────────────────────
+    doc.setFont('NanumGothic', 'normal');
+    doc.setFontSize(26);
+    doc.setTextColor(...navy);
+    doc.text('견  적  서', pageWidth / 2, y + 10, { align: 'center' });
+    y += 16;
+    doc.setFontSize(10);
+    doc.setTextColor(...gray);
+    doc.text('QUOTATION', pageWidth / 2, y + 4, { align: 'center' });
+    y += 12;
+
+    // ── 2. 귀하 ──────────────────────────────────────
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    const receiverLabel = receiver.name ? `${receiver.name} 귀하` : '귀하';
+    doc.text(receiverLabel, margin, y + 6);
+    y += 12;
+
+    // ── 3. 견적 정보(좌) + 견적금액 박스(우) ──────────
+    const infoW = 88;
+    const labelW = 28;
+    const rowH = 9;
+    const infoRows = [
+      ['견적번호', documentNumber],
+      ['견적일자', date],
+      ['유효기간', validUntil ? `${validUntil}까지` : '-'],
+    ];
+
+    infoRows.forEach((row, i) => {
+      const ry = y + i * rowH;
+      // 라벨 셀
+      doc.setFillColor(...lightGray);
+      doc.setDrawColor(...borderGray);
+      doc.rect(margin, ry, labelW, rowH, 'FD');
+      doc.setFontSize(9);
+      doc.setTextColor(80, 80, 80);
+      doc.text(row[0], margin + 3, ry + 6);
+      // 값 셀
+      doc.setFillColor(255, 255, 255);
+      doc.rect(margin + labelW, ry, infoW - labelW, rowH, 'FD');
+      doc.setTextColor(0, 0, 0);
+      doc.text(row[1], margin + labelW + 3, ry + 6);
+    });
+
+    // 견적금액 박스
+    const boxX = margin + infoW + 5;
+    const boxW = pageWidth - margin - boxX;
+    const boxH = rowH * 3;
+    doc.setDrawColor(...navy);
+    doc.setLineWidth(0.8);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(boxX, y, boxW, boxH, 'FD');
+    doc.setLineWidth(0.2);
+
+    doc.setFontSize(10);
+    doc.setTextColor(...navy);
+    doc.text('견적금액', boxX + boxW / 2, y + 8, { align: 'center' });
+
+    doc.setFontSize(20);
+    doc.setTextColor(...red);
+    doc.text(`\u20A9 ${fmt(totalAmount)}`, boxX + boxW / 2, y + 18, { align: 'center' });
+
+    doc.setFontSize(8);
+    doc.setTextColor(...gray);
+    doc.text('(부가세 포함)', boxX + boxW / 2, y + 24, { align: 'center' });
+
+    y += boxH + 8;
+
+    // ── 4. 품목 테이블 ────────────────────────────────
+    const emptyCount = Math.max(0, 5 - items.length);
+    const tableBody: RowInput[] = [
+      ...items.map((item, i) => [
+        String(i + 1),
+        item.productName,
+        item.spec || '',
+        item.unit || '',
+        fmt(item.quantity),
+        fmt(item.unitPrice),
+        fmt(item.supplyAmount),
+        fmt(item.vatAmount),
+      ]),
+      ...Array.from({ length: emptyCount }).map(() => ['', '', '', '', '', '', '', '']),
+    ];
+
+    autoTable(doc, {
+      startY: y,
+      head: [['No', '품목명', '규격', '단위', '수량', '단가', '공급가액', '세액']],
+      body: tableBody,
+      foot: [['합  계', '', '', '', '', fmt(supplyAmount), fmt(vatAmount), fmt(totalAmount)]],
+      theme: 'grid',
+      styles: {
+        font: 'NanumGothic',
+        fontSize: 9,
+        cellPadding: { top: 3, bottom: 3, left: 3, right: 3 },
+        halign: 'center',
+        valign: 'middle',
+        textColor: [0, 0, 0],
+        lineColor: [180, 180, 180],
+        lineWidth: 0.2,
+      },
+      headStyles: {
+        fillColor: navy,
+        textColor: [255, 255, 255],
+        fontStyle: 'normal',
+        fontSize: 10,
+        halign: 'center',
+      },
+      bodyStyles: {
+        fillColor: [255, 255, 255],
+      },
+      footStyles: {
+        fillColor: navy,
+        textColor: [255, 255, 255],
+        fontStyle: 'normal',
+        fontSize: 10,
+        halign: 'center',
+      },
+      columnStyles: {
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 'auto', halign: 'left' },
+        2: { cellWidth: 22, halign: 'center' },
+        3: { cellWidth: 14, halign: 'center' },
+        4: { cellWidth: 18, halign: 'right' },
+        5: { cellWidth: 24, halign: 'right' },
+        6: { cellWidth: 26, halign: 'right' },
+        7: { cellWidth: 22, halign: 'right' },
+      },
+      margin: { left: margin, right: margin },
+    });
+
+    y = (doc as any).lastAutoTable?.finalY || y + 60;
+    y += 4;
+
+    // ── 5. 비고 ──────────────────────────────────────
+    if (memo) {
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.setDrawColor(...borderGray);
+      doc.setFillColor(250, 250, 250);
+      const memoLines = doc.splitTextToSize(`비고: ${memo}`, pageWidth - margin * 2 - 6);
+      const memoH = memoLines.length * 5 + 6;
+      doc.rect(margin, y, pageWidth - margin * 2, memoH, 'FD');
+      doc.text(memoLines, margin + 3, y + 5);
+      y += memoH + 4;
+    }
+
+    // ── 6. 구분선 ─────────────────────────────────────
+    y += 2;
+    doc.setDrawColor(...navy);
+    doc.setLineWidth(0.8);
+    doc.line(margin, y, pageWidth - margin, y);
+    doc.setLineWidth(0.2);
+    y += 6;
+
+    // ── 7. 공급자 정보 ────────────────────────────────
+    doc.setFontSize(11);
+    doc.setTextColor(...navy);
+    doc.setFont('NanumGothic', 'normal');
+    doc.text('공급자', margin, y + 5);
+    y += 9;
+
+    const supplierRows = [
+      ['상호', supplier.name || ''],
+      ['사업자번호', supplier.businessNumber || ''],
+      ['대표자', supplier.representative || ''],
+      ['주소', supplier.address || ''],
+      ['연락처', [supplier.phone && `Tel: ${supplier.phone}`, supplier.fax && `Fax: ${supplier.fax}`].filter(Boolean).join(' / ')],
+    ];
+
+    const sealBoxX = pageWidth - margin - 28;
+    const sealBoxY = y;
+    const sealBoxSize = supplierRows.length * 7 + 2;
+
+    supplierRows.forEach((row, i) => {
+      const ry = y + i * 7;
+      doc.setFontSize(9);
+      doc.setTextColor(...gray);
+      doc.text(row[0], margin, ry + 5);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('NanumGothic', 'normal');
+      doc.text(row[1], margin + 22, ry + 5);
+    });
+
+    // (인) 도장 박스
+    doc.setDrawColor(...borderGray);
+    doc.setFillColor(255, 255, 255);
+    doc.rect(sealBoxX, sealBoxY, 28, sealBoxSize, 'FD');
+
+    if (supplier.sealImage) {
+      try {
+        const imgSrc = supplier.sealImage.startsWith('data:')
+          ? supplier.sealImage
+          : supplier.sealImage;
+        doc.addImage(imgSrc, 'PNG', sealBoxX + 2, sealBoxY + 2, 24, sealBoxSize - 4);
+      } catch {
+        doc.setFontSize(9);
+        doc.setTextColor(...gray);
+        doc.text('(인)', sealBoxX + 14, sealBoxY + sealBoxSize / 2 + 3, { align: 'center' });
+      }
+    } else {
+      doc.setFontSize(9);
+      doc.setTextColor(...gray);
+      doc.text('(인)', sealBoxX + 14, sealBoxY + sealBoxSize / 2 + 3, { align: 'center' });
+    }
+
+    // PDF 저장
+    const dateStr = new Date().toISOString().slice(0, 10);
+    doc.save(`${filename}_${dateStr}.pdf`);
+
+    message.success({ content: '견적서 PDF가 다운로드되었습니다.', key: 'pdf-export' });
+  } catch (error) {
+    console.error('Quotation Vector PDF export error:', error);
     message.error({ content: `PDF 내보내기에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`, key: 'pdf-export' });
   }
 };
