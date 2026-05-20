@@ -243,8 +243,8 @@ const PurchaseManagement: React.FC = () => {
     try {
       const [purchasesRes, customersRes, productsRes] = await Promise.all([
         purchaseAPI.getAll(currentBusiness.id),
-        customerAPI.getAll(currentBusiness.id),
-        productAPI.getAll(currentBusiness.id)
+        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
+        productAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 })
       ]);
 
       setPurchases(purchasesRes.data.data.purchases || []);

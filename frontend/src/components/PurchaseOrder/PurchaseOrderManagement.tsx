@@ -133,8 +133,8 @@ const PurchaseOrderManagement: React.FC = () => {
     setLoading(true);
     try {
       const [customerRes, productRes, orderRes] = await Promise.all([
-        customerAPI.getAll(currentBusiness.id),
-        productAPI.getAll(currentBusiness.id),
+        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
+        productAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
         purchaseOrderAPI.getAll(currentBusiness.id),
       ]);
       if (customerRes.data.success) {

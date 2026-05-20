@@ -236,7 +236,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               padding: '2mm 1mm',
               textAlign: 'center',
               fontWeight: 'bold',
-              width: '12%'
+              width: '9%'
             }}>단가</th>
             <th style={{
               border: '1px solid #000',
@@ -257,7 +257,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               padding: '2mm 1mm',
               textAlign: 'center',
               fontWeight: 'bold',
-              width: '12%',
+              width: '15%',
               whiteSpace: 'nowrap'
             }}>합계금액</th>
           </tr>
@@ -620,13 +620,46 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           </tbody>
         </table>
 
+      </div>
+
+      {/* 서명란 */}
+      <div style={{
+        display: 'flex',
+        marginTop: '2mm',
+        border: '1px solid #000',
+        height: '10mm'
+      }}>
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          borderRight: '1px solid #000',
+          padding: '1mm 3mm',
+          gap: '4mm'
+        }}>
+          <span style={{ fontSize: '9pt', fontWeight: 'bold', whiteSpace: 'nowrap' }}>공급자 확인:</span>
+          <div style={{ flex: 1, borderBottom: '1px solid #999', minWidth: '20mm' }}></div>
+          <span style={{ fontSize: '8pt', color: '#888', whiteSpace: 'nowrap' }}>(인)</span>
+        </div>
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '1mm 3mm',
+          gap: '4mm'
+        }}>
+          <span style={{ fontSize: '9pt', fontWeight: 'bold', whiteSpace: 'nowrap' }}>인수자 서명:</span>
+          <div style={{ flex: 1, borderBottom: '1px solid #999', minWidth: '20mm' }}></div>
+          <span style={{ fontSize: '8pt', color: '#888', whiteSpace: 'nowrap' }}>(인)</span>
+        </div>
+      </div>
+
         {/* 서명란 슬롯 */}
         {signatureSlot && (
           <div style={{ marginTop: '5mm' }}>
             {signatureSlot}
           </div>
         )}
-      </div>
 
     </div>
   );
