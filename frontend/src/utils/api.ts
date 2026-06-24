@@ -293,6 +293,10 @@ export const passwordResetAPI = {
     const response = await api.post('/auth/verify-password-reset', data);
     return response.data;
   },
+  confirmPasswordResetOtp: async (data: { email: string; code: string }) => {
+    const response = await api.post('/auth/confirm-password-reset-otp', data);
+    return response.data;
+  },
   resetPassword: async (data: { resetToken: string; newPassword: string }) => {
     const response = await api.post('/auth/reset-password', data);
     return response.data;

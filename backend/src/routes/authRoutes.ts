@@ -18,6 +18,7 @@ router.post('/upload-avatar', authenticateToken, avatarUpload.single('avatar'), 
 // 아이디/비밀번호 찾기
 router.post('/find-username', AuthController.findUsername);
 router.post('/verify-password-reset', AuthController.verifyPasswordReset);
+router.post('/confirm-password-reset-otp', AuthController.confirmPasswordResetOtp);
 router.post('/reset-password', AuthController.resetPassword);
 
 export default router;

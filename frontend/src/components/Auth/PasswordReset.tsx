@@ -19,6 +19,12 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
   const [form] = Form.useForm();
   const [foundUserId, setFoundUserId] = useState<string>('');
   const [resetToken, setResetToken] = useState<string>('');
+  // OTP(본인인증) 단계 상태
+  const [otpStage, setOtpStage] = useState(false);
+  const [resetEmail, setResetEmail] = useState<string>('');
+  const [phoneMasked, setPhoneMasked] = useState<string>('');
+  const [devCode, setDevCode] = useState<string>('');
+  const [verifyPayload, setVerifyPayload] = useState<{ email: string; companyName: string; businessNumber: string; phone: string } | null>(null);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordCriteria, setPasswordCriteria] = useState({
     length: false,
@@ -100,26 +106,74 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
     }
   };
 
-  // 비밀번호 찾기 (정보 검증)
+  // 비밀번호 찾기 (정보 검증) → OTP 발송
   const handleFindPassword = async (values: any) => {
     setLoading(true);
     try {
-      const response = await passwordResetAPI.verifyPasswordReset({
+      const payload = {
         email: values.username,
         companyName: values.companyName,
         businessNumber: values.businessNumber,
         phone: values.phone
-      });
+      };
+      const response = await passwordResetAPI.verifyPasswordReset(payload);
 
       if (response.success) {
-        setResetToken(response.data.resetToken);
-        setCurrentStep(3);
-        message.success('정보가 확인되었습니다. 새로운 비밀번호를 설정해주세요.');
+        setResetEmail(values.username);
+        setPhoneMasked(response.data?.phoneMasked || '');
+        setDevCode(response.data?.devCode || '');
+        setVerifyPayload(payload);
+        setOtpStage(true); // step 2 내에서 OTP 입력 화면으로 전환
+        message.success('등록된 연락처로 인증코드를 발송했습니다.');
       } else {
         message.error(response.message || '입력하신 정보와 일치하는 계정을 찾을 수 없습니다.');
       }
     } catch (error: any) {
       message.error(error.response?.data?.message || '비밀번호 찾기 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // OTP 인증코드 확인 → 재설정 토큰 발급
+  const handleConfirmOtp = async (values: any) => {
+    setLoading(true);
+    try {
+      const response = await passwordResetAPI.confirmPasswordResetOtp({
+        email: resetEmail,
+        code: String(values.otp).trim()
+      });
+
+      if (response.success) {
+        setResetToken(response.data.resetToken);
+        setOtpStage(false);
+        setCurrentStep(3);
+        message.success('본인인증이 완료되었습니다. 새로운 비밀번호를 설정해주세요.');
+      } else {
+        message.error(response.message || '인증코드가 일치하지 않습니다.');
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '인증 확인 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 인증코드 재발송
+  const handleResendOtp = async () => {
+    if (!verifyPayload) return;
+    setLoading(true);
+    try {
+      const response = await passwordResetAPI.verifyPasswordReset(verifyPayload);
+      if (response.success) {
+        setPhoneMasked(response.data?.phoneMasked || '');
+        setDevCode(response.data?.devCode || '');
+        message.success('인증코드를 다시 발송했습니다.');
+      } else {
+        message.error(response.message || '재발송에 실패했습니다.');
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '재발송 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -329,7 +383,64 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
           </div>
         );
 
-      case 2: // 비밀번호 찾기
+      case 2: // 비밀번호 찾기 (정보 검증 → OTP 인증)
+        if (otpStage) {
+          return (
+            <Form
+              key="otpForm"
+              name="otpConfirm"
+              onFinish={handleConfirmOtp}
+              layout="vertical"
+              autoComplete="off"
+            >
+              <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+                <h3 style={{ color: '#1890ff', marginBottom: '4px' }}>본인인증</h3>
+                <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>
+                  {phoneMasked ? <><strong>{phoneMasked}</strong> 로 </> : ''}
+                  발송된 6자리 인증코드를 입력해주세요. (5분 이내)
+                </p>
+                {devCode && (
+                  <p style={{ color: '#fa8c16', fontSize: '13px', marginTop: '8px' }}>
+                    [개발 모드] 인증코드: <strong>{devCode}</strong>
+                  </p>
+                )}
+              </div>
+
+              <Form.Item
+                name="otp"
+                label="인증코드"
+                rules={[
+                  { required: true, message: '인증코드를 입력해주세요!' },
+                  { pattern: /^\d{6}$/, message: '6자리 숫자를 입력해주세요!' }
+                ]}
+              >
+                <Input
+                  prefix={<LockOutlined />}
+                  placeholder="6자리 숫자"
+                  size="large"
+                  maxLength={6}
+                  inputMode="numeric"
+                />
+              </Form.Item>
+
+              <Form.Item style={{ marginBottom: '8px', marginTop: '24px' }}>
+                <Button type="primary" htmlType="submit" loading={loading} size="large" block>
+                  인증 확인
+                </Button>
+              </Form.Item>
+
+              <div style={{ textAlign: 'center' }}>
+                <Button type="link" onClick={handleResendOtp} disabled={loading} style={{ padding: 0 }}>
+                  인증코드 재발송
+                </Button>
+                <span style={{ color: '#ccc', margin: '0 8px' }}>|</span>
+                <Button type="link" onClick={() => setOtpStage(false)} disabled={loading} style={{ padding: 0 }}>
+                  정보 다시 입력
+                </Button>
+              </div>
+            </Form>
+          );
+        }
         return (
           <Form
             form={form}

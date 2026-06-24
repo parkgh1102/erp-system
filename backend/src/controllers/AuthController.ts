@@ -4,6 +4,7 @@ import { User } from '../entities/User';
 import { Business } from '../entities/Business';
 import { CompanySettings } from '../entities/CompanySettings';
 import { UserBusinessAccess } from '../entities/UserBusinessAccess';
+import { OTP } from '../entities/OTP';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
@@ -22,6 +23,7 @@ import path from 'path';
 const userRepository = AppDataSource.getRepository(User);
 const businessRepository = AppDataSource.getRepository(Business);
 const companySettingsRepository = AppDataSource.getRepository(CompanySettings);
+const otpRepository = AppDataSource.getRepository(OTP);
 
 const signupSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -883,21 +885,61 @@ export const AuthController = {
         });
       }
 
-      // 임시 토큰 생성 (5분 유효) — 전용 타입 클레임으로 일반 인증 토큰과 혼용 차단
-      const env = getValidatedEnv();
-      const resetToken = jwt.sign(
-        { userId: user.id, email: user.email, type: 'password_reset' },
-        env.JWT_SECRET,
-        { expiresIn: '5m' }
-      );
+      // 본인확인 통과 → OOB(알림톡/SMS) OTP 발송. 토큰은 OTP 확인 단계에서 발급한다.
+      const targetPhoneRaw = (business.phone && business.phone.replace(/\D/g, ''))
+        || (user.phone && user.phone.replace(/\D/g, ''));
+      if (!targetPhoneRaw) {
+        return res.status(400).json({
+          success: false,
+          message: '등록된 전화번호가 없어 인증코드를 보낼 수 없습니다. 관리자에게 문의해주세요.'
+        });
+      }
 
-      logger.info('Password reset verified successfully', { userId: user.id });
+      const code = AlimtalkService.generateOTP();
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5분
+
+      // 같은 이메일의 미사용 OTP 정리 후 신규 저장
+      await otpRepository.delete({ email: user.email, verified: false });
+      const otp = otpRepository.create({
+        email: user.email,
+        phone: targetPhoneRaw,
+        code,
+        expiresAt,
+        verified: false,
+        attemptCount: 0,
+        sendCount: 1
+      });
+      await otpRepository.save(otp);
+
+      // 알림톡 발송 (키가 설정된 경우)
+      const alimtalkConfigured = !!process.env.ALIMTALK_API_KEY;
+      let delivered = false;
+      if (alimtalkConfigured) {
+        delivered = await AlimtalkService.sendOTP(targetPhoneRaw, code);
+      }
+      // 개발 환경에서는 콘솔에 코드 출력 (알림톡 미설정 시 테스트용)
+      const isProd = process.env.NODE_ENV === 'production';
+      if (!isProd) {
+        logger.info(`[DEV] 비밀번호 재설정 OTP 코드: ${code} (수신: ${maskPhone(targetPhoneRaw)})`);
+      }
+      // 운영에서 발송 실패 시 진행 불가
+      if (isProd && !delivered) {
+        return res.status(502).json({
+          success: false,
+          message: '인증코드 발송에 실패했습니다. 잠시 후 다시 시도해주세요.'
+        });
+      }
+
+      logger.info('Password reset OTP sent', { userId: user.id });
 
       res.json({
         success: true,
+        message: '인증코드를 발송했습니다.',
         data: {
-          resetToken,
-          email: user.email
+          email: user.email,
+          phoneMasked: maskPhone(targetPhoneRaw),
+          // 개발 환경에서만 코드 노출 (운영 미노출)
+          devCode: isProd ? undefined : code
         }
       });
     } catch (error: unknown) {
@@ -906,6 +948,63 @@ export const AuthController = {
         success: false,
         message: '비밀번호 찾기 중 오류가 발생했습니다.'
       });
+    }
+  },
+
+  // 비밀번호 재설정 OTP 확인 → 재설정 토큰 발급
+  async confirmPasswordResetOtp(req: Request, res: Response) {
+    try {
+      const { email, code } = req.body;
+      if (!email || !code) {
+        return res.status(400).json({ success: false, message: '이메일과 인증코드를 입력해주세요.' });
+      }
+
+      const otp = await otpRepository.findOne({
+        where: { email, verified: false },
+        order: { createdAt: 'DESC' }
+      });
+      if (!otp) {
+        return res.status(400).json({ success: false, message: '인증 요청을 찾을 수 없습니다. 다시 시도해주세요.' });
+      }
+      if (otp.expiresAt < new Date()) {
+        return res.status(400).json({ success: false, message: '인증코드가 만료되었습니다. 다시 요청해주세요.' });
+      }
+      if (otp.attemptCount >= 5) {
+        return res.status(429).json({ success: false, message: '인증 시도 횟수를 초과했습니다. 다시 요청해주세요.' });
+      }
+      if (otp.code !== String(code).trim()) {
+        otp.attemptCount += 1;
+        otp.lastAttemptAt = new Date();
+        await otpRepository.save(otp);
+        return res.status(400).json({ success: false, message: '인증코드가 일치하지 않습니다.' });
+      }
+
+      // 확인 성공
+      otp.verified = true;
+      await otpRepository.save(otp);
+
+      const user = await userRepository.findOne({ where: { email } });
+      if (!user) {
+        return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+      }
+
+      // 재설정 전용 토큰 발급 (5분, 전용 타입 클레임)
+      const env = getValidatedEnv();
+      const resetToken = jwt.sign(
+        { userId: user.id, email: user.email, type: 'password_reset' },
+        env.JWT_SECRET,
+        { expiresIn: '5m' }
+      );
+
+      logger.info('Password reset OTP verified', { userId: user.id });
+
+      res.json({
+        success: true,
+        data: { resetToken, email: user.email }
+      });
+    } catch (error: unknown) {
+      logger.error('Confirm password reset OTP error', error instanceof Error ? error : new Error(String(error)));
+      res.status(500).json({ success: false, message: '인증 확인 중 오류가 발생했습니다.' });
     }
   },
 
