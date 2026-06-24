@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Upload, Button, App, Table, Alert, Space, Divider } from 'antd';
 import { DownloadOutlined, FileExcelOutlined } from '@ant-design/icons';
 import * as ExcelJS from 'exceljs';
+import { AnimatedFileUpload } from '../ui/AnimatedFileUpload';
 
 const { Dragger } = Upload;
 
@@ -420,21 +421,13 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
         </Button>
       </Space>
 
-      <Dragger
-        accept=".xlsx,.xls,.csv"
-        beforeUpload={handleFileUpload}
-        showUploadList={false}
-        style={{ marginBottom: 16 }}
-        disabled={loading}
-      >
-        <p className="ant-upload-drag-icon">
-          <FileExcelOutlined />
-        </p>
-        <p className="ant-upload-text">엑셀 파일을 드래그하거나 클릭하여 업로드하세요</p>
-        <p className="ant-upload-hint">
-          .xlsx, .xls, .csv 형식의 파일을 지원합니다.
-        </p>
-      </Dragger>
+      <div style={{ marginBottom: 16 }}>
+        <AnimatedFileUpload
+          accept=".xlsx,.xls,.csv"
+          onFile={(file) => { handleFileUpload(file); }}
+          hint="엑셀 파일을 끌어다 놓거나 클릭하여 업로드 (.xlsx, .xls, .csv)"
+        />
+      </div>
 
       {previewData.length > 0 && (
         <>

@@ -16,6 +16,7 @@ import {
   Drawer,
 } from 'antd';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
+import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
 import ExcelBulkUploadModal from '../Common/ExcelBulkUploadModal';
 import UploadResultModal, { UploadResultItem } from '../Common/UploadResultModal';
 import {
@@ -753,13 +754,10 @@ const CustomerManagement: React.FC = () => {
           </h2>
           {/* 검색 + 주요 액션 버튼 */}
           <Space direction="vertical" style={{ width: '100%' }} size="small">
-            <Input.Search
+            <AnimatedSearchBar
               placeholder="거래처명 또는 사업자번호 검색"
-              allowClear
-              enterButton={<SearchOutlined />}
-              size="middle"
               onSearch={handleSearch}
-              style={{ width: '100%' }}
+              width="100%"
             />
             <Space size="small" wrap>
               <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCustomer} size="middle">
@@ -790,13 +788,10 @@ const CustomerManagement: React.FC = () => {
           </Col>
           <Col style={{ marginLeft: '100px' }}>
             <Space size="middle" wrap>
-              <Input.Search
+              <AnimatedSearchBar
                 placeholder="거래처명 또는 사업자번호 검색"
-                allowClear
-                enterButton={<SearchOutlined />}
-                size="middle"
                 onSearch={handleSearch}
-                style={{ width: 300 }}
+                width={300}
               />
               <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCustomer}>
                 추가
