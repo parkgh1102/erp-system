@@ -25,7 +25,6 @@ const Settings = lazy(() => import('./components/Settings/Settings'));
 const QuotationManagement = lazy(() => import('./components/Quotation/QuotationManagement'));
 const TokenExpirationNotifier = lazy(() => import('./components/Common/TokenExpirationNotifier'));
 const ChatbotWidget = lazy(() => import('./components/Chatbot/ChatbotWidget'));
-const UiDemo = lazy(() => import('./components/ui/UiDemo'));
 
 // Loading fallback component
 const PageLoader: React.FC = () => (
@@ -182,9 +181,6 @@ const App: React.FC = () => {
               </PublicRoute>
             }
           />
-
-          {/* UI 컴포넌트 데모 (임시 미리보기, 인증 불필요) */}
-          <Route path="/ui-demo" element={<UiDemo />} />
 
           {/* 보호된 라우트 */}
           <Route
