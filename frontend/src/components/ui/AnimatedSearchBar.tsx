@@ -8,6 +8,8 @@ interface AnimatedSearchBarProps {
   onSearch?: (value: string) => void;
   placeholder?: string;
   width?: number | string;
+  /** 기존 입력(예: antd AutoComplete/Input.Search)을 감싸 동일한 애니메이션 프레임만 입히고 싶을 때 사용 */
+  children?: React.ReactNode;
 }
 
 /**
@@ -20,6 +22,7 @@ export const AnimatedSearchBar: React.FC<AnimatedSearchBarProps> = ({
   onSearch,
   placeholder = '검색어를 입력하세요',
   width = 320,
+  children,
 }) => {
   const [focused, setFocused] = useState(false);
   const [inner, setInner] = useState('');
@@ -29,6 +32,40 @@ export const AnimatedSearchBar: React.FC<AnimatedSearchBarProps> = ({
     if (value === undefined) setInner(v);
     onChange?.(v);
   };
+
+  // 프레임 모드: 기존 입력 컴포넌트를 감싸 애니메이션 테두리만 적용 (자동완성 등 기능 보존)
+  if (children) {
+    return (
+      <motion.div
+        onFocusCapture={() => setFocused(true)}
+        onBlurCapture={() => setFocused(false)}
+        animate={{ scale: focused ? 1.02 : 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        style={{ position: 'relative', width, padding: 2, borderRadius: 12 }}
+      >
+        <motion.div
+          aria-hidden
+          animate={{ rotate: 360, opacity: focused ? 1 : 0.4 }}
+          transition={{
+            rotate: { repeat: Infinity, duration: 4, ease: 'linear' },
+            opacity: { duration: 0.3 },
+          }}
+          style={{
+            position: 'absolute',
+            inset: -1,
+            borderRadius: 12,
+            background:
+              'conic-gradient(from 0deg, #1890ff, #52c41a, #faad14, #eb2f96, #1890ff)',
+            filter: 'blur(6px)',
+            zIndex: 0,
+          }}
+        />
+        <div style={{ position: 'relative', zIndex: 1, borderRadius: 10, overflow: 'hidden' }}>
+          {children}
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

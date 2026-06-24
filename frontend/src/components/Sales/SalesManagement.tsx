@@ -3,6 +3,7 @@ import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfir
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
+import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
 import { createExportMenuItems, exportNTSInvoiceExcel } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -1806,21 +1807,23 @@ const SalesManagement: React.FC = () => {
         <div style={{ marginBottom: 16 }}>
           <h2 style={{ margin: '0 0 12px 0', color: isDark ? '#ffffff' : '#000000', fontSize: '20px', fontWeight: 'bold' }}>매출 관리</h2>
           <Space direction="vertical" style={{ width: '100%' }} size="small">
-            <AutoComplete
-              options={autoCompleteOptions}
-              value={searchText}
-              onChange={handleSearchChange}
-              onSelect={(value) => setSearchText(value)}
-              style={{ width: '100%' }}
-            >
-              <Input.Search
-                placeholder="거래처, 품목명, 금액 검색"
-                allowClear
-                enterButton={<SearchOutlined />}
-                size="middle"
-                onSearch={handleSearch}
-              />
-            </AutoComplete>
+            <AnimatedSearchBar width="100%">
+              <AutoComplete
+                options={autoCompleteOptions}
+                value={searchText}
+                onChange={handleSearchChange}
+                onSelect={(value) => setSearchText(value)}
+                style={{ width: '100%' }}
+              >
+                <Input.Search
+                  placeholder="거래처, 품목명, 금액 검색"
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  size="middle"
+                  onSearch={handleSearch}
+                />
+              </AutoComplete>
+            </AnimatedSearchBar>
             <RangePicker
               style={{ width: '100%' }}
               value={dateRange}
@@ -1853,21 +1856,23 @@ const SalesManagement: React.FC = () => {
           <Col style={{ marginLeft: '100px' }}>
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
               <Space size={8} wrap>
-                <AutoComplete
-                  options={autoCompleteOptions}
-                  value={searchText}
-                  onChange={handleSearchChange}
-                  onSelect={(value) => setSearchText(value)}
-                  style={{ width: 300 }}
-                >
-                  <Input.Search
-                    placeholder="거래처, 품목명, 금액, 메모 등으로 검색 (2글자 이상)"
-                    allowClear
-                    enterButton={<SearchOutlined />}
-                    size="middle"
-                    onSearch={handleSearch}
-                  />
-                </AutoComplete>
+                <AnimatedSearchBar width={300}>
+                  <AutoComplete
+                    options={autoCompleteOptions}
+                    value={searchText}
+                    onChange={handleSearchChange}
+                    onSelect={(value) => setSearchText(value)}
+                    style={{ width: '100%' }}
+                  >
+                    <Input.Search
+                      placeholder="거래처, 품목명, 금액, 메모 등으로 검색 (2글자 이상)"
+                      allowClear
+                      enterButton={<SearchOutlined />}
+                      size="middle"
+                      onSearch={handleSearch}
+                    />
+                  </AutoComplete>
+                </AnimatedSearchBar>
                 <RangePicker
                   style={{ width: 300 }}
                   value={dateRange}
