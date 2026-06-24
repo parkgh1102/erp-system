@@ -161,3 +161,6 @@ tmpclaude-*
 
 # Windows null device files
 nul
+
+# Claude Code auto-generated activity log (Stop hook)
+.claude/activity-log.md

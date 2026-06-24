@@ -498,7 +498,7 @@ const SignupForm: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: '#ffffff',
         padding: '20px',
       }}
     >
@@ -525,7 +525,9 @@ const SignupForm: React.FC = () => {
         style={{
           width: '100%',
           maxWidth: '600px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+          background: '#f0f2f5',
+          border: '1px solid #e4e6ef',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
           borderRadius: '12px',
         }}
         styles={{ body: { padding: '40px' } }}

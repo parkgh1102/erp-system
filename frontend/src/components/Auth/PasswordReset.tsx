@@ -554,7 +554,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        backgroundColor: '#F9F9F9',
+        backgroundColor: '#ffffff',
         padding: '24px'
       }}>
       <Card
@@ -572,20 +572,19 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
         style={{
           width: '100%',
           maxWidth: 600,
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: '20px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-          backdropFilter: 'blur(10px)'
+          background: '#f0f2f5',
+          border: '1px solid #e4e6ef',
+          borderRadius: '12px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
         }}
         styles={{
           header: {
             textAlign: 'center',
             fontSize: '20px',
             fontWeight: 'bold',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            borderBottom: '1px solid rgba(0,0,0,0.1)',
-            borderRadius: '20px 20px 0 0',
+            background: '#f0f2f5',
+            borderBottom: '1px solid #e4e6ef',
+            borderRadius: '12px 12px 0 0',
             padding: '20px 24px'
           }
         }}

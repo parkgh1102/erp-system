@@ -891,25 +891,40 @@ const PurchaseManagement: React.FC = () => {
   // 거래명세서 인쇄 미리보기
   const handlePrintStatement = async (purchase: Purchase, mode: 'full' | 'receiver' | 'supplier') => {
     try {
-      // 전잔금 조회
+      // 전잔금 조회 (일시적 실패 대비 최대 3회 재시도).
+      // 실패 시 0으로 조용히 인쇄하면 전잔금이 0으로 잘못 표기되므로 인쇄를 중단한다.
       let balanceAmount = 0;
       if (purchase.customerId && currentBusiness) {
-        try {
-          const response = await api.get(
-            `/transaction-ledger/${currentBusiness.id}/customer/${purchase.customerId}/balance`,
-            {
-              params: {
-                beforeDate: purchase.purchaseDate,
-                excludePurchaseId: purchase.id // 현재 거래 제외하고 당일 이전 거래까지 합산
+        let lastError: unknown;
+        let success = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const response = await api.get(
+              `/transaction-ledger/${currentBusiness.id}/customer/${purchase.customerId}/balance`,
+              {
+                params: {
+                  beforeDate: purchase.purchaseDate,
+                  excludePurchaseId: purchase.id // 현재 거래 제외하고 당일 이전 거래까지 합산
+                }
               }
+            );
+            if (response.data?.success) {
+              balanceAmount = response.data.data.balance || 0;
+              success = true;
+              break;
             }
-          );
-          if (response.data.success) {
-            balanceAmount = response.data.data.balance || 0;
+            lastError = new Error(response.data?.message || '전잔금 조회 응답 오류');
+          } catch (error) {
+            lastError = error;
           }
-        } catch (error) {
-          console.error('전잔금 조회 실패:', error);
-          // 실패해도 0으로 계속 진행
+          if (attempt < 2) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        }
+        if (!success) {
+          console.error('전잔금 조회 최종 실패:', lastError);
+          message.error('전잔금 조회에 실패하여 인쇄를 중단했습니다. 잠시 후 다시 시도해주세요.', 3);
+          return;
         }
       }
 

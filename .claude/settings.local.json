@@ -243,9 +243,34 @@
       "Bash(ping:*)",
       "Bash(npx expo start:*)",
       "Bash(git rm:*)",
-      "WebFetch(domain:erp-backend-9c8v.onrender.com)"
+      "WebFetch(domain:erp-backend-9c8v.onrender.com)",
+      "Bash(npx swa deploy ./dist --env production)",
+      "Bash(npx swa deploy:*)",
+      "Bash(pushd:*)",
+      "Bash(gh.exe run list:*)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(az staticwebapp:*)",
+      "Bash(npm --version)",
+      "Bash(npx --yes node-pre-gyp rebuild)",
+      "Bash(\"C:/Users/black/Desktop/erp0402/node_modules/.bin/node-gyp.cmd\" rebuild:*)",
+      "Bash(\"C:/Users/black/Desktop/erp0402/node_modules/.bin/prebuild-install.cmd\" --target 26.1.0 --runtime node --arch x64 --platform win32)",
+      "Skill(update-config)"
     ],
     "deny": [],
     "ask": []
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\black\\Desktop\\erp0520\\.claude\\log-activity.ps1\"",
+            "async": true,
+            "statusMessage": "활동 기록 저장 중..."
+          }
+        ]
+      }
+    ]
   }
 }

@@ -638,7 +638,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           gap: '4mm'
         }}>
           <span style={{ fontSize: '9pt', fontWeight: 'bold', whiteSpace: 'nowrap' }}>공급자 확인:</span>
-          <div style={{ flex: 1, borderBottom: '1px solid #999', minWidth: '20mm' }}></div>
+          <div style={{ flex: 1, minWidth: '20mm' }}></div>
           <span style={{ fontSize: '8pt', color: '#888', whiteSpace: 'nowrap' }}>(인)</span>
         </div>
         <div style={{
@@ -649,7 +649,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           gap: '4mm'
         }}>
           <span style={{ fontSize: '9pt', fontWeight: 'bold', whiteSpace: 'nowrap' }}>인수자 서명:</span>
-          <div style={{ flex: 1, borderBottom: '1px solid #999', minWidth: '20mm' }}></div>
+          <div style={{ flex: 1, minWidth: '20mm' }}></div>
           <span style={{ fontSize: '8pt', color: '#888', whiteSpace: 'nowrap' }}>(인)</span>
         </div>
       </div>
@@ -689,9 +689,30 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
           }
         `}</style>
       )}
+      {/* 전체(공급자+공급받는자) 인쇄 전용 스타일 - A4 한 장에 맞춤 */}
+      {printMode === 'full' && (
+        <style>{`
+          @media print {
+            @page {
+              size: A4 portrait;
+              margin: 5mm;
+            }
+            body {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+            .full-print-wrapper {
+              zoom: 0.95 !important;
+              width: 210mm !important;
+              overflow: hidden !important;
+              page-break-inside: avoid !important;
+            }
+          }
+        `}</style>
+      )}
 
       <div
-        className={printMode !== 'full' ? 'single-print-wrapper' : ''}
+        className={printMode !== 'full' ? 'single-print-wrapper' : 'full-print-wrapper'}
         style={{
           width: '210mm',
           minHeight: printMode === 'full' ? '297mm' : 'auto',
@@ -710,7 +731,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
       {printMode === 'full' && (
         <div style={{
           borderTop: '1px dashed #999',
-          margin: '16mm 10mm 2mm 10mm' // 상단 마진 16mm (10행 테이블 수용 위해 조정)
+          margin: '10mm 10mm 2mm 10mm'
         }}></div>
       )}
 

@@ -262,6 +262,37 @@ const SalesManagement: React.FC = () => {
     };
   }, [modalVisible, editingSale, form]);
 
+  // 전잔금 조회 (일시적 실패 대비 재시도). 실패 시 조용히 0으로 처리하지 않고 예외를 던져
+  // 호출부에서 사용자에게 알리도록 한다. (가끔 전잔금이 0으로 잘못 인쇄되던 문제 대응)
+  const fetchCustomerBalance = async (
+    customerId: number,
+    beforeDate?: string,
+    extraParams: { excludeSaleId?: number; excludePurchaseId?: number } = {}
+  ): Promise<number> => {
+    if (!currentBusiness) return 0;
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const response = await api.get(
+          `/transaction-ledger/${currentBusiness.id}/customer/${customerId}/balance`,
+          { params: { beforeDate, ...extraParams } }
+        );
+        if (response.data?.success) {
+          return response.data.data.balance || 0;
+        }
+        lastError = new Error(response.data?.message || '전잔금 조회 응답 오류');
+      } catch (error) {
+        lastError = error;
+      }
+      // 마지막 시도가 아니면 잠시 대기 후 재시도
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+    }
+    console.error('전잔금 조회 최종 실패:', lastError);
+    throw lastError;
+  };
+
   const fetchData = async () => {
     if (!currentBusiness) return;
 
@@ -528,20 +559,15 @@ const SalesManagement: React.FC = () => {
       // 거래처가 있는 경우에만 전잔금 조회
       if (selectedSale.customerId) {
         try {
-          const response = await api.get(
-            `/transaction-ledger/${currentBusiness.id}/customer/${selectedSale.customerId}/balance`,
-            {
-              params: {
-                beforeDate: selectedSale.transactionDate || selectedSale.saleDate,
-                excludeSaleId: selectedSale.id // 현재 거래 제외하여 전잔금 계산
-              }
-            }
+          balanceAmount = await fetchCustomerBalance(
+            selectedSale.customerId,
+            selectedSale.transactionDate || selectedSale.saleDate,
+            { excludeSaleId: selectedSale.id } // 현재 거래 제외하여 전잔금 계산
           );
-          if (response.data.success) {
-            balanceAmount = response.data.data.balance || 0;
-          }
         } catch {
-          // 실패해도 0으로 계속 진행
+          setLoading(false);
+          message.error('전잔금 조회에 실패했습니다. 잠시 후 다시 시도해주세요.', 2);
+          return;
         }
       }
 
@@ -639,21 +665,15 @@ const SalesManagement: React.FC = () => {
       // 거래처가 있는 경우에만 전잔금 조회
       if (record.customerId) {
         try {
-          const response = await api.get(
-            `/transaction-ledger/${currentBusiness.id}/customer/${record.customerId}/balance`,
-            {
-              params: {
-                beforeDate: record.transactionDate || record.saleDate,
-                excludeSaleId: record.id // 현재 거래 제외하여 전잔금 계산
-              }
-            }
+          balanceAmount = await fetchCustomerBalance(
+            record.customerId,
+            record.transactionDate || record.saleDate,
+            { excludeSaleId: record.id } // 현재 거래 제외하여 전잔금 계산
           );
-          if (response.data.success) {
-            balanceAmount = response.data.data.balance || 0;
-          }
-        } catch (error) {
-          console.error('전잔금 조회 실패:', error);
-          // 실패해도 0으로 계속 진행
+        } catch {
+          setLoading(false);
+          message.error('전잔금 조회에 실패했습니다. 잠시 후 다시 시도해주세요.', 2);
+          return;
         }
       }
 
@@ -751,23 +771,13 @@ const SalesManagement: React.FC = () => {
         let balanceAmount = 0;
 
         // 거래처가 있는 경우에만 전잔금 조회
+        // 실패 시 0으로 조용히 넘어가면 전잔금이 0으로 잘못 인쇄되므로 예외를 전파한다.
         if (sale.customerId) {
-          try {
-            const response = await api.get(
-              `/transaction-ledger/${currentBusiness.id}/customer/${sale.customerId}/balance`,
-              {
-                params: {
-                  beforeDate: sale.transactionDate || sale.saleDate,
-                  excludeSaleId: sale.id // 현재 거래 제외하고 당일 이전 거래까지 합산
-                }
-              }
-            );
-            if (response.data.success) {
-              balanceAmount = response.data.data.balance || 0;
-            }
-          } catch {
-            // 실패해도 0으로 계속 진행
-          }
+          balanceAmount = await fetchCustomerBalance(
+            sale.customerId,
+            sale.transactionDate || sale.saleDate,
+            { excludeSaleId: sale.id } // 현재 거래 제외하고 당일 이전 거래까지 합산
+          );
         }
 
         // TransactionData 형식으로 변환
@@ -848,7 +858,7 @@ const SalesManagement: React.FC = () => {
       message.info(`${selectedSales.length}건의 거래명세서를 인쇄합니다.`, 2);
     } catch (error) {
       setLoading(false);
-      message.error('인쇄 준비 중 오류가 발생했습니다.', 2);
+      message.error('전잔금 조회에 실패하여 인쇄를 중단했습니다. 잠시 후 다시 시도해주세요.', 3);
       console.error('인쇄 준비 오류:', error);
     }
   };
