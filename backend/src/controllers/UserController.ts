@@ -12,6 +12,23 @@ const userRepository = AppDataSource.getRepository(User);
 const accessRepository = AppDataSource.getRepository(UserBusinessAccess);
 const businessRepository = AppDataSource.getRepository(Business);
 
+// 요청자(admin)가 소유한 사업체 id 집합
+async function getOwnedBusinessIds(requesterUserId: number): Promise<Set<number>> {
+  const owned = await businessRepository.find({
+    where: { userId: requesterUserId, isActive: true },
+    select: ['id']
+  });
+  return new Set(owned.map(b => b.id));
+}
+
+// 대상 사용자가 해당 사업체에 속하는지 (직접 소속 또는 접근권한 보유) 확인
+async function userBelongsToBusiness(targetUserId: number, businessId: number): Promise<boolean> {
+  const target = await userRepository.findOne({ where: { id: targetUserId } });
+  if (target?.businessId === businessId) return true;
+  const access = await accessRepository.findOne({ where: { userId: targetUserId, businessId } });
+  return !!access;
+}
+
 const createUserSchema = Joi.object({
   phone: Joi.string().required(),
   password: Joi.string().pattern(/^\d{4}$/).required().messages({
@@ -138,8 +155,12 @@ export const UserController = {
 
       const savedUser = await userRepository.save(user);
 
-      // 다중 사업자 접근 권한 설정
-      const accessBusinessIds = businessIds && businessIds.length > 0 ? businessIds : [businessId];
+      // 다중 사업자 접근 권한 설정 — 요청자(admin)가 소유한 사업체로만 제한 (권한 상승 차단)
+      const requesterId = (req as any).user?.userId;
+      const ownedIds = await getOwnedBusinessIds(requesterId);
+      const requestedIds: number[] = businessIds && businessIds.length > 0 ? businessIds : [businessId];
+      let accessBusinessIds = requestedIds.filter((id: number) => ownedIds.has(id));
+      if (accessBusinessIds.length === 0) accessBusinessIds = [businessId]; // 최소 현재 사업체
       for (const bizId of accessBusinessIds) {
         const access = accessRepository.create({
           userId: savedUser.id,
@@ -187,6 +208,15 @@ export const UserController = {
         });
       }
 
+      // 대상 사용자가 요청자의 사업체에 속하는지 확인 (타 사업체 사용자 수정 차단)
+      const reqBusinessId = parseInt(req.params.businessId);
+      if (!(await userBelongsToBusiness(userId, reqBusinessId))) {
+        return res.status(403).json({
+          success: false,
+          message: '이 사용자를 수정할 권한이 없습니다.'
+        });
+      }
+
       // 이메일 변경 시 중복 체크
       if (value.email && value.email !== user.email) {
         const existingUser = await userRepository.findOne({ where: { email: value.email } });
@@ -198,17 +228,17 @@ export const UserController = {
         }
       }
 
-      // businessIds가 있으면 접근 권한 업데이트
+      // businessIds가 있으면 접근 권한 업데이트 — 요청자가 소유한 사업체로만 제한
       if (value.businessIds) {
-        // 기존 접근 권한 삭제
-        await accessRepository.delete({ userId });
-        // 새 접근 권한 추가
-        for (const bizId of value.businessIds) {
-          const access = accessRepository.create({
-            userId,
-            businessId: bizId
-          });
-          await accessRepository.save(access);
+        const requesterId = (req as any).user?.userId;
+        const ownedIds = await getOwnedBusinessIds(requesterId);
+        const filtered: number[] = value.businessIds.filter((id: number) => ownedIds.has(id));
+        // 요청자 소유 사업체에 대한 기존 접근만 제거 후 재설정 (타 admin 이 부여한 접근은 보존)
+        for (const ownedId of ownedIds) {
+          await accessRepository.delete({ userId, businessId: ownedId });
+        }
+        for (const bizId of filtered) {
+          await accessRepository.save(accessRepository.create({ userId, businessId: bizId }));
         }
         delete value.businessIds; // User 엔티티에는 저장하지 않음
       }
@@ -264,6 +294,14 @@ export const UserController = {
         });
       }
 
+      // 대상 사용자가 요청자의 사업체에 속하는지 확인
+      if (!(await userBelongsToBusiness(userId, parseInt(req.params.businessId)))) {
+        return res.status(403).json({
+          success: false,
+          message: '이 사용자를 삭제할 권한이 없습니다.'
+        });
+      }
+
       await userRepository.remove(user);
 
       res.json({
@@ -289,6 +327,14 @@ export const UserController = {
         return res.status(404).json({
           success: false,
           message: '사용자를 찾을 수 없습니다.'
+        });
+      }
+
+      // 대상 사용자가 요청자의 사업체에 속하는지 확인
+      if (!(await userBelongsToBusiness(userId, parseInt(req.params.businessId)))) {
+        return res.status(403).json({
+          success: false,
+          message: '이 사용자를 변경할 권한이 없습니다.'
         });
       }
 

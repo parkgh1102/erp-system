@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { SettingsController } from '../controllers/SettingsController';
 import { authenticateToken } from '../middleware/auth';
+import { businessAccessMiddleware } from '../middleware/businessAccessMiddleware';
+import { requireBusinessAdmin } from '../middleware/requireBusinessAdmin';
 
 const router: Router = Router();
 
@@ -10,24 +12,24 @@ router.get('/security/:email', SettingsController.getSecuritySettingsByEmail);
 // 이후 라우트에 인증 미들웨어 적용
 router.use(authenticateToken);
 
-// 설정 조회
-router.get('/:businessId', SettingsController.getSettings);
+// 설정 조회 (접근 권한 검증)
+router.get('/:businessId', businessAccessMiddleware, SettingsController.getSettings);
 
-// 설정 저장
-router.put('/:businessId', SettingsController.updateSettings);
+// 설정 저장 (보안 설정 포함 → 소유 admin 전용)
+router.put('/:businessId', requireBusinessAdmin, SettingsController.updateSettings);
 
-// 데이터 내보내기
-router.get('/:businessId/export/customers', SettingsController.exportCustomers);
-router.get('/:businessId/export/products', SettingsController.exportProducts);
-router.get('/:businessId/export/transactions', SettingsController.exportTransactions);
-router.get('/:businessId/export/all', SettingsController.exportAll);
+// 데이터 내보내기 (접근 권한 검증)
+router.get('/:businessId/export/customers', businessAccessMiddleware, SettingsController.exportCustomers);
+router.get('/:businessId/export/products', businessAccessMiddleware, SettingsController.exportProducts);
+router.get('/:businessId/export/transactions', businessAccessMiddleware, SettingsController.exportTransactions);
+router.get('/:businessId/export/all', businessAccessMiddleware, SettingsController.exportAll);
 
-// 백업 및 복원
-router.get('/:businessId/backup', SettingsController.backupData);
-router.post('/:businessId/restore', SettingsController.restoreData);
+// 백업 (접근 권한 검증) / 복원 (소유 admin 전용)
+router.get('/:businessId/backup', businessAccessMiddleware, SettingsController.backupData);
+router.post('/:businessId/restore', requireBusinessAdmin, SettingsController.restoreData);
 
-// 위험한 작업
-router.post('/:businessId/reset-data', SettingsController.resetAllData);
-router.post('/:businessId/delete-account', SettingsController.deleteAccount);
+// 위험한 작업 — 소유 admin 전용
+router.post('/:businessId/reset-data', requireBusinessAdmin, SettingsController.resetAllData);
+router.post('/:businessId/delete-account', requireBusinessAdmin, SettingsController.deleteAccount);
 
 export default router;

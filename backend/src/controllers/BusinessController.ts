@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { Business } from '../entities/Business';
+import { UserBusinessAccess } from '../entities/UserBusinessAccess';
 import { validate } from '../utils/validation';
 import Joi from 'joi';
 import path from 'path';
@@ -42,8 +43,17 @@ export class BusinessController {
       const take = Number(limit);
       const skip = (Number(page) - 1) * take;
 
+      // 요청자가 소유하거나 접근 권한이 있는 사업체만 조회 (전체 사업체 노출 차단)
+      const userId = (req as any).user?.userId;
+      const accessRepository = AppDataSource.getRepository(UserBusinessAccess);
+      const accessList = await accessRepository.find({ where: { userId } });
+      const accessibleIds = accessList.map(a => a.businessId);
+      // IN () 빈 배열 방지를 위한 더미값
+      const idsForIn = accessibleIds.length > 0 ? accessibleIds : [0];
+
       let query = businessRepository.createQueryBuilder('business')
-        .where('business.isActive = :isActive', { isActive: true });
+        .where('business.isActive = :isActive', { isActive: true })
+        .andWhere('(business.userId = :userId OR business.id IN (:...idsForIn))', { userId, idsForIn });
 
       if (search) {
         query = query.andWhere(
@@ -129,7 +139,9 @@ export class BusinessController {
         });
       }
 
-      const business = businessRepository.create(value);
+      // 생성자를 소유자로 설정 (소유권 기반 접근제어의 기준)
+      const userId = (req as any).user?.userId;
+      const business = businessRepository.create({ ...(value as object), userId });
       const savedBusiness = await businessRepository.save(business);
 
       res.status(201).json({

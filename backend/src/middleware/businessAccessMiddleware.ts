@@ -8,7 +8,8 @@ import { logger } from '../utils/logger';
 
 export const businessAccessMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { businessId } = req.params;
+    // 일부 라우트는 파라미터명이 :id (사업체 직접 조회/수정/삭제), 나머지는 :businessId
+    const businessId = req.params.businessId || req.params.id;
     const userId = req.user?.userId;
 
     if (!businessId) {
