@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, Button, Dropdown, message, Checkbox, Input } from 'antd';
 import { PrinterOutlined, DownOutlined } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 import { TransactionStatement } from './TransactionStatement';
 import html2canvas from 'html2canvas';
 import logger from '../../utils/logger';
@@ -815,19 +816,26 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <Button
-              type="primary"
-              icon={<PrinterOutlined />}
-              onClick={handleDirectPrint}
-              size="large"
-              style={{
-                fontSize: 'clamp(14px, 1.8vw, 16px)',
-                height: 'clamp(36px, 5vh, 40px)',
-                padding: '0 20px'
-              }}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+              style={{ display: 'inline-flex' }}
             >
-              인쇄
-            </Button>
+              <Button
+                type="primary"
+                icon={<PrinterOutlined />}
+                onClick={handleDirectPrint}
+                size="large"
+                style={{
+                  fontSize: 'clamp(14px, 1.8vw, 16px)',
+                  height: 'clamp(36px, 5vh, 40px)',
+                  padding: '0 20px'
+                }}
+              >
+                인쇄
+              </Button>
+            </motion.div>
 
             <Button
               onClick={() => {

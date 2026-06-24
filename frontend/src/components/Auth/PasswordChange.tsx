@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, message, Progress, Card, ConfigProvider, theme } from 'antd';
 import { UserOutlined, ShopOutlined, ArrowLeftOutlined, PhoneOutlined, LockOutlined, IdcardOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { PasswordStrengthMeter } from '../ui/PasswordStrengthMeter';
 
 interface PasswordChangeProps {
   onBack?: () => void;
@@ -13,6 +14,7 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onBack, onShowLogin, on
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [form] = Form.useForm();
+  const [passwordValue, setPasswordValue] = useState('');
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordCriteria, setPasswordCriteria] = useState({
     length: false,
@@ -304,43 +306,14 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onBack, onShowLogin, on
                 prefix={<LockOutlined />}
                 placeholder="8-20자, 대소문자+숫자+특수문자 포함"
                 size="large"
-                onChange={(e) => checkPasswordStrength(e.target.value)}
+                onChange={(e) => {
+                  setPasswordValue(e.target.value);
+                  checkPasswordStrength(e.target.value);
+                }}
               />
             </Form.Item>
 
-            {form.getFieldValue('newPassword') && (
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '14px', color: '#666' }}>비밀번호 강도</span>
-                  <span style={{ fontSize: '14px', color: getPasswordStrengthColor(), fontWeight: 'bold' }}>
-                    {getPasswordStrengthText()}
-                  </span>
-                </div>
-                <Progress
-                  percent={passwordStrength}
-                  strokeColor={getPasswordStrengthColor()}
-                  showInfo={false}
-                  size="default"
-                />
-                <div style={{ marginTop: '8px', fontSize: '14px' }}>
-                  <div style={{ color: passwordCriteria.length ? '#52c41a' : '#ff4d4f', marginBottom: '2px' }}>
-                    {passwordCriteria.length ? '✓' : '✗'} 8-20자 길이
-                  </div>
-                  <div style={{ color: passwordCriteria.lowercase ? '#52c41a' : '#ff4d4f', marginBottom: '2px' }}>
-                    {passwordCriteria.lowercase ? '✓' : '✗'} 소문자 포함
-                  </div>
-                  <div style={{ color: passwordCriteria.uppercase ? '#52c41a' : '#ff4d4f', marginBottom: '2px' }}>
-                    {passwordCriteria.uppercase ? '✓' : '✗'} 대문자 포함
-                  </div>
-                  <div style={{ color: passwordCriteria.number ? '#52c41a' : '#ff4d4f', marginBottom: '2px' }}>
-                    {passwordCriteria.number ? '✓' : '✗'} 숫자 포함
-                  </div>
-                  <div style={{ color: passwordCriteria.special ? '#52c41a' : '#ff4d4f' }}>
-                    {passwordCriteria.special ? '✓' : '✗'} 특수문자 포함
-                  </div>
-                </div>
-              </div>
-            )}
+            <PasswordStrengthMeter password={passwordValue} />
 
             <Form.Item
               name="confirmPassword"
