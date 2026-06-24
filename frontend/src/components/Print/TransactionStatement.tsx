@@ -73,16 +73,17 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
     return null;
   }
 
-  // 빈 행 수 계산 (최대 10행까지, 품목 수에 따라 조정)
+  // 빈 행 수 계산 (전체 인쇄는 한 페이지에 2장이 들어가야 하므로 행 수를 줄임)
   const itemCount = data?.items?.length || 0;
-  const maxEmptyRows = Math.max(0, 10 - itemCount); // 최대 10행까지 빈 행 추가
+  const maxTotalRows = printMode === 'full' ? 7 : 10; // 전체 인쇄 7행, 단독 인쇄 10행
+  const maxEmptyRows = Math.max(0, maxTotalRows - itemCount);
 
   // 단일 명세표 컴포넌트 (공급받는자/공급자용)
   const renderSingleStatement = (isSupplier: boolean) => (
     <div style={{
       width: '100%',
-      minHeight: printMode === 'full' ? '130mm' : 'auto', // 페이지 넘김 방지
-      maxHeight: printMode === 'full' ? '135mm' : 'none', // 최대 높이 제한 (A4 반접기 기준, 10행 품목 테이블 수용)
+      minHeight: 'auto', // 자연 높이 (전체 인쇄 시 2장이 한 페이지에 들어가도록)
+      maxHeight: 'none',
       fontFamily: 'Malgun Gothic, sans-serif',
       fontSize: '10pt', // 전체/단독 인쇄 동일
       lineHeight: '1.3',
@@ -731,7 +732,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
       {printMode === 'full' && (
         <div style={{
           borderTop: '1px dashed #999',
-          margin: '10mm 10mm 2mm 10mm'
+          margin: '4mm 10mm 3mm 10mm'
         }}></div>
       )}
 
