@@ -28,6 +28,7 @@
     "dompurify": "^3.2.7",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
+    "framer-motion": "^12.41.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",

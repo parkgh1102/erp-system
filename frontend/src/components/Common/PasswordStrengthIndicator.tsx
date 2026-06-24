@@ -1,6 +1,7 @@
 import React from 'react';
-import { Progress, Typography, Space, Divider } from 'antd';
+import { Typography, Space, Divider } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PasswordStrength, getPasswordStrengthText, getPasswordStrengthColor } from '../../utils/passwordValidator';
 
 const { Text } = Typography;
@@ -31,23 +32,27 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <Text style={{ fontSize: '14px', color: '#666' }}>비밀번호 강도</Text>
-            <Text
-              style={{
-                fontSize: '14px',
-                fontWeight: 'bold',
-                color: strengthColor
-              }}
-            >
-              {strengthText}
-            </Text>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={strengthText}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.2 }}
+                style={{ fontSize: '14px', fontWeight: 'bold', color: strengthColor }}
+              >
+                {strengthText}
+              </motion.span>
+            </AnimatePresence>
           </div>
-          <Progress
-            percent={percentage}
-            showInfo={false}
-            strokeColor={strengthColor}
-            trailColor="#f0f0f0"
-            size="default"
-          />
+          {/* 부드럽게 차오르는 강도 바 */}
+          <div style={{ height: 8, borderRadius: 6, background: '#f0f0f0', overflow: 'hidden' }}>
+            <motion.div
+              animate={{ width: `${percentage}%`, backgroundColor: strengthColor }}
+              transition={{ type: 'spring', stiffness: 180, damping: 22 }}
+              style={{ height: '100%', borderRadius: 6 }}
+            />
+          </div>
         </div>
 
         {/* 피드백 메시지 */}
@@ -116,11 +121,18 @@ interface RequirementItemProps {
 
 const RequirementItem: React.FC<RequirementItemProps> = ({ text, met }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '2px 0' }}>
-    {met ? (
-      <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '12px' }} />
-    ) : (
-      <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: '12px' }} />
-    )}
+    <motion.span
+      key={met ? 'met' : 'unmet'}
+      animate={{ scale: met ? [1, 1.4, 1] : 1 }}
+      transition={{ duration: 0.3 }}
+      style={{ display: 'inline-flex' }}
+    >
+      {met ? (
+        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: '12px' }} />
+      ) : (
+        <CloseCircleOutlined style={{ color: '#ff4d4f', fontSize: '12px' }} />
+      )}
+    </motion.span>
     <Text style={{
       fontSize: '13px',
       color: met ? '#52c41a' : '#666',
