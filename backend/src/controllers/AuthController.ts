@@ -883,10 +883,10 @@ export const AuthController = {
         });
       }
 
-      // 임시 토큰 생성 (5분 유효)
+      // 임시 토큰 생성 (5분 유효) — 전용 타입 클레임으로 일반 인증 토큰과 혼용 차단
       const env = getValidatedEnv();
       const resetToken = jwt.sign(
-        { userId: user.id, email: user.email },
+        { userId: user.id, email: user.email, type: 'password_reset' },
         env.JWT_SECRET,
         { expiresIn: '5m' }
       );
@@ -948,6 +948,14 @@ export const AuthController = {
         return res.status(401).json({
           success: false,
           message: '유효하지 않거나 만료된 토큰입니다.'
+        });
+      }
+
+      // 비밀번호 재설정 전용 토큰만 허용 (일반 인증/리프레시 토큰 사용 차단)
+      if ((decoded as any).type !== 'password_reset') {
+        return res.status(401).json({
+          success: false,
+          message: '유효하지 않은 토큰입니다.'
         });
       }
 

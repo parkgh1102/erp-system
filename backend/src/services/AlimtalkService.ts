@@ -1,5 +1,6 @@
 import axios from 'axios';
 import FormData from 'form-data';
+import crypto from 'crypto';
 
 interface AlimtalkParams {
   api_key: string;
@@ -187,9 +188,10 @@ export class AlimtalkService {
   }
 
   /**
-   * 6자리 랜덤 OTP 코드 생성
+   * 6자리 랜덤 OTP 코드 생성 (암호학적으로 안전한 난수 사용)
    */
   static generateOTP(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    // 100000 ~ 999999
+    return crypto.randomInt(100000, 1000000).toString();
   }
 }

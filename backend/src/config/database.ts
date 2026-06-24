@@ -14,6 +14,7 @@
 
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import { DataSource } from 'typeorm';
@@ -96,6 +97,26 @@ const baseConfig = {
 };
 
 /**
+ * 프로덕션 DB SSL 설정.
+ * 기본값은 인증서 검증 활성화(rejectUnauthorized: true)로 MITM 을 방지한다.
+ * - DB_SSL_REJECT_UNAUTHORIZED=false : 자체 서명 인증서 환경에서 명시적 옵트아웃
+ * - DB_SSL_CA=/path/to/ca.crt        : 사설 CA 인증서 경로 지정
+ */
+const getProductionSsl = () => {
+  const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false';
+  const caPath = process.env.DB_SSL_CA;
+  let ca: string | undefined;
+  if (caPath) {
+    try {
+      ca = fs.readFileSync(caPath).toString();
+    } catch {
+      // CA 파일을 읽지 못하면 무시 (rejectUnauthorized 설정은 그대로 적용)
+    }
+  }
+  return ca ? { rejectUnauthorized, ca } : { rejectUnauthorized };
+};
+
+/**
  * 데이터베이스별 설정
  */
 const getDatabaseConfig = () => {
@@ -111,10 +132,9 @@ const getDatabaseConfig = () => {
         database: env.DB_DATABASE,
 
         // ✅ SSL 설정 (프로덕션 필수)
-        ssl: env.NODE_ENV === 'production' ? {
-          rejectUnauthorized: false, // 자체 서명 인증서 허용
-          // ca: fs.readFileSync('/path/to/ca-cert.crt').toString(), // CA 인증서 경로
-        } : false,
+        // 기본적으로 인증서를 검증한다(MITM 방지). 자체 서명 인증서를 써야 하는 환경에서는
+        // DB_SSL_REJECT_UNAUTHORIZED=false 로 명시적으로 옵트아웃하거나 DB_SSL_CA 로 CA 경로를 지정한다.
+        ssl: env.NODE_ENV === 'production' ? getProductionSsl() : false,
 
         // 연결 풀 최적화
         extra: {
@@ -181,10 +201,8 @@ const getDatabaseConfig = () => {
           acquireTimeout: 60000,
           timeout: 60000,
 
-          // ✅ SSL 설정 (프로덕션)
-          ssl: env.NODE_ENV === 'production' ? {
-            rejectUnauthorized: false
-          } : false,
+          // ✅ SSL 설정 (프로덕션) — 기본 인증서 검증, env 로 옵트아웃 가능
+          ssl: env.NODE_ENV === 'production' ? getProductionSsl() : false,
 
           // 자동 재연결
           reconnect: true,

@@ -67,13 +67,11 @@ if (validatedEnv.FRONTEND_URL && !allowedOrigins.includes(validatedEnv.FRONTEND_
 // CORS 미들웨어 설정
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Origin이 없는 요청은 제한적으로 허용 (health check, 서버 간 통신 등)
-    // 프로덕션에서는 경고 로그 기록
+    // Origin이 없는 요청(health check, 서버 간 통신, 동일 출처 등)에는
+    // 자격증명용 CORS 헤더를 부여하지 않는다. (allowlist 우회 크로스오리진 자격증명 요청 차단)
+    // CORS 는 브라우저에서 강제되므로 서버 간 호출/헬스체크는 그대로 동작한다.
     if (!origin) {
-      if (process.env.NODE_ENV === 'production') {
-        // 프로덕션에서 Origin 없는 요청 모니터링 (보안 감사용)
-      }
-      return callback(null, true);
+      return callback(null, false);
     }
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
