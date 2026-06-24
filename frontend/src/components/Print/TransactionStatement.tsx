@@ -679,7 +679,7 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               padding: 0 !important;
             }
             .single-print-wrapper {
-              width: 200mm !important;
+              width: 100% !important;
               height: 138mm !important;
               max-height: 138mm !important;
               padding: 3mm 5mm 3mm 5mm !important;
@@ -702,8 +702,8 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
               padding: 0 !important;
             }
             .full-print-wrapper {
-              zoom: 0.95 !important;
-              width: 210mm !important;
+              width: 100% !important;
+              min-height: auto !important;
               overflow: hidden !important;
               page-break-inside: avoid !important;
             }
