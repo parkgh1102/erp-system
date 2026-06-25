@@ -38,6 +38,7 @@ import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import CustomerBalancePrint from '../Print/CustomerBalancePrint';
+import { docTotal, computeAging, sumAging, type AgingBuckets } from '../../utils/receivableAging';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -56,7 +57,8 @@ interface CustomerBalance {
   payableBalance: number; // 미지급 (매입 - 지급)
   netBalance: number; // 순잔액 (미수금 - 미지급)
   lastTransactionDate?: string;
-  overdueDays?: number;
+  overdueDays?: number; // 미수금이 발생한 가장 오래된 매출의 경과일수
+  aging?: AgingBuckets; // 미수금 연령 구간별 분포
 }
 
 interface TransactionDetail {
@@ -84,103 +86,121 @@ const CustomerBalanceManagement: React.FC = () => {
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [autoSaveType, setAutoSaveType] = useState<'pdf' | 'png' | 'jpg' | 'clipboard' | null>(null);
+  // 거래처별 거래 내역 (상세보기/인쇄용) — fetchData 시 함께 계산해 보관
+  const [detailsMap, setDetailsMap] = useState<Record<number, TransactionDetail[]>>({});
 
-  // 샘플 데이터
-  const [sampleBalances] = useState<CustomerBalance[]>([
-    {
-      id: 1,
-      customerCode: 'C001',
-      name: '(주)테스트기업',
-      businessNumber: '123-45-67890',
-      customerType: 'customer',
-      totalSales: 5000000,
-      totalReceipts: 3500000,
-      receivableBalance: 1500000,
-      totalPurchases: 0,
-      totalPayments: 0,
-      payableBalance: 0,
-      netBalance: 1500000,
-      lastTransactionDate: '2026-01-15',
-      overdueDays: 15,
-    },
-    {
-      id: 2,
-      customerCode: 'C002',
-      name: '삼성전자',
-      businessNumber: '234-56-78901',
-      customerType: 'customer',
-      totalSales: 10000000,
-      totalReceipts: 10000000,
-      receivableBalance: 0,
-      totalPurchases: 0,
-      totalPayments: 0,
-      payableBalance: 0,
-      netBalance: 0,
-      lastTransactionDate: '2026-01-18',
-    },
-    {
-      id: 3,
-      customerCode: 'C003',
-      name: 'LG전자',
-      businessNumber: '345-67-89012',
-      customerType: 'customer',
-      totalSales: 8000000,
-      totalReceipts: 5000000,
-      receivableBalance: 3000000,
-      totalPurchases: 0,
-      totalPayments: 0,
-      payableBalance: 0,
-      netBalance: 3000000,
-      lastTransactionDate: '2026-01-10',
-      overdueDays: 30,
-    },
-    {
-      id: 4,
-      customerCode: 'S001',
-      name: '(주)공급업체A',
-      businessNumber: '111-22-33333',
-      customerType: 'supplier',
-      totalSales: 0,
-      totalReceipts: 0,
-      receivableBalance: 0,
-      totalPurchases: 3000000,
-      totalPayments: 2000000,
-      payableBalance: 1000000,
-      netBalance: -1000000,
-      lastTransactionDate: '2026-01-12',
-    },
-    {
-      id: 5,
-      customerCode: 'S002',
-      name: '(주)공급업체B',
-      businessNumber: '222-33-44444',
-      customerType: 'supplier',
-      totalSales: 0,
-      totalReceipts: 0,
-      receivableBalance: 0,
-      totalPurchases: 5000000,
-      totalPayments: 3500000,
-      payableBalance: 1500000,
-      netBalance: -1500000,
-      lastTransactionDate: '2026-01-08',
-      overdueDays: 20,
-    },
-  ]);
-
-  // 데이터 로드
+  // 데이터 로드 + 미수금/미지급 및 연령분석 계산
   const fetchData = useCallback(async () => {
     if (!currentBusiness) return;
     setLoading(true);
     try {
-      // TODO: 실제 API 연동
-      setBalances(sampleBalances);
+      const [customersRes, salesRes, purchasesRes, paymentsRes] = await Promise.all([
+        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
+        salesAPI.getAll(currentBusiness.id),
+        purchaseAPI.getAll(currentBusiness.id),
+        paymentAPI.getAll(currentBusiness.id),
+      ]);
+
+      const customers: any[] = customersRes.data?.data?.customers || [];
+      const sales: any[] = salesRes.data?.data?.sales || [];
+      const purchases: any[] = purchasesRes.data?.data?.purchases || [];
+      const payments: any[] = paymentsRes.data?.data?.payments || [];
+
+      // 거래처별로 매출/매입/수금/지급을 그룹화
+      const byCustomer = new Map<number, {
+        sales: any[]; purchases: any[]; receipts: number; payments: number;
+      }>();
+      const ensure = (id: number) => {
+        if (!byCustomer.has(id)) byCustomer.set(id, { sales: [], purchases: [], receipts: 0, payments: 0 });
+        return byCustomer.get(id)!;
+      };
+      sales.forEach(s => { if (s.customerId != null) ensure(s.customerId).sales.push(s); });
+      purchases.forEach(p => { if (p.customerId != null) ensure(p.customerId).purchases.push(p); });
+      payments.forEach(p => {
+        if (p.customerId == null) return;
+        const bucket = ensure(p.customerId);
+        if (p.paymentType === '수금') bucket.receipts += Number(p.amount) || 0;
+        else if (p.paymentType === '지급') bucket.payments += Number(p.amount) || 0;
+      });
+
+      const details: Record<number, TransactionDetail[]> = {};
+
+      const computed: CustomerBalance[] = customers.map((c: any) => {
+        const g = byCustomer.get(c.id) || { sales: [], purchases: [], receipts: 0, payments: 0 };
+
+        const totalSales = g.sales.reduce((sum, s) => sum + docTotal(s), 0);
+        const totalPurchases = g.purchases.reduce((sum, p) => sum + docTotal(p), 0);
+        const totalReceipts = g.receipts;
+        const totalPayments = g.payments;
+        const receivableBalance = totalSales - totalReceipts;
+        const payableBalance = totalPurchases - totalPayments;
+
+        // 미수금 연령분석 (수금액을 오래된 매출부터 FIFO 차감)
+        const { aging, overdueDays } = computeAging(g.sales, totalReceipts);
+
+        // 거래 내역 타임라인 (순 미수 포지션 기준 잔액)
+        const timeline: Array<{ date: string; type: TransactionDetail['type']; description: string; amount: number }> = [];
+        g.sales.forEach((s, i) => timeline.push({ date: dayjs(s.transactionDate).format('YYYY-MM-DD'), type: 'sales', description: s.description || s.memo || `매출 #${s.id ?? i + 1}`, amount: docTotal(s) }));
+        g.purchases.forEach((p, i) => timeline.push({ date: dayjs(p.transactionDate).format('YYYY-MM-DD'), type: 'purchase', description: p.description || p.memo || `매입 #${p.id ?? i + 1}`, amount: -docTotal(p) }));
+        payments.filter(p => p.customerId === c.id).forEach((p, i) => {
+          const amt = Number(p.amount) || 0;
+          timeline.push({
+            date: dayjs(p.paymentDate).format('YYYY-MM-DD'),
+            type: p.paymentType === '수금' ? 'receipt' : 'payment',
+            description: p.description || `${p.paymentType} #${p.id ?? i + 1}`,
+            amount: p.paymentType === '수금' ? -amt : amt,
+          });
+        });
+        timeline.sort((a, b) => dayjs(a.date).valueOf() - dayjs(b.date).valueOf());
+        let running = 0;
+        details[c.id] = timeline.map((t, idx) => {
+          running += t.amount;
+          return { id: idx + 1, date: t.date, type: t.type, description: t.description, amount: t.amount, balance: running };
+        });
+
+        const allDates = [
+          ...g.sales.map(s => s.transactionDate),
+          ...g.purchases.map(p => p.transactionDate),
+          ...payments.filter(p => p.customerId === c.id).map(p => p.paymentDate),
+        ].filter(Boolean);
+        const lastTransactionDate = allDates.length
+          ? dayjs(Math.max(...allDates.map(d => dayjs(d).valueOf()))).format('YYYY-MM-DD')
+          : undefined;
+
+        const typeMap: Record<string, CustomerBalance['customerType']> = {
+          '매출처': 'customer', '매입처': 'supplier', '기타': 'both',
+        };
+
+        return {
+          id: c.id,
+          customerCode: c.customerCode || '',
+          name: c.name,
+          businessNumber: c.businessNumber,
+          customerType: typeMap[c.customerType] || 'both',
+          totalSales,
+          totalReceipts,
+          receivableBalance,
+          totalPurchases,
+          totalPayments,
+          payableBalance,
+          netBalance: receivableBalance - payableBalance,
+          lastTransactionDate,
+          overdueDays,
+          aging,
+        };
+      })
+      // 거래 이력이 전혀 없는 거래처는 제외
+      .filter(b => b.totalSales > 0 || b.totalPurchases > 0 || b.totalReceipts > 0 || b.totalPayments > 0);
+
+      setDetailsMap(details);
+      setBalances(computed);
     } catch (error) {
       console.error('데이터 로드 오류:', error);
       message.error('데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [currentBusiness, message, sampleBalances]);
+  }, [currentBusiness, message]);
 
   useEffect(() => {
     fetchData();
@@ -194,6 +214,9 @@ const CustomerBalanceManagement: React.FC = () => {
     const receivableCustomers = balances.filter(b => b.receivableBalance > 0).length;
     const payableSuppliers = balances.filter(b => b.payableBalance > 0).length;
 
+    // 미수금 연령 구간별 합계
+    const aging = sumAging(balances.map(b => b.aging).filter((a): a is AgingBuckets => !!a));
+
     return {
       totalReceivable,
       totalPayable,
@@ -201,6 +224,7 @@ const CustomerBalanceManagement: React.FC = () => {
       overdueCount,
       receivableCustomers,
       payableSuppliers,
+      aging,
     };
   }, [balances]);
 
@@ -230,16 +254,10 @@ const CustomerBalanceManagement: React.FC = () => {
     return result;
   }, [balances, activeTab, searchText]);
 
-  // 샘플 거래 내역 설정
+  // 거래처별 실제 거래 내역 설정 (fetchData에서 계산해 둔 detailsMap 사용)
   const loadTransactionDetails = (customer: CustomerBalance) => {
     setSelectedCustomer(customer);
-    // 샘플 거래 내역
-    setTransactionDetails([
-      { id: 1, date: '2026-01-05', type: 'sales', description: '매출 #S001', amount: 1000000, balance: 1000000 },
-      { id: 2, date: '2026-01-10', type: 'receipt', description: '수금 #R001', amount: -500000, balance: 500000 },
-      { id: 3, date: '2026-01-15', type: 'sales', description: '매출 #S002', amount: 2000000, balance: 2500000 },
-      { id: 4, date: '2026-01-18', type: 'receipt', description: '수금 #R002', amount: -1000000, balance: 1500000 },
-    ]);
+    setTransactionDetails(detailsMap[customer.id] || []);
   };
 
   // 상세보기
@@ -412,6 +430,45 @@ const CustomerBalanceManagement: React.FC = () => {
           </Col>
         </Row>
       </Card>
+
+      {/* 미수금 연령분석 */}
+      {stats.totalReceivable > 0 && (
+        <Card size="small" title={<span><WarningOutlined style={{ color: '#fa8c16', marginRight: 6 }} />미수금 연령분석</span>} style={{ marginBottom: 16 }}>
+          {(() => {
+            const buckets = [
+              { key: 'b0_30', label: '0~30일', value: stats.aging.b0_30, color: '#52c41a' },
+              { key: 'b31_60', label: '31~60일', value: stats.aging.b31_60, color: '#faad14' },
+              { key: 'b61_90', label: '61~90일', value: stats.aging.b61_90, color: '#fa8c16' },
+              { key: 'b90plus', label: '90일 초과', value: stats.aging.b90plus, color: '#cf1322' },
+            ];
+            const total = stats.totalReceivable || 1;
+            return (
+              <>
+                <Row gutter={[12, 12]}>
+                  {buckets.map(bk => (
+                    <Col xs={12} md={6} key={bk.key}>
+                      <div style={{ textAlign: 'center', padding: '8px 4px', border: `1px solid ${bk.color}33`, borderRadius: 8, background: `${bk.color}0d` }}>
+                        <Text style={{ fontSize: 12, color: bk.color }}>{bk.label}</Text>
+                        <div style={{ fontSize: isMobile ? 14 : 18, fontWeight: 600, color: bk.color, marginTop: 4 }}>
+                          {formatCurrency(bk.value)}
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 11 }}>{Math.round((bk.value / total) * 100)}%</Text>
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+                <Progress
+                  style={{ marginTop: 12 }}
+                  percent={100}
+                  showInfo={false}
+                  success={{ percent: Math.round((stats.aging.b0_30 / total) * 100) }}
+                  strokeColor="#cf1322"
+                />
+              </>
+            );
+          })()}
+        </Card>
+      )}
 
       {/* 필터 */}
       <Card size="small" style={{ marginBottom: 16 }}>

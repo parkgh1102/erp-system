@@ -101,3 +101,8 @@ DB 마이그레이션: `cd backend && npm run migration:run` / `migration:genera
 
 ### 2026-06-04
 - CLAUDE.md 신규 작성: 프로젝트 가이드 + 활동 기록 체계 수립.
+
+### 2026-06-25
+- 검색바 회전 무지개 그라데이션 테두리 제거(AnimatedSearchBar).
+- 미수금/미지급 현황(CustomerBalance) 샘플 데이터 → 실제 API 연동. 매출·매입·수금·지급으로 거래처별 잔액 계산.
+- 미수금 연령분석(Aging) 구현: 수금액 FIFO 차감 후 0~30/31~60/61~90/90일 초과 구간 분포 + 경과일수. 계산 로직을 `utils/receivableAging.ts`로 분리하고 Vitest 테스트 12종 작성(첫 테스트 도입, setup.ts 추가).
