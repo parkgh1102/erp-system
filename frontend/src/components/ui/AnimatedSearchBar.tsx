@@ -43,23 +43,6 @@ export const AnimatedSearchBar: React.FC<AnimatedSearchBarProps> = ({
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         style={{ position: 'relative', width, padding: 2, borderRadius: 12 }}
       >
-        <motion.div
-          aria-hidden
-          animate={{ rotate: 360, opacity: focused ? 1 : 0.4 }}
-          transition={{
-            rotate: { repeat: Infinity, duration: 4, ease: 'linear' },
-            opacity: { duration: 0.3 },
-          }}
-          style={{
-            position: 'absolute',
-            inset: -1,
-            borderRadius: 12,
-            background:
-              'conic-gradient(from 0deg, #1890ff, #52c41a, #faad14, #eb2f96, #1890ff)',
-            filter: 'blur(6px)',
-            zIndex: 0,
-          }}
-        />
         <div style={{ position: 'relative', zIndex: 1, borderRadius: 10, overflow: 'hidden' }}>
           {children}
         </div>
@@ -73,24 +56,6 @@ export const AnimatedSearchBar: React.FC<AnimatedSearchBarProps> = ({
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       style={{ position: 'relative', width, padding: 2, borderRadius: 12 }}
     >
-      {/* 회전 그라데이션 테두리 */}
-      <motion.div
-        aria-hidden
-        animate={{ rotate: 360, opacity: focused ? 1 : 0.45 }}
-        transition={{
-          rotate: { repeat: Infinity, duration: 4, ease: 'linear' },
-          opacity: { duration: 0.3 },
-        }}
-        style={{
-          position: 'absolute',
-          inset: -1,
-          borderRadius: 12,
-          background:
-            'conic-gradient(from 0deg, #1890ff, #52c41a, #faad14, #eb2f96, #1890ff)',
-          filter: 'blur(6px)',
-          zIndex: 0,
-        }}
-      />
       <div
         style={{
           position: 'relative',
