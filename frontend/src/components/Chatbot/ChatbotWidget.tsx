@@ -159,7 +159,7 @@ const ChatbotWidget: React.FC = () => {
       theme={{
         algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#1890ff',
+          colorPrimary: '#1B61A8',
           colorBgContainer: '#ffffff',
           colorText: 'rgba(0, 0, 0, 0.88)',
           colorTextSecondary: 'rgba(0, 0, 0, 0.65)',
@@ -180,7 +180,7 @@ const ChatbotWidget: React.FC = () => {
           <Card
             title={
               <Space>
-                <RobotOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
+                <RobotOutlined style={{ fontSize: '20px', color: '#1B61A8' }} />
                 <span>ERP AI 어시스턴트</span>
                 {status?.hasApiKey && (
                   <Tag color="success" style={{ marginLeft: 'auto' }}>
@@ -218,7 +218,7 @@ const ChatbotWidget: React.FC = () => {
                   <Avatar
                     icon={msg.role === 'user' ? <UserOutlined /> : <RobotOutlined />}
                     style={{
-                      backgroundColor: msg.role === 'user' ? '#1890ff' : '#52c41a'
+                      backgroundColor: msg.role === 'user' ? '#1B61A8' : '#52c41a'
                     }}
                   />
                   <div className="message-content">

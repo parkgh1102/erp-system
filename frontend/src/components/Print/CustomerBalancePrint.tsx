@@ -182,7 +182,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'sales': return '#1890ff';
+      case 'sales': return '#1B61A8';
       case 'receipt': return '#52c41a';
       case 'purchase': return '#fa8c16';
       case 'payment': return '#f5222d';

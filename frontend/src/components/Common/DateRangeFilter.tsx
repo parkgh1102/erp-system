@@ -129,7 +129,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
           padding: '8px 12px',
           fontWeight: 'bold',
           fontSize: '13px',
-          color: isDark ? '#4da3ff' : '#1890ff',
+          color: isDark ? '#4da3ff' : '#1B61A8',
           borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
           marginBottom: '4px'
         }}>
@@ -216,7 +216,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
           padding: '8px 12px',
           fontWeight: 'bold',
           fontSize: '13px',
-          color: isDark ? '#4da3ff' : '#1890ff',
+          color: isDark ? '#4da3ff' : '#1B61A8',
           borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
           marginBottom: '4px'
         }}>
@@ -376,40 +376,51 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
     ],
   };
 
-  // 모바일 버튼 스타일
-  const mobileButtonStyle: React.CSSProperties = isMobile
-    ? { padding: '0 10px', fontSize: '13px', whiteSpace: 'nowrap', flexShrink: 0 }
-    : {};
+  // 데스크톱: 기존 컬러 버튼 / 모바일: 통일된 회색 칩 스타일
+  // (모바일에서는 인라인 무지개색을 덮어써 일관된 톤으로 정리)
+  const chip = (color: string): React.CSSProperties =>
+    isMobile
+      ? {
+          padding: '0 12px',
+          fontSize: '13px',
+          whiteSpace: 'nowrap',
+          flexShrink: 0,
+          borderRadius: '999px',
+          background: isDark ? '#1f1f1f' : '#ffffff',
+          borderColor: isDark ? '#434343' : '#d9dde3',
+          color: isDark ? '#d1d5db' : '#374151',
+        }
+      : { backgroundColor: color, borderColor: color, color: 'white' };
 
-  const content = (
-    <Space size="small" wrap={!isMobile} style={isMobile ? { flexWrap: 'nowrap' } : undefined}>
+  const buttons = (
+    <>
       <Dropdown menu={recentDaysMenu} trigger={['click']}>
-        <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white', ...mobileButtonStyle }}>
+        <Button size={isMobile ? 'small' : 'middle'} style={chip('#1B61A8')}>
           최근7일 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown popupRender={() => monthMenuContent} trigger={['click']}>
-        <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white', ...mobileButtonStyle }}>
+        <Button size={isMobile ? 'small' : 'middle'} style={chip('#52c41a')}>
           최근 한달 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown popupRender={() => quarterMenuContent} trigger={['click']}>
-        <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#fa8c16', borderColor: '#fa8c16', color: 'white', ...mobileButtonStyle }}>
+        <Button size={isMobile ? 'small' : 'middle'} style={chip('#fa8c16')}>
           이번분기 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Dropdown menu={yearMenu} trigger={['click']}>
-        <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white', ...mobileButtonStyle }}>
+        <Button size={isMobile ? 'small' : 'middle'} style={chip('#722ed1')}>
           이번년도 <DownOutlined />
         </Button>
       </Dropdown>
 
       <Button
         size={isMobile ? 'small' : 'middle'}
-        style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white', ...mobileButtonStyle }}
+        style={chip('#13c2c2')}
         onClick={() => {
           const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
           const startDate = dayjs().subtract(2, 'month').startOf('month').format('YYYY-MM-DD');
@@ -421,7 +432,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
 
       <Button
         size={isMobile ? 'small' : 'middle'}
-        style={{ backgroundColor: '#eb2f96', borderColor: '#eb2f96', color: 'white', ...mobileButtonStyle }}
+        style={chip('#eb2f96')}
         onClick={() => {
           const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
           const startDate = dayjs().subtract(5, 'month').startOf('month').format('YYYY-MM-DD');
@@ -433,15 +444,15 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
 
       {onLimitChange && (
         <Dropdown menu={limitMenu} trigger={['click']}>
-          <Button size={isMobile ? 'small' : 'middle'} style={{ backgroundColor: '#595959', borderColor: '#595959', color: 'white', ...mobileButtonStyle }}>
+          <Button size={isMobile ? 'small' : 'middle'} style={chip('#595959')}>
             최근자료 <DownOutlined />
           </Button>
         </Dropdown>
       )}
-    </Space>
+    </>
   );
 
-  // 모바일: 가로 스크롤 컨테이너
+  // 모바일: 가로 스크롤 단일 행 (Space 대신 일반 flex 사용 — 전역 .ant-space wrap 강제 회피)
   if (isMobile) {
     return (
       <div style={{
@@ -454,14 +465,21 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
         padding: '4px 8px'
       }}>
         <style>{`.date-range-filter-mobile::-webkit-scrollbar { display: none; }`}</style>
-        <div className="date-range-filter-mobile" style={{ display: 'inline-flex', gap: '6px' }}>
-          {content}
+        <div
+          className="date-range-filter-mobile"
+          style={{ display: 'flex', flexWrap: 'nowrap', gap: '6px', width: 'max-content' }}
+        >
+          {buttons}
         </div>
       </div>
     );
   }
 
-  return content;
+  return (
+    <Space size="small" wrap>
+      {buttons}
+    </Space>
+  );
 };
 
 export default DateRangeFilter;

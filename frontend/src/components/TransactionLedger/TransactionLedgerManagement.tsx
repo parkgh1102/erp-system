@@ -472,7 +472,7 @@ const TransactionLedgerManagement: React.FC = () => {
         // 음수(반품)는 빨간색, 양수는 타입별 색상
         const isNegative = displayAmount < 0;
         const colorMap = {
-          'sales': isDark ? '#40a9ff' : '#1890ff',
+          'sales': isDark ? '#40a9ff' : '#1B61A8',
           'purchase': isDark ? '#d9d9d9' : '#000000',
           'receipt': isDark ? '#ff7875' : '#ff4d4f',
           'payment': isDark ? '#d9d9d9' : '#000000'
@@ -537,7 +537,7 @@ const TransactionLedgerManagement: React.FC = () => {
         // 품목별 누적 잔액 표시 (cumulativeBalance 사용)
         const displayBalance = record.cumulativeBalance ?? balance;
         const color = displayBalance >= 0
-          ? (isDark ? '#40a9ff' : '#1890ff')  // 양수: 파랑
+          ? (isDark ? '#40a9ff' : '#1B61A8')  // 양수: 파랑
           : (isDark ? '#ff7875' : '#ff4d4f'); // 음수: 빨강
         return (
           <span style={{ fontWeight: 'bold', color }}>
@@ -642,7 +642,7 @@ const TransactionLedgerManagement: React.FC = () => {
   const mobileActionDrawerContent = (
     <Space direction="vertical" style={{ width: '100%' }} size="small">
       <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight" trigger={['click']}>
-        <Button icon={<ExportOutlined />} block size="large" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white', justifyContent: 'flex-start' }}>
+        <Button icon={<ExportOutlined />} block size="large" style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white', justifyContent: 'flex-start' }}>
           파일저장
         </Button>
       </Dropdown>
@@ -757,7 +757,7 @@ const TransactionLedgerManagement: React.FC = () => {
                   조회
                 </Button>
                 <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-                  <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                  <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white' }}>
                     파일저장
                   </Button>
                 </Dropdown>
@@ -884,7 +884,7 @@ const TransactionLedgerManagement: React.FC = () => {
                     <Table.Summary.Cell index={6} align="right"></Table.Summary.Cell>
                     <Table.Summary.Cell index={7} align="right"></Table.Summary.Cell>
                     <Table.Summary.Cell index={8} align="right">
-                      <span style={{ color: finalBalance >= 0 ? (isDark ? '#40a9ff' : '#1890ff') : (isDark ? '#ff7875' : '#ff4d4f') }}>
+                      <span style={{ color: finalBalance >= 0 ? (isDark ? '#40a9ff' : '#1B61A8') : (isDark ? '#ff7875' : '#ff4d4f') }}>
                         {Math.round(finalBalance || 0).toLocaleString()}원
                       </span>
                     </Table.Summary.Cell>
@@ -895,13 +895,13 @@ const TransactionLedgerManagement: React.FC = () => {
                     <Table.Summary.Cell index={3} align="center"></Table.Summary.Cell>
                     <Table.Summary.Cell index={4} align="right"></Table.Summary.Cell>
                     <Table.Summary.Cell index={5} align="right">
-                      <span style={{ color: isDark ? '#40a9ff' : '#1890ff' }}>{Math.round(totalSalesSupply).toLocaleString()}원</span>
+                      <span style={{ color: isDark ? '#40a9ff' : '#1B61A8' }}>{Math.round(totalSalesSupply).toLocaleString()}원</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={6} align="right">
-                      <span style={{ color: isDark ? '#40a9ff' : '#1890ff' }}>{Math.round(totalSalesVat).toLocaleString()}원</span>
+                      <span style={{ color: isDark ? '#40a9ff' : '#1B61A8' }}>{Math.round(totalSalesVat).toLocaleString()}원</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={7} align="right">
-                      <span style={{ color: isDark ? '#40a9ff' : '#1890ff', fontWeight: 'bold' }}>{Math.round(totalSales).toLocaleString()}원</span>
+                      <span style={{ color: isDark ? '#40a9ff' : '#1B61A8', fontWeight: 'bold' }}>{Math.round(totalSales).toLocaleString()}원</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={8} colSpan={1} align="center">수금 합계</Table.Summary.Cell>
                     <Table.Summary.Cell index={9} align="right">

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { ConfigProvider, App as AntApp, theme, Spin } from 'antd';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from './stores/themeStore';
+import { antdSeedToken } from './styles/tokens';
 import AppLayout from './components/Layout/AppLayout';
 import koKR from 'antd/locale/ko_KR';
 import 'dayjs/locale/ko';
@@ -110,8 +111,7 @@ const ThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     ? {
         algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#1890ff',
-          borderRadius: 6,
+          ...antdSeedToken,
         },
       }
     : getThemeConfig();

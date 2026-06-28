@@ -26,6 +26,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { authAPI, businessAPI } from '../../utils/api';
 import { formatBusinessNumber, formatPhoneNumber } from '../../utils/formatters';
 import type { UploadProps } from 'antd';
@@ -36,6 +37,7 @@ const { Title, Text } = Typography;
 const Profile: React.FC = () => {
   const { user, updateUser, currentBusiness, setAuth, token, setCurrentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
+  const { isMobile } = useMediaQuery();
   const [form] = Form.useForm();
   const [passwordForm] = Form.useForm();
   const [businessForm] = Form.useForm();
@@ -239,12 +241,12 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
+    <div style={{ padding: isMobile ? '16px 8px' : '24px' }}>
+      <Title level={isMobile ? 3 : 2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
         내 정보
       </Title>
 
-      <Row gutter={[24, 24]}>
+      <Row gutter={isMobile ? [12, 12] : [24, 24]}>
         <Col xs={24} lg={8}>
           <Card
             title="프로필 사진"
@@ -256,7 +258,7 @@ const Profile: React.FC = () => {
                 src={user?.avatar ? `${import.meta.env.VITE_API_URL?.replace('/api', '')}${user.avatar}` : undefined}
                 icon={!user?.avatar ? <UserOutlined /> : undefined}
                 style={{
-                  backgroundColor: '#1890ff',
+                  backgroundColor: '#1B61A8',
                   border: '4px solid #f0f0f0',
                 }}
               />

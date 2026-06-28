@@ -218,7 +218,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
             width={canvasSize.width}
             height={canvasSize.height}
             style={{
-              border: '2px solid #1890ff',
+              border: '2px solid #1B61A8',
               borderRadius: 8,
               cursor: 'crosshair',
               backgroundColor: '#fff',

@@ -190,7 +190,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
               <td style={{ ...cellBase, textAlign: 'right' }}></td>
               <td style={{ ...cellBase, textAlign: 'right' }}></td>
               <td style={{ ...cellBase, textAlign: 'right' }}></td>
-              <td style={{ ...cellBase, textAlign: 'right', fontWeight: 'bold', backgroundColor: '#fff9e6', color: data.previousBalance >= 0 ? '#1890ff' : '#ff4d4f', fontSize: '10pt' }}>
+              <td style={{ ...cellBase, textAlign: 'right', fontWeight: 'bold', backgroundColor: '#fff9e6', color: data.previousBalance >= 0 ? '#1B61A8' : '#ff4d4f', fontSize: '10pt' }}>
                 {data.previousBalance.toLocaleString()}원
               </td>
               <td style={{ ...cellBase, textAlign: 'center', backgroundColor: '#fff9e6' }}>
@@ -224,7 +224,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
                 <td style={{ ...cellBase, textAlign: 'center' }}>
                   {entry.customerName || data.companyName}
                 </td>
-                <td style={{ ...cellBase, textAlign: 'center', color: entry.type === 'sales' ? '#1890ff' : entry.type === 'purchase' ? '#000' : entry.type === 'receipt' ? '#52c41a' : '#fa8c16' }}>
+                <td style={{ ...cellBase, textAlign: 'center', color: entry.type === 'sales' ? '#1B61A8' : entry.type === 'purchase' ? '#000' : entry.type === 'receipt' ? '#52c41a' : '#fa8c16' }}>
                   {entry.type === 'sales' ? '매출' : entry.type === 'purchase' ? '매입' : entry.type === 'receipt' ? '수금' : '지급'}
                 </td>
                 <td style={{ ...cellBase, textAlign: 'center' }}>
@@ -235,7 +235,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
                     ? entry.itemInfo.quantity.toLocaleString()
                     : ''}
                 </td>
-                <td style={{ ...cellBase, textAlign: 'right', color: entry.type === 'sales' ? '#1890ff' : entry.type === 'receipt' ? '#ff4d4f' : '#000' }}>
+                <td style={{ ...cellBase, textAlign: 'right', color: entry.type === 'sales' ? '#1B61A8' : entry.type === 'receipt' ? '#ff4d4f' : '#000' }}>
                   {entry.supplyAmount ? `${entry.supplyAmount.toLocaleString()}원` : ''}
                 </td>
                 <td style={{ ...cellBase, textAlign: 'right' }}>
@@ -244,7 +244,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
                 <td style={{ ...cellBase, textAlign: 'right', fontWeight: 'bold' }}>
                   {entry.totalAmount ? `${entry.totalAmount.toLocaleString()}원` : ''}
                 </td>
-                <td style={{ ...cellBase, textAlign: 'right', fontWeight: 'bold', color: entry.balance >= 0 ? '#1890ff' : '#ff4d4f' }}>
+                <td style={{ ...cellBase, textAlign: 'right', fontWeight: 'bold', color: entry.balance >= 0 ? '#1B61A8' : '#ff4d4f' }}>
                   {entry.balance.toLocaleString()}원
                 </td>
                 <td style={{ ...cellBase, textAlign: 'center', fontSize: '8pt' }}>
@@ -265,7 +265,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
             <td style={{ ...cellBase, textAlign: 'center' }}></td>
             <td style={{ ...cellBase, textAlign: 'center' }}></td>
             <td style={{ ...cellBase, textAlign: 'center' }}></td>
-            <td style={{ ...cellBase, textAlign: 'right', fontWeight: 'bold', backgroundColor: '#fafafa', color: finalBalance >= 0 ? '#1890ff' : '#ff4d4f' }}>
+            <td style={{ ...cellBase, textAlign: 'right', fontWeight: 'bold', backgroundColor: '#fafafa', color: finalBalance >= 0 ? '#1B61A8' : '#ff4d4f' }}>
               {finalBalance.toLocaleString()}원
             </td>
             <td style={{ ...cellBase, textAlign: 'center' }}></td>
@@ -277,13 +277,13 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
               매출 합계
             </td>
             <td style={{ ...cellBase, textAlign: 'right' }}></td>
-            <td style={{ ...cellBase, textAlign: 'right', color: '#1890ff', fontWeight: 'bold', backgroundColor: summaryBg }}>
+            <td style={{ ...cellBase, textAlign: 'right', color: '#1B61A8', fontWeight: 'bold', backgroundColor: summaryBg }}>
               {totalSalesSupply.toLocaleString()}원
             </td>
-            <td style={{ ...cellBase, textAlign: 'right', color: '#1890ff', fontWeight: 'bold', backgroundColor: summaryBg }}>
+            <td style={{ ...cellBase, textAlign: 'right', color: '#1B61A8', fontWeight: 'bold', backgroundColor: summaryBg }}>
               {totalSalesVat.toLocaleString()}원
             </td>
-            <td style={{ ...cellBase, textAlign: 'right', color: '#1890ff', fontWeight: 'bold', backgroundColor: summaryBg }}>
+            <td style={{ ...cellBase, textAlign: 'right', color: '#1B61A8', fontWeight: 'bold', backgroundColor: summaryBg }}>
               {totalSalesAmount.toLocaleString()}원
             </td>
             <td style={{ ...cellBase, textAlign: 'center', fontWeight: 'bold', backgroundColor: summaryBg }}>

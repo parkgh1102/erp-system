@@ -4,6 +4,7 @@ import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-de
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../../utils/api';
 import { useAuthStore } from '../../stores/authStore';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { AxiosErrorResponse } from '../../types';
 
 const { Title, Text } = Typography;
@@ -13,6 +14,7 @@ const LoginFormContent: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loginType, setLoginType] = useState<'email' | 'phone'>('email');
+  const { isMobile } = useMediaQuery();
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
 
@@ -57,7 +59,7 @@ const LoginFormContent: React.FC = () => {
         alignItems: 'center',
         justifyContent: 'center',
         background: '#ffffff',
-        padding: '20px',
+        padding: isMobile ? '12px' : '20px',
       }}
     >
       <Card
@@ -69,14 +71,14 @@ const LoginFormContent: React.FC = () => {
           boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
           borderRadius: '12px',
         }}
-        styles={{ body: { padding: '40px' } }}
+        styles={{ body: { padding: isMobile ? '24px 18px' : '40px' } }}
       >
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div
             style={{
               width: '80px',
               height: '80px',
-              background: 'linear-gradient(135deg, #1890ff, #096dd9)',
+              background: 'linear-gradient(135deg, #1B61A8, #096dd9)',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -125,7 +127,7 @@ const LoginFormContent: React.FC = () => {
                 width: '100%',
                 padding: '4px',
                 backgroundColor: '#f0f5ff',
-                border: '2px solid #1890ff',
+                border: '2px solid #1B61A8',
                 borderRadius: '8px',
                 fontSize: '16px',
                 fontWeight: 'bold',
@@ -186,7 +188,7 @@ const LoginFormContent: React.FC = () => {
                 borderRadius: '8px',
                 fontSize: '16px',
                 fontWeight: 'bold',
-                background: 'linear-gradient(135deg, #1890ff, #096dd9)',
+                background: 'linear-gradient(135deg, #1B61A8, #096dd9)',
                 border: 'none',
               }}
             >
@@ -204,7 +206,7 @@ const LoginFormContent: React.FC = () => {
                 계정이 없으신가요?{' '}
                 <Link
                   to="/signup"
-                  style={{ color: '#1890ff', fontWeight: 'bold' }}
+                  style={{ color: '#1B61A8', fontWeight: 'bold' }}
                 >
                   회원가입
                 </Link>
@@ -215,7 +217,7 @@ const LoginFormContent: React.FC = () => {
                 아이디 또는 비밀번호를 모르시나요?{' '}
                 <Link
                   to="/password-reset"
-                  style={{ color: '#1890ff', fontWeight: 'bold' }}
+                  style={{ color: '#1B61A8', fontWeight: 'bold' }}
                 >
                   찾으러가기
                 </Link>

@@ -33,6 +33,7 @@ import {
   CloudUploadOutlined,
 } from '@ant-design/icons';
 import { useThemeStore } from '../../stores/themeStore';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useAuthStore } from '../../stores/authStore';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { useMessage } from '../../hooks/useMessage';
@@ -58,6 +59,7 @@ interface ActivityLog {
 const Settings: React.FC = () => {
   const [form] = Form.useForm();
   const { isDark, toggleTheme } = useThemeStore();
+  const { isMobile } = useMediaQuery();
   const { currentBusiness, user } = useAuthStore();
   const { success: showSuccess, error: showError } = useMessage();
   const {
@@ -923,14 +925,15 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Title level={2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
+    <div style={{ padding: isMobile ? '16px 8px' : '24px' }}>
+      <Title level={isMobile ? 3 : 2} style={{ color: isDark ? '#ffffff' : '#000000' }}>
         설정
       </Title>
 
       <Tabs
         defaultActiveKey="general"
         type="card"
+        size={isMobile ? 'small' : 'middle'}
         items={getTabItems()}
       />
 

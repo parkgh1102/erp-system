@@ -631,7 +631,7 @@ const CustomerManagement: React.FC = () => {
               size="small"
               icon={<EditOutlined />}
               onClick={() => handleEditCustomer(record)}
-              style={{ color: '#1890ff' }}
+              style={{ color: '#1B61A8' }}
             />
           </Tooltip>
           <Popconfirm
@@ -711,7 +711,7 @@ const CustomerManagement: React.FC = () => {
         icon={<FileExcelOutlined />}
         block
         size="large"
-        style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white', justifyContent: 'flex-start' }}
+        style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white', justifyContent: 'flex-start' }}
       >
         엑셀 내보내기
       </Button>
@@ -906,7 +906,7 @@ const CustomerManagement: React.FC = () => {
               <Button
                 onClick={() => handleExport('excel')}
                 icon={<FileExcelOutlined />}
-                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
+                style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white' }}
               >
                 엑셀
               </Button>

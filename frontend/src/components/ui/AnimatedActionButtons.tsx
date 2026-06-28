@@ -16,7 +16,7 @@ interface AnimatedActionButtonProps {
 export const AnimatedActionButton: React.FC<AnimatedActionButtonProps> = ({
   icon,
   label,
-  color = '#1890ff',
+  color = '#1B61A8',
   loading = false,
   onClick,
 }) => (
@@ -75,7 +75,7 @@ export const DownloadShareButtons: React.FC<DownloadShareButtonsProps> = ({
     <AnimatedActionButton
       icon={<DownloadOutlined />}
       label={downloadLabel}
-      color="#1890ff"
+      color="#1B61A8"
       loading={downloadLoading}
       onClick={onDownload}
     />

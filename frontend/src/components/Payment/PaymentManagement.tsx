@@ -830,7 +830,7 @@ const PaymentManagement: React.FC = () => {
         엑셀업로드
       </Button>
       <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight" trigger={['click']}>
-        <Button icon={<ExportOutlined />} block size="large" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white', justifyContent: 'flex-start' }}>
+        <Button icon={<ExportOutlined />} block size="large" style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white', justifyContent: 'flex-start' }}>
           파일저장
         </Button>
       </Dropdown>
@@ -981,7 +981,7 @@ const PaymentManagement: React.FC = () => {
                   엑셀업로드
                 </Button>
                 <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-                  <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                  <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white' }}>
                     파일저장
                   </Button>
                 </Dropdown>

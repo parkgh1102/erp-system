@@ -69,7 +69,7 @@ export const AnimatedSearchBar: React.FC<AnimatedSearchBarProps> = ({
           border: '1px solid #e8e8e8',
         }}
       >
-        <SearchOutlined style={{ color: focused ? '#1890ff' : '#999', fontSize: 16 }} />
+        <SearchOutlined style={{ color: focused ? '#1B61A8' : '#999', fontSize: 16 }} />
         <input
           value={val}
           placeholder={placeholder}

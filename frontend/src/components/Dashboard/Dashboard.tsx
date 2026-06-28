@@ -207,7 +207,7 @@ const Dashboard: React.FC = () => {
     {
       title: '매입 전표 작성',
       icon: <FileTextOutlined />,
-      color: '#1890ff',
+      color: '#1B61A8',
       action: () => {
         navigate('/purchases');
         setTimeout(() => {
@@ -333,7 +333,7 @@ const Dashboard: React.FC = () => {
 
       {/* 주요 지표 카드 */}
       <Row gutter={[16, 16]} style={{ marginBottom: isMobile ? '16px' : '24px' }}>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={12} sm={12} md={6}>
           <Card
             size={isMobile ? 'small' : 'default'}
             style={{ height: isMobile ? '120px' : '140px' }}
@@ -356,7 +356,7 @@ const Dashboard: React.FC = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={12} sm={12} md={6}>
           <Card
             size={isMobile ? 'small' : 'default'}
             style={{ height: isMobile ? '120px' : '140px' }}
@@ -379,7 +379,7 @@ const Dashboard: React.FC = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={12} sm={12} md={6}>
           <Card
             size={isMobile ? 'small' : 'default'}
             style={{ height: isMobile ? '120px' : '140px' }}
@@ -398,7 +398,7 @@ const Dashboard: React.FC = () => {
             </div>
           </Card>
         </Col>
-        <Col xs={24} sm={12} md={6}>
+        <Col xs={12} sm={12} md={6}>
           <Card
             size={isMobile ? 'small' : 'default'}
             style={{ height: isMobile ? '120px' : '140px' }}

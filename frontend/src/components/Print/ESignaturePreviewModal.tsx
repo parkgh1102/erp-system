@@ -783,7 +783,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
               style={{
                 width: '80px',
                 height: '40px',
-                border: signatureDataUrl ? '1px solid #d9d9d9' : `2px solid ${blinking ? '#1890ff' : '#52c41a'}`,
+                border: signatureDataUrl ? '1px solid #d9d9d9' : `2px solid ${blinking ? '#1B61A8' : '#52c41a'}`,
                 backgroundColor: signatureDataUrl ? '#fff' : (blinking ? 'rgba(24, 144, 255, 0.1)' : 'rgba(82, 196, 26, 0.1)'),
                 cursor: transactionData?.signedBy ? 'default' : 'pointer',
                 display: 'flex',
@@ -808,7 +808,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
               ) : (
                 <span style={{
                   fontSize: '10px',
-                  color: blinking ? '#1890ff' : '#52c41a',
+                  color: blinking ? '#1B61A8' : '#52c41a',
                   fontWeight: 'bold'
                 }}>
                   서명란

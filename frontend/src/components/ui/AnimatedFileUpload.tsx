@@ -67,7 +67,7 @@ export const AnimatedFileUpload: React.FC<AnimatedFileUploadProps> = ({
       }}
       onClick={() => !file && inputRef.current?.click()}
       animate={{
-        borderColor: dragOver ? '#1890ff' : '#d9d9d9',
+        borderColor: dragOver ? '#1B61A8' : '#d9d9d9',
         backgroundColor: dragOver ? '#e6f4ff' : '#fafafa',
       }}
       style={{
@@ -97,7 +97,7 @@ export const AnimatedFileUpload: React.FC<AnimatedFileUploadProps> = ({
               animate={{ y: dragOver ? -6 : 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 15 }}
             >
-              <InboxOutlined style={{ fontSize: 40, color: '#1890ff' }} />
+              <InboxOutlined style={{ fontSize: 40, color: '#1B61A8' }} />
             </motion.div>
             <div style={{ marginTop: 10, color: '#666', fontSize: 14 }}>{hint}</div>
           </motion.div>
@@ -110,7 +110,7 @@ export const AnimatedFileUpload: React.FC<AnimatedFileUploadProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
               <motion.span
-                animate={done ? { scale: [1, 1.3, 1], color: '#52c41a' } : { color: '#1890ff' }}
+                animate={done ? { scale: [1, 1.3, 1], color: '#52c41a' } : { color: '#1B61A8' }}
                 transition={{ duration: 0.4 }}
               >
                 <FileDoneOutlined style={{ fontSize: 22 }} />
@@ -132,12 +132,12 @@ export const AnimatedFileUpload: React.FC<AnimatedFileUploadProps> = ({
 
             <div style={{ marginTop: 14, height: 8, borderRadius: 6, background: '#f0f0f0', overflow: 'hidden' }}>
               <motion.div
-                animate={{ width: `${pct}%`, backgroundColor: done ? '#52c41a' : '#1890ff' }}
+                animate={{ width: `${pct}%`, backgroundColor: done ? '#52c41a' : '#1B61A8' }}
                 transition={{ ease: 'easeOut' }}
                 style={{ height: '100%', borderRadius: 6 }}
               />
             </div>
-            <div style={{ marginTop: 6, fontSize: 13, color: done ? '#52c41a' : '#1890ff', fontWeight: 600 }}>
+            <div style={{ marginTop: 6, fontSize: 13, color: done ? '#52c41a' : '#1B61A8', fontWeight: 600 }}>
               {done ? '업로드 완료' : `${pct}%`}
             </div>
           </motion.div>

@@ -20,6 +20,7 @@ import {
   Popconfirm,
   Divider,
   Dropdown,
+  Collapse,
 } from 'antd';
 import {
   PlusOutlined,
@@ -469,12 +470,12 @@ const PurchaseOrderManagement: React.FC = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={12} sm={6}>
           <Card size="small">
-            <Statistic title="전체" value={stats.total} suffix="건" valueStyle={{ color: '#1890ff' }} />
+            <Statistic title="전체" value={stats.total} suffix="건" valueStyle={{ color: '#1B61A8' }} />
           </Card>
         </Col>
         <Col xs={12} sm={6}>
           <Card size="small">
-            <Statistic title="발주완료" value={stats.ordered} suffix="건" valueStyle={{ color: '#1890ff' }} />
+            <Statistic title="발주완료" value={stats.ordered} suffix="건" valueStyle={{ color: '#1B61A8' }} />
           </Card>
         </Col>
         <Col xs={12} sm={6}>
@@ -484,7 +485,7 @@ const PurchaseOrderManagement: React.FC = () => {
         </Col>
         <Col xs={12} sm={6}>
           <Card size="small">
-            <Statistic title="총 금액" value={stats.totalAmount} formatter={(val) => formatCurrency(val as number)} valueStyle={{ color: '#1890ff', fontSize: isMobile ? 16 : 20 }} />
+            <Statistic title="총 금액" value={stats.totalAmount} formatter={(val) => formatCurrency(val as number)} valueStyle={{ color: '#1B61A8', fontSize: isMobile ? 16 : 20 }} />
           </Card>
         </Col>
       </Row>
@@ -616,7 +617,9 @@ const PurchaseOrderManagement: React.FC = () => {
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={handleSave}
-        width={1000}
+        width={isMobile ? '100%' : 1000}
+        style={isMobile ? { top: 0, maxWidth: '100vw', margin: 0, paddingBottom: 0 } : undefined}
+        styles={isMobile ? { body: { maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' } } : undefined}
         okText="저장"
         cancelText="취소"
       >
@@ -641,6 +644,76 @@ const PurchaseOrderManagement: React.FC = () => {
 
           <Divider>품목 목록</Divider>
 
+          {isMobile ? (
+            <>
+              {(orderItems || []).map((item, index) => (
+                <Card
+                  key={index}
+                  size="small"
+                  style={{ marginBottom: 12, border: '1px solid #d9d9d9' }}
+                  title={`품목 ${index + 1}`}
+                  extra={<Button type="text" danger icon={<MinusCircleOutlined />} onClick={() => removeItem(index)} disabled={orderItems.length === 1} size="small" />}
+                >
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>품목명</div>
+                    <Input
+                      placeholder="품목명"
+                      value={item.productName}
+                      onChange={(e) => {
+                        const newItems = [...orderItems];
+                        newItems[index].productName = e.target.value;
+                        setOrderItems(newItems);
+                      }}
+                    />
+                  </div>
+                  <Row gutter={8} style={{ marginBottom: 12 }}>
+                    <Col span={12}>
+                      <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>수량</div>
+                      <InputNumber value={item.quantity} onChange={(val) => calculateItemAmount(index, 'quantity', val || 0)} min={1} style={{ width: '100%' }} placeholder="수량" inputMode="numeric" />
+                    </Col>
+                    <Col span={12}>
+                      <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>단가</div>
+                      <InputNumber value={item.unitPrice} onChange={(val) => calculateItemAmount(index, 'unitPrice', val || 0)} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} parser={(v) => v?.replace(/,/g, '') as any} style={{ width: '100%' }} placeholder="단가" inputMode="numeric" />
+                    </Col>
+                  </Row>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: isDark ? '#15314f' : '#eef4fb', borderRadius: 8, marginBottom: 12 }}>
+                    <span style={{ fontSize: 13, color: isDark ? '#9cc3ea' : '#1B61A8' }}>합계</span>
+                    <strong style={{ fontSize: 15, color: isDark ? '#9cc3ea' : '#1B61A8' }}>{formatCurrency(item.totalAmount)}</strong>
+                  </div>
+                  <Collapse
+                    ghost
+                    size="small"
+                    style={{ marginBottom: 0, marginLeft: -12, marginRight: -12 }}
+                    items={[{
+                      key: 'detail',
+                      label: <span style={{ fontSize: 13, color: '#8c8c8c' }}>상세 (규격·공급가액)</span>,
+                      children: (
+                        <Row gutter={8}>
+                          <Col span={12}>
+                            <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>규격</div>
+                            <Input
+                              value={item.spec}
+                              placeholder="규격"
+                              onChange={(e) => {
+                                const newItems = [...orderItems];
+                                newItems[index].spec = e.target.value;
+                                setOrderItems(newItems);
+                              }}
+                            />
+                          </Col>
+                          <Col span={12}>
+                            <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>공급가액</div>
+                            <InputNumber value={item.supplyAmount} readOnly style={{ width: '100%' }} formatter={(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} />
+                          </Col>
+                        </Row>
+                      ),
+                    }]}
+                  />
+                </Card>
+              ))}
+            </>
+          ) : (
+          <>
           {(orderItems || []).map((item, index) => (
             <Row gutter={8} key={index} style={{ marginBottom: 8 }}>
               <Col xs={24} sm={6}>
@@ -697,6 +770,8 @@ const PurchaseOrderManagement: React.FC = () => {
               </Col>
             </Row>
           ))}
+          </>
+          )}
 
           <Button type="dashed" onClick={addItem} block icon={<PlusOutlined />} style={{ marginBottom: 16 }}>
             품목 추가
@@ -705,7 +780,7 @@ const PurchaseOrderManagement: React.FC = () => {
           <Row gutter={16} style={{ background: isDark ? '#1f1f1f' : '#fafafa', padding: 16, borderRadius: 8 }}>
             <Col span={8}><Text>공급가액: <Text strong>{formatCurrency(totals.supplyAmount)}</Text></Text></Col>
             <Col span={8}><Text>세액: <Text strong>{formatCurrency(totals.vatAmount)}</Text></Text></Col>
-            <Col span={8}><Text>합계: <Text strong style={{ color: '#1890ff', fontSize: 18 }}>{formatCurrency(totals.totalAmount)}</Text></Text></Col>
+            <Col span={8}><Text>합계: <Text strong style={{ color: '#1B61A8', fontSize: 18 }}>{formatCurrency(totals.totalAmount)}</Text></Text></Col>
           </Row>
 
           <Form.Item name="memo" label="비고" style={{ marginTop: 16 }}>
@@ -752,7 +827,7 @@ const PurchaseOrderManagement: React.FC = () => {
               <Col span={24}>
                 <Text style={{ marginRight: 24 }}>공급가액: <Text strong>{formatCurrency(selectedOrder.supplyAmount)}</Text></Text>
                 <Text style={{ marginRight: 24 }}>세액: <Text strong>{formatCurrency(selectedOrder.vatAmount)}</Text></Text>
-                <Text>합계: <Text strong style={{ color: '#1890ff', fontSize: 20 }}>{formatCurrency(selectedOrder.totalAmount)}</Text></Text>
+                <Text>합계: <Text strong style={{ color: '#1B61A8', fontSize: 20 }}>{formatCurrency(selectedOrder.totalAmount)}</Text></Text>
               </Col>
             </Row>
           </div>

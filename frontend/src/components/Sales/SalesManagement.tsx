@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip, Checkbox, Progress, Drawer } from 'antd';
+import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip, Checkbox, Progress, Drawer, Collapse } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
@@ -1740,7 +1740,7 @@ const SalesManagement: React.FC = () => {
         엑셀업로드
       </Button>
       <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight" trigger={['click']}>
-        <Button icon={<ExportOutlined />} block size="large" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white', justifyContent: 'flex-start' }}>
+        <Button icon={<ExportOutlined />} block size="large" style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white', justifyContent: 'flex-start' }}>
           파일저장
         </Button>
       </Dropdown>
@@ -1894,7 +1894,7 @@ const SalesManagement: React.FC = () => {
                     엑셀업로드
                   </Button>
                   <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-                    <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                    <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white' }}>
                       파일저장
                     </Button>
                   </Dropdown>
@@ -2072,7 +2072,7 @@ const SalesManagement: React.FC = () => {
               ? `${total}건`
               : (
                 <span>
-                  <span style={{ fontWeight: 'bold', color: '#1890ff', marginRight: 16 }}>
+                  <span style={{ fontWeight: 'bold', color: '#1B61A8', marginRight: 16 }}>
                     합계: {totalAmountStr}
                   </span>
                   {`${range[0]}-${range[1]} / ${total}건${searchInfo}`}
@@ -2247,6 +2247,43 @@ const SalesManagement: React.FC = () => {
                       </Select>
                     </div>
                     <Row gutter={8} style={{ marginBottom: 12 }}>
+                      <Col span={12}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>수량</div>
+                        <InputNumber
+                          placeholder="수량"
+                          value={item.quantity}
+                          onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
+                          style={{ width: '100%' }}
+                          inputMode="numeric"
+                        />
+                      </Col>
+                      <Col span={12}>
+                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>단가</div>
+                        <InputNumber
+                          placeholder="단가"
+                          value={item.unitPrice}
+                          onChange={(value) => handleItemChange(index, 'unitPrice', value || 0)}
+                          style={{ width: '100%' }}
+                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                          parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
+                          inputMode="numeric"
+                        />
+                      </Col>
+                    </Row>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: isDark ? '#15314f' : '#eef4fb', borderRadius: 8, marginBottom: 12 }}>
+                      <span style={{ fontSize: 13, color: isDark ? '#9cc3ea' : '#1B61A8' }}>합계</span>
+                      <strong style={{ fontSize: 15, color: isDark ? '#9cc3ea' : '#1B61A8' }}>{(item.totalAmount || 0).toLocaleString()}원</strong>
+                    </div>
+                    <Collapse
+                      ghost
+                      size="small"
+                      style={{ marginBottom: 0, marginLeft: -12, marginRight: -12 }}
+                      items={[{
+                        key: 'detail',
+                        label: <span style={{ fontSize: 13, color: '#8c8c8c' }}>상세 (규격·단위·과세·금액 직접입력)</span>,
+                        children: (
+                          <>
+                    <Row gutter={8} style={{ marginBottom: 12 }}>
                       <Col span={8}>
                         <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>규격</div>
                         <Select
@@ -2365,30 +2402,6 @@ const SalesManagement: React.FC = () => {
                         </div>
                       </Col>
                     </Row>
-                    <Row gutter={8} style={{ marginBottom: 12 }}>
-                      <Col span={12}>
-                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>수량</div>
-                        <InputNumber
-                          placeholder="수량"
-                          value={item.quantity}
-                          onChange={(value) => handleItemChange(index, 'quantity', value || 0)}
-                          style={{ width: '100%' }}
-                          inputMode="numeric"
-                        />
-                      </Col>
-                      <Col span={12}>
-                        <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>단가</div>
-                        <InputNumber
-                          placeholder="단가"
-                          value={item.unitPrice}
-                          onChange={(value) => handleItemChange(index, 'unitPrice', value || 0)}
-                          style={{ width: '100%' }}
-                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                          parser={(value: string | undefined) => value?.replace(/\$\s?|(,*)/g, '') as any}
-                          inputMode="numeric"
-                        />
-                      </Col>
-                    </Row>
                     <Row gutter={8}>
                       <Col span={8}>
                         <div style={{ marginBottom: 4, fontWeight: 500, fontSize: 12, color: '#666' }}>공급가액</div>
@@ -2427,6 +2440,10 @@ const SalesManagement: React.FC = () => {
                         />
                       </Col>
                     </Row>
+                          </>
+                        ),
+                      }]}
+                    />
                   </Card>
                 ))}
                 <Button
@@ -2740,7 +2757,7 @@ const SalesManagement: React.FC = () => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f0f0f0', paddingTop: 8, marginTop: 4 }}>
                   <span style={{ fontSize: '16px', fontWeight: 600 }}>총 금액:</span>
-                  <strong style={{ fontSize: '16px', color: '#1890ff' }}>
+                  <strong style={{ fontSize: '16px', color: '#1B61A8' }}>
                     {((totalAmount || 0) + (vatAmount || 0)).toLocaleString()}원
                   </strong>
                 </div>
@@ -2794,19 +2811,34 @@ const SalesManagement: React.FC = () => {
             />
           </Form.Item>
 
-          <div style={{ textAlign: 'center', marginBottom: 0, paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
-            <Space size="middle" style={{ justifyContent: 'center', alignItems: 'center' }}>
-              <Button size="middle" onClick={closeModal}>
-                취소
-              </Button>
-              <Button size="middle" type="primary" htmlType="submit">
-                저장 (F8)
-              </Button>
+          {isMobile ? (
+            /* 모바일: 하단 고정 저장 바 (총액 표시) */
+            <div style={{
+              position: 'sticky',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              margin: '0 -16px -16px',
+              padding: '10px 16px calc(10px + env(safe-area-inset-bottom))',
+              background: isDark ? '#1f1f1f' : '#ffffff',
+              borderTop: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
+              boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.08)',
+              zIndex: 10,
+            }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+                <Button onClick={closeModal} style={{ flex: '0 0 72px', height: 46 }}>
+                  취소
+                </Button>
+                <Button type="primary" htmlType="submit" style={{ flex: 1, height: 46, fontWeight: 600 }}>
+                  저장 · {(((totalAmount || 0) + (vatAmount || 0))).toLocaleString()}원
+                </Button>
+              </div>
               {!editingSale && (
                 <Button
-                  size="middle"
-                  type="default"
-                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+                  type="link"
+                  block
+                  size="small"
+                  style={{ marginTop: 4 }}
                   onClick={() => {
                     form.validateFields().then(values => {
                       handleSubmit(values, true);
@@ -2815,12 +2847,39 @@ const SalesManagement: React.FC = () => {
                     });
                   }}
                 >
-                  저장 후 초기화 (F9)
+                  저장 후 계속 입력
                 </Button>
               )}
-              <ShortcutGuide />
-            </Space>
-          </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', marginBottom: 0, paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
+              <Space size="middle" style={{ justifyContent: 'center', alignItems: 'center' }}>
+                <Button size="middle" onClick={closeModal}>
+                  취소
+                </Button>
+                <Button size="middle" type="primary" htmlType="submit">
+                  저장 (F8)
+                </Button>
+                {!editingSale && (
+                  <Button
+                    size="middle"
+                    type="default"
+                    style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white' }}
+                    onClick={() => {
+                      form.validateFields().then(values => {
+                        handleSubmit(values, true);
+                      }).catch(info => {
+                        logger.debug('Validate Failed:', info);
+                      });
+                    }}
+                  >
+                    저장 후 초기화 (F9)
+                  </Button>
+                )}
+                <ShortcutGuide />
+              </Space>
+            </div>
+          )}
         </Form>
       </Modal>
 

@@ -1,3 +1,36 @@
+/* ==========================================================================
+   디자인 토큰 (CSS 변수) — src/styles/tokens.ts 와 값 동기화 유지
+   ========================================================================== */
+:root {
+  /* 브랜드 색 */
+  --color-primary: #1B61A8;
+  --color-primary-hover: #2C77C2;
+  --color-primary-active: #134B83;
+  --color-primary-bg: #e6f0fa;
+  --color-success: #0F8A6A;
+  --color-error: #C0392B;
+  --color-warning: #C77F0A;
+
+  /* 간격 (8pt) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* 모서리 */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* 그림자 */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* 표면색 */
+  --bg-page: #f5f6f8;
+}
+
 /* 전역 스타일 */
 * {
   box-sizing: border-box;
@@ -10,7 +43,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
+  background-color: var(--bg-page);
   overflow-y: auto !important;
   pointer-events: auto !important;
 }
@@ -27,8 +60,8 @@ body {
 }
 
 .ant-menu-item-selected {
-  background-color: #e6f7ff !important;
-  border-right: 3px solid #1890ff !important;
+  background-color: var(--color-primary-bg) !important;
+  border-right: 3px solid var(--color-primary) !important;
 }
 
 /* 테이블 스타일 */
@@ -48,28 +81,18 @@ body {
 
 /* 버튼 스타일 */
 .ant-btn {
-  border-radius: 6px;
-}
-
-.ant-btn-primary {
-  background-color: #1890ff;
-  border-color: #1890ff;
-}
-
-.ant-btn-primary:hover {
-  background-color: #40a9ff;
-  border-color: #40a9ff;
+  border-radius: var(--radius-md);
 }
 
 /* 카드 스타일 */
 .ant-card {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
 }
 
 /* 모달 스타일 */
 .ant-modal-content {
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
 }
 
 /* 페이지네이션 스타일 */
@@ -94,20 +117,20 @@ body {
 
 /* 로딩 스피너 커스터마이징 */
 .ant-spin-dot-item {
-  background-color: #1890ff;
+  background-color: var(--color-primary);
 }
 
 /* 성공/에러 상태 색상 */
 .status-success {
-  color: #52c41a;
+  color: var(--color-success);
 }
 
 .status-error {
-  color: #ff4d4f;
+  color: var(--color-error);
 }
 
 .status-warning {
-  color: #faad14;
+  color: var(--color-warning);
 }
 
 /* 유틸리티 클래스 */
@@ -217,7 +240,7 @@ body {
 }
 
 .dark-mode .ant-tabs-tab-active .ant-tabs-tab-btn {
-  color: #1890ff !important;
+  color: var(--color-primary-hover) !important;
 }
 
 .dark-mode .ant-dropdown-menu {
@@ -294,7 +317,7 @@ body {
 
 .ant-message-info .anticon,
 .ant-notification-notice-icon-info {
-  color: #1890ff !important;
+  color: var(--color-primary) !important;
 }
 
 .ant-notification-notice-close,
@@ -322,8 +345,8 @@ body {
 
 /* 로그인 페이지 관리자/사용자 탭 스타일 */
 .login-segmented.ant-segmented {
-  background-color: #e6f4ff !important;
-  border: 2px solid #1890ff !important;
+  background-color: var(--color-primary-bg) !important;
+  border: 2px solid var(--color-primary) !important;
   border-radius: 8px !important;
 }
 
@@ -334,7 +357,7 @@ body {
 
 .login-segmented .ant-segmented-item {
   flex: 1 !important;
-  color: #1890ff !important;
+  color: var(--color-primary) !important;
   font-weight: 600 !important;
   font-size: 15px !important;
   padding: 8px 24px !important;
