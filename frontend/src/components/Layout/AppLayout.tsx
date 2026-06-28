@@ -152,6 +152,18 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       label: '견적서',
       roles: ['admin'],
     },
+    {
+      key: '/purchase-orders',
+      icon: <FileTextOutlined style={{ color: '#2f54eb' }} />,
+      label: '발주서',
+      roles: ['admin'],
+    },
+    {
+      key: '/customer-balance',
+      icon: <BankOutlined style={{ color: '#36cfc9' }} />,
+      label: '거래처 잔액',
+      roles: ['admin'],
+    },
   ];
 
   // 사용자 권한에 따라 메뉴 필터링
@@ -499,6 +511,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           { key: '/products', icon: <ShoppingOutlined />, label: '품목 관리', roles: ['admin'] },
           { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
           { key: '/quotations', icon: <SolutionOutlined />, label: '견적서', roles: ['admin'] },
+          { key: '/purchase-orders', icon: <FileTextOutlined />, label: '발주서', roles: ['admin'] },
+          { key: '/customer-balance', icon: <BankOutlined />, label: '거래처 잔액', roles: ['admin'] },
           { key: '/settings', icon: <SettingOutlined />, label: '설정', roles: ['admin'] },
         ].filter(item => item.roles.includes(user?.role || 'admin'));
 
@@ -584,6 +598,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             { key: '/products', icon: <ShoppingOutlined />, label: '품목 관리', roles: ['admin'] },
             { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
             { key: '/quotations', icon: <SolutionOutlined />, label: '견적서', roles: ['admin'] },
+            { key: '/purchase-orders', icon: <FileTextOutlined />, label: '발주서', roles: ['admin'] },
+            { key: '/customer-balance', icon: <BankOutlined />, label: '거래처 잔액', roles: ['admin'] },
             { key: '/settings', icon: <SettingOutlined />, label: '설정', roles: ['admin'] },
             { key: '/profile', icon: <UserOutlined />, label: '내 정보', roles: ['admin', 'sales_viewer'] },
           ].filter(item => item.roles.includes(user?.role || 'admin')).map((item) => {

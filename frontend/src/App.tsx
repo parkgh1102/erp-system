@@ -24,6 +24,8 @@ const TransactionLedgerManagement = lazy(() => import('./components/TransactionL
 const Profile = lazy(() => import('./components/Profile/Profile'));
 const Settings = lazy(() => import('./components/Settings/Settings'));
 const QuotationManagement = lazy(() => import('./components/Quotation/QuotationManagement'));
+const PurchaseOrderManagement = lazy(() => import('./components/PurchaseOrder/PurchaseOrderManagement'));
+const CustomerBalanceManagement = lazy(() => import('./components/CustomerBalance/CustomerBalanceManagement'));
 const TokenExpirationNotifier = lazy(() => import('./components/Common/TokenExpirationNotifier'));
 const ChatbotWidget = lazy(() => import('./components/Chatbot/ChatbotWidget'));
 
@@ -289,6 +291,26 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <AppLayout>
                   <QuotationManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchase-orders"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <PurchaseOrderManagement />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/customer-balance"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <CustomerBalanceManagement />
                 </AppLayout>
               </ProtectedRoute>
             }
