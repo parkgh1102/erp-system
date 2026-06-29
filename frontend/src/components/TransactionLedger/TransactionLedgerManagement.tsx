@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, Row, Col, Select, DatePicker, Button, Table, Space, message, Modal, Form, Input, Spin, AutoComplete, Dropdown, Statistic, Alert, Badge, Tabs, Tag, Progress, Divider, List, Avatar, Tooltip, Drawer } from 'antd';
+import { Card, Row, Col, Select, DatePicker, Button, Table, Space, message, Modal, Form, Input, Spin, AutoComplete, Dropdown, Statistic, Alert, Badge, Tabs, Tag, Progress, Divider, List, Avatar, Tooltip, Drawer, Pagination } from 'antd';
 import { SearchOutlined, PrinterOutlined, FilePdfOutlined, ExportOutlined, DollarOutlined, UserOutlined, ArrowUpOutlined, ArrowDownOutlined, MoreOutlined } from '@ant-design/icons';
 import { useReactToPrint } from 'react-to-print';
 import SignatureEditModal from './SignatureEditModal';
@@ -558,6 +558,94 @@ const TransactionLedgerManagement: React.FC = () => {
     },
   ];
 
+  // 모바일 카드 렌더 (거래원장 한 행 = 카드 하나). 웹/인쇄/PDF/엑셀 출력은 columns 사용 — 카드는 모바일 표시 전용.
+  const renderLedgerCard = (record: ExpandedLedgerEntry) => {
+    const typeLabelMap: Record<string, string> = { sales: '매출', purchase: '매입', receipt: '수금', payment: '지급' };
+    const typeColorMap: Record<string, string> = {
+      sales: isDark ? '#40a9ff' : '#1B61A8',
+      purchase: isDark ? '#ff7875' : '#ff4d4f',
+      receipt: isDark ? '#73d13d' : '#52c41a',
+      payment: isDark ? '#ff7875' : '#ff4d4f',
+    };
+    const cardStyle: React.CSSProperties = {
+      background: isDark ? '#1f1f1f' : '#ffffff',
+      border: `1px solid ${isDark ? '#303030' : '#eef0f3'}`,
+      borderRadius: 12,
+      padding: '12px 14px',
+      marginBottom: 10,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+    };
+    const muted = isDark ? '#8c8c8c' : '#8c8c8c';
+    const balance = record.cumulativeBalance ?? record.balance;
+    const balColor = balance >= 0 ? (isDark ? '#40a9ff' : '#1B61A8') : (isDark ? '#ff7875' : '#ff4d4f');
+
+    // 이월잔액 카드
+    if (record.isCarryOver) {
+      return (
+        <div key={record.rowKey} style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ color: '#faad14', fontWeight: 600 }}>이월잔액</span>
+            <strong style={{ color: balColor, fontSize: 15 }}>{Math.round(balance || 0).toLocaleString()}원</strong>
+          </div>
+        </div>
+      );
+    }
+
+    const isReceiptPayment = record.type === 'receipt' || record.type === 'payment';
+    const itemName = isReceiptPayment ? record.description : (record.currentItemInfo?.itemName ?? record.description);
+    const qty = record.currentItemInfo?.quantity;
+    const supply = record.currentItemInfo?.amount ?? record.supplyAmount;
+    const tax = record.currentItemInfo?.taxAmount ?? record.vatAmount;
+    const total = record.currentItemInfo?.totalAmount ?? record.totalAmount;
+    const neg = (n: number) => n < 0 ? (isDark ? '#ff7875' : '#ff4d4f') : undefined;
+
+    const amountRow = (label: string, value: number, opts?: { bold?: boolean }) => (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <span style={{ fontSize: 11, color: muted }}>{label}</span>
+        <span style={{ fontSize: 13, fontWeight: opts?.bold ? 700 : 400, color: neg(value) }}>
+          {Math.round(value || 0).toLocaleString()}원
+        </span>
+      </div>
+    );
+
+    return (
+      <div key={record.rowKey} style={cardStyle}>
+        {/* 헤더: 일자 + 구분 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <span style={{ fontSize: 12, color: muted }}>{record.date}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: typeColorMap[record.type] }}>{typeLabelMap[record.type]}</span>
+        </div>
+        {/* 품목명 */}
+        <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 10, color: isDark ? '#e5e7eb' : '#1f2937' }}>
+          {itemName}
+          {qty !== undefined && qty !== null && (
+            <span style={{ fontSize: 12, color: muted, fontWeight: 400 }}> · {qty.toLocaleString()}개</span>
+          )}
+        </div>
+        {/* 금액 */}
+        {isReceiptPayment ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+            {amountRow('금액', total, { bold: true })}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>
+            {amountRow('공급가액', supply)}
+            {amountRow('세액', tax)}
+            {amountRow('합계', total, { bold: true })}
+          </div>
+        )}
+        {/* 잔액 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`, paddingTop: 8 }}>
+          <span style={{ fontSize: 12, color: muted }}>잔액</span>
+          <strong style={{ fontSize: 15, color: balColor }}>{Math.round(balance || 0).toLocaleString()}원</strong>
+        </div>
+        {record.isFirstRow && record.memo && (
+          <div style={{ fontSize: 12, color: muted, marginTop: 6 }}>{record.memo}</div>
+        )}
+      </div>
+    );
+  };
+
   // 거래원장 전용 PDF 내보내기 핸들러
   const handleExportLedgerPDF = () => {
     if (!selectedCustomerInfo) {
@@ -824,6 +912,33 @@ const TransactionLedgerManagement: React.FC = () => {
       )}
 
       <Card>
+        {isMobile ? (
+          <Spin spinning={loading}>
+            {expandedEntries.length === 0 ? (
+              <div style={{ padding: '48px 16px', textAlign: 'center', color: '#8c8c8c' }}>
+                {selectedCustomer ? '조회 버튼을 클릭하여 거래원장을 조회하세요.' : '거래처를 선택하고 조회하세요.'}
+              </div>
+            ) : (
+              <>
+                {expandedEntries
+                  .slice((currentPage - 1) * 5, (currentPage - 1) * 5 + 5)
+                  .map(renderLedgerCard)}
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+                  <Pagination
+                    simple
+                    current={currentPage}
+                    pageSize={5}
+                    total={expandedEntries.length}
+                    onChange={(page) => setCurrentPage(page)}
+                  />
+                </div>
+                <div style={{ textAlign: 'center', marginTop: 8, fontSize: 12, color: '#8c8c8c' }}>
+                  총 {ledgerEntries.length}건
+                </div>
+              </>
+            )}
+          </Spin>
+        ) : (
         <Spin spinning={loading}>
           <Table
             id="transaction-ledger-table"
@@ -934,6 +1049,7 @@ const TransactionLedgerManagement: React.FC = () => {
             }}
           />
         </Spin>
+        )}
       </Card>
 
 
