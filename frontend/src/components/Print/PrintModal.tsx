@@ -221,7 +221,7 @@ export const PrintModal: React.FC<PrintModalProps> = ({
           // 이미지 저장 로직
           const html2canvas = (await import('html2canvas')).default;
           const canvas = await html2canvas(previewElement, {
-            background: '#ffffff',
+            backgroundColor: '#ffffff',
             allowTaint: true,
             useCORS: true,
             width: previewElement.scrollWidth,
@@ -244,7 +244,7 @@ export const PrintModal: React.FC<PrintModalProps> = ({
           // 클립보드 저장
           const html2canvas = (await import('html2canvas')).default;
           const clipboardCanvas = await html2canvas(previewElement, {
-            background: '#ffffff',
+            backgroundColor: '#ffffff',
             allowTaint: true,
             useCORS: true,
             width: previewElement.scrollWidth,

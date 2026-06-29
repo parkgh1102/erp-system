@@ -265,7 +265,7 @@ const InventoryManagement: React.FC = () => {
       <Table
         id="inventory-table"
         className={isMobile ? 'mobile-compact-table' : ''}
-        columns={columns}
+        columns={columns as any}
         dataSource={filteredProducts}
         rowKey="id"
         loading={loading}

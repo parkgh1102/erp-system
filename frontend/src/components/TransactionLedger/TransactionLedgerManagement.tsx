@@ -1120,8 +1120,8 @@ const TransactionLedgerManagement: React.FC = () => {
       <TransactionLedgerPrintModal
         open={ledgerPrintModalVisible}
         onClose={() => setLedgerPrintModalVisible(false)}
-        ledgerEntries={ledgerEntries}
-        expandedEntries={expandedEntries}
+        ledgerEntries={ledgerEntries as any}
+        expandedEntries={expandedEntries as any}
         customer={customers.find(c => c.id === selectedCustomer) || customersWithTransactions.find(c => c.id === selectedCustomer) || null}
         dateRange={dateRange}
         title="거래원장"

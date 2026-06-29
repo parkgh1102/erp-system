@@ -599,7 +599,7 @@ const Settings: React.FC = () => {
             </Col>
 
             <Col xs={24} lg={12}>
-              <Card title="알림 설정" icon={<BellOutlined />}>
+              <Card title="알림 설정">
                 <Form layout="vertical">
                   <Form.Item label="이메일 알림">
                     <Space>
@@ -652,7 +652,7 @@ const Settings: React.FC = () => {
                             icon={<BellOutlined />}
                             onClick={async () => {
                               await requestPush();
-                              if (pushPermission === 'granted') {
+                              if ((pushPermission as string) === 'granted') {
                                 showSuccess('푸시 알림이 활성화되었습니다');
                               }
                             }}

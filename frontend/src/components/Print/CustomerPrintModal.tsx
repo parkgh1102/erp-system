@@ -38,7 +38,7 @@ export const CustomerPrintModal: React.FC<CustomerPrintModalProps> = ({
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
+    contentRef: printRef,
     documentTitle: '거래처 관리',
     onBeforePrint: () => {
       console.log('인쇄 시작');

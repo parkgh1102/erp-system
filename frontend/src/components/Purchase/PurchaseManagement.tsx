@@ -57,6 +57,7 @@ interface Customer {
   email?: string;
   address?: string;
   representative?: string;
+  bankAccount?: string;
 }
 
 interface PurchaseItem {
@@ -71,6 +72,7 @@ interface PurchaseItem {
   supplyAmount: number;  // 공급가액
   vatAmount: number;     // 세액
   totalAmount: number;   // 합계금액
+  amount?: number;       // 백엔드 호환 필드
 }
 
 interface Purchase {
@@ -806,7 +808,10 @@ const PurchaseManagement: React.FC = () => {
       unit: '',
       quantity: 1,
       unitPrice: 0,
-      amount: 0
+      amount: 0,
+      supplyAmount: 0,
+      vatAmount: 0,
+      totalAmount: 0
     }]);
   };
 
@@ -1404,7 +1409,7 @@ const PurchaseManagement: React.FC = () => {
       <Table
         id="purchase-table"
         className={isMobile ? 'mobile-compact-table' : ''}
-        columns={isMobile ? columns.filter(col => ['purchaseDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns}
+        columns={(isMobile ? columns.filter(col => ['purchaseDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns) as any}
         dataSource={filteredPurchases}
         rowKey="id"
         loading={false}
@@ -1594,7 +1599,7 @@ const PurchaseManagement: React.FC = () => {
                         popupClassName="mobile-full-dropdown"
                         listHeight={300}
                         filterOption={(input, option) =>
-                          (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+                          (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
                         }
                       >
                         {products.map(product => (
@@ -1844,7 +1849,7 @@ const PurchaseManagement: React.FC = () => {
                         popupMatchSelectWidth={false}
                         styles={{ popup: { root: { minWidth: 400 } } }}
                         filterOption={(input, option) =>
-                          (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+                          (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
                         }
                       >
                         {products.map(product => (

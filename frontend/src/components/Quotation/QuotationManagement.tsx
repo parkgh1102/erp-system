@@ -232,24 +232,6 @@ const QuotationManagement: React.FC = () => {
     }
   };
 
-  // 품목 선택
-  const handleProductSelect = (index: number, productId: number) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      const newItems = [...quotationItems];
-      newItems[index] = {
-        ...newItems[index],
-        productId: product.id,
-        productCode: product.productCode,
-        productName: product.name,
-        spec: product.spec || '',
-        unit: product.unit || '',
-        unitPrice: product.sellPrice || 0,
-      };
-      calculateItemAmount(index, 'unitPrice', product.sellPrice || 0);
-    }
-  };
-
   // 모달 열기
   const openModal = async (quotation?: Quotation) => {
     if (quotation) {

@@ -482,7 +482,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           const html2canvas = (await import('html2canvas')).default;
           for (let i = 0; i < printElements.length; i++) {
             const canvas = await html2canvas(printElements[i], {
-              background: '#ffffff',
+              backgroundColor: '#ffffff',
               allowTaint: true,
               useCORS: true,
               width: printElements[i].scrollWidth,
@@ -510,7 +510,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           // 첫 번째 페이지만 클립보드에 복사
           const html2canvas = (await import('html2canvas')).default;
           const clipboardCanvas = await html2canvas(printElements[0], {
-            background: '#ffffff',
+            backgroundColor: '#ffffff',
             allowTaint: true,
             useCORS: true,
             scale: 2

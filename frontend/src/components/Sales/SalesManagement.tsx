@@ -63,6 +63,7 @@ interface Customer {
   representative?: string;
   businessType?: string;
   businessItem?: string;
+  bankAccount?: string;
 }
 
 interface User {
@@ -86,6 +87,7 @@ interface SaleItem {
   supplyAmount: number;  // 공급가액
   vatAmount: number;     // 세액
   totalAmount: number;   // 합계금액
+  amount?: number;       // 백엔드 호환 필드
 }
 
 interface Sale {
@@ -106,6 +108,8 @@ interface Sale {
   signedAt?: string;
   signedByUser?: User;
   signatureImage?: string;
+  notice?: string;
+  bankAccount?: string;
 }
 
 const SalesManagement: React.FC = () => {
@@ -1369,7 +1373,10 @@ const SalesManagement: React.FC = () => {
       unit: '',
       quantity: 1,
       unitPrice: 0,
-      amount: 0
+      amount: 0,
+      supplyAmount: 0,
+      vatAmount: 0,
+      totalAmount: 0
     }]);
   };
 
@@ -1966,7 +1973,7 @@ const SalesManagement: React.FC = () => {
       <Table
         id="sales-table"
         className={isMobile ? 'mobile-compact-table' : ''}
-        columns={isMobile ? columns.filter(col => ['transactionDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns}
+        columns={(isMobile ? columns.filter(col => ['transactionDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns) as any}
         dataSource={filteredSales}
         rowKey="id"
         loading={false}
@@ -2943,7 +2950,7 @@ const SalesManagement: React.FC = () => {
         }}>
           <div onClick={(e) => e.stopPropagation()}>
             <TransactionStatement
-              data={selectedSaleForStatement}
+              data={selectedSaleForStatement as any}
               type="sales"
               supplierInfo={currentBusiness ? {
                 companyName: currentBusiness.companyName,
