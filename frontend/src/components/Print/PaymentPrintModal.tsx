@@ -53,7 +53,7 @@ export const PaymentPrintModal: React.FC<PaymentPrintModalProps> = ({
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
+    contentRef: printRef,
     documentTitle: '수금/지급 관리',
   });
 

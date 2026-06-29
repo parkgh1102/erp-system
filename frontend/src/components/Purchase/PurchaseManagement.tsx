@@ -5,7 +5,6 @@ import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
 import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
 import { createExportMenuItems } from '../../utils/exportUtils';
-import * as ExcelJS from 'exceljs';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import api, { purchaseAPI, customerAPI, productAPI } from '../../utils/api';
@@ -15,6 +14,7 @@ import { PrintPreviewModal } from '../Print/PrintPreviewModal';
 import { useFormShortcuts } from '../../hooks/useFormShortcuts';
 import ShortcutGuide from '../Common/ShortcutGuide';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { calcAmountsFromQuantityPrice, calcAmountsFromTotal, calcAmountsFromSupply, calcTotalFromSupplyAndVat } from '../../utils/itemCalculation';
 
 dayjs.extend(isBetween);
 
@@ -57,6 +57,7 @@ interface Customer {
   email?: string;
   address?: string;
   representative?: string;
+  bankAccount?: string;
 }
 
 interface PurchaseItem {
@@ -71,6 +72,7 @@ interface PurchaseItem {
   supplyAmount: number;  // 공급가액
   vatAmount: number;     // 세액
   totalAmount: number;   // 합계금액
+  amount?: number;       // 백엔드 호환 필드
 }
 
 interface Purchase {
@@ -627,108 +629,48 @@ const PurchaseManagement: React.FC = () => {
         newItems[index].taxType = selectedProduct.taxType || 'tax_separate';
         newItems[index].unitPrice = selectedProduct.buyPrice || 0;
 
-        // 공급가액, 세액, 합계금액 계산
-        const amount = newItems[index].quantity * (selectedProduct.buyPrice || 0);
-        let supplyAmount = amount;
-        let vatAmount = 0;
-        let totalAmount = amount;
-
-        if (selectedProduct.taxType === 'tax_separate') {
-          // 과세별도: 공급가액 = 단가*수량, 세액 = 공급가액*0.1, 합계 = 공급가액+세액
-          supplyAmount = amount;
-          vatAmount = Math.round(amount * 0.1);
-          totalAmount = supplyAmount + vatAmount;
-        } else if (selectedProduct.taxType === 'tax_inclusive') {
-          // 과세포함: 합계금액 = 단가*수량, 공급가액 = 합계/1.1, 세액 = 합계-공급가액
-          totalAmount = amount;
-          supplyAmount = Math.round(amount / 1.1);
-          vatAmount = totalAmount - supplyAmount;
-        } else {
-          // 면세: 공급가액 = 단가*수량, 세액 = 0, 합계 = 공급가액
-          supplyAmount = amount;
-          vatAmount = 0;
-          totalAmount = supplyAmount;
-        }
-
-        newItems[index].supplyAmount = supplyAmount;
-        newItems[index].vatAmount = vatAmount;
-        newItems[index].totalAmount = totalAmount;
+        // 공급가액, 세액, 합계금액 계산 (utils/itemCalculation)
+        const amounts = calcAmountsFromQuantityPrice(
+          selectedProduct.taxType,
+          newItems[index].quantity,
+          selectedProduct.buyPrice || 0
+        );
+        newItems[index].supplyAmount = amounts.supplyAmount;
+        newItems[index].vatAmount = amounts.vatAmount;
+        newItems[index].totalAmount = amounts.totalAmount;
       }
     }
 
     if (field === 'quantity' || field === 'unitPrice') {
-      const amount = newItems[index].quantity * newItems[index].unitPrice;
       const selectedProduct = products.find(p => p.id === newItems[index].productId);
       const taxType = selectedProduct?.taxType || 'tax_separate';
-
-      let supplyAmount = amount;
-      let vatAmount = 0;
-      let totalAmount = amount;
-
-      if (taxType === 'tax_separate') {
-        // 과세별도: 공급가액 = 단가*수량, 세액 = 공급가액*0.1, 합계 = 공급가액+세액
-        supplyAmount = amount;
-        vatAmount = Math.round(amount * 0.1);
-        totalAmount = supplyAmount + vatAmount;
-      } else if (taxType === 'tax_inclusive') {
-        // 과세포함: 합계금액 = 단가*수량, 공급가액 = 합계/1.1, 세액 = 합계-공급가액
-        totalAmount = amount;
-        supplyAmount = Math.round(amount / 1.1);
-        vatAmount = totalAmount - supplyAmount;
-      } else {
-        // 면세: 공급가액 = 단가*수량, 세액 = 0, 합계 = 공급가액
-        supplyAmount = amount;
-        vatAmount = 0;
-        totalAmount = supplyAmount;
-      }
-
-      newItems[index].supplyAmount = supplyAmount;
-      newItems[index].vatAmount = vatAmount;
-      newItems[index].totalAmount = totalAmount;
+      const amounts = calcAmountsFromQuantityPrice(taxType, newItems[index].quantity, newItems[index].unitPrice);
+      newItems[index].supplyAmount = amounts.supplyAmount;
+      newItems[index].vatAmount = amounts.vatAmount;
+      newItems[index].totalAmount = amounts.totalAmount;
     }
 
     // 합계금액 직접 입력 시 공급가액과 세액 역산
     if (field === 'totalAmount') {
       const selectedProduct = products.find(p => p.id === newItems[index].productId);
       const taxType = selectedProduct?.taxType || newItems[index].taxType || 'tax_separate';
-      const totalAmount = value || 0;
-
-      if (taxType === 'tax_free') {
-        // 면세: 공급가액 = 합계, 세액 = 0
-        newItems[index].supplyAmount = totalAmount;
-        newItems[index].vatAmount = 0;
-      } else {
-        // 과세: 합계에서 공급가액과 세액 역산
-        const supplyAmount = Math.round(totalAmount / 1.1);
-        const vatAmount = totalAmount - supplyAmount;
-        newItems[index].supplyAmount = supplyAmount;
-        newItems[index].vatAmount = vatAmount;
-      }
+      const amounts = calcAmountsFromTotal(taxType, value || 0);
+      newItems[index].supplyAmount = amounts.supplyAmount;
+      newItems[index].vatAmount = amounts.vatAmount;
     }
 
     // 공급가액 직접 입력 시 세액과 합계금액 계산
     if (field === 'supplyAmount') {
       const selectedProduct = products.find(p => p.id === newItems[index].productId);
       const taxType = selectedProduct?.taxType || newItems[index].taxType || 'tax_separate';
-      const supplyAmount = value || 0;
-
-      if (taxType === 'tax_free') {
-        // 면세: 세액 = 0, 합계 = 공급가액
-        newItems[index].vatAmount = 0;
-        newItems[index].totalAmount = supplyAmount;
-      } else {
-        // 과세: 세액 = 공급가액 * 0.1, 합계 = 공급가액 + 세액
-        const vatAmount = Math.round(supplyAmount * 0.1);
-        newItems[index].vatAmount = vatAmount;
-        newItems[index].totalAmount = supplyAmount + vatAmount;
-      }
+      const amounts = calcAmountsFromSupply(taxType, value || 0);
+      newItems[index].vatAmount = amounts.vatAmount;
+      newItems[index].totalAmount = amounts.totalAmount;
     }
 
     // 세액 직접 입력 시 합계금액 계산
     if (field === 'vatAmount') {
-      const supplyAmount = newItems[index].supplyAmount || 0;
-      const vatAmount = value || 0;
-      newItems[index].totalAmount = supplyAmount + vatAmount;
+      newItems[index].totalAmount = calcTotalFromSupplyAndVat(newItems[index].supplyAmount, value || 0);
     }
 
     setPurchaseItems(newItems);
@@ -866,7 +808,10 @@ const PurchaseManagement: React.FC = () => {
       unit: '',
       quantity: 1,
       unitPrice: 0,
-      amount: 0
+      amount: 0,
+      supplyAmount: 0,
+      vatAmount: 0,
+      totalAmount: 0
     }]);
   };
 
@@ -1464,7 +1409,7 @@ const PurchaseManagement: React.FC = () => {
       <Table
         id="purchase-table"
         className={isMobile ? 'mobile-compact-table' : ''}
-        columns={isMobile ? columns.filter(col => ['purchaseDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns}
+        columns={(isMobile ? columns.filter(col => ['purchaseDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns) as any}
         dataSource={filteredPurchases}
         rowKey="id"
         loading={false}
@@ -1654,7 +1599,7 @@ const PurchaseManagement: React.FC = () => {
                         popupClassName="mobile-full-dropdown"
                         listHeight={300}
                         filterOption={(input, option) =>
-                          (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+                          (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
                         }
                       >
                         {products.map(product => (
@@ -1904,7 +1849,7 @@ const PurchaseManagement: React.FC = () => {
                         popupMatchSelectWidth={false}
                         styles={{ popup: { root: { minWidth: 400 } } }}
                         filterOption={(input, option) =>
-                          (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+                          (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
                         }
                       >
                         {products.map(product => (

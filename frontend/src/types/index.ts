@@ -13,6 +13,10 @@ export interface PaginationQuery {
   search?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+  startDate?: string;
+  endDate?: string;
+  period?: string;
+  customerId?: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -111,11 +115,18 @@ export interface CustomerCreateData {
   representative?: string;
   address?: string;
   phone?: string;
+  fax?: string;
   email?: string;
+  businessType?: string;
+  businessItem?: string;
+  bankAccount?: string;
+  homepage?: string;
+  managerContact?: string;
+  memo?: string;
 }
 
-// 품목 관련 타입
-export type TaxType = '과세' | '면세' | '영세';
+// 품목 관련 타입 (런타임 값: tax_separate/tax_inclusive/tax_free)
+export type TaxType = 'tax_separate' | 'tax_inclusive' | 'tax_free' | string;
 
 export interface Product {
   id: number;
@@ -164,16 +175,22 @@ export interface TransactionItem {
 
 export interface TransactionItemData {
   productId?: number;
+  productCode?: string;
   productName: string;
   itemName?: string;
   quantity: number;
   unitPrice: number;
-  totalPrice: number;
+  totalPrice?: number;
   supplyAmount?: number;
   taxAmount?: number;
+  vatAmount?: number;
+  totalAmount?: number;
+  amount?: number;
   vatRate?: number;
   unit?: string;
+  spec?: string;
   specification?: string;
+  taxType?: string;
   remark?: string;
 }
 
@@ -197,21 +214,37 @@ export interface Transaction {
 }
 
 export interface SalesCreateData {
+  businessId?: number;
   customerId: number;
-  transactionDate: string;
+  customer?: { id?: number; name?: string };
+  transactionDate?: string;
+  saleDate?: string;
   description?: string;
-  supplyAmount: number;
-  taxAmount: number;
+  supplyAmount?: number;
+  taxAmount?: number;
+  vatAmount?: number;
   totalAmount: number;
+  memo?: string;
+  notice?: string;
+  bankAccount?: string;
   items: TransactionItemData[];
 }
 
 export interface PurchaseCreateData {
+  businessId?: number;
   supplierName?: string;
-  transactionDate: string;
+  customerId?: number;
+  customer?: { id?: number; name?: string };
+  transactionDate?: string;
+  purchaseDate?: string;
   description?: string;
+  supplyAmount?: number;
   totalAmount: number;
-  vatAmount: number;
+  vatAmount?: number;
+  taxAmount?: number;
+  memo?: string;
+  notice?: string;
+  bankAccount?: string;
   items: TransactionItemData[];
 }
 
@@ -237,9 +270,11 @@ export interface Payment {
 }
 
 export interface PaymentCreateData {
+  businessId?: number;
   customerId: number;
   paymentDate: string;
-  paymentType: PaymentType;
+  paymentType?: PaymentType;
+  type?: string;
   paymentMethod?: PaymentMethod;
   amount: number;
   description?: string;

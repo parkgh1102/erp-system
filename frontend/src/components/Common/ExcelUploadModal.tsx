@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Upload, Button, App, Table, Alert, Space, Divider } from 'antd';
 import { DownloadOutlined, FileExcelOutlined } from '@ant-design/icons';
-import * as ExcelJS from 'exceljs';
 import { AnimatedFileUpload } from '../ui/AnimatedFileUpload';
 
 const { Dragger } = Upload;
@@ -202,6 +201,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
   };
 
   const downloadTemplate = async () => {
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Template');
 
@@ -272,6 +272,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({
       reader.onload = async (e) => {
         try {
           const buffer = e.target?.result as ArrayBuffer;
+          const ExcelJS = await import('exceljs');
           const workbook = new ExcelJS.Workbook();
           await workbook.xlsx.load(buffer);
 

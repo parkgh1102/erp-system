@@ -44,7 +44,7 @@ export interface VectorPdfOptions {
 const getCellValue = (record: any, column: VectorPdfColumn): string => {
   try {
     if (column.render && typeof column.render === 'function') {
-      const result = column.render(record[column.dataIndex || column.key], record);
+      const result: any = column.render(record[column.dataIndex || column.key], record);
       // React 엘리먼트 처리
       if (result && typeof result === 'object' && result.props) {
         const children = result.props.children;

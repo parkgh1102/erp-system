@@ -1396,7 +1396,7 @@ const PaymentManagement: React.FC = () => {
               allowClear
               optionFilterProp="children"
               filterOption={(input, option) =>
-                (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
+                (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
               }
             >
               {customers.map(customer => (
@@ -1466,7 +1466,7 @@ const PaymentManagement: React.FC = () => {
       <PaymentPrintModal
         open={printModalVisible}
         onClose={() => setPrintModalVisible(false)}
-        payments={activeTab === 'receipt' ? filteredReceiptData : filteredPaymentData}
+        payments={(activeTab === 'receipt' ? filteredReceiptData : filteredPaymentData) as any}
         title="수금/지급 관리"
       />
     </div>

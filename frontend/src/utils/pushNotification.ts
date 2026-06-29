@@ -93,7 +93,7 @@ class PushNotificationService {
         data: options.data,
         requireInteraction: options.requireInteraction || false,
         vibrate: [200, 100, 200],
-      });
+      } as NotificationOptions);
     } catch (error) {
       console.error('Failed to show push notification:', error);
       // 폴백으로 로컬 알림 사용

@@ -159,7 +159,7 @@ const CustomerManagement: React.FC = () => {
         type: filterType,
         sortField: sortField,
         sortOrder: sortOrder,
-      });
+      } as any);
 
       setCustomers(response.data.data.customers);
       setPagination(prev => ({
@@ -944,7 +944,7 @@ const CustomerManagement: React.FC = () => {
       <Table
           id="customer-table"
           className={isMobile ? 'mobile-compact-table' : ''}
-          columns={isMobile ? columns.filter(col => ['customerCode', 'name', 'actions'].includes(col.key as string)) : columns}
+          columns={(isMobile ? columns.filter(col => ['customerCode', 'name', 'actions'].includes(col.key as string)) : columns) as any}
           dataSource={customers}
           rowKey="id"
           loading={loading}

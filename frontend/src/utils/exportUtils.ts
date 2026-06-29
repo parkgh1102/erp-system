@@ -1,9 +1,9 @@
-import * as ExcelJS from 'exceljs';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { message } from 'antd';
 import React from 'react';
-import { exportToVectorPdf, exportTransactionLedgerToVectorPdf, VectorPdfColumn } from './vectorPdfExport';
+import type { VectorPdfColumn } from './vectorPdfExport';
+// 무거운 라이브러리(exceljs ~938KB, jspdf/vectorPdf ~634KB, html2canvas)는
+// 각 export 함수 내부에서 동적 import 한다 → 매출/매입 페이지 진입 시 끌려오지 않고,
+// 실제 "엑셀/PDF 내보내기"를 누를 때만 로드되어 모바일 초기 로딩이 가벼워진다.
 
 export interface ExportColumn {
   key: string;
@@ -44,6 +44,7 @@ export const exportToExcel = async (options: ExportOptions) => {
     }
 
     // 워크북 생성
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(title || 'Sheet1');
 
@@ -159,7 +160,8 @@ export const exportToPDF = async (options: ExportOptions) => {
     render: col.render,
   }));
 
-  // 벡터 PDF로 내보내기
+  // 벡터 PDF로 내보내기 (jsPDF는 동적 로드)
+  const { exportToVectorPdf } = await import('./vectorPdfExport');
   await exportToVectorPdf({
     filename,
     title,
@@ -257,6 +259,8 @@ export const exportToPDFLegacy = async (options: ExportOptions) => {
     document.body.appendChild(tempDiv);
 
     // HTML을 캔버스로 변환 (고해상도)
+    const html2canvas = (await import('html2canvas')).default;
+    const { default: jsPDF } = await import('jspdf');
     const canvas = await html2canvas(tempDiv, {
       useCORS: true,
       allowTaint: true,
@@ -698,6 +702,7 @@ export interface TransactionLedgerExportOptions {
 
 // 거래원장 전용 PDF 내보내기 (벡터 기반 - 텍스트 선택/편집 가능)
 export const exportTransactionLedgerToPDF = async (options: TransactionLedgerExportOptions) => {
+  const { exportTransactionLedgerToVectorPdf } = await import('./vectorPdfExport');
   await exportTransactionLedgerToVectorPdf(options);
 };
 
@@ -899,6 +904,8 @@ export const exportTransactionLedgerToPDFLegacy = async (options: TransactionLed
     document.body.appendChild(tempDiv);
 
     // HTML을 캔버스로 변환 (고해상도)
+    const html2canvas = (await import('html2canvas')).default;
+    const { default: jsPDF } = await import('jspdf');
     const canvas = await html2canvas(tempDiv, {
       useCORS: true,
       allowTaint: true,
@@ -982,6 +989,7 @@ export const exportTransactionLedgerToExcel = async (options: TransactionLedgerE
     };
 
     // 워크북 생성
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(title);
 
@@ -1373,6 +1381,7 @@ export const exportNTSInvoiceExcel = async (options: NTSInvoiceExportOptions) =>
     };
 
     // 워크북 생성
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('엑셀업로드양식');
 

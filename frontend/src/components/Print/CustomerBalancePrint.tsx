@@ -2,8 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import { Modal, Button, Space, message, Dropdown } from 'antd';
 import { PrinterOutlined, DownloadOutlined, FilePdfOutlined, FileImageOutlined, CopyOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 interface TransactionDetail {
   id: number;
@@ -75,6 +73,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
   const handleDownloadPNG = async () => {
     if (!printRef.current || !data) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const link = document.createElement('a');
       link.download = `미수미지급현황_${data.name}_${dayjs().format('YYYYMMDD')}.png`;
@@ -89,6 +88,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
   const handleDownloadJPG = async () => {
     if (!printRef.current || !data) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const link = document.createElement('a');
       link.download = `미수미지급현황_${data.name}_${dayjs().format('YYYYMMDD')}.jpg`;
@@ -103,8 +103,10 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
   const handleDownloadPDF = async () => {
     if (!printRef.current || !data) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const imgData = canvas.toDataURL('image/png');
+      const { default: jsPDF } = await import('jspdf');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
@@ -119,6 +121,7 @@ const CustomerBalancePrint: React.FC<CustomerBalancePrintProps> = ({ open, onClo
   const handleCopyToClipboard = async () => {
     if (!printRef.current) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       canvas.toBlob(async (blob) => {
         if (blob) {

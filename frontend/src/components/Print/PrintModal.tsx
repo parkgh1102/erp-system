@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, message } from 'antd';
 import PrintPreviewModal from './PrintPreviewModal';
-import html2canvas from 'html2canvas';
 
 
 interface PrintModalProps {
@@ -220,8 +219,9 @@ export const PrintModal: React.FC<PrintModalProps> = ({
         case 'jpg':
         case 'png': {
           // 이미지 저장 로직
+          const html2canvas = (await import('html2canvas')).default;
           const canvas = await html2canvas(previewElement, {
-            background: '#ffffff',
+            backgroundColor: '#ffffff',
             allowTaint: true,
             useCORS: true,
             width: previewElement.scrollWidth,
@@ -242,8 +242,9 @@ export const PrintModal: React.FC<PrintModalProps> = ({
 
         case 'clipboard': {
           // 클립보드 저장
+          const html2canvas = (await import('html2canvas')).default;
           const clipboardCanvas = await html2canvas(previewElement, {
-            background: '#ffffff',
+            backgroundColor: '#ffffff',
             allowTaint: true,
             useCORS: true,
             width: previewElement.scrollWidth,

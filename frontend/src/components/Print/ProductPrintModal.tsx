@@ -36,7 +36,7 @@ export const ProductPrintModal: React.FC<ProductPrintModalProps> = ({
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
+    contentRef: printRef,
     documentTitle: '품목 관리',
   });
 

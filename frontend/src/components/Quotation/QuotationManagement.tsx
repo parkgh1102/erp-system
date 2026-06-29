@@ -39,8 +39,6 @@ import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import QuotationPrint from '../Print/QuotationPrint';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -231,24 +229,6 @@ const QuotationManagement: React.FC = () => {
   const removeItem = (index: number) => {
     if (quotationItems.length > 1) {
       setQuotationItems(quotationItems.filter((_, i) => i !== index));
-    }
-  };
-
-  // 품목 선택
-  const handleProductSelect = (index: number, productId: number) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      const newItems = [...quotationItems];
-      newItems[index] = {
-        ...newItems[index],
-        productId: product.id,
-        productCode: product.productCode,
-        productName: product.name,
-        spec: product.spec || '',
-        unit: product.unit || '',
-        unitPrice: product.sellPrice || 0,
-      };
-      calculateItemAmount(index, 'unitPrice', product.sellPrice || 0);
     }
   };
 

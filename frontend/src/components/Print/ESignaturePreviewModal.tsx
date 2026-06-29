@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, Button, Space, message, Dropdown, Input } from 'antd';
 import { PrinterOutlined, DownloadOutlined, SendOutlined, DownOutlined, PhoneOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import DOMPurify from 'dompurify';
 import { TransactionStatement } from './TransactionStatement';
 import { SignatureModal } from './SignatureModal';
@@ -445,6 +443,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
       const captureWidth = element.scrollWidth || 794;
       const captureHeight = element.scrollHeight || 1123;
 
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -489,6 +488,7 @@ export const ESignaturePreviewModal: React.FC<ESignaturePreviewModalProps> = ({
 
     try {
       const imgData = canvas.toDataURL('image/png');
+      const { default: jsPDF } = await import('jspdf');
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',

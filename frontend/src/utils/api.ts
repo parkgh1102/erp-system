@@ -133,7 +133,7 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  login: (data: { email: string; password: string }) =>
+  login: (data: { email?: string; phone?: string; password: string }) =>
     api.post('/auth/login', data, {
       // 로그인 실패(401)는 예상되는 응답이므로 인터셉터에서 리다이렉트하지 않도록 함
       skipErrorHandler: true
@@ -145,7 +145,7 @@ export const authAPI = {
       params: { email },
       // 이메일 체크는 에러 메시지를 직접 처리하므로 인터셉터 스킵
       skipErrorHandler: true
-    }),
+    } as any),
   getProfile: () =>
     api.get('/auth/profile'),
   updateProfile: (data: Partial<UserCreateData>) =>
@@ -258,6 +258,9 @@ export const dashboardAPI = {
     api.get(`/businesses/${businessId}/dashboard/monthly-trend`, { params }),
   getTopCustomers: (businessId: number, params?: PaginationQuery) =>
     api.get(`/businesses/${businessId}/dashboard/top-customers`, { params }),
+  // 대시보드 "전체 거래내역" 모달용 (recent-transactions 엔드포인트 재사용)
+  getAllTransactions: (businessId: number, params?: PaginationQuery) =>
+    api.get(`/businesses/${businessId}/dashboard/recent-transactions`, { params }),
 };
 
 export const businessAPI = {

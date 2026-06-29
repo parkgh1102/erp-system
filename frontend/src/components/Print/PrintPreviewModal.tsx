@@ -4,7 +4,6 @@ import { PrinterOutlined, DownOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { TransactionStatement } from './TransactionStatement';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
-import html2canvas from 'html2canvas';
 import logger from '../../utils/logger';
 
 const { TextArea } = Input;
@@ -480,9 +479,10 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           // 여러 페이지를 각각 저장
           message.loading(`${printElements.length}개 페이지를 ${format.toUpperCase()}로 저장 중...`, 0);
 
+          const html2canvas = (await import('html2canvas')).default;
           for (let i = 0; i < printElements.length; i++) {
             const canvas = await html2canvas(printElements[i], {
-              background: '#ffffff',
+              backgroundColor: '#ffffff',
               allowTaint: true,
               useCORS: true,
               width: printElements[i].scrollWidth,
@@ -508,8 +508,9 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
         case 'clipboard': {
           // 첫 번째 페이지만 클립보드에 복사
+          const html2canvas = (await import('html2canvas')).default;
           const clipboardCanvas = await html2canvas(printElements[0], {
-            background: '#ffffff',
+            backgroundColor: '#ffffff',
             allowTaint: true,
             useCORS: true,
             scale: 2
