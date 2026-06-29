@@ -134,7 +134,9 @@
 }
 
 .mobile-compact-table .ant-table-cell {
-  word-break: break-all !important;
+  /* 셀 내용을 한 줄로 유지 (금액 "640,000원" 줄바꿈·품목명 다단 줄바꿈 방지). 넘치면 가로 스크롤. */
+  white-space: nowrap !important;
+  word-break: keep-all !important;
 }
 
 .mobile-compact-table .ant-btn-sm {

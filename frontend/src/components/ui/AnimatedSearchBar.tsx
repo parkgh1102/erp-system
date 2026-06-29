@@ -65,11 +65,13 @@ export const AnimatedSearchBar: React.FC<AnimatedSearchBarProps> = ({
           gap: 8,
           background: '#fff',
           borderRadius: 10,
-          padding: '8px 14px',
-          border: '1px solid #e8e8e8',
+          minHeight: 44,
+          padding: '0 14px',
+          border: `1px solid ${focused ? '#1B61A8' : '#e8e8e8'}`,
+          transition: 'border-color 0.2s',
         }}
       >
-        <SearchOutlined style={{ color: focused ? '#1B61A8' : '#999', fontSize: 16 }} />
+        <SearchOutlined style={{ color: focused ? '#1B61A8' : '#999', fontSize: 16, flexShrink: 0 }} />
         <input
           value={val}
           placeholder={placeholder}
@@ -81,9 +83,14 @@ export const AnimatedSearchBar: React.FC<AnimatedSearchBarProps> = ({
           }}
           style={{
             flex: 1,
+            minWidth: 0,
             border: 'none',
             outline: 'none',
-            fontSize: 14,
+            fontSize: 16,
+            lineHeight: '24px',
+            height: 24,
+            padding: 0,
+            margin: 0,
             background: 'transparent',
           }}
         />
