@@ -39,8 +39,6 @@ import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import QuotationPrint from '../Print/QuotationPrint';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;

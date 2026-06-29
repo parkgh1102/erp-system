@@ -2,8 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import { Modal, Button, Space, message, Dropdown } from 'antd';
 import { PrinterOutlined, DownloadOutlined, FilePdfOutlined, FileImageOutlined, CopyOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import html2canvas from 'html2canvas';
-import { exportDocumentToVectorPdf } from '../../utils/vectorPdfExport';
 
 interface PurchaseOrderItem {
   productName: string;
@@ -90,6 +88,7 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
   const handleDownloadPNG = async () => {
     if (!printRef.current || !data) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const link = document.createElement('a');
       link.download = `발주서_${data.orderNumber}_${dayjs().format('YYYYMMDD')}.png`;
@@ -104,6 +103,7 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
   const handleDownloadJPG = async () => {
     if (!printRef.current || !data) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const link = document.createElement('a');
       link.download = `발주서_${data.orderNumber}_${dayjs().format('YYYYMMDD')}.jpg`;
@@ -118,6 +118,7 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
   const handleDownloadPDF = async () => {
     if (!data) return;
     try {
+      const { exportDocumentToVectorPdf } = await import('../../utils/vectorPdfExport');
       await exportDocumentToVectorPdf({
         filename: `발주서_${data.orderNumber}`,
         title: '발 주 서',
@@ -159,6 +160,7 @@ const PurchaseOrderPrint: React.FC<PurchaseOrderPrintProps> = ({ open, onClose, 
   const handleCopyToClipboard = async () => {
     if (!printRef.current) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       canvas.toBlob(async (blob) => {
         if (blob) {

@@ -5,7 +5,6 @@ import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
 import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
 import { createExportMenuItems } from '../../utils/exportUtils';
-import * as ExcelJS from 'exceljs';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import api, { purchaseAPI, customerAPI, productAPI } from '../../utils/api';

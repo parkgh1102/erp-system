@@ -1,7 +1,6 @@
 import React from 'react';
 import { Modal, Table, Tag, Typography, Space, Statistic, Row, Col, Alert, Button } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, DownloadOutlined } from '@ant-design/icons';
-import * as ExcelJS from 'exceljs';
 
 const { Text } = Typography;
 
@@ -35,6 +34,7 @@ const UploadResultModal: React.FC<UploadResultModalProps> = ({
   const downloadFailedItems = async () => {
     if (failedItems.length === 0) return;
 
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('실패 목록');
 

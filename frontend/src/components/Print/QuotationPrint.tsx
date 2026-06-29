@@ -2,8 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import { Modal, Button, Space, message, Dropdown } from 'antd';
 import { PrinterOutlined, DownloadOutlined, FilePdfOutlined, FileImageOutlined, CopyOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import html2canvas from 'html2canvas';
-import { exportQuotationToVectorPdf } from '../../utils/vectorPdfExport';
 
 interface QuotationItem {
   productName: string;
@@ -90,6 +88,7 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
   const handleDownloadPNG = async () => {
     if (!printRef.current || !data) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const link = document.createElement('a');
       link.download = `견적서_${data.quotationNumber}_${dayjs().format('YYYYMMDD')}.png`;
@@ -104,6 +103,7 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
   const handleDownloadJPG = async () => {
     if (!printRef.current || !data) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       const link = document.createElement('a');
       link.download = `견적서_${data.quotationNumber}_${dayjs().format('YYYYMMDD')}.jpg`;
@@ -117,6 +117,7 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
 
   const handleDownloadPDF = async () => {
     if (!data) return;
+    const { exportQuotationToVectorPdf } = await import('../../utils/vectorPdfExport');
     await exportQuotationToVectorPdf({
       filename: `견적서_${data.quotationNumber}`,
       documentNumber: data.quotationNumber,
@@ -148,6 +149,7 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
   const handleCopyToClipboard = async () => {
     if (!printRef.current) return;
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(printRef.current, { scale: 3, backgroundColor: '#fff', logging: false });
       canvas.toBlob(async (blob) => {
         if (blob) {
