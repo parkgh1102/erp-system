@@ -24,6 +24,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../../utils/api';
 import { useAuthStore } from '../../stores/authStore';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { formatPhoneNumber, formatBusinessNumber, formatFaxNumber } from '../../utils/formatters';
 import { validatePassword } from '../../utils/passwordValidator';
 import PasswordStrengthIndicator from '../Common/PasswordStrengthIndicator';
@@ -41,6 +42,7 @@ const SignupForm: React.FC = () => {
   const [emailCheckMessage, setEmailCheckMessage] = useState<string>('');
   const [passwordValue, setPasswordValue] = useState<string>('');
   const [passwordStrength, setPasswordStrength] = useState(validatePassword(''));
+  const { isMobile } = useMediaQuery();
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
 
@@ -482,7 +484,7 @@ const SignupForm: React.FC = () => {
       theme={{
         algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#1890ff',
+          colorPrimary: '#1B61A8',
         },
         components: {
           Form: {
@@ -499,7 +501,7 @@ const SignupForm: React.FC = () => {
         alignItems: 'center',
         justifyContent: 'center',
         background: '#ffffff',
-        padding: '20px',
+        padding: isMobile ? '12px' : '20px',
       }}
     >
       <style>
@@ -530,14 +532,14 @@ const SignupForm: React.FC = () => {
           boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
           borderRadius: '12px',
         }}
-        styles={{ body: { padding: '40px' } }}
+        styles={{ body: { padding: isMobile ? '24px 18px' : '40px' } }}
       >
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div
             style={{
               width: '80px',
               height: '80px',
-              background: 'linear-gradient(135deg, #1890ff, #096dd9)',
+              background: 'linear-gradient(135deg, #1B61A8, #096dd9)',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -553,10 +555,16 @@ const SignupForm: React.FC = () => {
           <Text type="secondary">ERP 시스템 계정을 생성하세요</Text>
         </div>
 
-        <Steps current={currentStep} style={{ marginBottom: '32px' }}>
-          <Step title="개인정보" description="계정 정보 입력" />
-          <Step title="사업자정보" description="회사 정보 입력" />
-        </Steps>
+        <Steps
+          current={currentStep}
+          size={isMobile ? 'small' : 'default'}
+          responsive={false}
+          style={{ marginBottom: isMobile ? '24px' : '32px' }}
+          items={[
+            { title: '개인정보', description: isMobile ? undefined : '계정 정보 입력' },
+            { title: '사업자정보', description: isMobile ? undefined : '회사 정보 입력' },
+          ]}
+        />
 
         {error && (
           <Alert
@@ -606,7 +614,7 @@ const SignupForm: React.FC = () => {
                     borderRadius: '8px',
                     fontSize: '16px',
                     fontWeight: 'bold',
-                    background: 'linear-gradient(135deg, #1890ff, #096dd9)',
+                    background: 'linear-gradient(135deg, #1B61A8, #096dd9)',
                     border: 'none',
                   }}
                 >
@@ -642,7 +650,7 @@ const SignupForm: React.FC = () => {
               이미 계정이 있으신가요?{' '}
               <Link
                 to="/login"
-                style={{ color: '#1890ff', fontWeight: 'bold' }}
+                style={{ color: '#1B61A8', fontWeight: 'bold' }}
               >
                 로그인
               </Link>

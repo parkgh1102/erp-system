@@ -211,7 +211,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
     if (canvas && signatureType === 'handwritten') {
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.strokeStyle = '#1890ff';
+        ctx.strokeStyle = '#1B61A8';
         ctx.lineWidth = isMobile ? 3 : 2;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -249,7 +249,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
             <div style={{
               fontSize: isMobile ? '24px' : '32px',
               fontFamily: 'serif',
-              color: '#1890ff',
+              color: '#1B61A8',
               fontWeight: 'bold'
             }}>
               {form.getFieldValue('name') || '미리보기'}
@@ -306,7 +306,7 @@ const SignatureEditModal: React.FC<SignatureEditModalProps> = ({
               width={canvasSize.width}
               height={canvasSize.height}
               style={{
-                border: '2px solid #1890ff',
+                border: '2px solid #1B61A8',
                 borderRadius: '8px',
                 cursor: 'crosshair',
                 backgroundColor: 'white',

@@ -424,7 +424,7 @@ const CustomerBalanceManagement: React.FC = () => {
             <Text strong>지급률</Text>
             <Progress
               percent={Math.round((1 - stats.totalPayable / (stats.totalPayable + balances.reduce((s, b) => s + b.totalPayments, 0) || 1)) * 100)}
-              strokeColor="#1890ff"
+              strokeColor="#1B61A8"
               style={{ marginTop: 8 }}
             />
           </Col>
@@ -589,22 +589,24 @@ const CustomerBalanceManagement: React.FC = () => {
           <Button key="print" icon={<PrinterOutlined />} onClick={() => setPrintModalVisible(true)}>인쇄</Button>,
           <Button key="close" onClick={() => setDetailModalVisible(false)}>닫기</Button>,
         ]}
-        width={800}
+        width={isMobile ? '100%' : 800}
+        style={isMobile ? { top: 0, maxWidth: '100vw', margin: 0, paddingBottom: 0 } : undefined}
+        styles={isMobile ? { body: { maxHeight: 'calc(100vh - 150px)', overflowY: 'auto' } } : undefined}
       >
         {selectedCustomer && (
           <div>
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Card size="small">
                   <Statistic title="총 매출" value={selectedCustomer.totalSales} formatter={(v) => formatCurrency(v as number)} valueStyle={{ fontSize: 16 }} />
                 </Card>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Card size="small">
                   <Statistic title="총 수금" value={selectedCustomer.totalReceipts} formatter={(v) => formatCurrency(v as number)} valueStyle={{ fontSize: 16, color: '#52c41a' }} />
                 </Card>
               </Col>
-              <Col span={8}>
+              <Col xs={24} sm={8}>
                 <Card size="small">
                   <Statistic title="미수금 잔액" value={selectedCustomer.receivableBalance} formatter={(v) => formatCurrency(v as number)} valueStyle={{ fontSize: 16, color: '#cf1322' }} />
                 </Card>

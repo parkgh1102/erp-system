@@ -252,7 +252,7 @@ const InventoryManagement: React.FC = () => {
             <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
               <Button
                 icon={<ExportOutlined />}
-                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
+                style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white' }}
               >
                 파일저장
               </Button>

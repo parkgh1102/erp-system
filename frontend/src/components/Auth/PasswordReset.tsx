@@ -320,7 +320,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
                     padding: '0',
                     fontSize: '14px',
                     fontWeight: '500',
-                    color: '#1890ff'
+                    color: '#1B61A8'
                   }}
                   onClick={() => navigate('/signup')}
                 >
@@ -335,7 +335,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
                     padding: '0',
                     fontSize: '14px',
                     fontWeight: '500',
-                    color: '#1890ff'
+                    color: '#1B61A8'
                   }}
                   onClick={() => {
                     setCurrentStep(2);
@@ -358,7 +358,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
               subTitle={
                 <div>
                   <p style={{ fontSize: '16px', margin: '16px 0' }}>
-                    찾은 아이디: <strong style={{ fontSize: '18px', color: '#1890ff' }}>{foundUserId}</strong>
+                    찾은 아이디: <strong style={{ fontSize: '18px', color: '#1B61A8' }}>{foundUserId}</strong>
                   </p>
                   <p style={{ color: '#666', fontSize: '14px' }}>
                     비밀번호를 찾으시려면 아래 버튼을 클릭해주세요.
@@ -394,7 +394,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
               autoComplete="off"
             >
               <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-                <h3 style={{ color: '#1890ff', marginBottom: '4px' }}>본인인증</h3>
+                <h3 style={{ color: '#1B61A8', marginBottom: '4px' }}>본인인증</h3>
                 <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>
                   {phoneMasked ? <><strong>{phoneMasked}</strong> 로 </> : ''}
                   발송된 6자리 인증코드를 입력해주세요. (5분 이내)
@@ -656,7 +656,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
       theme={{
         algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#1890ff',
+          colorPrimary: '#1B61A8',
         },
       }}
     >

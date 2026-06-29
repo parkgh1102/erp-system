@@ -63,7 +63,7 @@ const NotificationPopover: React.FC<NotificationPopoverProps> = ({ children }) =
       case 'sales':
         return <ShoppingCartOutlined style={{ ...iconStyle, color: '#52c41a' }} />;
       case 'purchase':
-        return <ShoppingOutlined style={{ ...iconStyle, color: '#1890ff' }} />;
+        return <ShoppingOutlined style={{ ...iconStyle, color: '#1B61A8' }} />;
       case 'payment':
       case 'receipt':
         return <WalletOutlined style={{ ...iconStyle, color: '#722ed1' }} />;

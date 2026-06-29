@@ -125,7 +125,7 @@
 }
 
 .message-user .message-content {
-  background: #1890ff;
+  background: #1B61A8;
   color: white;
 }
 
@@ -154,8 +154,8 @@
 }
 
 .suggested-questions .ant-btn:hover {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: #1B61A8;
+  color: #1B61A8;
   background: #f0f7ff;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2);

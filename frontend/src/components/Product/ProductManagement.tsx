@@ -707,7 +707,7 @@ const ProductManagement: React.FC = () => {
                 엑셀업로드
               </Button>
               <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
-                <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}>
+                <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white' }}>
                   파일저장
                 </Button>
               </Dropdown>
@@ -764,7 +764,7 @@ const ProductManagement: React.FC = () => {
               <Button
                 onClick={() => handleExport('excel')}
                 icon={<FileExcelOutlined />}
-                style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
+                style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white' }}
                 size="middle"
               >
                 엑셀

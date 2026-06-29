@@ -244,7 +244,7 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onBack, onShowLogin, on
                     padding: '0',
                     fontSize: '14px',
                     fontWeight: '500',
-                    color: '#1890ff'
+                    color: '#1B61A8'
                   }}
                   onClick={() => navigate('/login')}
                 >
@@ -259,7 +259,7 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onBack, onShowLogin, on
                     padding: '0',
                     fontSize: '14px',
                     fontWeight: '500',
-                    color: '#1890ff'
+                    color: '#1B61A8'
                   }}
                   onClick={() => navigate('/password-reset')}
                 >
@@ -370,7 +370,7 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onBack, onShowLogin, on
       theme={{
         algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#1890ff',
+          colorPrimary: '#1B61A8',
         },
       }}
     >

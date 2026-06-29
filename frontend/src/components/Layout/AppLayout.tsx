@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Switch, Typography, Badge, Button, Select } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Switch, Typography, Badge, Button, Select, Drawer } from 'antd';
 import {
   DashboardOutlined,
   UserOutlined,
@@ -15,9 +15,11 @@ import {
   BellOutlined,
   BankOutlined,
   SolutionOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
+import { brand } from '../../styles/tokens';
 import { useNotificationStore } from '../../stores/notificationStore';
 import { useNavigate, useLocation } from 'react-router-dom';
 import NotificationPopover from '../Notification/NotificationPopover';
@@ -33,6 +35,7 @@ interface AppLayoutProps {
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { isMobile } = useMediaQuery();
   const [collapsed, setCollapsed] = useState(false);
+  const [moreDrawerVisible, setMoreDrawerVisible] = useState(false);
   const [isTabletOrSmaller, setIsTabletOrSmaller] = useState(window.innerWidth <= 992);
   const { user, currentBusiness, setCurrentBusiness, logout } = useAuthStore();
   const { isDark, toggleTheme } = useThemeStore();
@@ -75,7 +78,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         }
         .ant-menu-dark .ant-menu-item-selected::after {
           border-radius: 0 !important;
-          background-color: #1677ff !important;
+          background-color: #1B61A8 !important;
         }
         .ant-menu-dark .ant-menu-item-selected .ant-menu-item-icon {
           color: #ffffff !important;
@@ -97,7 +100,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const allMenuItems = [
     {
       key: '/dashboard',
-      icon: <DashboardOutlined style={{ color: '#1890ff' }} />,
+      icon: <DashboardOutlined style={{ color: '#1B61A8' }} />,
       label: '대시보드',
       roles: ['admin'], // admin만 접근 가능
     },
@@ -149,6 +152,18 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       label: '견적서',
       roles: ['admin'],
     },
+    {
+      key: '/purchase-orders',
+      icon: <FileTextOutlined style={{ color: '#2f54eb' }} />,
+      label: '발주서',
+      roles: ['admin'],
+    },
+    {
+      key: '/customer-balance',
+      icon: <BankOutlined style={{ color: '#36cfc9' }} />,
+      label: '거래처 잔액',
+      roles: ['admin'],
+    },
   ];
 
   // 사용자 권한에 따라 메뉴 필터링
@@ -159,7 +174,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const userMenuItems = [
     {
       key: 'profile',
-      icon: <UserOutlined style={{ color: '#1890ff' }} />,
+      icon: <UserOutlined style={{ color: '#1B61A8' }} />,
       label: '내 정보',
       onClick: () => navigate('/profile'),
     },
@@ -219,7 +234,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             style={{
               fontSize: collapsed ? '16px' : '18px',
               fontWeight: 'bold',
-              color: isDark ? '#e5e7eb' : '#1890ff',
+              color: isDark ? '#e5e7eb' : '#1B61A8',
             }}
           >
             {collapsed ? 'ERP' : 'ERP 통합시스템'}
@@ -277,7 +292,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             {!collapsed && (
               <Text
                 style={{
-                  color: isDark ? '#d1d5db' : '#1890ff',
+                  color: isDark ? '#d1d5db' : '#1B61A8',
                   fontSize: '12px',
                   fontWeight: '500',
                   opacity: isDark ? 1 : 0.9,
@@ -294,7 +309,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               unCheckedChildren="☀️"
               aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
               style={{
-                background: isDark ? '#1677ff' : '#1890ff',
+                background: isDark ? '#1B61A8' : '#1B61A8',
               }}
             />
           </div>
@@ -377,14 +392,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 justifyContent: 'center'
               }}
             />
-            {/* 환영 메시지 */}
+            {/* 환영 메시지 (모바일에서는 우측에 사용자명이 있으므로 숨김) */}
             {user && (
               <Text style={{
                 color: isDark ? '#ffffff' : '#000000',
                 fontSize: '14px',
-                display: window.innerWidth <= 480 ? 'none' : 'block'
+                display: isMobile ? 'none' : 'block'
               }}>
-                <span style={{ color: '#1890ff', fontWeight: 'bold' }}>
+                <span style={{ color: brand.primary, fontWeight: 'bold' }}>
                   {user.name}
                 </span>님! 방문을 환영합니다.
               </Text>
@@ -410,12 +425,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   value: b.id,
                   label: (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <BankOutlined style={{ color: '#1890ff' }} />
+                      <BankOutlined style={{ color: '#1B61A8' }} />
                       {b.companyName}
                     </span>
                   ),
                 }))}
-                suffixIcon={<BankOutlined style={{ color: '#1890ff' }} />}
+                suffixIcon={<BankOutlined style={{ color: '#1B61A8' }} />}
               />
             )}
 
@@ -456,7 +471,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 <Avatar
                   size="small"
                   icon={<UserOutlined />}
-                  style={{ backgroundColor: '#1890ff' }}
+                  style={{ backgroundColor: '#1B61A8' }}
                 />
                 <Text style={{ color: isDark ? '#ffffff' : '#000000' }}>
                   {user?.name}
@@ -480,76 +495,141 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </Content>
       </Layout>
 
-      {/* 모바일 하단 탭바 */}
-      {isTabletOrSmaller && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '60px',
-            background: isDark ? '#001529' : '#ffffff',
-            borderTop: `2px solid ${isDark ? '#303030' : '#f0f0f0'}`,
-            display: 'flex',
-            justifyContent: 'space-around',
-            alignItems: 'center',
-            zIndex: 1000,
-            boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.1)',
-          }}
-        >
+      {/* 모바일 하단 탭바 (주요 5개: 핵심 4 + 더보기) */}
+      {isTabletOrSmaller && (() => {
+        const primaryItems = [
+          { key: '/dashboard', icon: <DashboardOutlined />, label: '대시보드', roles: ['admin'] },
+          { key: '/customers', icon: <TeamOutlined />, label: '거래처', roles: ['admin'] },
+          { key: '/sales', icon: <ShoppingCartOutlined />, label: '매출', roles: ['admin', 'sales_viewer'] },
+          { key: '/transaction-ledger', icon: <FileTextOutlined />, label: '거래원장', roles: ['admin', 'sales_viewer'] },
+        ].filter(item => item.roles.includes(user?.role || 'admin'));
+
+        // 더보기 드로어에 담을 나머지 메뉴 (주요 탭 제외)
+        const moreItems = [
+          { key: '/purchases', icon: <FileTextOutlined />, label: '매입 관리', roles: ['admin'] },
+          { key: '/inventory', icon: <ShoppingOutlined />, label: '재고 관리', roles: ['admin'] },
+          { key: '/products', icon: <ShoppingOutlined />, label: '품목 관리', roles: ['admin'] },
+          { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
+          { key: '/quotations', icon: <SolutionOutlined />, label: '견적서', roles: ['admin'] },
+          { key: '/purchase-orders', icon: <FileTextOutlined />, label: '발주서', roles: ['admin'] },
+          { key: '/customer-balance', icon: <BankOutlined />, label: '거래처 잔액', roles: ['admin'] },
+          { key: '/settings', icon: <SettingOutlined />, label: '설정', roles: ['admin'] },
+        ].filter(item => item.roles.includes(user?.role || 'admin'));
+
+        const activeColor = brand.primary;
+        const inactiveColor = isDark ? '#8c8c8c' : '#6b7280';
+        const moreActive = moreItems.some(m => m.key === location.pathname);
+
+        const tabItems: { key: string; icon: React.ReactNode; label: string; isMore?: boolean }[] = [
+          ...primaryItems.map(i => ({ key: i.key, icon: i.icon, label: i.label })),
+        ];
+        if (moreItems.length > 0) {
+          tabItems.push({ key: '__more__', icon: <AppstoreOutlined />, label: '더보기', isMore: true });
+        }
+
+        return (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '60px',
+              background: isDark ? '#1f1f1f' : '#ffffff',
+              borderTop: `1px solid ${isDark ? '#303030' : '#eef0f3'}`,
+              display: 'flex',
+              justifyContent: 'space-around',
+              alignItems: 'center',
+              zIndex: 1000,
+              boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.06)',
+            }}
+          >
+            {tabItems.map((item) => {
+              const isActive = item.isMore ? moreActive : location.pathname === item.key;
+              const color = isActive ? activeColor : inactiveColor;
+              return (
+                <div
+                  key={item.key}
+                  onClick={() => (item.isMore ? setMoreDrawerVisible(true) : navigate(item.key))}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    cursor: 'pointer',
+                    color,
+                    transition: 'all 0.2s',
+                    minHeight: '44px',
+                    minWidth: '44px',
+                  }}
+                  onTouchStart={(e) => {
+                    e.currentTarget.style.backgroundColor = isDark ? '#1a1a1a' : '#f5f6f8';
+                  }}
+                  onTouchEnd={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <div style={{ fontSize: '21px', marginBottom: '2px' }}>{item.icon}</div>
+                  <Text style={{ fontSize: '10px', color, fontWeight: isActive ? 'bold' : 'normal' }}>
+                    {item.label}
+                  </Text>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {/* 더보기 드로어 (하단 시트) */}
+      <Drawer
+        title="전체 메뉴"
+        placement="bottom"
+        height="auto"
+        open={moreDrawerVisible}
+        onClose={() => setMoreDrawerVisible(false)}
+        styles={{ body: { padding: '12px 8px 24px' } }}
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
           {[
-            { key: '/dashboard', icon: <DashboardOutlined />, label: '대시보드', roles: ['admin'] },
-            { key: '/customers', icon: <TeamOutlined />, label: '거래처', roles: ['admin'] },
-            { key: '/sales', icon: <ShoppingCartOutlined />, label: '매출', roles: ['admin', 'sales_viewer'] },
-            { key: '/transaction-ledger', icon: <FileTextOutlined />, label: '거래원장', roles: ['admin', 'sales_viewer'] },
-            { key: '/purchases', icon: <FileTextOutlined />, label: '매입', roles: ['admin'] },
-            { key: '/inventory', icon: <FileTextOutlined />, label: '재고', roles: ['admin'] },
+            { key: '/purchases', icon: <FileTextOutlined />, label: '매입 관리', roles: ['admin'] },
+            { key: '/inventory', icon: <ShoppingOutlined />, label: '재고 관리', roles: ['admin'] },
+            { key: '/products', icon: <ShoppingOutlined />, label: '품목 관리', roles: ['admin'] },
             { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
+            { key: '/quotations', icon: <SolutionOutlined />, label: '견적서', roles: ['admin'] },
+            { key: '/purchase-orders', icon: <FileTextOutlined />, label: '발주서', roles: ['admin'] },
+            { key: '/customer-balance', icon: <BankOutlined />, label: '거래처 잔액', roles: ['admin'] },
+            { key: '/settings', icon: <SettingOutlined />, label: '설정', roles: ['admin'] },
+            { key: '/profile', icon: <UserOutlined />, label: '내 정보', roles: ['admin', 'sales_viewer'] },
           ].filter(item => item.roles.includes(user?.role || 'admin')).map((item) => {
             const isActive = location.pathname === item.key;
             return (
               <div
                 key={item.key}
-                onClick={() => navigate(item.key)}
+                onClick={() => { setMoreDrawerVisible(false); navigate(item.key); }}
                 style={{
-                  flex: 1,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  height: '100%',
+                  gap: '6px',
+                  padding: '14px 4px',
+                  borderRadius: '12px',
                   cursor: 'pointer',
-                  color: isActive ? '#1890ff' : (isDark ? '#8c8c8c' : '#595959'),
-                  fontSize: '20px',
-                  transition: 'all 0.3s',
-                  minHeight: '44px',
-                  minWidth: '44px',
-                }}
-                onTouchStart={(e) => {
-                  e.currentTarget.style.backgroundColor = isDark ? '#1a1a1a' : '#f5f5f5';
-                }}
-                onTouchEnd={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
+                  background: isActive ? (isDark ? '#15314f' : brand.primary + '14') : (isDark ? '#262626' : '#f7f8fa'),
+                  color: isActive ? brand.primary : (isDark ? '#d1d5db' : '#374151'),
                 }}
               >
-                <div style={{ fontSize: '22px', marginBottom: '2px' }}>
-                  {item.icon}
-                </div>
-                <Text
-                  style={{
-                    fontSize: '10px',
-                    color: isActive ? '#1890ff' : (isDark ? '#8c8c8c' : '#595959'),
-                    fontWeight: isActive ? 'bold' : 'normal',
-                  }}
-                >
+                <div style={{ fontSize: '24px' }}>{item.icon}</div>
+                <Text style={{ fontSize: '12px', color: isActive ? brand.primary : (isDark ? '#d1d5db' : '#374151') }}>
                   {item.label}
                 </Text>
               </div>
             );
           })}
         </div>
-      )}
+      </Drawer>
     </Layout>
   );
 };

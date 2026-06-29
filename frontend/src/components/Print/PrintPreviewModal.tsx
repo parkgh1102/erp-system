@@ -3,6 +3,7 @@ import { Modal, Button, Dropdown, message, Checkbox, Input } from 'antd';
 import { PrinterOutlined, DownOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { TransactionStatement } from './TransactionStatement';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import html2canvas from 'html2canvas';
 import logger from '../../utils/logger';
 
@@ -37,9 +38,16 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
   const transactionDataArray = Array.isArray(transactionData)
     ? transactionData
     : transactionData ? [transactionData] : [];
+  const { isMobile } = useMediaQuery();
   const [paperSize] = useState<'A4' | 'A3' | 'Letter'>('A4');
   const [orientation] = useState<'portrait' | 'landscape'>('portrait');
-  const [scale] = useState<number>(100);
+  // 모바일에서는 A4(210mm≈794px)를 화면 폭에 맞게 축소 (데스크톱은 100%)
+  const [scale] = useState<number>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      return Math.max(38, Math.floor(((window.innerWidth - 40) / 794) * 100));
+    }
+    return 100;
+  });
   const [margin] = useState<number>(10);
   const [showMemo, setShowMemo] = useState(false);
   const [showNotice, setShowNotice] = useState(false);
@@ -892,8 +900,10 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
               style={{
                 backgroundColor: 'white',
                 boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                transform: `scale(${getPreviewScale()})`,
-                transformOrigin: 'top center',
+                // 모바일: zoom으로 레이아웃까지 축소(가로 스크롤 제거) / 데스크톱: 기존 transform 유지
+                ...(isMobile
+                  ? { zoom: getPreviewScale() }
+                  : { transform: `scale(${getPreviewScale()})`, transformOrigin: 'top center' }),
                 border: '1px solid #ddd',
                 pageBreakAfter: 'always',
                 marginBottom: '20px'
@@ -930,7 +940,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
                 }}></div>
                 <div style={{
                   padding: '5px 15px',
-                  backgroundColor: '#1890ff',
+                  backgroundColor: '#1B61A8',
                   color: 'white',
                   fontSize: '14px',
                   fontWeight: 'bold',

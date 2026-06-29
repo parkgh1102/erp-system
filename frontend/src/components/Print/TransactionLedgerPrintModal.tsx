@@ -237,7 +237,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                 <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}></td>
                 <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}></td>
                 <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center' }}></td>
-                <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#fffbe6', color: previousBalance >= 0 ? '#1890ff' : '#ff4d4f' }}>
+                <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#fffbe6', color: previousBalance >= 0 ? '#1B61A8' : '#ff4d4f' }}>
                   {previousBalance.toLocaleString()}원
                 </td>
                 <td style={{ border: '1px solid #000', padding: '6px', textAlign: 'center', backgroundColor: '#fffbe6' }}>-</td>
@@ -282,7 +282,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     border: '1px solid #000',
                     padding: '6px',
                     textAlign: 'center',
-                    color: entry.type === 'sales' ? '#1890ff' : entry.type === 'purchase' ? '#000' : entry.type === 'receipt' ? '#52c41a' : '#fa8c16'
+                    color: entry.type === 'sales' ? '#1B61A8' : entry.type === 'purchase' ? '#000' : entry.type === 'receipt' ? '#52c41a' : '#fa8c16'
                   }}>
                     {isFirstRow ? (entry.type === 'sales' ? '매출' : entry.type === 'purchase' ? '매입' : entry.type === 'receipt' ? '수금' : '지급') : ''}
                   </td>
@@ -306,7 +306,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     border: '1px solid #000',
                     padding: '6px',
                     textAlign: 'right',
-                    color: displaySupplyAmount < 0 ? '#ff4d4f' : (entry.type === 'sales' ? '#1890ff' : entry.type === 'receipt' ? '#ff4d4f' : '#000')
+                    color: displaySupplyAmount < 0 ? '#ff4d4f' : (entry.type === 'sales' ? '#1B61A8' : entry.type === 'receipt' ? '#ff4d4f' : '#000')
                   }}>
                     {displaySupplyAmount !== undefined ? `${displaySupplyAmount.toLocaleString()}원` : ''}
                   </td>
@@ -346,7 +346,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                     padding: '6px',
                     textAlign: 'right',
                     fontWeight: 'bold',
-                    color: cumulativeBalance >= 0 ? '#1890ff' : '#ff4d4f'
+                    color: cumulativeBalance >= 0 ? '#1B61A8' : '#ff4d4f'
                   }}>
                     {cumulativeBalance.toLocaleString()}원
                   </td>
@@ -377,7 +377,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                   <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}></td>
                   <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}></td>
                   <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}></td>
-                  <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#fafafa', color: finalBalance >= 0 ? '#1890ff' : '#ff4d4f' }}>
+                  <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', fontWeight: 'bold', backgroundColor: '#fafafa', color: finalBalance >= 0 ? '#1B61A8' : '#ff4d4f' }}>
                     {finalBalance.toLocaleString()}원
                   </td>
                   <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}></td>
@@ -391,13 +391,13 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
                 매출 합계
               </td>
               <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right' }}></td>
-              <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', color: '#1890ff', fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
+              <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', color: '#1B61A8', fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
                 {totalSalesSupply.toLocaleString()}원
               </td>
-              <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', color: '#1890ff', fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
+              <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', color: '#1B61A8', fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
                 {totalSalesVat.toLocaleString()}원
               </td>
-              <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', color: '#1890ff', fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
+              <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'right', color: '#1B61A8', fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
                 {totalSalesAmount.toLocaleString()}원
               </td>
               <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center', fontWeight: 'bold', backgroundColor: '#f0f0f0' }}>
