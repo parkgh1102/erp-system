@@ -128,15 +128,36 @@ export const UserController = {
 
       const { password, name, phone, role, businessIds } = value;
 
-      // 전화번호 중복 체크
+      // 전화번호 중복 체크 (전화번호 = 로그인 ID 이므로 시스템 전역에서 유일해야 함)
       const cleanPhone = phone.replace(/[^0-9]/g, '');
       const users = await userRepository.find();
       const existingUser = users.find(u => u.phone && u.phone.replace(/[^0-9]/g, '') === cleanPhone);
       if (existingUser) {
-        return res.status(409).json({
-          success: false,
-          message: '이미 사용 중인 전화번호입니다.'
-        });
+        const requesterId = (req as any).user?.userId;
+        // 기본: 다른 계정에서 사용 중 (요청자 권한 밖이라 상세는 노출하지 않음)
+        let message = '이미 다른 계정에서 사용 중인 전화번호입니다. 사용자 계정에는 다른 번호를 사용해주세요.';
+
+        if (existingUser.id === requesterId) {
+          message = '현재 로그인한 관리자 본인의 전화번호입니다. 사용자 계정에는 다른 번호를 사용해주세요.';
+        } else {
+          // 기존 계정이 요청자(관리자)가 소유한 사업장에 속하면 위치/이름/역할을 안내해 바로 찾을 수 있게 함
+          const ownedIds = await getOwnedBusinessIds(requesterId);
+          let ownedBizId: number | undefined;
+          if (existingUser.businessId && ownedIds.has(existingUser.businessId)) {
+            ownedBizId = existingUser.businessId;
+          } else {
+            const access = await accessRepository.find({ where: { userId: existingUser.id } });
+            ownedBizId = access.find(a => ownedIds.has(a.businessId))?.businessId;
+          }
+          if (ownedBizId) {
+            const biz = await businessRepository.findOne({ where: { id: ownedBizId } });
+            const roleText = existingUser.role === 'admin' ? '관리자' : '사용자';
+            message = `이미 '${biz?.companyName || '내 사업장'}'에 ${roleText} '${existingUser.name}'(으)로 등록된 번호입니다. 사용자 관리 목록에서 확인/수정하거나 다른 번호를 사용해주세요.`;
+          }
+        }
+
+        logger.warn('User create blocked: duplicate phone', { existingUserId: existingUser.id, existingRole: existingUser.role });
+        return res.status(409).json({ success: false, message });
       }
 
       // 비밀번호 해싱
