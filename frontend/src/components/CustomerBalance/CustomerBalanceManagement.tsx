@@ -96,11 +96,13 @@ const CustomerBalanceManagement: React.FC = () => {
     if (!currentBusiness) return;
     setLoading(true);
     try {
+      // 일부 API가 실패(예: 권한/404)해도 전체가 깨지지 않도록 개별 방어 처리
+      const safeGet = (p: Promise<any>) => p.catch(() => ({ data: { data: {} } }));
       const [customersRes, salesRes, purchasesRes, paymentsRes] = await Promise.all([
-        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
-        salesAPI.getAll(currentBusiness.id),
-        purchaseAPI.getAll(currentBusiness.id),
-        paymentAPI.getAll(currentBusiness.id),
+        safeGet(customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 })),
+        safeGet(salesAPI.getAll(currentBusiness.id)),
+        safeGet(purchaseAPI.getAll(currentBusiness.id)),
+        safeGet(paymentAPI.getAll(currentBusiness.id)),
       ]);
 
       const customers: any[] = customersRes.data?.data?.customers || [];
