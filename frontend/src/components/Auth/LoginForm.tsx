@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Button, Typography, Alert, Divider, Segmented } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../../utils/api';
 import { useAuthStore } from '../../stores/authStore';
@@ -201,28 +201,31 @@ const LoginFormContent: React.FC = () => {
           </Divider>
 
           <div style={{ textAlign: 'center' }}>
-            <div style={{ marginBottom: '8px' }}>
-              <Text type="secondary">
-                계정이 없으신가요?{' '}
-                <Link
-                  to="/signup"
-                  style={{ color: '#1B61A8', fontWeight: 'bold' }}
-                >
-                  회원가입
-                </Link>
-              </Text>
-            </div>
-            <div>
-              <Text type="secondary">
-                아이디 또는 비밀번호를 모르시나요?{' '}
-                <Link
-                  to="/password-reset"
-                  style={{ color: '#1B61A8', fontWeight: 'bold' }}
-                >
-                  찾으러가기
-                </Link>
-              </Text>
-            </div>
+            <Button
+              block
+              icon={<QuestionCircleOutlined />}
+              onClick={() => navigate('/password-reset')}
+              style={{
+                height: '44px',
+                borderRadius: '8px',
+                fontSize: '15px',
+                fontWeight: 600,
+                color: '#1B61A8',
+                borderColor: '#1B61A8',
+                marginBottom: '12px',
+              }}
+            >
+              아이디 / 비밀번호 찾기
+            </Button>
+            <Text type="secondary">
+              계정이 없으신가요?{' '}
+              <Link
+                to="/signup"
+                style={{ color: '#1B61A8', fontWeight: 'bold' }}
+              >
+                회원가입
+              </Link>
+            </Text>
           </div>
         </Form>
       </Card>

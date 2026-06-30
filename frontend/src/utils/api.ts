@@ -293,6 +293,11 @@ export const passwordResetAPI = {
     const response = await api.post('/auth/verify-password-reset', data);
     return response.data;
   },
+  // 사용자(매출조회) 전화번호 기반 비밀번호 재설정 요청 → 본인 전화번호로 OTP 발송
+  requestPhoneReset: async (data: { phone: string }) => {
+    const response = await api.post('/auth/request-phone-reset', data);
+    return response.data;
+  },
   confirmPasswordResetOtp: async (data: { email: string; code: string }) => {
     const response = await api.post('/auth/confirm-password-reset-otp', data);
     return response.data;

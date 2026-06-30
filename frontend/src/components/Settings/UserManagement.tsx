@@ -25,6 +25,8 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   BankOutlined,
+  KeyOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { api, businessAPI } from '../../utils/api';
@@ -59,6 +61,11 @@ const UserManagement: React.FC = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('sales_viewer');
   const [form] = Form.useForm();
+  // 비밀번호 초기화 모달 상태
+  const [resetModalVisible, setResetModalVisible] = useState(false);
+  const [resetTargetUser, setResetTargetUser] = useState<User | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetForm] = Form.useForm();
   const { currentBusiness } = useAuthStore();
   const { success: showSuccess, error: showError } = useMessage();
 
@@ -146,6 +153,51 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  // 비밀번호 초기화 모달 열기
+  const handleOpenReset = (user: User) => {
+    setResetTargetUser(user);
+    resetForm.resetFields();
+    // 전화번호 뒤 4자리를 기본 추천값으로 제안
+    const digits = (user.phone || '').replace(/[^0-9]/g, '');
+    if (digits.length >= 4) {
+      resetForm.setFieldsValue({ password: digits.slice(-4) });
+    }
+    setResetModalVisible(true);
+  };
+
+  // 로그인 아이디(전화번호) 복사
+  const handleCopyLoginId = (phone?: string) => {
+    if (!phone) return;
+    navigator.clipboard?.writeText(phone).then(
+      () => showSuccess('로그인 아이디가 복사되었습니다.'),
+      () => showError('복사에 실패했습니다.')
+    );
+  };
+
+  // 비밀번호 초기화 실행
+  const handleResetSubmit = async () => {
+    if (!currentBusiness || !resetTargetUser) return;
+
+    try {
+      const values = await resetForm.validateFields();
+      setResetLoading(true);
+      await api.put(`/businesses/${currentBusiness.id}/users/${resetTargetUser.id}`, {
+        password: values.password,
+      });
+      showSuccess(`${resetTargetUser.name}님의 비밀번호가 초기화되었습니다.`);
+      setResetModalVisible(false);
+      setResetTargetUser(null);
+      resetForm.resetFields();
+    } catch (error: any) {
+      if (error?.errorFields) return; // 폼 검증 에러는 무시
+      const errorMessage = error?.response?.data?.message || error?.message || '비밀번호 초기화에 실패했습니다.';
+      showError(errorMessage);
+      console.error('Reset password error:', error);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!currentBusiness) return;
 
@@ -191,10 +243,25 @@ const UserManagement: React.FC = () => {
       ),
     },
     {
-      title: '전화번호',
+      title: '전화번호 (로그인 ID)',
       dataIndex: 'phone',
       key: 'phone',
-      render: (text: string) => text || '-',
+      render: (text: string) =>
+        text ? (
+          <Space size={4}>
+            <span>{text}</span>
+            <Tooltip title="로그인 아이디 복사">
+              <Button
+                type="text"
+                size="small"
+                icon={<CopyOutlined />}
+                onClick={() => handleCopyLoginId(text)}
+              />
+            </Tooltip>
+          </Space>
+        ) : (
+          '-'
+        ),
     },
     {
       title: '권한',
@@ -258,6 +325,13 @@ const UserManagement: React.FC = () => {
           </Button>
           <Button
             type="link"
+            icon={<KeyOutlined />}
+            onClick={() => handleOpenReset(record)}
+          >
+            비밀번호 초기화
+          </Button>
+          <Button
+            type="link"
             onClick={() => handleToggleStatus(record.id)}
           >
             {record.isActive ? '비활성화' : '활성화'}
@@ -300,6 +374,7 @@ const UserManagement: React.FC = () => {
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10 }}
+          scroll={{ x: 'max-content' }}
         />
 
         <Modal
@@ -397,6 +472,69 @@ const UserManagement: React.FC = () => {
               />
             )}
           </Form>
+        </Modal>
+
+        {/* 비밀번호 초기화 모달 */}
+        <Modal
+          title="비밀번호 초기화"
+          open={resetModalVisible}
+          onOk={handleResetSubmit}
+          confirmLoading={resetLoading}
+          onCancel={() => {
+            setResetModalVisible(false);
+            setResetTargetUser(null);
+            resetForm.resetFields();
+          }}
+          okText="초기화"
+          cancelText="취소"
+          width={460}
+        >
+          {resetTargetUser && (
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Alert
+                type="info"
+                showIcon
+                message={
+                  <Space direction="vertical" size={2}>
+                    <Text>
+                      <UserOutlined /> <strong>{resetTargetUser.name}</strong> 님의 로그인 정보
+                    </Text>
+                    <Text>
+                      <PhoneOutlined /> 아이디(전화번호):{' '}
+                      <Text copyable={{ text: resetTargetUser.phone || '' }} strong>
+                        {resetTargetUser.phone || '-'}
+                      </Text>
+                    </Text>
+                  </Space>
+                }
+              />
+
+              <Form form={resetForm} layout="vertical">
+                <Form.Item
+                  label="새 비밀번호 (숫자 4자리)"
+                  name="password"
+                  rules={[
+                    { required: true, message: '새 비밀번호를 입력해주세요.' },
+                    { pattern: /^\d{4}$/, message: '비밀번호는 숫자 4자리여야 합니다.' },
+                  ]}
+                  extra="기본값으로 전화번호 뒤 4자리가 입력되어 있습니다. 필요 시 변경하세요."
+                >
+                  <Input.Password
+                    prefix={<LockOutlined />}
+                    placeholder="숫자 4자리"
+                    maxLength={4}
+                    inputMode="numeric"
+                  />
+                </Form.Item>
+              </Form>
+
+              <Alert
+                type="warning"
+                showIcon
+                message="초기화된 비밀번호를 사용자에게 안전하게 전달해주세요. 사용자는 로그인 후 직접 변경할 수 있습니다."
+              />
+            </Space>
+          )}
         </Modal>
       </Space>
     </Card>

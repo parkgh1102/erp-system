@@ -917,6 +917,18 @@ const PurchaseManagement: React.FC = () => {
             lastError = new Error(response.data?.message || '전잔금 조회 응답 오류');
           } catch (error) {
             lastError = error;
+            const status = (error as { response?: { status?: number } })?.response?.status;
+            // 거래처가 삭제되어 잔액 기준 거래처를 찾지 못하는 경우(404)는
+            // 전잔금이 없는 것으로 간주하여 0으로 처리하고 인쇄를 진행한다.
+            if (status === 404) {
+              balanceAmount = 0;
+              success = true;
+              break;
+            }
+            // 4xx 클라이언트 오류는 재시도해도 동일하므로 즉시 중단
+            if (typeof status === 'number' && status >= 400 && status < 500) {
+              break;
+            }
           }
           if (attempt < 2) {
             await new Promise((resolve) => setTimeout(resolve, 300));

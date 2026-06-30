@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Steps, Result, Progress, ConfigProvider, theme, App } from 'antd';
+import { Form, Input, Button, Card, Steps, Result, Progress, ConfigProvider, theme, App, Segmented } from 'antd';
 import { UserOutlined, ShopOutlined, ArrowLeftOutlined, CheckCircleOutlined, PhoneOutlined, LockOutlined, IdcardOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { passwordResetAPI } from '../../utils/api';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface PasswordResetProps {
   onBack?: () => void;
@@ -14,8 +15,12 @@ const { Step } = Steps;
 
 const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, onShowRegister }) => {
   const { message } = App.useApp();
+  const { isMobile } = useMediaQuery();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  // 'admin' = 관리자(이메일) 찾기 흐름, 'user' = 매출조회 사용자(전화번호) 찾기 흐름
+  const [userType, setUserType] = useState<'admin' | 'user'>('admin');
+  const [svPhone, setSvPhone] = useState<string>('');
   const [form] = Form.useForm();
   const [foundUserId, setFoundUserId] = useState<string>('');
   const [resetToken, setResetToken] = useState<string>('');
@@ -147,7 +152,8 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
       if (response.success) {
         setResetToken(response.data.resetToken);
         setOtpStage(false);
-        setCurrentStep(3);
+        // 사용자(매출조회) 모드는 3단계 흐름(전화→인증→변경)이라 step 2가 비밀번호 변경
+        setCurrentStep(userType === 'user' ? 2 : 3);
         message.success('본인인증이 완료되었습니다. 새로운 비밀번호를 설정해주세요.');
       } else {
         message.error(response.message || '인증코드가 일치하지 않습니다.');
@@ -177,6 +183,101 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
     } finally {
       setLoading(false);
     }
+  };
+
+  // [사용자 모드] 전화번호로 OTP 발송 요청
+  const handleUserPhoneFind = async (values: any) => {
+    setLoading(true);
+    try {
+      const response = await passwordResetAPI.requestPhoneReset({ phone: values.phone });
+      if (response.success) {
+        setResetEmail(response.data?.email || '');
+        setPhoneMasked(response.data?.phoneMasked || '');
+        setDevCode(response.data?.devCode || '');
+        setSvPhone(values.phone);
+        setOtpStage(true);
+        setCurrentStep(1);
+        message.success('등록된 전화번호로 인증코드를 발송했습니다.');
+      } else {
+        message.error(response.message || '일치하는 사용자를 찾을 수 없습니다.');
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '비밀번호 찾기 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // [사용자 모드] 인증코드 재발송
+  const handleUserResend = async () => {
+    if (!svPhone) return;
+    setLoading(true);
+    try {
+      const response = await passwordResetAPI.requestPhoneReset({ phone: svPhone });
+      if (response.success) {
+        setPhoneMasked(response.data?.phoneMasked || '');
+        setDevCode(response.data?.devCode || '');
+        message.success('인증코드를 다시 발송했습니다.');
+      } else {
+        message.error(response.message || '재발송에 실패했습니다.');
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '재발송 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // [사용자 모드] 새 비밀번호(숫자 4자리) 설정
+  const handleUserNewPassword = async (values: any) => {
+    setLoading(true);
+    try {
+      if (!/^\d{4}$/.test(values.newPassword || '')) {
+        message.error('비밀번호는 숫자 4자리여야 합니다.');
+        setLoading(false);
+        return;
+      }
+      if (values.newPassword !== values.confirmPassword) {
+        message.error('입력하신 비밀번호를 확인 하시기 바랍니다.');
+        setLoading(false);
+        return;
+      }
+      if (!resetToken) {
+        message.error('유효하지 않은 요청입니다.');
+        setLoading(false);
+        return;
+      }
+      const response = await passwordResetAPI.resetPassword({
+        resetToken,
+        newPassword: values.newPassword
+      });
+      if (response.success) {
+        message.success('비밀번호가 변경되었습니다. 로그인 페이지로 이동합니다.');
+        setTimeout(() => navigate('/login'), 1500);
+      } else {
+        message.error(response.message || '비밀번호 변경에 실패했습니다.');
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || '비밀번호 변경 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 관리자/사용자 모드 전환 시 상태 초기화
+  const handleUserTypeChange = (value: string | number) => {
+    const next = value as 'admin' | 'user';
+    setUserType(next);
+    setCurrentStep(0);
+    setOtpStage(false);
+    setFoundUserId('');
+    setResetToken('');
+    setResetEmail('');
+    setPhoneMasked('');
+    setDevCode('');
+    setSvPhone('');
+    setVerifyPayload(null);
+    form.resetFields();
   };
 
   // 비밀번호 변경
@@ -641,7 +742,182 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
     }
   };
 
+  // [사용자 모드] 전화번호 → OTP → 새 비밀번호(4자리) 흐름
+  const renderUserModeContent = () => {
+    switch (currentStep) {
+      case 0: // 전화번호 입력
+        return (
+          <Form
+            form={form}
+            name="userPhoneFind"
+            onFinish={handleUserPhoneFind}
+            layout="vertical"
+            autoComplete="off"
+          >
+            <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+              <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>
+                가입 시 등록한 <strong>전화번호(로그인 아이디)</strong>를 입력하시면<br />
+                해당 번호로 인증코드를 보내드립니다.
+              </p>
+            </div>
+            <Form.Item
+              name="phone"
+              label="전화번호 (로그인 아이디)"
+              rules={[
+                { required: true, message: '전화번호를 입력해주세요!' },
+                { pattern: /^01[0-9]-\d{3,4}-\d{4}$/, message: '올바른 휴대폰 번호 형식이 아닙니다!' }
+              ]}
+            >
+              <Input
+                prefix={<PhoneOutlined />}
+                placeholder="010-1234-5678"
+                size="large"
+                inputMode="numeric"
+                onChange={(e) => {
+                  const formatted = formatPhoneNumber(e.target.value);
+                  form.setFieldsValue({ phone: formatted });
+                }}
+              />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0, marginTop: '24px' }}>
+              <Button type="primary" htmlType="submit" loading={loading} size="large" block>
+                인증코드 받기
+              </Button>
+            </Form.Item>
+          </Form>
+        );
+
+      case 1: // OTP 인증
+        return (
+          <Form
+            key="userOtpForm"
+            name="userOtpConfirm"
+            onFinish={handleConfirmOtp}
+            layout="vertical"
+            autoComplete="off"
+          >
+            <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+              <h3 style={{ color: '#1B61A8', marginBottom: '4px' }}>본인인증</h3>
+              <p style={{ color: '#666', fontSize: '14px', margin: 0 }}>
+                {phoneMasked ? <><strong>{phoneMasked}</strong> 로 </> : ''}
+                발송된 6자리 인증코드를 입력해주세요. (5분 이내)
+              </p>
+              {devCode && (
+                <p style={{ color: '#fa8c16', fontSize: '13px', marginTop: '8px' }}>
+                  [개발 모드] 인증코드: <strong>{devCode}</strong>
+                </p>
+              )}
+            </div>
+            <Form.Item
+              name="otp"
+              label="인증코드"
+              rules={[
+                { required: true, message: '인증코드를 입력해주세요!' },
+                { pattern: /^\d{6}$/, message: '6자리 숫자를 입력해주세요!' }
+              ]}
+            >
+              <Input
+                prefix={<LockOutlined />}
+                placeholder="6자리 숫자"
+                size="large"
+                maxLength={6}
+                inputMode="numeric"
+              />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: '8px', marginTop: '24px' }}>
+              <Button type="primary" htmlType="submit" loading={loading} size="large" block>
+                인증 확인
+              </Button>
+            </Form.Item>
+            <div style={{ textAlign: 'center' }}>
+              <Button type="link" onClick={handleUserResend} disabled={loading} style={{ padding: 0 }}>
+                인증코드 재발송
+              </Button>
+              <span style={{ color: '#ccc', margin: '0 8px' }}>|</span>
+              <Button type="link" onClick={() => setCurrentStep(0)} disabled={loading} style={{ padding: 0 }}>
+                전화번호 다시 입력
+              </Button>
+            </div>
+          </Form>
+        );
+
+      case 2: // 새 비밀번호 (숫자 4자리)
+        return (
+          <Form
+            form={form}
+            name="userNewPassword"
+            onFinish={handleUserNewPassword}
+            layout="vertical"
+            autoComplete="off"
+          >
+            <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+              <h3 style={{ color: '#52c41a' }}>본인인증이 완료되었습니다!</h3>
+              <p style={{ color: '#666', fontSize: '14px' }}>
+                새로운 비밀번호(숫자 4자리)를 설정해주세요.
+              </p>
+            </div>
+            <Form.Item
+              name="newPassword"
+              label="새 비밀번호 (숫자 4자리)"
+              rules={[
+                { required: true, message: '새 비밀번호를 입력해주세요!' },
+                { pattern: /^\d{4}$/, message: '비밀번호는 숫자 4자리여야 합니다.' }
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder="숫자 4자리"
+                size="large"
+                maxLength={4}
+                inputMode="numeric"
+              />
+            </Form.Item>
+            <Form.Item
+              name="confirmPassword"
+              label="새 비밀번호 확인"
+              dependencies={['newPassword']}
+              rules={[
+                { required: true, message: '비밀번호 확인을 입력해주세요!' },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('newPassword') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error('비밀번호가 일치하지 않습니다!'));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder="숫자 4자리 다시 입력"
+                size="large"
+                maxLength={4}
+                inputMode="numeric"
+              />
+            </Form.Item>
+            <Form.Item style={{ marginBottom: 0, marginTop: '24px' }}>
+              <Button type="primary" htmlType="submit" loading={loading} size="large" block>
+                비밀번호 변경 완료
+              </Button>
+            </Form.Item>
+          </Form>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   const getStepTitle = () => {
+    if (userType === 'user') {
+      switch (currentStep) {
+        case 0: return '사용자 비밀번호 찾기';
+        case 1: return '본인인증';
+        case 2: return '비밀번호 변경';
+        default: return '사용자 비밀번호 찾기';
+      }
+    }
     switch (currentStep) {
       case 0: return '아이디 찾기';
       case 1: return '아이디 찾기 결과';
@@ -666,7 +942,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
         alignItems: 'center',
         minHeight: '100vh',
         backgroundColor: '#ffffff',
-        padding: '24px'
+        padding: isMobile ? '12px' : '24px'
       }}>
       <Card
         title={
@@ -691,31 +967,57 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
         styles={{
           header: {
             textAlign: 'center',
-            fontSize: '20px',
+            fontSize: isMobile ? '17px' : '20px',
             fontWeight: 'bold',
             background: '#f0f2f5',
             borderBottom: '1px solid #e4e6ef',
             borderRadius: '12px 12px 0 0',
-            padding: '20px 24px'
+            padding: isMobile ? '16px' : '20px 24px'
+          },
+          body: {
+            padding: isMobile ? '20px 16px' : '24px'
           }
         }}
       >
+        {/* 관리자(이메일) / 사용자(전화번호) 찾기 모드 전환 */}
+        <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+          <Segmented
+            block
+            value={userType}
+            onChange={handleUserTypeChange}
+            options={[
+              { label: '관리자(이메일)', value: 'admin' },
+              { label: '사용자(전화번호)', value: 'user' },
+            ]}
+          />
+        </div>
+
         <Steps
           current={currentStep}
           style={{
-            marginBottom: '32px',
-            padding: '0 10px'
+            marginBottom: isMobile ? '24px' : '32px',
+            padding: isMobile ? 0 : '0 10px'
           }}
           labelPlacement="vertical"
           size="small"
+          progressDot={isMobile}
+          responsive={false}
         >
-          <Step title="아이디 찾기" />
-          <Step title="결과 확인" />
-          <Step title="비밀번호 찾기" />
-          <Step title="비밀번호 변경" />
+          {userType === 'user'
+            ? [
+                <Step key="u0" title="전화번호 입력" />,
+                <Step key="u1" title="본인인증" />,
+                <Step key="u2" title="비밀번호 변경" />,
+              ]
+            : [
+                <Step key="a0" title="아이디 찾기" />,
+                <Step key="a1" title="결과 확인" />,
+                <Step key="a2" title="비밀번호 찾기" />,
+                <Step key="a3" title="비밀번호 변경" />,
+              ]}
         </Steps>
 
-        {renderStepContent()}
+        {userType === 'user' ? renderUserModeContent() : renderStepContent()}
       </Card>
       </div>
     </ConfigProvider>

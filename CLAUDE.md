@@ -102,6 +102,13 @@ DB 마이그레이션: `cd backend && npm run migration:run` / `migration:genera
 ### 2026-06-04
 - CLAUDE.md 신규 작성: 프로젝트 가이드 + 활동 기록 체계 수립.
 
+### 2026-06-30
+- 설정>사용자관리: 관리자용 "비밀번호 초기화" 버튼/모달 추가(전화번호 뒤 4자리 기본 제안, 로그인 ID 복사), 기존 update API 재사용(백엔드 변경 없음), 테이블 가로 스크롤.
+- 로그인 화면 아이디/비번 찾기(PasswordReset) 모바일 최적화: 반응형 패딩, Steps progressDot, 카드 본문 패딩.
+- 매출조회(sales_viewer) 모바일 하단 탭바에 '내 정보' 탭 추가(기존엔 더보기가 비어 프로필/로그아웃 동선 부재).
+- 거래처 잔액(getCustomerBalance) 404 해결: 거래처 마스터가 삭제된 고아 매출/매입도 매출·매입·수금 데이터로 잔액 계산하도록 404 제거(fallback 이름 '(삭제된 거래처)'). 프론트(Sales/Purchase) 전잔금 조회는 4xx 재시도 중단·404는 0 처리로 인쇄 차단 방지.
+- 로그인 화면 '찾으러가기'를 버튼화(아이디/비밀번호 찾기). 사용자(매출조회) 셀프 비번 재설정 흐름 신설: POST /auth/request-phone-reset(전화번호→OTP), resetPassword 역할별 검증(sales_viewer 4자리 허용), PasswordReset에 관리자/사용자 모드 토글(전화번호→OTP→4자리).
+
 ### 2026-06-25
 - 검색바 회전 무지개 그라데이션 테두리 제거(AnimatedSearchBar).
 - 미수금/미지급 현황(CustomerBalance) 샘플 데이터 → 실제 API 연동. 매출·매입·수금·지급으로 거래처별 잔액 계산.

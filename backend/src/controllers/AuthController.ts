@@ -951,6 +951,81 @@ export const AuthController = {
     }
   },
 
+  // 사용자(매출조회) 전화번호 기반 비밀번호 재설정 요청 → 본인 전화번호로 OTP 발송
+  async requestPhonePasswordReset(req: Request, res: Response) {
+    try {
+      const { phone } = req.body;
+      if (!phone) {
+        return res.status(400).json({ success: false, message: '전화번호를 입력해주세요.' });
+      }
+
+      const cleanedPhone = String(phone).replace(/[^0-9]/g, '');
+      if (cleanedPhone.length < 9) {
+        return res.status(400).json({ success: false, message: '올바른 전화번호를 입력해주세요.' });
+      }
+
+      // 전화번호로 사용자 검색 (정규화 비교)
+      const users = await userRepository.find();
+      const user = users.find(u => u.phone && u.phone.replace(/[^0-9]/g, '') === cleanedPhone);
+
+      if (!user || !user.isActive) {
+        logger.warn('Phone password reset: user not found or inactive', { phone: maskPhone(cleanedPhone) });
+        return res.status(404).json({
+          success: false,
+          message: '입력하신 전화번호와 일치하는 사용자를 찾을 수 없습니다.'
+        });
+      }
+
+      // 본인 전화번호로 OTP 발송
+      const code = AlimtalkService.generateOTP();
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5분
+
+      await otpRepository.delete({ email: user.email, verified: false });
+      const otp = otpRepository.create({
+        email: user.email,
+        phone: cleanedPhone,
+        code,
+        expiresAt,
+        verified: false,
+        attemptCount: 0,
+        sendCount: 1
+      });
+      await otpRepository.save(otp);
+
+      const alimtalkConfigured = !!process.env.ALIMTALK_API_KEY;
+      let delivered = false;
+      if (alimtalkConfigured) {
+        delivered = await AlimtalkService.sendOTP(cleanedPhone, code);
+      }
+      const isProd = process.env.NODE_ENV === 'production';
+      if (!isProd) {
+        logger.info(`[DEV] 사용자 비밀번호 재설정 OTP 코드: ${code} (수신: ${maskPhone(cleanedPhone)})`);
+      }
+      if (isProd && !delivered) {
+        return res.status(502).json({
+          success: false,
+          message: '인증코드 발송에 실패했습니다. 잠시 후 다시 시도해주세요.'
+        });
+      }
+
+      logger.info('Phone password reset OTP sent', { userId: user.id });
+
+      res.json({
+        success: true,
+        message: '인증코드를 발송했습니다.',
+        data: {
+          email: user.email,
+          phoneMasked: maskPhone(cleanedPhone),
+          // 개발 환경에서만 코드 노출 (운영 미노출)
+          devCode: isProd ? undefined : code
+        }
+      });
+    } catch (error: unknown) {
+      logger.error('Request phone password reset error', error instanceof Error ? error : new Error(String(error)));
+      res.status(500).json({ success: false, message: '비밀번호 찾기 중 오류가 발생했습니다.' });
+    }
+  },
+
   // 비밀번호 재설정 OTP 확인 → 재설정 토큰 발급
   async confirmPasswordResetOtp(req: Request, res: Response) {
     try {
@@ -1020,15 +1095,6 @@ export const AuthController = {
         });
       }
 
-      // 비밀번호 유효성 검사
-      const { error } = passwordSchema.validate(newPassword);
-      if (error) {
-        return res.status(400).json({
-          success: false,
-          message: error.details[0].message
-        });
-      }
-
       // 토큰 검증
       const env = getValidatedEnv();
       let decoded: JwtPayload;
@@ -1068,6 +1134,24 @@ export const AuthController = {
           success: false,
           message: '사용자를 찾을 수 없습니다.'
         });
+      }
+
+      // 역할별 비밀번호 유효성 검사 (사용자/매출조회는 숫자 4자리, 관리자는 복합 규칙)
+      if (user.role === 'sales_viewer') {
+        if (!/^\d{4}$/.test(String(newPassword))) {
+          return res.status(400).json({
+            success: false,
+            message: '비밀번호는 숫자 4자리여야 합니다.'
+          });
+        }
+      } else {
+        const { error } = passwordSchema.validate(newPassword);
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            message: error.details[0].message
+          });
+        }
       }
 
       // 새 비밀번호 해시화 및 저장

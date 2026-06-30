@@ -702,16 +702,12 @@ export const transactionLedgerController = {
       const purchaseRepository = AppDataSource.getRepository(Purchase);
       const paymentRepository = AppDataSource.getRepository(Payment);
 
+      // 거래처 마스터가 삭제되었더라도 매출/매입/수금 데이터(customerId 기준)로
+      // 잔액은 계산할 수 있으므로 404로 막지 않고 fallback 이름으로 진행한다.
+      // (거래처 삭제 후 남은 고아 매출/매입 데이터의 거래명세표 인쇄 실패 대응)
       const customer = await customerRepository.findOne({
         where: { id: Number(customerId), businessId: Number(businessId) }
       });
-
-      if (!customer) {
-        return res.status(404).json({
-          success: false,
-          message: '거래처를 찾을 수 없습니다.'
-        });
-      }
 
       // 잔액 계산을 위한 날짜 설정 (beforeDate가 있으면 그 날짜 이전까지만 계산)
       const endDate = beforeDate ? dayjs(beforeDate as string) : dayjs();
@@ -846,7 +842,7 @@ export const transactionLedgerController = {
         success: true,
         data: {
           customerId: Number(customerId),
-          customerName: customer.name,
+          customerName: customer?.name || '(삭제된 거래처)',
           balance: balance,
           lastTransactionDate: lastTransactionDate || dayjs().format('YYYY-MM-DD')
         }
