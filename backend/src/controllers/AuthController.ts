@@ -388,13 +388,23 @@ export const AuthController = {
         });
       }
 
-      // sales_viewer인 경우 businessId로 비즈니스 정보 조회
-      if (user.role === 'sales_viewer' && user.businessId) {
-        const business = await businessRepository.findOne({
-          where: { id: user.businessId }
-        });
-        if (business) {
-          user.businesses = [business];
+      // sales_viewer인 경우 접근 가능한 모든 사업장을 반환 (로그인과 동일하게 다중 사업장 유지)
+      // — getProfile이 단일 사업장만 돌려주면 상단 사업장 선택기가 사라지는 문제를 방지
+      if (user.role === 'sales_viewer') {
+        const accessRepository = AppDataSource.getRepository(UserBusinessAccess);
+        const accessList = await accessRepository
+          .createQueryBuilder('access')
+          .innerJoinAndSelect('access.business', 'business')
+          .where('access.userId = :userId', { userId: user.id })
+          .andWhere('business.isActive = :isActive', { isActive: true })
+          .getMany();
+        if (accessList.length > 0) {
+          user.businesses = accessList.map((a: any) => a.business).filter((b: any) => b);
+        } else if (user.businessId) {
+          const business = await businessRepository.findOne({ where: { id: user.businessId } });
+          if (business) {
+            user.businesses = [business];
+          }
         }
       }
 

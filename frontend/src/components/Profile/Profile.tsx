@@ -35,7 +35,7 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 
 const Profile: React.FC = () => {
-  const { user, updateUser, currentBusiness, setAuth, token, setCurrentBusiness } = useAuthStore();
+  const { user, updateUser, currentBusiness, setCurrentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
   const { isMobile } = useMediaQuery();
   const [form] = Form.useForm();
@@ -56,8 +56,9 @@ const Profile: React.FC = () => {
         const response = await authAPI.getProfile();
         if (response.data.success) {
           const userData = response.data.data;
-          // 토큰을 유지하면서 사용자 정보 업데이트
-          setAuth(userData, token || '');
+          // 사용자 정보만 갱신 (setAuth는 currentBusiness를 첫 사업장으로 리셋하므로
+          // updateUser로 병합하여 현재 선택한 사업장을 유지한다)
+          updateUser(userData);
           form.setFieldsValue({
             name: userData.name,
             email: userData.email,

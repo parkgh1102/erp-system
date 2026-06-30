@@ -162,7 +162,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       key: '/customer-balance',
       icon: <BankOutlined style={{ color: '#36cfc9' }} />,
       label: '거래처 잔액',
-      roles: ['admin'],
+      roles: ['admin', 'sales_viewer'],
     },
   ];
 
@@ -406,7 +406,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px', minWidth: 0 }}>
             {/* 다중 사업자 선택 (2개 이상일 때만 표시) */}
             {user?.businesses && user.businesses.length > 1 && (
               <Select
@@ -418,7 +418,10 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   }
                 }}
                 style={{
-                  minWidth: window.innerWidth <= 480 ? 120 : 180,
+                  // 모바일에서는 폭을 제한해 우측 사용자 이름이 세로로 줄바꿈되지 않도록 함
+                  minWidth: isMobile ? 96 : 180,
+                  maxWidth: isMobile ? 150 : 260,
+                  flexShrink: 1,
                 }}
                 dropdownStyle={{ minWidth: 200 }}
                 options={user.businesses.map(b => ({
@@ -460,6 +463,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   padding: '4px 8px',
                   borderRadius: '6px',
                   transition: 'background-color 0.3s',
+                  flexShrink: 0,
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = isDark ? '#262626' : '#f5f5f5';
@@ -471,9 +475,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 <Avatar
                   size="small"
                   icon={<UserOutlined />}
-                  style={{ backgroundColor: '#1B61A8' }}
+                  style={{ backgroundColor: '#1B61A8', flexShrink: 0 }}
                 />
-                <Text style={{ color: isDark ? '#ffffff' : '#000000' }}>
+                <Text
+                  style={{
+                    color: isDark ? '#ffffff' : '#000000',
+                    whiteSpace: 'nowrap', // 좁은 화면에서 이름이 한 글자씩 세로로 줄바꿈되는 것 방지
+                  }}
+                >
                   {user?.name}
                 </Text>
               </div>
@@ -502,7 +511,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           { key: '/customers', icon: <TeamOutlined />, label: '거래처', roles: ['admin'] },
           { key: '/sales', icon: <ShoppingCartOutlined />, label: '매출', roles: ['admin', 'sales_viewer'] },
           { key: '/transaction-ledger', icon: <FileTextOutlined />, label: '거래원장', roles: ['admin', 'sales_viewer'] },
-          // 매출 조회 사용자는 더보기 메뉴가 비어 있으므로 내 정보를 기본 탭으로 노출
+          // 매출 조회 사용자는 더보기 메뉴가 비어 있으므로 거래처 잔액·내 정보를 기본 탭으로 노출
+          { key: '/customer-balance', icon: <BankOutlined />, label: '거래처잔액', roles: ['sales_viewer'] },
           { key: '/profile', icon: <UserOutlined />, label: '내 정보', roles: ['sales_viewer'] },
         ].filter(item => item.roles.includes(user?.role || 'admin'));
 

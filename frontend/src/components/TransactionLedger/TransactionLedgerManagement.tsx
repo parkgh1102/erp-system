@@ -381,7 +381,7 @@ const TransactionLedgerManagement: React.FC = () => {
       title: '일자',
       dataIndex: 'date',
       key: 'date',
-      width: 120,
+      width: isMobile ? 78 : 120,
       align: 'center' as const,
       render: (text: string, record: ExpandedLedgerEntry) => {
         if (!record.isFirstRow) return null;
@@ -392,7 +392,7 @@ const TransactionLedgerManagement: React.FC = () => {
       title: '거래처',
       dataIndex: 'customerName',
       key: 'customerName',
-      width: 150,
+      width: isMobile ? 88 : 150,
       align: 'center' as const,
       render: (text: string, record: ExpandedLedgerEntry) => {
         if (!record.isFirstRow) return null;
@@ -403,7 +403,7 @@ const TransactionLedgerManagement: React.FC = () => {
       title: '구분',
       dataIndex: 'type',
       key: 'type',
-      width: 80,
+      width: isMobile ? 52 : 80,
       align: 'center' as const,
       render: (type: string, record: ExpandedLedgerEntry) => {
         if (!record.isFirstRow) return null;
@@ -430,7 +430,7 @@ const TransactionLedgerManagement: React.FC = () => {
       title: '품목명',
       dataIndex: 'description',
       key: 'description',
-      width: 200,
+      width: isMobile ? 104 : 200,
       align: 'center' as const,
       render: (description: string, record: ExpandedLedgerEntry) => {
         // 수금, 지급은 기존 description 표시
@@ -449,7 +449,7 @@ const TransactionLedgerManagement: React.FC = () => {
     {
       title: '수량',
       key: 'quantity',
-      width: 70,
+      width: isMobile ? 50 : 70,
       align: 'right' as const,
       render: (_: any, record: ExpandedLedgerEntry) => {
         if (record.isCarryOver || record.type === 'receipt' || record.type === 'payment') return null;
@@ -462,7 +462,7 @@ const TransactionLedgerManagement: React.FC = () => {
       title: '공급가액',
       dataIndex: 'supplyAmount',
       key: 'supplyAmount',
-      width: 120,
+      width: isMobile ? 92 : 120,
       align: 'right' as const,
       render: (supplyAmount: number, record: ExpandedLedgerEntry) => {
         // 이월잔액 행은 공급가액 비움
@@ -489,7 +489,7 @@ const TransactionLedgerManagement: React.FC = () => {
       title: '세액',
       dataIndex: 'vatAmount',
       key: 'vatAmount',
-      width: 100,
+      width: isMobile ? 78 : 100,
       align: 'right' as const,
       render: (vatAmount: number, record: ExpandedLedgerEntry) => {
         // 이월잔액 행은 세액 비움
@@ -510,7 +510,7 @@ const TransactionLedgerManagement: React.FC = () => {
       title: '합계',
       dataIndex: 'totalAmount',
       key: 'totalAmount',
-      width: 120,
+      width: isMobile ? 92 : 120,
       align: 'right' as const,
       render: (totalAmount: number, record: ExpandedLedgerEntry) => {
         // 이월잔액 행은 합계 비움
@@ -531,7 +531,7 @@ const TransactionLedgerManagement: React.FC = () => {
       title: '잔액',
       dataIndex: 'balance',
       key: 'balance',
-      width: 120,
+      width: isMobile ? 96 : 120,
       align: 'right' as const,
       render: (balance: number, record: ExpandedLedgerEntry) => {
         // 품목별 누적 잔액 표시 (cumulativeBalance 사용)
@@ -550,6 +550,7 @@ const TransactionLedgerManagement: React.FC = () => {
       title: '비고',
       dataIndex: 'memo',
       key: 'memo',
+      width: isMobile ? 60 : undefined,
       align: 'center' as const,
       render: (memo: string, record: ExpandedLedgerEntry) => {
         if (!record.isFirstRow) return null;
