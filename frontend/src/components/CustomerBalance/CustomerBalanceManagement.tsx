@@ -16,6 +16,8 @@ import {
   Tooltip,
   DatePicker,
   Dropdown,
+  Checkbox,
+  Empty,
 } from 'antd';
 import {
   SearchOutlined,
@@ -352,6 +354,110 @@ const CustomerBalanceManagement: React.FC = () => {
     { key: 'overdue', label: <span style={{ color: '#ff4d4f' }}>연체 ({stats.overdueCount})</span> },
   ];
 
+  // 모바일 카드형 목록 (테이블 대체)
+  const renderBalanceCards = () => {
+    if (!loading && filteredBalances.length === 0) {
+      return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="조회된 거래처가 없습니다." style={{ padding: '24px 0' }} />;
+    }
+    const sumReceivable = filteredBalances.reduce((s, b) => s + b.receivableBalance, 0);
+    const sumPayable = filteredBalances.reduce((s, b) => s + b.payableBalance, 0);
+    return (
+      <div className="balance-mobile-cards">
+        {filteredBalances.map((b) => {
+          const checked = selectedRowKeys.includes(b.id);
+          const overdue = b.overdueDays || 0;
+          return (
+            <Card
+              key={b.id}
+              size="small"
+              style={{ marginBottom: 8, borderColor: checked ? '#1B61A8' : undefined }}
+              styles={{ body: { padding: 12 } }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', minWidth: 0 }}>
+                  <Checkbox
+                    checked={checked}
+                    onChange={() =>
+                      setSelectedRowKeys((prev) =>
+                        prev.includes(b.id) ? prev.filter((k) => k !== b.id) : [...prev, b.id]
+                      )
+                    }
+                  />
+                  <div style={{ minWidth: 0 }}>
+                    <a onClick={() => openDetail(b)} style={{ fontWeight: 600, fontSize: 15 }}>
+                      {b.name}
+                    </a>
+                    <div>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {b.customerCode}{b.businessNumber ? ` · ${b.businessNumber}` : ''}
+                      </Text>
+                    </div>
+                  </div>
+                </div>
+                <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(b)} />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                {activeTab !== 'payable' && (
+                  <div style={{ flex: 1, background: isDark ? '#2a1215' : '#fff1f0', borderRadius: 8, padding: '6px 10px' }}>
+                    <Text type="secondary" style={{ fontSize: 11 }}>미수금</Text>
+                    <div style={{ fontWeight: 700, color: '#cf1322' }}>
+                      {b.receivableBalance > 0 ? formatCurrency(b.receivableBalance) : '-'}
+                    </div>
+                  </div>
+                )}
+                {activeTab !== 'receivable' && (
+                  <div style={{ flex: 1, background: isDark ? '#2b2111' : '#fffbe6', borderRadius: 8, padding: '6px 10px' }}>
+                    <Text type="secondary" style={{ fontSize: 11 }}>미지급</Text>
+                    <div style={{ fontWeight: 700, color: '#faad14' }}>
+                      {b.payableBalance > 0 ? formatCurrency(b.payableBalance) : '-'}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                {overdue > 0 ? (
+                  <Tag color={overdue > 30 ? 'red' : overdue > 14 ? 'orange' : 'gold'} icon={<WarningOutlined />}>
+                    {overdue}일 연체
+                  </Tag>
+                ) : (
+                  <Text type="secondary" style={{ fontSize: 12 }}>연체 없음</Text>
+                )}
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  최근거래 {b.lastTransactionDate ? dayjs(b.lastTransactionDate).format('YYYY-MM-DD') : '-'}
+                </Text>
+              </div>
+            </Card>
+          );
+        })}
+
+        {/* 합계 카드 */}
+        {filteredBalances.length > 0 && (
+          <Card size="small" style={{ marginTop: 4, background: isDark ? '#1f1f1f' : '#fafafa' }} styles={{ body: { padding: 12 } }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text strong>합계 ({filteredBalances.length}건)</Text>
+              <div style={{ textAlign: 'right' }}>
+                {activeTab !== 'payable' && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>미수금 </Text>
+                    <Text type="danger" strong>{formatCurrency(sumReceivable)}</Text>
+                  </div>
+                )}
+                {activeTab !== 'receivable' && (
+                  <div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>미지급 </Text>
+                    <Text type="warning" strong>{formatCurrency(sumPayable)}</Text>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div style={{ padding: isMobile ? 12 : 24 }}>
       {/* 헤더 */}
@@ -533,6 +639,9 @@ const CustomerBalanceManagement: React.FC = () => {
       {/* 테이블 */}
       <Card size="small">
         <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
+        {isMobile ? (
+          renderBalanceCards()
+        ) : (
         <Table
           columns={columns}
           dataSource={filteredBalances}
@@ -578,6 +687,7 @@ const CustomerBalanceManagement: React.FC = () => {
             </Table.Summary>
           )}
         />
+        )}
       </Card>
 
       {/* 상세보기 모달 */}

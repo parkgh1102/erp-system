@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, Row, Col, Select, DatePicker, Button, Table, Space, message, Modal, Form, Input, Spin, AutoComplete, Dropdown, Statistic, Alert, Badge, Tabs, Tag, Progress, Divider, List, Avatar, Tooltip, Drawer } from 'antd';
+import { Card, Row, Col, Select, DatePicker, Button, Table, Space, message, Modal, Form, Input, Spin, AutoComplete, Dropdown, Statistic, Alert, Badge, Tabs, Tag, Progress, Divider, List, Avatar, Tooltip, Drawer, Empty, Typography } from 'antd';
 import { SearchOutlined, PrinterOutlined, FilePdfOutlined, ExportOutlined, DollarOutlined, UserOutlined, ArrowUpOutlined, ArrowDownOutlined, MoreOutlined } from '@ant-design/icons';
 import { useReactToPrint } from 'react-to-print';
 import SignatureEditModal from './SignatureEditModal';
@@ -18,6 +18,7 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
+const { Text } = Typography;
 
 interface LedgerItemInfo {
   itemCode: string;
@@ -659,6 +660,125 @@ const TransactionLedgerManagement: React.FC = () => {
     </Space>
   );
 
+  // 모바일 카드형 거래원장 (테이블 대체)
+  const renderLedgerCards = () => {
+    if (expandedEntries.length === 0) {
+      return (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={selectedCustomer ? '조회 버튼을 클릭하여 거래원장을 조회하세요.' : '거래처를 선택하고 조회하세요.'}
+          style={{ padding: '32px 0' }}
+        />
+      );
+    }
+
+    const typeMap: Record<string, string> = { sales: '매출', purchase: '매입', receipt: '수금', payment: '지급' };
+    const typeColor: Record<string, string> = { sales: 'blue', purchase: 'red', receipt: 'green', payment: 'red' };
+
+    // 요약 합계 (전체 데이터 기준)
+    const sales = ledgerEntries.filter(e => e.type === 'sales');
+    const purchases = ledgerEntries.filter(e => e.type === 'purchase');
+    const totalSalesSupply = sales.reduce((s, e) => s + (e.supplyAmount || 0), 0);
+    const totalSalesVat = sales.reduce((s, e) => s + (e.vatAmount || 0), 0);
+    const totalSales = sales.reduce((s, e) => s + (e.totalAmount || 0), 0);
+    const totalPurchaseSupply = purchases.reduce((s, e) => s + (e.supplyAmount || 0), 0);
+    const totalPurchaseVat = purchases.reduce((s, e) => s + (e.vatAmount || 0), 0);
+    const totalPurchase = purchases.reduce((s, e) => s + (e.totalAmount || 0), 0);
+    const totalReceipt = ledgerEntries.filter(e => e.type === 'receipt').reduce((s, e) => s + (e.totalAmount || e.amount || 0), 0);
+    const totalPayment = ledgerEntries.filter(e => e.type === 'payment').reduce((s, e) => s + (e.totalAmount || e.amount || 0), 0);
+    const finalBalance = expandedEntries.length > 0
+      ? (expandedEntries[expandedEntries.length - 1].cumulativeBalance ?? 0)
+      : 0;
+    const fmt = (v: number) => Math.round(v || 0).toLocaleString() + '원';
+    const balColorOf = (v: number) => (v >= 0 ? (isDark ? '#40a9ff' : '#1B61A8') : (isDark ? '#ff7875' : '#ff4d4f'));
+
+    return (
+      <div className="ledger-mobile-cards">
+        {expandedEntries.map((record) => {
+          const isCarry = record.isCarryOver;
+          const t = record.type;
+          const isMoney = t === 'receipt' || t === 'payment';
+          const bal = record.cumulativeBalance ?? record.balance;
+          const supply = record.currentItemInfo?.amount ?? record.supplyAmount;
+          const tax = record.currentItemInfo?.taxAmount ?? record.vatAmount;
+          const total = record.currentItemInfo?.totalAmount ?? record.totalAmount;
+          const qty = record.currentItemInfo?.quantity;
+          const isNeg = (total ?? 0) < 0;
+          return (
+            <Card key={record.rowKey} size="small" style={{ marginBottom: 8 }} styles={{ body: { padding: '10px 12px' } }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Space size={6}>
+                  {isCarry ? <Tag color="gold">이월</Tag> : <Tag color={typeColor[t]}>{typeMap[t]}</Tag>}
+                  {record.isFirstRow && (
+                    <Text style={{ fontSize: 12, color: isDark ? '#a6a6a6' : '#8c8c8c' }}>
+                      {dayjs(record.date).format('YYYY-MM-DD')}
+                    </Text>
+                  )}
+                </Space>
+                <Text style={{ fontWeight: 'bold', color: balColorOf(bal) }}>잔액 {fmt(bal)}</Text>
+              </div>
+
+              {!isCarry && (
+                <div style={{ marginTop: 6 }}>
+                  <Text style={{ fontSize: 13 }}>
+                    {isMoney ? record.description : (record.currentItemInfo?.itemName || record.description || '-')}
+                  </Text>
+                  {!isMoney && qty !== undefined && qty !== null && (
+                    <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>수량 {qty.toLocaleString()}</Text>
+                  )}
+                </div>
+              )}
+
+              {!isCarry && !isMoney && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 12 }}>
+                  <Text type="secondary">공급 {Math.round(supply || 0).toLocaleString()}</Text>
+                  <Text type="secondary">세액 {Math.round(tax || 0).toLocaleString()}</Text>
+                  <Text strong style={{ color: isNeg ? '#ff4d4f' : undefined }}>합계 {fmt(total)}</Text>
+                </div>
+              )}
+
+              {!isCarry && isMoney && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6, fontSize: 12 }}>
+                  <Text strong>{fmt(total || record.amount || 0)}</Text>
+                </div>
+              )}
+
+              {record.isFirstRow && record.memo && (
+                <div style={{ marginTop: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>비고: {record.memo}</Text>
+                </div>
+              )}
+            </Card>
+          );
+        })}
+
+        {/* 요약 카드 */}
+        <Card size="small" style={{ marginTop: 4, background: isDark ? '#1f1f1f' : '#fafafa' }} styles={{ body: { padding: 12 } }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text strong>합계</Text>
+            <Text style={{ fontWeight: 'bold', color: balColorOf(finalBalance) }}>잔액 {fmt(finalBalance)}</Text>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+            <Text style={{ color: isDark ? '#40a9ff' : '#1B61A8' }}>매출 합계</Text>
+            <Text style={{ color: isDark ? '#40a9ff' : '#1B61A8' }}>
+              공급 {Math.round(totalSalesSupply).toLocaleString()} · 세액 {Math.round(totalSalesVat).toLocaleString()} · 합계 {fmt(totalSales)}
+            </Text>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+            <Text>매입 합계</Text>
+            <Text>
+              공급 {Math.round(totalPurchaseSupply).toLocaleString()} · 세액 {Math.round(totalPurchaseVat).toLocaleString()} · 합계 {fmt(totalPurchase)}
+            </Text>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+            <Text style={{ color: isDark ? '#ff7875' : '#ff4d4f' }}>수금 합계 {fmt(totalReceipt)}</Text>
+            <Text>지급 합계 {fmt(totalPayment)}</Text>
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
   return (
     <div style={{
       padding: isMobile ? '16px 8px' : '24px',
@@ -826,6 +946,9 @@ const TransactionLedgerManagement: React.FC = () => {
 
       <Card>
         <Spin spinning={loading}>
+          {isMobile ? (
+            renderLedgerCards()
+          ) : (
           <Table
             id="transaction-ledger-table"
             className={isMobile ? 'mobile-compact-table' : ''}
@@ -934,6 +1057,7 @@ const TransactionLedgerManagement: React.FC = () => {
               emptyText: selectedCustomer ? '조회 버튼을 클릭하여 거래원장을 조회하세요.' : '거래처를 선택하고 조회하세요.'
             }}
           />
+          )}
         </Spin>
       </Card>
 
