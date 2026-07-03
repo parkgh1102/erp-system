@@ -276,6 +276,33 @@
   -webkit-backdrop-filter: blur(14px);
 }
 
+/* ---------- 모바일 sticky 검색바 (거래처·품목) ---------- */
+@media (max-width: 767px) {
+  .erp-sticky-search {
+    position: sticky;
+    top: 64px; /* sticky 앱 헤더(64px) 바로 아래 */
+    z-index: 50; /* 하단 액션바(100)·헤더(1000)보다 낮게 */
+    margin: 0 -8px;
+    padding: 8px 8px 10px;
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: box-shadow 0.25s;
+  }
+
+  .erp-sticky-search.erp-stuck {
+    box-shadow: 0 4px 14px rgba(27, 97, 168, 0.14);
+  }
+
+  .dark-mode .erp-sticky-search {
+    background: rgba(20, 20, 20, 0.86);
+  }
+
+  .dark-mode .erp-sticky-search.erp-stuck {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  }
+}
+
 /* ---------- 접근성: 모션 최소화 설정 존중 ---------- */
 @media (prefers-reduced-motion: reduce) {
   .erp-login-orb,
@@ -299,6 +326,13 @@
   .erp-login-orb,
   .erp-theme-toggle {
     display: none !important;
+  }
+
+  .erp-sticky-search {
+    position: static !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 
   .ant-btn {
