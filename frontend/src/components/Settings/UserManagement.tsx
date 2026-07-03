@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Table,
   Button,
@@ -31,6 +31,7 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import { api, businessAPI } from '../../utils/api';
 import { useMessage } from '../../hooks/useMessage';
+import TrackPagination from '../Common/TrackPagination';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title, Text } = Typography;
@@ -66,8 +67,19 @@ const UserManagement: React.FC = () => {
   const [resetTargetUser, setResetTargetUser] = useState<User | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetForm] = Form.useForm();
+  const [uPage, setUPage] = useState(1);
+  const [uPageSize, setUPageSize] = useState(10);
   const { currentBusiness } = useAuthStore();
   const { success: showSuccess, error: showError } = useMessage();
+
+  const pagedUsers = useMemo(() => {
+    const start = (uPage - 1) * uPageSize;
+    return users.slice(start, start + uPageSize);
+  }, [users, uPage, uPageSize]);
+  useEffect(() => {
+    const pc = Math.max(1, Math.ceil(users.length / uPageSize));
+    if (uPage > pc) setUPage(pc);
+  }, [users.length, uPageSize, uPage]);
 
   useEffect(() => {
     fetchBusinesses();
@@ -370,11 +382,18 @@ const UserManagement: React.FC = () => {
 
         <Table
           columns={columns}
-          dataSource={users}
+          dataSource={pagedUsers}
           rowKey="id"
           loading={loading}
-          pagination={{ pageSize: 10 }}
+          pagination={false}
           scroll={{ x: 'max-content' }}
+        />
+        <TrackPagination
+          current={uPage}
+          pageSize={uPageSize}
+          total={users.length}
+          onChange={(page, size) => { setUPage(page); setUPageSize(size); }}
+          extra={`총 ${users.length}명`}
         />
 
         <Modal

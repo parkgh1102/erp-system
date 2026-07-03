@@ -37,6 +37,7 @@ import { formatPhoneNumber, formatBusinessNumber } from '../../utils/formatters'
 import CustomerPrintModal from '../Print/CustomerPrintModal';
 import logger from '../../utils/logger';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import TrackPagination from '../Common/TrackPagination';
 
 const { Option } = Select;
 
@@ -437,11 +438,13 @@ const CustomerManagement: React.FC = () => {
   };
 
   const handleTableChange = (paginationConfig: any, filters: any, sorter: any) => {
-    setPagination(prev => ({
-      ...prev,
-      current: paginationConfig.current,
-      pageSize: paginationConfig.pageSize,
-    }));
+    if (paginationConfig && paginationConfig.current) {
+      setPagination(prev => ({
+        ...prev,
+        current: paginationConfig.current,
+        pageSize: paginationConfig.pageSize,
+      }));
+    }
 
     // 정렬 처리
     if (sorter && sorter.field && sorter.order) {
@@ -952,17 +955,7 @@ const CustomerManagement: React.FC = () => {
             selectedRowKeys,
             onChange: setSelectedRowKeys,
           }}
-          pagination={{
-            ...pagination,
-            pageSize: isMobile ? 5 : pagination.pageSize,
-            showSizeChanger: window.innerWidth > 768,
-            showQuickJumper: window.innerWidth > 768,
-            simple: isMobile,
-            showTotal: (total, range) =>
-              isMobile
-                ? `${total}건`
-                : `${range[0]}-${range[1]} of ${total} items`,
-          }}
+          pagination={false}
           onChange={handleTableChange}
           onRow={(record) => ({
             onClick: (e) => {
@@ -990,6 +983,23 @@ const CustomerManagement: React.FC = () => {
           scroll={{ x: isMobile ? 280 : 'max-content', y: isMobile ? 400 : 600 }}
           size={isMobile ? 'small' : 'middle'}
         />
+
+      <TrackPagination
+        current={pagination.current}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        showSizeChanger={!isMobile}
+        onChange={(page, size) =>
+          setPagination(prev => ({ ...prev, current: page, pageSize: size }))
+        }
+        extra={(() => {
+          const total = pagination.total;
+          if (isMobile) return `${total}건`;
+          const start = total === 0 ? 0 : (pagination.current - 1) * pagination.pageSize + 1;
+          const end = Math.min(pagination.current * pagination.pageSize, total);
+          return `${start}-${end} of ${total} items`;
+        })()}
+      />
 
       <Modal
         title={editingCustomer ? '거래처 수정' : '거래처 등록'}

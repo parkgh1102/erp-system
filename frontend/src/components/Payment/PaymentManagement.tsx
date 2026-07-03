@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, message, Popconfirm, Card, Row, Col, InputNumber, Tabs, Spin, AutoComplete, Typography, Dropdown, Radio, Alert, Drawer } from 'antd';
 import { EditOutlined, DeleteOutlined, MoneyCollectOutlined, PayCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, PrinterOutlined, MoreOutlined } from '@ant-design/icons';
 import { createExportMenuItems, exportToExcel, exportToPDF } from '../../utils/exportUtils';
@@ -7,6 +7,7 @@ import { useThemeStore } from '../../stores/themeStore';
 import { paymentAPI, customerAPI } from '../../utils/api';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
+import TrackPagination from '../Common/TrackPagination';
 import PaymentPrintModal from '../Print/PaymentPrintModal';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -69,6 +70,8 @@ const PaymentManagement: React.FC = () => {
   const [bulkForm] = Form.useForm();
   const [mobileActionDrawerVisible, setMobileActionDrawerVisible] = useState(false);
   const [pageSize, setPageSize] = useState(10);
+  const [receiptPage, setReceiptPage] = useState(1);
+  const [paymentPage, setPaymentPage] = useState(1);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
@@ -794,6 +797,23 @@ const PaymentManagement: React.FC = () => {
   const filteredReceiptData = getFilteredReceiptData();
   const filteredPaymentData = getFilteredPaymentData();
 
+  const pagedReceiptData = useMemo(() => {
+    const start = (receiptPage - 1) * pageSize;
+    return filteredReceiptData.slice(start, start + pageSize);
+  }, [filteredReceiptData, receiptPage, pageSize]);
+  const pagedPaymentData = useMemo(() => {
+    const start = (paymentPage - 1) * pageSize;
+    return filteredPaymentData.slice(start, start + pageSize);
+  }, [filteredPaymentData, paymentPage, pageSize]);
+  useEffect(() => {
+    const pc = Math.max(1, Math.ceil(filteredReceiptData.length / pageSize));
+    if (receiptPage > pc) setReceiptPage(pc);
+  }, [filteredReceiptData.length, pageSize, receiptPage]);
+  useEffect(() => {
+    const pc = Math.max(1, Math.ceil(filteredPaymentData.length / pageSize));
+    if (paymentPage > pc) setPaymentPage(pc);
+  }, [filteredPaymentData.length, pageSize, paymentPage]);
+
 
   const handleExport = async (type: 'excel' | 'pdf') => {
     const isReceipt = activeTab === 'receipt';
@@ -1083,11 +1103,12 @@ const PaymentManagement: React.FC = () => {
               key: 'receipt',
               label: `수금 관리 (${filteredReceiptData.length})`,
               children: (
+                <>
                 <Table
                   id="payment-table"
                   className={isMobile ? 'mobile-compact-table' : ''}
                   columns={isMobile ? receiptColumns.filter(col => ['paymentDate', 'customerName', 'amount'].includes(col.key as string)) : receiptColumns}
-                  dataSource={filteredReceiptData}
+                  dataSource={pagedReceiptData}
                   rowKey="id"
                   loading={false}
                   rowSelection={getRowSelection()}
@@ -1099,33 +1120,37 @@ const PaymentManagement: React.FC = () => {
                     onDoubleClick: () => handleEdit(record),
                     style: { cursor: 'pointer' }
                   })}
-                  pagination={{
-                    pageSize: pageSize,
-                    pageSizeOptions: ['10', '20', '50', '100'],
-                    showSizeChanger: true,
-                    showQuickJumper: !isMobile,
-                    onChange: (page, size) => {
-                      if (size !== pageSize) setPageSize(size);
-                    },
-                    showTotal: (total, range) => {
-                      const searchInfo = searchText ? ` (전체 ${payments.filter(p => p.type === 'receipt').length}건 중 검색결과)` : '';
-                      return isMobile
-                        ? `${total}건`
-                        : `${range[0]}-${range[1]} / ${total}건${searchInfo}`;
-                    },
-                  }}
+                  pagination={false}
                 />
+                <TrackPagination
+                  current={receiptPage}
+                  pageSize={pageSize}
+                  total={filteredReceiptData.length}
+                  showSizeChanger={!isMobile}
+                  pageSizeOptions={[10, 20, 50, 100]}
+                  onChange={(page, size) => { setReceiptPage(page); if (size !== pageSize) { setPageSize(size); setReceiptPage(1); } }}
+                  extra={(() => {
+                    const total = filteredReceiptData.length;
+                    if (isMobile) return `${total}건`;
+                    const start = total === 0 ? 0 : (receiptPage - 1) * pageSize + 1;
+                    const end = Math.min(receiptPage * pageSize, total);
+                    const searchInfo = searchText ? ` (전체 ${payments.filter(p => p.type === 'receipt').length}건 중 검색결과)` : '';
+                    return `${start}-${end} / ${total}건${searchInfo}`;
+                  })()}
+                />
+                </>
               )
             },
             {
               key: 'payment',
               label: `지급 관리 (${filteredPaymentData.length})`,
               children: (
+                <>
                 <Table
                   id="payment-table"
                   className={isMobile ? 'mobile-compact-table' : ''}
                   columns={isMobile ? paymentColumns.filter(col => ['paymentDate', 'customerName', 'amount'].includes(col.key as string)) : paymentColumns}
-                  dataSource={filteredPaymentData}
+                  dataSource={pagedPaymentData}
                   rowKey="id"
                   loading={false}
                   rowSelection={getRowSelection()}
@@ -1137,22 +1162,25 @@ const PaymentManagement: React.FC = () => {
                     onDoubleClick: () => handleEdit(record),
                     style: { cursor: 'pointer' }
                   })}
-                  pagination={{
-                    pageSize: pageSize,
-                    pageSizeOptions: ['10', '20', '50', '100'],
-                    showSizeChanger: true,
-                    showQuickJumper: !isMobile,
-                    onChange: (page, size) => {
-                      if (size !== pageSize) setPageSize(size);
-                    },
-                    showTotal: (total, range) => {
-                      const searchInfo = searchText ? ` (전체 ${payments.filter(p => p.type === 'payment').length}건 중 검색결과)` : '';
-                      return isMobile
-                        ? `${total}건`
-                        : `${range[0]}-${range[1]} / ${total}건${searchInfo}`;
-                    },
-                  }}
+                  pagination={false}
                 />
+                <TrackPagination
+                  current={paymentPage}
+                  pageSize={pageSize}
+                  total={filteredPaymentData.length}
+                  showSizeChanger={!isMobile}
+                  pageSizeOptions={[10, 20, 50, 100]}
+                  onChange={(page, size) => { setPaymentPage(page); if (size !== pageSize) { setPageSize(size); setPaymentPage(1); } }}
+                  extra={(() => {
+                    const total = filteredPaymentData.length;
+                    if (isMobile) return `${total}건`;
+                    const start = total === 0 ? 0 : (paymentPage - 1) * pageSize + 1;
+                    const end = Math.min(paymentPage * pageSize, total);
+                    const searchInfo = searchText ? ` (전체 ${payments.filter(p => p.type === 'payment').length}건 중 검색결과)` : '';
+                    return `${start}-${end} / ${total}건${searchInfo}`;
+                  })()}
+                />
+                </>
               )
             }
           ]}

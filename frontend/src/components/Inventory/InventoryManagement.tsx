@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Table, Button, Input, Space, message, Card, Row, Col, Statistic, Tag, Dropdown } from 'antd';
+import TrackPagination from '../Common/TrackPagination';
 import { SearchOutlined, ReloadOutlined, ExportOutlined } from '@ant-design/icons';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
@@ -31,6 +32,7 @@ const InventoryManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState<string>('');
   const [pageSize, setPageSize] = useState<number>(10);
+  const [invPage, setInvPage] = useState(1);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
@@ -71,6 +73,17 @@ const InventoryManagement: React.FC = () => {
       product.category?.toLowerCase().includes(searchLower)
     );
   });
+
+  const invEffectiveSize = isMobile ? 10 : pageSize;
+  const pagedProducts = useMemo(() => {
+    const start = (invPage - 1) * invEffectiveSize;
+    return filteredProducts.slice(start, start + invEffectiveSize);
+  }, [filteredProducts, invPage, invEffectiveSize]);
+
+  useEffect(() => {
+    const pageCount = Math.max(1, Math.ceil(filteredProducts.length / invEffectiveSize));
+    if (invPage > pageCount) setInvPage(pageCount);
+  }, [filteredProducts.length, invEffectiveSize, invPage]);
 
   // 통계 계산
   const totalProducts = filteredProducts.length;
@@ -266,22 +279,24 @@ const InventoryManagement: React.FC = () => {
         id="inventory-table"
         className={isMobile ? 'mobile-compact-table' : ''}
         columns={columns}
-        dataSource={filteredProducts}
+        dataSource={pagedProducts}
         rowKey="id"
         loading={loading}
-        pagination={{
-          pageSize: isMobile ? 10 : pageSize,
-          showSizeChanger: !isMobile,
-          pageSizeOptions: ['10', '20', '50', '100'],
-          onShowSizeChange: (_, size) => setPageSize(size),
-          showTotal: (total) => isMobile ? `${total}개` : `총 ${total}개`,
-          simple: isMobile,
-        }}
+        pagination={false}
         scroll={{ x: isMobile ? 350 : 1200 }}
         size={isMobile ? 'small' : 'middle'}
         style={{
           backgroundColor: isDark ? '#1f1f1f' : '#fff',
         }}
+      />
+      <TrackPagination
+        current={invPage}
+        pageSize={invEffectiveSize}
+        total={filteredProducts.length}
+        showSizeChanger={!isMobile}
+        pageSizeOptions={[10, 20, 50, 100]}
+        onChange={(page, size) => { setInvPage(page); setPageSize(size); }}
+        extra={`총 ${filteredProducts.length}개`}
       />
     </div>
   );
