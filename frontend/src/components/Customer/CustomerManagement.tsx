@@ -46,6 +46,7 @@ import logger from '../../utils/logger';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
 import TrackPagination from '../Common/TrackPagination';
+import MobileStickyBar from '../Common/MobileStickyBar';
 
 const { Option } = Select;
 
@@ -932,9 +933,10 @@ const CustomerManagement: React.FC = () => {
       padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
-      {/* 모바일 레이아웃 */}
+      {/* 모바일 레이아웃 — sticky는 부모 박스 안에서만 고정되므로
+          검색바를 작은 헤더 div가 아닌 페이지 레벨에 직접 배치 */}
       {isMobile ? (
-        <div style={{ marginBottom: 16 }}>
+        <>
           <h2 style={{
             margin: '0 0 12px 0',
             color: isDark ? '#ffffff' : '#000000',
@@ -943,27 +945,30 @@ const CustomerManagement: React.FC = () => {
           }}>
             거래처 관리
           </h2>
-          {/* 검색 + 주요 액션 버튼 */}
-          <Space direction="vertical" style={{ width: '100%' }} size="small">
-            <AnimatedSearchBar
-              placeholder="거래처명 또는 사업자번호 검색"
-              onSearch={handleSearch}
-              width="100%"
-            />
-            <Space size="small" wrap>
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCustomer} size="middle">
-                추가
-              </Button>
-              <Button
-                icon={<MoreOutlined />}
-                onClick={() => setMobileActionDrawerVisible(true)}
-                size="middle"
-              >
-                더보기
-              </Button>
+          {/* 검색 + 주요 액션 버튼 (스크롤 시 상단 고정) */}
+          <MobileStickyBar>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+              <AnimatedSearchBar
+                placeholder="거래처명 또는 사업자번호 검색"
+                onSearch={handleSearch}
+                width="100%"
+              />
+              <Space size="small" wrap>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCustomer} size="middle">
+                  추가
+                </Button>
+                <Button
+                  icon={<MoreOutlined />}
+                  onClick={() => setMobileActionDrawerVisible(true)}
+                  size="middle"
+                >
+                  더보기
+                </Button>
+              </Space>
             </Space>
-          </Space>
-        </div>
+          </MobileStickyBar>
+          <div style={{ height: 8 }} />
+        </>
       ) : (
         /* 데스크톱 레이아웃 */
         <Row align="middle" style={{ marginBottom: 24 }}>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconfirm, Radio, Row, Col, AutoComplete, Spin, Dropdown, Select, Tag, Card, Checkbox, Empty } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconfirm, Radio, Row, Col, AutoComplete, Spin, Dropdown, Select, Tag, Card, Checkbox, Empty, Drawer } from 'antd';
+import MobileStickyBar from '../Common/MobileStickyBar';
 import TrackPagination from '../Common/TrackPagination';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined, CloseOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined, CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import UploadResultModal, { UploadResultItem } from '../Common/UploadResultModal';
 import { createExportMenuItems } from '../../utils/exportUtils';
@@ -54,6 +55,7 @@ const ProductManagement: React.FC = () => {
   const [uploadResultModalVisible, setUploadResultModalVisible] = useState(false);
   const [uploadResults, setUploadResults] = useState<UploadResultItem[]>([]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
+  const [mobileActionDrawerVisible, setMobileActionDrawerVisible] = useState(false);
   const [pageSize, setPageSize] = useState<number>(isMobile ? 5 : 10);
   const [prodPage, setProdPage] = useState(1);
   const { currentBusiness } = useAuthStore();
@@ -835,6 +837,47 @@ const ProductManagement: React.FC = () => {
       padding: isMobile ? '16px 8px' : '24px',
       minHeight: 'calc(100vh - 140px)'
     }}>
+      {isMobile ? (
+        <>
+          <h2 style={{ margin: '0 0 12px 0', color: isDark ? '#ffffff' : '#000000', fontSize: '20px', fontWeight: 'bold' }}>
+            품목 관리
+          </h2>
+          {/* 검색 + 주요 액션 버튼 (스크롤 시 상단 고정) —
+              sticky는 부모 박스 안에서만 고정되므로 페이지 레벨에 직접 배치 */}
+          <MobileStickyBar>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+              <AutoComplete
+                options={autoCompleteOptions}
+                value={searchText}
+                onChange={handleSearchChange}
+                onSelect={(value) => setSearchText(value)}
+                style={{ width: '100%' }}
+              >
+                <Input.Search
+                  placeholder="품목명, 코드, 규격, 분류 검색"
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  size="middle"
+                  onSearch={handleSearch}
+                />
+              </AutoComplete>
+              <Space size="small" wrap>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size="middle">
+                  추가
+                </Button>
+                <Button
+                  icon={<MoreOutlined />}
+                  onClick={() => setMobileActionDrawerVisible(true)}
+                  size="middle"
+                >
+                  더보기
+                </Button>
+              </Space>
+            </Space>
+          </MobileStickyBar>
+          <div style={{ height: 8 }} />
+        </>
+      ) : (
       <Row align="middle" style={{ marginBottom: 24 }}>
         <Col>
           <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>품목 관리</h2>
@@ -951,6 +994,75 @@ const ProductManagement: React.FC = () => {
           </Space>
         </Col>
       </Row>
+      )}
+
+      {/* 모바일 액션 드로어 */}
+      <Drawer
+        title="작업 선택"
+        placement="bottom"
+        onClose={() => setMobileActionDrawerVisible(false)}
+        open={mobileActionDrawerVisible}
+        height="auto"
+        styles={{ body: { padding: '12px 16px' } }}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="small">
+          <Button
+            icon={<ImportOutlined />}
+            onClick={() => { setExcelUploadModalVisible(true); setMobileActionDrawerVisible(false); }}
+            block
+            size="large"
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white', justifyContent: 'flex-start' }}
+          >
+            엑셀업로드
+          </Button>
+          <Button
+            onClick={() => { handleSelectAll(); setMobileActionDrawerVisible(false); }}
+            block
+            size="large"
+            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: 'white', justifyContent: 'flex-start' }}
+          >
+            {selectedRowKeys.length === filteredProducts.length && filteredProducts.length > 0 ? '전체 해제' : '전체 선택'}
+          </Button>
+          <Popconfirm
+            title={`선택한 ${selectedRowKeys.length}개 항목을 삭제하시겠습니까?`}
+            onConfirm={() => { handleBulkDelete(); setMobileActionDrawerVisible(false); }}
+            okText="예"
+            cancelText="아니오"
+            disabled={selectedRowKeys.length === 0}
+          >
+            <Button danger block size="large" disabled={selectedRowKeys.length === 0} style={{ justifyContent: 'flex-start' }}>
+              선택 삭제 ({selectedRowKeys.length})
+            </Button>
+          </Popconfirm>
+          <Button
+            onClick={() => { handleExport('excel'); setMobileActionDrawerVisible(false); }}
+            icon={<FileExcelOutlined />}
+            block
+            size="large"
+            style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white', justifyContent: 'flex-start' }}
+          >
+            엑셀 내보내기
+          </Button>
+          <Button
+            onClick={() => { handleExport('pdf'); setMobileActionDrawerVisible(false); }}
+            icon={<FilePdfOutlined />}
+            block
+            size="large"
+            style={{ backgroundColor: '#fa541c', borderColor: '#fa541c', color: 'white', justifyContent: 'flex-start' }}
+          >
+            PDF 내보내기
+          </Button>
+          <Button
+            onClick={() => { setPrintModalVisible(true); setMobileActionDrawerVisible(false); }}
+            icon={<PrinterOutlined />}
+            block
+            size="large"
+            style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: 'white', justifyContent: 'flex-start' }}
+          >
+            인쇄
+          </Button>
+        </Space>
+      </Drawer>
 
       {loading && (
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9999 }}>

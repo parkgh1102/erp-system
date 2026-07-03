@@ -488,7 +488,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             marginBottom: isTabletOrSmaller ? '70px' : '0',
             background: isDark ? '#141414' : '#ffffff',
             borderRadius: '8px',
-            overflow: 'auto',
+            // overflow:auto가 있으면 내부 position:sticky(모바일 검색바)가 뷰포트에 안 붙음.
+            // 카드뷰라 가로 넘침이 없는 거래처/품목 화면(모바일)에서만 visible로 전환.
+            // (매출 등 다른 화면은 기존처럼 auto 유지 — 넓은 요소를 Content 스크롤로 흡수)
+            overflow:
+              isMobile && ['/customers', '/products'].includes(location.pathname)
+                ? 'visible'
+                : 'auto',
           }}
         >
           {children}
