@@ -941,10 +941,23 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        backgroundColor: '#ffffff',
         padding: isMobile ? '12px' : '24px'
-      }}>
+      }}
+      className="erp-login-bg">
+      <div
+        className="erp-login-orb"
+        style={{ width: 220, height: 220, top: -60, left: -50 }}
+      />
+      <div
+        className="erp-login-orb"
+        style={{ width: 130, height: 130, bottom: -35, right: '12%', animationDelay: '2.5s' }}
+      />
+      <div
+        className="erp-login-orb"
+        style={{ width: 70, height: 70, top: '18%', right: '22%', animationDelay: '4s' }}
+      />
       <Card
+        className="erp-login-glass"
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Button
@@ -959,19 +972,16 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
         style={{
           width: '100%',
           maxWidth: 600,
-          background: '#f0f2f5',
-          border: '1px solid #e4e6ef',
-          borderRadius: '12px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+          borderRadius: '14px',
         }}
         styles={{
           header: {
             textAlign: 'center',
             fontSize: isMobile ? '17px' : '20px',
             fontWeight: 'bold',
-            background: '#f0f2f5',
-            borderBottom: '1px solid #e4e6ef',
-            borderRadius: '12px 12px 0 0',
+            background: 'transparent',
+            borderBottom: '1px solid rgba(255,255,255,0.55)',
+            borderRadius: '14px 14px 0 0',
             padding: isMobile ? '16px' : '20px 24px'
           },
           body: {

@@ -116,6 +116,10 @@ DB 마이그레이션: `cd backend && npm run migration:run` / `migration:genera
 - 사용자 생성 시 전화번호 중복 에러 메시지 구체화: 본인 관리자 번호/내 사업장 등록 계정(회사명·이름·역할)/외부 계정을 구분 안내(전역 유일성 검사는 유지).
 - sales_viewer 모바일 추가 개선: (1) getProfile이 다중 접근 사업장 모두 반환하도록 수정 + Profile 진입 시 setAuth→updateUser로 변경해 상단 사업장 선택기가 사라지던 문제 해결, (2) 헤더 사용자 이름이 한 글자씩 세로로 줄바꿈되던 것 whiteSpace:nowrap + 사업장 Select 폭 제한으로 수정, (3) 거래처 잔액(/customer-balance)을 sales_viewer 메뉴·하단탭에 노출, (4) 거래원장 모바일 컬럼 폭 축소(요약 행 정렬 유지 위해 컬럼 숨김 대신 폭만 축소).
 
+### 2026-07-04
+- CSS 개선 프로젝트(davidm_ai 인스타 스타일 마이크로 인터랙션) 5종 일괄 적용. 신규 `styles/effects.css` (erp* 접두사 키프레임, `.dark-mode` 재정의, hover는 `@media (hover:hover)` PC 한정, `@media print` 전부 제외, `prefers-reduced-motion` 대응): ① antd Spin 기본 인디케이터를 그라데이션 링 스피너로 전역 교체(`Spin.setDefaultIndicator`, main.tsx) ② primary 버튼 hover 리프트+눌림(scale .97), 입력/셀렉트/피커 포커스 파랑 글로우 ③ 모바일(≤767px) 카드 계단식 등장(`erpCardIn`, `.balance-mobile-cards`·`.erp-stagger` 유틸) ④ 다크모드 토글을 해↔달 회전 커스텀 토글로 교체(신규 `Common/ThemeToggle.tsx`, AppLayout 사이드바+Settings 2곳) ⑤ 로그인 화면 글래스모피즘 시범(그라데이션 배경+떠다니는 orb+blur 14px 프로스트 카드, 로그인은 항상 라이트 테마라 다크 이슈 없음). vite build 통과, Preview로 로그인 글래스/포커스 글로우/다크 토글 동작/라우트 전환 시 erp-spinner 표출/모바일 stagger delay까지 실검증. 참고: `.dark .responsive-card` 등 기존 `.dark` 접두사 CSS는 실제 적용 클래스(`dark-mode`)와 달라 죽은 코드로 보임.
+- 글래스모피즘을 회원가입(SignupForm)·비밀번호 찾기(PasswordReset)·비밀번호 변경(PasswordChange)까지 확대 (`erp-login-bg`+orb+`erp-login-glass` 동일 패턴, PasswordReset/Change는 Card header 투명+흰 구분선 처리). PasswordChange의 deprecated `headStyle`→`styles.header` 정리. 세 화면 모두 공개 페이지(항상 라이트 테마)라 다크모드 영향 없음. Preview 모바일/PC 확인, vite build 통과.
+
 ### 2026-06-25
 - 검색바 회전 무지개 그라데이션 테두리 제거(AnimatedSearchBar).
 - 미수금/미지급 현황(CustomerBalance) 샘플 데이터 → 실제 API 연동. 매출·매입·수금·지급으로 거래처별 잔액 계산.

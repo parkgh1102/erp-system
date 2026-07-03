@@ -33,6 +33,7 @@ import {
   CloudUploadOutlined,
 } from '@ant-design/icons';
 import { useThemeStore } from '../../stores/themeStore';
+import ThemeToggle from '../Common/ThemeToggle';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useAuthStore } from '../../stores/authStore';
 import { useNotificationStore } from '../../stores/notificationStore';
@@ -494,12 +495,7 @@ const Settings: React.FC = () => {
                   <Form.Item label="테마 설정">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <Text>라이트 모드</Text>
-                      <Switch
-                        checked={isDark}
-                        onChange={toggleTheme}
-                        checkedChildren="🌙"
-                        unCheckedChildren="☀️"
-                      />
+                      <ThemeToggle checked={isDark} onChange={toggleTheme} />
                       <Text>다크 모드</Text>
                     </div>
                   </Form.Item>
