@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconfirm, Radio, Row, Col, AutoComplete, Spin, Dropdown, Select, Tag } from 'antd';
+import TrackPagination from '../Common/TrackPagination';
 import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import UploadResultModal, { UploadResultItem } from '../Common/UploadResultModal';
@@ -53,6 +54,7 @@ const ProductManagement: React.FC = () => {
   const [uploadResults, setUploadResults] = useState<UploadResultItem[]>([]);
   const [printModalVisible, setPrintModalVisible] = useState(false);
   const [pageSize, setPageSize] = useState<number>(isMobile ? 5 : 10);
+  const [prodPage, setProdPage] = useState(1);
   const { currentBusiness } = useAuthStore();
   const { isDark } = useThemeStore();
 
@@ -147,6 +149,15 @@ const ProductManagement: React.FC = () => {
       product.memo?.toLowerCase().includes(searchLower)
     );
   });
+
+  const pagedProducts = useMemo(() => {
+    const start = (prodPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, prodPage, pageSize]);
+  useEffect(() => {
+    const pc = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+    if (prodPage > pc) setProdPage(pc);
+  }, [filteredProducts.length, pageSize, prodPage]);
 
   const handleSearch = (value: string) => {
     setSearchText(value);
@@ -799,7 +810,7 @@ const ProductManagement: React.FC = () => {
       <Table
         id="product-table"
         columns={columns}
-        dataSource={filteredProducts}
+        dataSource={pagedProducts}
         rowKey="id"
         loading={false}
         rowSelection={rowSelection}
@@ -811,22 +822,23 @@ const ProductManagement: React.FC = () => {
         })}
         scroll={{ x: isMobile ? 1200 : undefined }}
         size={isMobile ? 'small' : 'middle'}
-        pagination={{
-          pageSize: pageSize,
-          pageSizeOptions: isMobile ? ['5', '10', '20'] : ['10', '20', '50', '100'],
-          showSizeChanger: window.innerWidth > 768,
-          showQuickJumper: window.innerWidth > 768,
-          simple: isMobile,
-          showTotal: (total, range) => {
-            const searchInfo = searchText ? ` (전체 ${products.length}건 중 검색결과)` : '';
-            return isMobile
-              ? `${total}건`
-              : `${range[0]}-${range[1]} / ${total}건${searchInfo}`;
-          },
-          onShowSizeChange: (current, size) => {
-            setPageSize(size);
-          },
-        }}
+        pagination={false}
+      />
+      <TrackPagination
+        current={prodPage}
+        pageSize={pageSize}
+        total={filteredProducts.length}
+        showSizeChanger={window.innerWidth > 768}
+        pageSizeOptions={isMobile ? [5, 10, 20] : [10, 20, 50, 100]}
+        onChange={(page, size) => { setProdPage(page); if (size !== pageSize) { setPageSize(size); setProdPage(1); } }}
+        extra={(() => {
+          const total = filteredProducts.length;
+          if (isMobile) return `${total}건`;
+          const start = total === 0 ? 0 : (prodPage - 1) * pageSize + 1;
+          const end = Math.min(prodPage * pageSize, total);
+          const searchInfo = searchText ? ` (전체 ${products.length}건 중 검색결과)` : '';
+          return `${start}-${end} / ${total}건${searchInfo}`;
+        })()}
       />
 
       <Modal

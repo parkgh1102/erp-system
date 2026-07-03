@@ -3,6 +3,7 @@ import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfir
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
+import TrackPagination from '../Common/TrackPagination';
 import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import * as ExcelJS from 'exceljs';
@@ -284,6 +285,21 @@ const PurchaseManagement: React.FC = () => {
     [filteredPurchases]
   );
 
+  // Track 페이지네이션: pagination={false} 로 전체 렌더되므로 현재 페이지만큼 직접 잘라서 표시
+  const effectivePageSize = isMobile ? 5 : pagination.pageSize;
+  const pagedPurchases = useMemo(() => {
+    const start = (pagination.current - 1) * effectivePageSize;
+    return filteredPurchases.slice(start, start + effectivePageSize);
+  }, [filteredPurchases, pagination.current, effectivePageSize]);
+
+  // 검색/필터로 결과가 줄어 현재 페이지가 마지막 페이지를 넘으면 보정
+  useEffect(() => {
+    const pageCount = Math.max(1, Math.ceil(filteredPurchases.length / effectivePageSize));
+    if (pagination.current > pageCount) {
+      setPagination(prev => ({ ...prev, current: pageCount }));
+    }
+  }, [filteredPurchases.length, effectivePageSize, pagination.current]);
+
   const handleSearch = (value: string) => {
     setSearchText(value);
   };
@@ -462,11 +478,13 @@ const PurchaseManagement: React.FC = () => {
 
   // 테이블 변경 핸들러 (페이지네이션, 정렬 등)
   const handleTableChange = (paginationConfig: any, filters: any, sorter: any) => {
-    setPagination(prev => ({
-      ...prev,
-      current: paginationConfig.current,
-      pageSize: paginationConfig.pageSize,
-    }));
+    if (paginationConfig && paginationConfig.current) {
+      setPagination(prev => ({
+        ...prev,
+        current: paginationConfig.current,
+        pageSize: paginationConfig.pageSize,
+      }));
+    }
   };
 
   // 엑셀 업로드 처리 (배치 병렬 처리)
@@ -1477,7 +1495,7 @@ const PurchaseManagement: React.FC = () => {
         id="purchase-table"
         className={isMobile ? 'mobile-compact-table' : ''}
         columns={isMobile ? columns.filter(col => ['purchaseDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns}
-        dataSource={filteredPurchases}
+        dataSource={pagedPurchases}
         rowKey="id"
         loading={false}
         rowSelection={rowSelection}
@@ -1509,28 +1527,32 @@ const PurchaseManagement: React.FC = () => {
         scroll={{ x: isMobile ? 320 : 1200 }}
         size={isMobile ? "small" : "middle"}
         onChange={handleTableChange}
-        pagination={{
-          ...pagination,
-          pageSize: isMobile ? 5 : pagination.pageSize,
-          pageSizeOptions: ['5', '10', '20', '50'],
-          showSizeChanger: true,
-          showQuickJumper: window.innerWidth > 768,
-          total: filteredPurchases.length,
-          showTotal: (total, range) => {
-            const searchInfo = searchText ? ` (전체 ${purchases.length}건 중 검색결과)` : '';
-            const totalAmountStr = filteredTotalAmount.toLocaleString('ko-KR') + '원';
-            return isMobile
-              ? `${total}건`
-              : (
-                <span>
-                  <span style={{ fontWeight: 'bold', color: '#1B61A8', marginRight: 16 }}>
-                    합계: {totalAmountStr}
-                  </span>
-                  {`${range[0]}-${range[1]} / ${total}건${searchInfo}`}
-                </span>
-              );
-          },
-        }}
+        pagination={false}
+      />
+      <TrackPagination
+        current={pagination.current}
+        pageSize={effectivePageSize}
+        total={filteredPurchases.length}
+        showSizeChanger={!isMobile}
+        onChange={(page, size) =>
+          setPagination(prev => ({ ...prev, current: page, pageSize: size }))
+        }
+        extra={(() => {
+          const total = filteredPurchases.length;
+          if (isMobile) return `${total}건`;
+          const start = total === 0 ? 0 : (pagination.current - 1) * effectivePageSize + 1;
+          const end = Math.min(pagination.current * effectivePageSize, total);
+          const searchInfo = searchText ? ` (전체 ${purchases.length}건 중 검색결과)` : '';
+          const totalAmountStr = filteredTotalAmount.toLocaleString('ko-KR') + '원';
+          return (
+            <span>
+              <span style={{ fontWeight: 'bold', color: '#1B61A8', marginRight: 16 }}>
+                합계: {totalAmountStr}
+              </span>
+              {`${start}-${end} / ${total}건${searchInfo}`}
+            </span>
+          );
+        })()}
       />
 
       <Modal

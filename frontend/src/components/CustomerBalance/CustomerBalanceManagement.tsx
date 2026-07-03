@@ -41,6 +41,7 @@ import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import CustomerBalancePrint from '../Print/CustomerBalancePrint';
 import { docTotal, computeAging, sumAging, type AgingBuckets } from '../../utils/receivableAging';
+import TrackPagination from '../Common/TrackPagination';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -257,6 +258,18 @@ const CustomerBalanceManagement: React.FC = () => {
 
     return result;
   }, [balances, activeTab, searchText]);
+
+  // Track 페이지네이션: pagination={false} 로 전체 렌더되므로 현재 페이지만큼 직접 잘라서 표시
+  const [cbPage, setCbPage] = useState(1);
+  const [cbPageSize, setCbPageSize] = useState(10);
+  const pagedBalances = useMemo(() => {
+    const start = (cbPage - 1) * cbPageSize;
+    return filteredBalances.slice(start, start + cbPageSize);
+  }, [filteredBalances, cbPage, cbPageSize]);
+  useEffect(() => {
+    const pageCount = Math.max(1, Math.ceil(filteredBalances.length / cbPageSize));
+    if (cbPage > pageCount) setCbPage(pageCount);
+  }, [filteredBalances.length, cbPageSize, cbPage]);
 
   // 거래처별 실제 거래 내역 설정 (fetchData에서 계산해 둔 detailsMap 사용)
   const loadTransactionDetails = (customer: CustomerBalance) => {
@@ -644,9 +657,10 @@ const CustomerBalanceManagement: React.FC = () => {
         {isMobile ? (
           renderBalanceCards()
         ) : (
+        <>
         <Table
           columns={columns}
-          dataSource={filteredBalances}
+          dataSource={pagedBalances}
           rowKey="id"
           loading={loading}
           rowSelection={{
@@ -664,7 +678,7 @@ const CustomerBalanceManagement: React.FC = () => {
             },
             style: { cursor: 'pointer' }
           })}
-          pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }}
+          pagination={false}
           scroll={{ x: 700 }}
           size={isMobile ? 'small' : 'middle'}
           summary={() => (
@@ -689,6 +703,15 @@ const CustomerBalanceManagement: React.FC = () => {
             </Table.Summary>
           )}
         />
+        <TrackPagination
+          current={cbPage}
+          pageSize={cbPageSize}
+          total={filteredBalances.length}
+          showSizeChanger={!isMobile}
+          onChange={(page, size) => { setCbPage(page); setCbPageSize(size); }}
+          extra={`총 ${filteredBalances.length}건`}
+        />
+        </>
         )}
       </Card>
 

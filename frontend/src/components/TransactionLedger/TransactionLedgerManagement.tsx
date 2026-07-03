@@ -4,6 +4,7 @@ import { SearchOutlined, PrinterOutlined, FilePdfOutlined, ExportOutlined, Dolla
 import { useReactToPrint } from 'react-to-print';
 import SignatureEditModal from './SignatureEditModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
+import TrackPagination from '../Common/TrackPagination';
 import { exportTransactionLedgerToPDF, exportTransactionLedgerToExcel } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -193,6 +194,17 @@ const TransactionLedgerManagement: React.FC = () => {
 
     return result;
   }, [ledgerEntries, ledgerData?.previousBalance, dateRange, selectedCustomer, customers]);
+
+  // Track 페이지네이션: pagination={false} 로 전체 렌더되므로 현재 페이지만큼 직접 잘라서 표시
+  // (summary 는 잘린 페이지 데이터를 pageData 로 받아 기존과 동일하게 페이지 합계를 계산)
+  const pagedEntries = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return expandedEntries.slice(start, start + pageSize);
+  }, [expandedEntries, currentPage, pageSize]);
+  useEffect(() => {
+    const pageCount = Math.max(1, Math.ceil(expandedEntries.length / pageSize));
+    if (currentPage > pageCount) setCurrentPage(pageCount);
+  }, [expandedEntries.length, pageSize, currentPage]);
 
   useEffect(() => {
     if (currentBusiness) {
@@ -949,29 +961,16 @@ const TransactionLedgerManagement: React.FC = () => {
           {isMobile ? (
             renderLedgerCards()
           ) : (
+          <>
           <Table
             id="transaction-ledger-table"
             className={isMobile ? 'mobile-compact-table' : ''}
             columns={columns}
-            dataSource={expandedEntries}
+            dataSource={pagedEntries}
             rowKey="rowKey"
             scroll={{ x: isMobile ? 400 : 'max-content' }}
             size={isMobile ? 'small' : 'middle'}
-            pagination={{
-              current: currentPage,
-              pageSize: isMobile ? 5 : pageSize,
-              total: expandedEntries.length,
-              showSizeChanger: !isMobile,
-              simple: isMobile,
-              showTotal: () => isMobile ? `${ledgerEntries.length}건` : `총 ${ledgerEntries.length}건`,
-              onChange: (page, size) => {
-                setCurrentPage(page);
-                if (size !== pageSize) {
-                  setPageSize(size);
-                  setCurrentPage(1);
-                }
-              },
-            }}
+            pagination={false}
             summary={(pageData) => {
               if (pageData.length === 0) return null;
 
@@ -1057,6 +1056,21 @@ const TransactionLedgerManagement: React.FC = () => {
               emptyText: selectedCustomer ? '조회 버튼을 클릭하여 거래원장을 조회하세요.' : '거래처를 선택하고 조회하세요.'
             }}
           />
+          <TrackPagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={expandedEntries.length}
+            showSizeChanger={true}
+            onChange={(page, size) => {
+              setCurrentPage(page);
+              if (size !== pageSize) {
+                setPageSize(size);
+                setCurrentPage(1);
+              }
+            }}
+            extra={`총 ${ledgerEntries.length}건`}
+          />
+          </>
           )}
         </Spin>
       </Card>

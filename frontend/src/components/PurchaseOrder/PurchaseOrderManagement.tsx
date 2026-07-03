@@ -46,6 +46,7 @@ import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import PurchaseOrderPrint from '../Print/PurchaseOrderPrint';
+import TrackPagination from '../Common/TrackPagination';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -127,6 +128,8 @@ const PurchaseOrderManagement: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [autoSaveType, setAutoSaveType] = useState<'pdf' | 'png' | 'jpg' | 'clipboard' | null>(null);
   const [nextNumber, setNextNumber] = useState('');
+  const [oPage, setOPage] = useState(1);
+  const [oPageSize, setOPageSize] = useState(10);
 
   // 데이터 로드
   const fetchData = useCallback(async () => {
@@ -202,6 +205,16 @@ const PurchaseOrderManagement: React.FC = () => {
     }
     return result;
   }, [orders, activeTab, searchText]);
+
+  const pagedOrders = useMemo(() => {
+    const start = (oPage - 1) * oPageSize;
+    return filteredOrders.slice(start, start + oPageSize);
+  }, [filteredOrders, oPage, oPageSize]);
+
+  useEffect(() => {
+    const pageCount = Math.max(1, Math.ceil(filteredOrders.length / oPageSize));
+    if (oPage > pageCount) setOPage(pageCount);
+  }, [filteredOrders.length, oPageSize, oPage]);
 
   // 금액 계산
   const calculateItemAmount = (index: number, field: string, value: number) => {
@@ -587,7 +600,7 @@ const PurchaseOrderManagement: React.FC = () => {
         <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
         <Table
           columns={columns}
-          dataSource={filteredOrders}
+          dataSource={pagedOrders}
           rowKey="id"
           loading={loading}
           rowSelection={{
@@ -605,10 +618,18 @@ const PurchaseOrderManagement: React.FC = () => {
             },
             style: { cursor: 'pointer' }
           })}
-          pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }}
+          pagination={false}
           scroll={{ x: 800 }}
           size={isMobile ? 'small' : 'middle'}
         />
+          <TrackPagination
+            current={oPage}
+            pageSize={oPageSize}
+            total={filteredOrders.length}
+            showSizeChanger={!isMobile}
+            onChange={(page, size) => { setOPage(page); setOPageSize(size); }}
+            extra={`총 ${filteredOrders.length}건`}
+          />
       </Card>
 
       {/* 발주서 작성 모달 */}

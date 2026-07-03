@@ -19,6 +19,7 @@ import {
   ReloadOutlined
 } from '@ant-design/icons';
 import { BusinessForm } from './BusinessForm';
+import TrackPagination from '../Common/TrackPagination';
 import { businessAPI } from '../../utils/api';
 import type { Business } from '../../types/business';
 
@@ -153,7 +154,9 @@ export const BusinessList: React.FC = () => {
   };
 
   const handleTableChange = (newPagination: any) => {
-    fetchBusinesses(newPagination.current, searchTerm);
+    if (newPagination && newPagination.current) {
+      fetchBusinesses(newPagination.current, searchTerm);
+    }
   };
 
   const handleAdd = () => {
@@ -247,16 +250,24 @@ export const BusinessList: React.FC = () => {
         dataSource={businesses}
         rowKey="id"
         loading={loading}
-        pagination={{
-          ...pagination,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} / 총 ${total}건`
-        }}
+        pagination={false}
         onChange={handleTableChange}
         scroll={{ x: 1200 }}
         size="middle"
+      />
+
+      <TrackPagination
+        current={pagination.current}
+        pageSize={pagination.pageSize}
+        total={pagination.total}
+        showSizeChanger={false}
+        onChange={(page) => fetchBusinesses(page, searchTerm)}
+        extra={(() => {
+          const total = pagination.total;
+          const start = total === 0 ? 0 : (pagination.current - 1) * pagination.pageSize + 1;
+          const end = Math.min(pagination.current * pagination.pageSize, total);
+          return `${start}-${end} / 총 ${total}건`;
+        })()}
       />
 
       <Modal

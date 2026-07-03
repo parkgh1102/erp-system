@@ -102,8 +102,10 @@ DB 마이그레이션: `cd backend && npm run migration:run` / `migration:genera
 ### 2026-06-04
 - CLAUDE.md 신규 작성: 프로젝트 가이드 + 활동 기록 체계 수립.
 
-### 2026-06-30
-- 설정>사용자관리: 관리자용 "비밀번호 초기화" 버튼/모달 추가(전화번호 뒤 4자리 기본 제안, 로그인 ID 복사), 기존 update API 재사용(백엔드 변경 없음), 테이블 가로 스크롤.
+### 2026-07-03
+- 매출조회 페이지네이션을 Instagram "Track"(슬라이더형) 스타일로 교체. 공통 컴포넌트 `components/Common/TrackPagination.tsx` 신설(그라데이션 손잡이가 트랙 위를 이동, 다크모드 대응, 페이지 수 많으면 양끝+현재/총 컴팩트 모드로 자동 전환). SalesManagement는 Table `pagination={false}` + 직접 slice(`pagedSales`)로 표시, 합계금액·페이지크기(5/10/20/50)·검색결과 건수는 `extra` prop으로 유지. 검색으로 결과 줄면 현재 페이지 자동 보정.
+- Track 페이지네이션을 매입·견적·발주·거래처·재고 화면으로 확대 적용. 클라이언트 slice형(매입=제어형 상태, 견적/발주/재고=현재페이지 상태 신설)과 서버 사이드형(거래처: slice 없이 상태 변경→기존 refetch useEffect 트리거) 구분 처리. 각 화면의 기존 합계/건수 표기는 `extra`로 이관, `pagination={false}` 전환 후 정렬 onChange가 페이지 상태를 덮어쓰지 않도록 `handleTableChange` 가드. `vite build` 통과.
+- Track 페이지네이션 2차 확대: 결제(수금/지급 2개 테이블 각각)·품목·사용자관리·사업체(서버사이드)·거래원장·미수금(CustomerBalance)까지 적용. 거래원장은 `summary`가 현재 페이지 데이터(pageData) 기준이라 slice 후에도 페이지 합계 동작 동일, 미수금 summary는 `filteredBalances` 전체 기준이라 영향 없음(둘 다 데스크톱 Table 분기만 교체, 모바일 카드뷰는 유지). 손잡이 색을 보라→핑크에서 프로젝트 파랑 톤(`#378ADD→#1B61A8`)으로 변경(공통 컴포넌트 GRADIENT 1곳 수정→전 화면 반영). `vite build` 통과. 대시보드는 모달 내 위젯 테이블이라 제외.
 - 로그인 화면 아이디/비번 찾기(PasswordReset) 모바일 최적화: 반응형 패딩, Steps progressDot, 카드 본문 패딩.
 - 매출조회(sales_viewer) 모바일 하단 탭바에 '내 정보' 탭 추가(기존엔 더보기가 비어 프로필/로그아웃 동선 부재).
 - 거래처 잔액(getCustomerBalance) 404 해결: 거래처 마스터가 삭제된 고아 매출/매입도 매출·매입·수금 데이터로 잔액 계산하도록 404 제거(fallback 이름 '(삭제된 거래처)'). 프론트(Sales/Purchase) 전잔금 조회는 4xx 재시도 중단·404는 0 처리로 인쇄 차단 방지.

@@ -38,6 +38,7 @@ import { quotationAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import TrackPagination from '../Common/TrackPagination';
 import QuotationPrint from '../Print/QuotationPrint';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -134,6 +135,8 @@ const QuotationManagement: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [autoSaveType, setAutoSaveType] = useState<'pdf' | 'png' | 'jpg' | 'clipboard' | null>(null);
   const [nextNumber, setNextNumber] = useState('');
+  const [qPage, setQPage] = useState(1);
+  const [qPageSize, setQPageSize] = useState(10);
 
   // 데이터 로드
   const fetchData = useCallback(async () => {
@@ -193,6 +196,16 @@ const QuotationManagement: React.FC = () => {
     }
     return result;
   }, [quotations, searchText]);
+
+  const pagedQuotations = useMemo(() => {
+    const start = (qPage - 1) * qPageSize;
+    return filteredQuotations.slice(start, start + qPageSize);
+  }, [filteredQuotations, qPage, qPageSize]);
+
+  useEffect(() => {
+    const pageCount = Math.max(1, Math.ceil(filteredQuotations.length / qPageSize));
+    if (qPage > pageCount) setQPage(pageCount);
+  }, [filteredQuotations.length, qPageSize, qPage]);
 
   // 품목 금액 계산
   const calculateItemAmount = (index: number, field: string, value: number | string) => {
@@ -551,7 +564,7 @@ const QuotationManagement: React.FC = () => {
       <Card size="small">
         <Table
           columns={columns}
-          dataSource={filteredQuotations}
+          dataSource={pagedQuotations}
           rowKey="id"
           loading={loading}
           rowSelection={{
@@ -572,10 +585,18 @@ const QuotationManagement: React.FC = () => {
             },
             style: { cursor: 'pointer' }
           })}
-          pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }}
+          pagination={false}
           scroll={{ x: 800 }}
           size={isMobile ? 'small' : 'middle'}
         />
+          <TrackPagination
+            current={qPage}
+            pageSize={qPageSize}
+            total={filteredQuotations.length}
+            showSizeChanger={!isMobile}
+            onChange={(page, size) => { setQPage(page); setQPageSize(size); }}
+            extra={`총 ${filteredQuotations.length}건`}
+          />
       </Card>
 
       {/* 견적서 작성 모달 */}
