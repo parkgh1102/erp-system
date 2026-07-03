@@ -21,7 +21,8 @@ export default defineConfig({
   plugins: [react()],
 
   server: {
-    port: 5173,
+    // PORT 환경변수 우선 (5173 사용 중일 때 다른 포트로 실행 가능)
+    port: Number(process.env.PORT) || 5173,
     host: true,
 
     // 개발 서버 CORS 설정

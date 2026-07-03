@@ -79,14 +79,9 @@
   display: none;
 }
 
-/* Dark mode support */
-.dark .responsive-card {
-  background: #1f1f1f;
-  border-color: #303030;
-}
-
-.dark .responsive-card-badges,
-.dark .responsive-card-details {
+/* Dark mode support (antd Card 배경/테두리는 darkAlgorithm + index.css .ant-card 규칙이 처리) */
+.dark-mode .responsive-card-badges,
+.dark-mode .responsive-card-details {
   border-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -97,12 +92,9 @@
 }
 
 .responsive-table .ant-table-thead > tr > th {
+  /* 다크모드 배경은 index.css의 .dark-mode .ant-table-thead 규칙(!important)이 덮어씀 */
   background: #fafafa;
   font-weight: 600;
-}
-
-.dark .responsive-table .ant-table-thead > tr > th {
-  background: #1d1d1d;
 }
 
 /* Tablet-specific adjustments */
@@ -226,7 +218,7 @@
   gap: 8px;
 }
 
-.dark .mobile-action-area {
+.dark-mode .mobile-action-area {
   background: #1f1f1f;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
 }
@@ -252,7 +244,7 @@
   pointer-events: none;
 }
 
-.dark .responsive-table-scroll-hint::after {
+.dark-mode .responsive-table-scroll-hint::after {
   background: linear-gradient(to right, transparent, rgba(31, 31, 31, 0.9));
 }
 
@@ -290,7 +282,7 @@
   color: #8c8c8c;
 }
 
-.dark .responsive-table-empty {
+.dark-mode .responsive-table-empty {
   color: #6c6c6c;
 }
 
@@ -300,7 +292,7 @@
   color: #1890ff;
 }
 
-.dark .responsive-card .amount-display {
+.dark-mode .responsive-card .amount-display {
   color: #40a9ff;
 }
 

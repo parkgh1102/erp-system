@@ -170,16 +170,12 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  /* 테이블 고정 헤더 */
+  /* 테이블 고정 헤더 (다크모드 배경은 index.css의 .dark-mode .ant-table-thead 규칙이 더 높은 특이성으로 덮어씀) */
   .ant-table-thead > tr > th {
     position: sticky;
     top: 0;
     z-index: 2;
     background: #fafafa !important;
-  }
-
-  .dark .ant-table-thead > tr > th {
-    background: #1d1d1d !important;
   }
 
   /* 모바일 버튼 그룹 개선 */
@@ -446,7 +442,6 @@
   .ant-modal-header {
     flex-shrink: 0;
     padding: 12px 16px !important;
-    border-bottom: 1px solid #f0f0f0;
   }
 
   .ant-modal-body {
@@ -456,19 +451,14 @@
     padding: 16px !important;
   }
 
+  /* background/border 미지정: antd 자체 규칙(.ant-modal .ant-modal-footer, 특이성 우위)이
+     항상 이겨서 어떤 값도 적용된 적 없음. footer는 투명이며 본문이 내부 스크롤이라 겹치지 않음. */
   .ant-modal-footer {
     flex-shrink: 0;
     padding: 12px 16px !important;
-    border-top: 1px solid #f0f0f0;
     position: sticky;
     bottom: 0;
-    background: #fff;
     z-index: 10;
-  }
-
-  .dark .ant-modal-footer {
-    background: #1f1f1f;
-    border-top-color: #303030;
   }
 
   /* 모달 내 폼 아이템 */
@@ -506,18 +496,15 @@
     padding: 12px 16px !important;
   }
 
+  /* background 미지정: 투명이면 .ant-drawer-content의 테마 배경이 그대로 보이고
+     본문이 내부 스크롤이라 겹치지 않음. (기존 #fff 하드코딩은 다크모드에서 흰 footer 버그,
+     Drawer는 portal이라 .dark-mode 조상 선택자로는 못 고침) */
   .ant-drawer-footer {
     padding: 12px 16px !important;
     position: sticky;
     bottom: 0;
-    background: #fff;
     z-index: 10;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
-  }
-
-  .dark .ant-drawer-footer {
-    background: #1f1f1f;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -552,7 +539,7 @@
   gap: 8px;
 }
 
-.dark .mobile-action-bar {
+.dark-mode .mobile-action-bar {
   background: #1f1f1f;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
 }
