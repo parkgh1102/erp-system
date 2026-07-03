@@ -14,6 +14,11 @@ import {
   Tooltip,
   Dropdown,
   Drawer,
+  Card,
+  Checkbox,
+  Tag,
+  Skeleton,
+  Empty,
 } from 'antd';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
@@ -29,6 +34,8 @@ import {
   FilePdfOutlined,
   PrinterOutlined,
   MoreOutlined,
+  PhoneOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -746,6 +753,180 @@ const CustomerManagement: React.FC = () => {
     </Space>
   );
 
+  // 모바일 카드 리스트 (테이블 대체)
+  const toggleCardSelection = (id: number) => {
+    setSelectedRowKeys(prev =>
+      prev.includes(id) ? prev.filter(key => key !== id) : [...prev, id]
+    );
+  };
+
+  const handleCopyAddress = (address: string) => {
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(address).then(
+        () => message.success('주소가 복사되었습니다'),
+        () => message.error('주소 복사에 실패했습니다')
+      );
+    }
+  };
+
+  const renderCustomerCards = () => {
+    if (loading) {
+      return (
+        <div>
+          {[1, 2, 3].map(i => (
+            <Card key={i} size="small" style={{ marginBottom: 8 }} styles={{ body: { padding: 12 } }}>
+              <Skeleton active title={false} paragraph={{ rows: 2 }} />
+            </Card>
+          ))}
+        </div>
+      );
+    }
+    if (customers.length === 0) {
+      return (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="조회된 거래처가 없습니다."
+          style={{ padding: '32px 0' }}
+        />
+      );
+    }
+    return (
+      <div className="erp-stagger">
+        {customers.map(customer => {
+          const checked = selectedRowKeys.includes(customer.id);
+          return (
+            <Card
+              key={customer.id}
+              size="small"
+              style={{ marginBottom: 8, borderColor: checked ? '#1B61A8' : undefined }}
+              styles={{ body: { padding: 12 } }}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (
+                  target.closest('.ant-checkbox') ||
+                  target.closest('button') ||
+                  target.closest('a')
+                ) {
+                  return;
+                }
+                toggleCardSelection(customer.id);
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', minWidth: 0, flex: 1 }}>
+                  <Checkbox
+                    checked={checked}
+                    onChange={() => toggleCardSelection(customer.id)}
+                    style={{ marginTop: 2 }}
+                  />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <a
+                        onClick={() => handleEditCustomer(customer)}
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 15,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          color: isDark ? '#7db4e8' : '#1B61A8',
+                        }}
+                      >
+                        {customer.name}
+                      </a>
+                      <Tag style={{ marginRight: 0, flexShrink: 0 }}>{customer.customerCode}</Tag>
+                    </div>
+                    {(customer.representative || customer.businessNumber) && (
+                      <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>
+                        {customer.representative}
+                        {customer.representative && customer.businessNumber ? ' · ' : ''}
+                        {customer.businessNumber ? formatBusinessNumber(customer.businessNumber) : ''}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Space size={0} style={{ flexShrink: 0 }}>
+                  <Button
+                    type="text"
+                    icon={<EditOutlined />}
+                    onClick={() => handleEditCustomer(customer)}
+                    style={{ color: '#1B61A8', minWidth: 40, minHeight: 40 }}
+                    aria-label="수정"
+                  />
+                  <Popconfirm
+                    title="정말로 삭제하시겠습니까?"
+                    onConfirm={() => handleDeleteCustomer(customer.id)}
+                    okText="삭제"
+                    cancelText="취소"
+                    okButtonProps={{ danger: true }}
+                  >
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      style={{ minWidth: 40, minHeight: 40 }}
+                      aria-label="삭제"
+                    />
+                  </Popconfirm>
+                </Space>
+              </div>
+              {(customer.phone || customer.address) && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    paddingTop: 8,
+                    borderTop: '1px solid rgba(128, 128, 128, 0.18)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                  }}
+                >
+                  {customer.phone && (
+                    <a
+                      href={`tel:${customer.phone.replace(/[^0-9+]/g, '')}`}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        fontSize: 13,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        width: 'fit-content',
+                      }}
+                    >
+                      <PhoneOutlined />
+                      {formatPhoneNumber(customer.phone)}
+                    </a>
+                  )}
+                  {customer.address && (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyAddress(customer.address!);
+                      }}
+                      style={{
+                        fontSize: 12,
+                        color: '#8c8c8c',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 6,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <CopyOutlined style={{ marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {customer.address}
+                      </span>
+                    </span>
+                  )}
+                </div>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div style={{
       padding: isMobile ? '16px 8px' : '24px',
@@ -951,11 +1132,13 @@ const CustomerManagement: React.FC = () => {
         {mobileActionDrawerContent}
       </Drawer>
 
-      <Table
+      {isMobile ? (
+        renderCustomerCards()
+      ) : (
+        <Table
           id="customer-table"
-          className={isMobile ? 'mobile-compact-table' : ''}
-          columns={isMobile ? columns.filter(col => ['customerCode', 'name', 'actions'].includes(col.key as string)) : resizableColumns}
-          components={isMobile ? undefined : resizableComponents}
+          columns={resizableColumns}
+          components={resizableComponents}
           dataSource={customers}
           rowKey="id"
           loading={loading}
@@ -988,9 +1171,10 @@ const CustomerManagement: React.FC = () => {
             onDoubleClick: () => handleRowDoubleClick(record),
             style: { cursor: 'pointer' },
           })}
-          scroll={{ x: isMobile ? 280 : 'max-content', y: isMobile ? 400 : 600 }}
-          size={isMobile ? 'small' : 'middle'}
+          scroll={{ x: 'max-content', y: 600 }}
+          size="middle"
         />
+      )}
 
       <TrackPagination
         current={pagination.current}

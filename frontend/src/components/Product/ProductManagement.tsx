@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconfirm, Radio, Row, Col, AutoComplete, Spin, Dropdown, Select, Tag } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconfirm, Radio, Row, Col, AutoComplete, Spin, Dropdown, Select, Tag, Card, Checkbox, Empty } from 'antd';
 import TrackPagination from '../Common/TrackPagination';
 import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined, CloseOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
@@ -686,6 +686,150 @@ const ProductManagement: React.FC = () => {
     'product-table'
   );
 
+  // 모바일 카드 리스트 (테이블 대체)
+  const taxTypeLabel = (taxType: string) => {
+    switch (taxType) {
+      case 'tax_separate': return '과세 10%별도';
+      case 'tax_inclusive': return '과세 10%포함';
+      case 'tax_free': return '면세';
+      default: return '';
+    }
+  };
+
+  const toggleCardSelection = (id: number) => {
+    setSelectedRowKeys(prev =>
+      prev.includes(id) ? prev.filter(key => key !== id) : [...prev, id]
+    );
+  };
+
+  const renderProductCards = () => {
+    if (!loading && pagedProducts.length === 0) {
+      return (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="조회된 품목이 없습니다."
+          style={{ padding: '32px 0' }}
+        />
+      );
+    }
+    return (
+      <div className="erp-stagger">
+        {pagedProducts.map(product => {
+          const checked = selectedRowKeys.includes(product.id);
+          return (
+            <Card
+              key={product.id}
+              size="small"
+              style={{ marginBottom: 8, borderColor: checked ? '#1B61A8' : undefined }}
+              styles={{ body: { padding: 12 } }}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (
+                  target.closest('.ant-checkbox') ||
+                  target.closest('button') ||
+                  target.closest('a')
+                ) {
+                  return;
+                }
+                toggleCardSelection(product.id);
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', minWidth: 0, flex: 1 }}>
+                  <Checkbox
+                    checked={checked}
+                    onChange={() => toggleCardSelection(product.id)}
+                    style={{ marginTop: 2 }}
+                  />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <a
+                        onClick={() => handleEdit(product)}
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 15,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          color: isDark ? '#7db4e8' : '#1B61A8',
+                        }}
+                      >
+                        {product.name}
+                      </a>
+                      {product.productCode && (
+                        <Tag style={{ marginRight: 0, flexShrink: 0 }}>{product.productCode}</Tag>
+                      )}
+                    </div>
+                    {(product.spec || product.unit || product.category) && (
+                      <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>
+                        {[product.spec, product.unit, product.category].filter(Boolean).join(' · ')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Space size={0} style={{ flexShrink: 0 }}>
+                  <Button
+                    type="text"
+                    icon={<EditOutlined />}
+                    onClick={() => handleEdit(product)}
+                    style={{ color: '#1B61A8', minWidth: 40, minHeight: 40 }}
+                    aria-label="수정"
+                  />
+                  <Popconfirm
+                    title="정말 삭제하시겠습니까?"
+                    onConfirm={() => handleDelete(product.id)}
+                    okText="예"
+                    cancelText="아니오"
+                    okButtonProps={{ autoFocus: true }}
+                  >
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      style={{ minWidth: 40, minHeight: 40 }}
+                      aria-label="삭제"
+                    />
+                  </Popconfirm>
+                </Space>
+              </div>
+              <div
+                style={{
+                  marginTop: 8,
+                  paddingTop: 8,
+                  borderTop: '1px solid rgba(128, 128, 128, 0.18)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: 'flex', gap: 12, fontSize: 13 }}>
+                  <span>
+                    <span style={{ color: '#8c8c8c', fontSize: 12 }}>매입 </span>
+                    <span style={{ fontWeight: 600, color: isDark ? '#e57368' : '#C0392B' }}>
+                      {(product.buyPrice ? Math.round(product.buyPrice).toLocaleString() : '0')}원
+                    </span>
+                  </span>
+                  <span>
+                    <span style={{ color: '#8c8c8c', fontSize: 12 }}>매출 </span>
+                    <span style={{ fontWeight: 600, color: isDark ? '#7db4e8' : '#378ADD' }}>
+                      {(product.sellPrice ? Math.round(product.sellPrice).toLocaleString() : '0')}원
+                    </span>
+                  </span>
+                </div>
+                {taxTypeLabel(product.taxType) && (
+                  <Tag style={{ marginRight: 0, flexShrink: 0 }} color={product.taxType === 'tax_free' ? 'green' : 'blue'}>
+                    {taxTypeLabel(product.taxType)}
+                  </Tag>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <div style={{
       padding: isMobile ? '16px 8px' : '24px',
@@ -814,24 +958,27 @@ const ProductManagement: React.FC = () => {
         </div>
       )}
 
-      <Table
-        id="product-table"
-        columns={resizableColumns}
-        components={resizableComponents}
-        dataSource={pagedProducts}
-        rowKey="id"
-        loading={false}
-        rowSelection={rowSelection}
-        showSorterTooltip={false}
-        onRow={(record) => ({
-          onClick: (e) => handleRowClick(record, e),
-          onDoubleClick: () => handleEdit(record),
-          style: { cursor: 'pointer' }
-        })}
-        scroll={{ x: isMobile ? 1200 : undefined }}
-        size={isMobile ? 'small' : 'middle'}
-        pagination={false}
-      />
+      {isMobile ? (
+        renderProductCards()
+      ) : (
+        <Table
+          id="product-table"
+          columns={resizableColumns}
+          components={resizableComponents}
+          dataSource={pagedProducts}
+          rowKey="id"
+          loading={false}
+          rowSelection={rowSelection}
+          showSorterTooltip={false}
+          onRow={(record) => ({
+            onClick: (e) => handleRowClick(record, e),
+            onDoubleClick: () => handleEdit(record),
+            style: { cursor: 'pointer' }
+          })}
+          size="middle"
+          pagination={false}
+        />
+      )}
       <TrackPagination
         current={prodPage}
         pageSize={pageSize}
