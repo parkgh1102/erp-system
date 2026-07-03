@@ -374,15 +374,23 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onBack, onShowLogin, on
         },
       }}
     >
-      <div style={{
+      <div className="erp-login-bg" style={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        backgroundColor: '#F9F9F9',
         padding: '24px'
       }}>
+      <div
+        className="erp-login-orb"
+        style={{ width: 220, height: 220, top: -60, left: -50 }}
+      />
+      <div
+        className="erp-login-orb"
+        style={{ width: 130, height: 130, bottom: -35, right: '12%', animationDelay: '2.5s' }}
+      />
       <Card
+        className="erp-login-glass"
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Button
@@ -397,20 +405,18 @@ const PasswordChange: React.FC<PasswordChangeProps> = ({ onBack, onShowLogin, on
         style={{
           width: '100%',
           maxWidth: 600,
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: '20px',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-          backdropFilter: 'blur(10px)'
+          borderRadius: '14px',
         }}
-        headStyle={{
-          textAlign: 'center',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-          borderBottom: '1px solid rgba(0,0,0,0.1)',
-          borderRadius: '20px 20px 0 0',
-          padding: '20px 24px'
+        styles={{
+          header: {
+            textAlign: 'center',
+            fontSize: '20px',
+            fontWeight: 'bold',
+            backgroundColor: 'transparent',
+            borderBottom: '1px solid rgba(255,255,255,0.55)',
+            borderRadius: '14px 14px 0 0',
+            padding: '20px 24px'
+          }
         }}
       >
         {renderStepContent()}

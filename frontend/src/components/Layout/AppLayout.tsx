@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Switch, Typography, Badge, Button, Select, Drawer } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Typography, Badge, Button, Select, Drawer } from 'antd';
+import ThemeToggle from '../Common/ThemeToggle';
 import {
   DashboardOutlined,
   UserOutlined,
@@ -301,17 +302,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 {isDark ? '어두운 모드' : '밝은 모드'}
               </Text>
             )}
-            <Switch
-              checked={isDark}
-              onChange={toggleTheme}
-              size="small"
-              checkedChildren="🌙"
-              unCheckedChildren="☀️"
-              aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
-              style={{
-                background: isDark ? '#1B61A8' : '#1B61A8',
-              }}
-            />
+            <ThemeToggle checked={isDark} onChange={toggleTheme} size="small" />
           </div>
 
           {/* 메뉴 접기/펼치기 버튼 */}

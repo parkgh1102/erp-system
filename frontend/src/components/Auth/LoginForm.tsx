@@ -53,23 +53,33 @@ const LoginFormContent: React.FC = () => {
 
   return (
     <div
+      className="erp-login-bg"
       style={{
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#ffffff',
         padding: isMobile ? '12px' : '20px',
       }}
     >
+      <div
+        className="erp-login-orb"
+        style={{ width: 220, height: 220, top: -60, left: -50 }}
+      />
+      <div
+        className="erp-login-orb"
+        style={{ width: 130, height: 130, bottom: -35, right: '12%', animationDelay: '2.5s' }}
+      />
+      <div
+        className="erp-login-orb"
+        style={{ width: 70, height: 70, top: '18%', right: '22%', animationDelay: '4s' }}
+      />
       <Card
+        className="erp-login-glass"
         style={{
           width: '100%',
           maxWidth: '400px',
-          background: '#f0f2f5',
-          border: '1px solid #e4e6ef',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-          borderRadius: '12px',
+          borderRadius: '14px',
         }}
         styles={{ body: { padding: isMobile ? '24px 18px' : '40px' } }}
       >
