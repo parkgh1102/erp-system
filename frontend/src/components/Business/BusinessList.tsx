@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons';
 import { BusinessForm } from './BusinessForm';
 import TrackPagination from '../Common/TrackPagination';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 import { businessAPI } from '../../utils/api';
 import type { Business } from '../../types/business';
 
@@ -122,6 +123,12 @@ export const BusinessList: React.FC = () => {
       )
     }
   ];
+
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'business',
+    columns,
+    { baseWidth: 1200 }
+  );
 
   const fetchBusinesses = useCallback(async (page = 1, search = '') => {
     setLoading(true);
@@ -246,7 +253,8 @@ export const BusinessList: React.FC = () => {
       </div>
 
       <Table
-        columns={columns}
+        columns={resizableColumns}
+        components={resizableComponents}
         dataSource={businesses}
         rowKey="id"
         loading={loading}

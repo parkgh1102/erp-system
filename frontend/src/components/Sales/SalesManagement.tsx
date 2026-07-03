@@ -17,6 +17,7 @@ import { ESignaturePreviewModal } from '../Print/ESignaturePreviewModal';
 import TransactionStatement from '../Print/TransactionStatement';
 import ShortcutGuide from '../Common/ShortcutGuide';
 import TrackPagination from '../Common/TrackPagination';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 import { useMessage } from '../../hooks/useMessage';
 import { useFormShortcuts } from '../../hooks/useFormShortcuts';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -1572,15 +1573,21 @@ const SalesManagement: React.FC = () => {
       key: 'productName',
       width: isMobile ? 80 : '12%',
       align: 'center' as const,
+      // 한 줄 표시(넘치면 … 처리, 마우스 오버 시 전체 이름 툴팁)
+      ellipsis: { showTitle: false },
       render: (items: SaleItem[]) => {
         if (!items || items.length === 0) return '-';
 
         const firstItem = items[0];
-        if (items.length === 1) {
-          return firstItem.itemName || firstItem.productName || '-';
-        } else {
-          return `${firstItem.itemName || firstItem.productName || '품목'} 외 ${items.length - 1}`;
-        }
+        const label = items.length === 1
+          ? (firstItem.itemName || firstItem.productName || '-')
+          : `${firstItem.itemName || firstItem.productName || '품목'} 외 ${items.length - 1}`;
+
+        return (
+          <Tooltip placement="topLeft" title={label}>
+            <span style={{ whiteSpace: 'nowrap' }}>{label}</span>
+          </Tooltip>
+        );
       },
       sorter: (a: Sale, b: Sale) => {
         const aFirstItem = (a.items && (a.items[0]?.itemName || a.items[0]?.productName)) || '';
@@ -1747,6 +1754,13 @@ const SalesManagement: React.FC = () => {
 
   // sales_viewer인 경우 작업 컬럼 제외
   const columns = allColumns.filter(col => !col.hidden);
+
+  // 데스크톱: 마우스로 컬럼 폭 조절 + localStorage 저장 (모바일은 비활성)
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'sales',
+    columns,
+    { baseWidth: 1200, enabled: !isMobile }
+  );
 
   const actionMenuItems = createExportMenuItems(
     filteredSales,
@@ -2055,7 +2069,8 @@ const SalesManagement: React.FC = () => {
       <Table
         id="sales-table"
         className={isMobile ? 'mobile-compact-table' : ''}
-        columns={isMobile ? columns.filter(col => ['transactionDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns}
+        columns={isMobile ? columns.filter(col => ['transactionDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : resizableColumns}
+        components={isMobile ? undefined : resizableComponents}
         dataSource={pagedSales}
         rowKey="id"
         loading={false}

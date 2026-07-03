@@ -42,6 +42,7 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 import CustomerBalancePrint from '../Print/CustomerBalancePrint';
 import { docTotal, computeAging, sumAging, type AgingBuckets } from '../../utils/receivableAging';
 import TrackPagination from '../Common/TrackPagination';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -362,6 +363,12 @@ const CustomerBalanceManagement: React.FC = () => {
     },
   ];
 
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'customer-balance',
+    columns,
+    { baseWidth: 700, enabled: !isMobile }
+  );
+
   const tabItems = [
     { key: 'all', label: `전체` },
     { key: 'receivable', label: `미수금 (${stats.receivableCustomers})` },
@@ -659,7 +666,8 @@ const CustomerBalanceManagement: React.FC = () => {
         ) : (
         <>
         <Table
-          columns={columns}
+          columns={resizableColumns}
+          components={resizableComponents}
           dataSource={pagedBalances}
           rowKey="id"
           loading={loading}

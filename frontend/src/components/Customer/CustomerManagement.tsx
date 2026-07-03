@@ -37,6 +37,7 @@ import { formatPhoneNumber, formatBusinessNumber } from '../../utils/formatters'
 import CustomerPrintModal from '../Print/CustomerPrintModal';
 import logger from '../../utils/logger';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 import TrackPagination from '../Common/TrackPagination';
 
 const { Option } = Select;
@@ -658,6 +659,12 @@ const CustomerManagement: React.FC = () => {
     },
   ];
 
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'customer',
+    columns,
+    { baseWidth: 1200, enabled: !isMobile }
+  );
+
 
 
   // 모바일 액션 드로어 내용
@@ -947,7 +954,8 @@ const CustomerManagement: React.FC = () => {
       <Table
           id="customer-table"
           className={isMobile ? 'mobile-compact-table' : ''}
-          columns={isMobile ? columns.filter(col => ['customerCode', 'name', 'actions'].includes(col.key as string)) : columns}
+          columns={isMobile ? columns.filter(col => ['customerCode', 'name', 'actions'].includes(col.key as string)) : resizableColumns}
+          components={isMobile ? undefined : resizableComponents}
           dataSource={customers}
           rowKey="id"
           loading={loading}

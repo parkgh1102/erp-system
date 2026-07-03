@@ -7,6 +7,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { productAPI } from '../../utils/api';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 
 interface Product {
   id: number;
@@ -197,6 +198,12 @@ const InventoryManagement: React.FC = () => {
     },
   ];
 
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'inventory',
+    columns,
+    { baseWidth: 1200, enabled: !isMobile }
+  );
+
   // 파일저장 드롭다운 메뉴
   const actionMenuItems = createExportMenuItems(
     filteredProducts,
@@ -278,7 +285,8 @@ const InventoryManagement: React.FC = () => {
       <Table
         id="inventory-table"
         className={isMobile ? 'mobile-compact-table' : ''}
-        columns={columns}
+        columns={resizableColumns}
+        components={resizableComponents}
         dataSource={pagedProducts}
         rowKey="id"
         loading={loading}

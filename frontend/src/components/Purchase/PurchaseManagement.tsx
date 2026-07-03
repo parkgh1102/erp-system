@@ -16,6 +16,7 @@ import { PrintPreviewModal } from '../Print/PrintPreviewModal';
 import { useFormShortcuts } from '../../hooks/useFormShortcuts';
 import ShortcutGuide from '../Common/ShortcutGuide';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 
 dayjs.extend(isBetween);
 
@@ -1219,6 +1220,13 @@ const PurchaseManagement: React.FC = () => {
     },
   ];
 
+  // 데스크톱: 마우스로 컬럼 폭 조절 + localStorage 저장 (모바일은 비활성)
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'purchase',
+    columns,
+    { baseWidth: 1200, enabled: !isMobile }
+  );
+
   const actionMenuItems = createExportMenuItems(
     filteredPurchases,
     columns,
@@ -1494,7 +1502,8 @@ const PurchaseManagement: React.FC = () => {
       <Table
         id="purchase-table"
         className={isMobile ? 'mobile-compact-table' : ''}
-        columns={isMobile ? columns.filter(col => ['purchaseDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : columns}
+        columns={isMobile ? columns.filter(col => ['purchaseDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : resizableColumns}
+        components={isMobile ? undefined : resizableComponents}
         dataSource={pagedPurchases}
         rowKey="id"
         loading={false}

@@ -11,6 +11,7 @@ import { useThemeStore } from '../../stores/themeStore';
 import { productAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 
 const { TextArea } = Input;
 
@@ -672,6 +673,12 @@ const ProductManagement: React.FC = () => {
     },
   ];
 
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'product',
+    columns,
+    { baseWidth: 1200, enabled: !isMobile }
+  );
+
   const actionMenuItems = createExportMenuItems(
     products,
     columns,
@@ -809,7 +816,8 @@ const ProductManagement: React.FC = () => {
 
       <Table
         id="product-table"
-        columns={columns}
+        columns={resizableColumns}
+        components={resizableComponents}
         dataSource={pagedProducts}
         rowKey="id"
         loading={false}
