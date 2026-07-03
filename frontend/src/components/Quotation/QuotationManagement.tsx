@@ -38,6 +38,7 @@ import { quotationAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 import TrackPagination from '../Common/TrackPagination';
 import QuotationPrint from '../Print/QuotationPrint';
 import html2canvas from 'html2canvas';
@@ -417,6 +418,12 @@ const QuotationManagement: React.FC = () => {
     },
   ];
 
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'quotation',
+    columns,
+    { baseWidth: 800, enabled: !isMobile }
+  );
+
 
   return (
     <div style={{ padding: isMobile ? 12 : 24 }}>
@@ -563,7 +570,8 @@ const QuotationManagement: React.FC = () => {
       {/* 테이블 */}
       <Card size="small">
         <Table
-          columns={columns}
+          columns={resizableColumns}
+          components={resizableComponents}
           dataSource={pagedQuotations}
           rowKey="id"
           loading={loading}

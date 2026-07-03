@@ -47,6 +47,7 @@ import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import PurchaseOrderPrint from '../Print/PurchaseOrderPrint';
 import TrackPagination from '../Common/TrackPagination';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -459,6 +460,12 @@ const PurchaseOrderManagement: React.FC = () => {
     },
   ];
 
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'purchase-order',
+    columns,
+    { baseWidth: 800, enabled: !isMobile }
+  );
+
   const tabItems = [
     { key: 'all', label: `전체 (${stats.total})` },
     { key: 'draft', label: `임시저장 (${stats.draft})` },
@@ -599,7 +606,8 @@ const PurchaseOrderManagement: React.FC = () => {
       <Card size="small">
         <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
         <Table
-          columns={columns}
+          columns={resizableColumns}
+          components={resizableComponents}
           dataSource={pagedOrders}
           rowKey="id"
           loading={loading}

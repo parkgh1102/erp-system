@@ -15,6 +15,7 @@ import PrintModal from '../Print/PrintModal';
 import TransactionLedgerPrintModal from '../Print/TransactionLedgerPrintModal';
 import dayjs from 'dayjs';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -572,6 +573,12 @@ const TransactionLedgerManagement: React.FC = () => {
     },
   ];
 
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'transaction-ledger',
+    columns,
+    { baseWidth: 1200, enabled: !isMobile }
+  );
+
   // 거래원장 전용 PDF 내보내기 핸들러
   const handleExportLedgerPDF = () => {
     if (!selectedCustomerInfo) {
@@ -965,7 +972,8 @@ const TransactionLedgerManagement: React.FC = () => {
           <Table
             id="transaction-ledger-table"
             className={isMobile ? 'mobile-compact-table' : ''}
-            columns={columns}
+            columns={resizableColumns}
+            components={resizableComponents}
             dataSource={pagedEntries}
             rowKey="rowKey"
             scroll={{ x: isMobile ? 400 : 'max-content' }}

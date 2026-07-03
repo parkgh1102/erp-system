@@ -188,6 +188,9 @@ export default defineConfig({
     // 빌드 타임에 대체될 전역 상수
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    // react-draggable(react-resizable 내부)이 참조하는 process.env.DRAGGABLE_DEBUG 를
+    // 브라우저 번들에서 안전하게 대체(미정의 시 'process is not defined' 로 드래그가 깨짐)
+    'process.env.DRAGGABLE_DEBUG': 'false',
   },
 
   // 로그 레벨

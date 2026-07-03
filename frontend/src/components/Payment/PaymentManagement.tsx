@@ -15,6 +15,7 @@ import isBetween from 'dayjs/plugin/isBetween';
 dayjs.extend(isBetween);
 
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -791,6 +792,13 @@ const PaymentManagement: React.FC = () => {
     },
   ];
 
+  const { columns: resizableReceiptColumns, components: resizableReceiptComponents } = useResizableColumns(
+    'payment-receipt', receiptColumns, { baseWidth: 900, enabled: !isMobile }
+  );
+  const { columns: resizablePaymentColumns, components: resizablePaymentComponents } = useResizableColumns(
+    'payment-payment', paymentColumns, { baseWidth: 900, enabled: !isMobile }
+  );
+
   const getFilteredReceiptData = () => filteredPayments.filter(p => p.type === 'receipt');
   const getFilteredPaymentData = () => filteredPayments.filter(p => p.type === 'payment');
 
@@ -1107,7 +1115,8 @@ const PaymentManagement: React.FC = () => {
                 <Table
                   id="payment-table"
                   className={isMobile ? 'mobile-compact-table' : ''}
-                  columns={isMobile ? receiptColumns.filter(col => ['paymentDate', 'customerName', 'amount'].includes(col.key as string)) : receiptColumns}
+                  columns={isMobile ? receiptColumns.filter(col => ['paymentDate', 'customerName', 'amount'].includes(col.key as string)) : resizableReceiptColumns}
+                  components={isMobile ? undefined : resizableReceiptComponents}
                   dataSource={pagedReceiptData}
                   rowKey="id"
                   loading={false}
@@ -1149,7 +1158,8 @@ const PaymentManagement: React.FC = () => {
                 <Table
                   id="payment-table"
                   className={isMobile ? 'mobile-compact-table' : ''}
-                  columns={isMobile ? paymentColumns.filter(col => ['paymentDate', 'customerName', 'amount'].includes(col.key as string)) : paymentColumns}
+                  columns={isMobile ? paymentColumns.filter(col => ['paymentDate', 'customerName', 'amount'].includes(col.key as string)) : resizablePaymentColumns}
+                  components={isMobile ? undefined : resizablePaymentComponents}
                   dataSource={pagedPaymentData}
                   rowKey="id"
                   loading={false}

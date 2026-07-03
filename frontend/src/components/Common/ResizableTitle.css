@@ -1,0 +1,23 @@
+/* 컬럼 리사이즈 핸들 (헤더 셀 오른쪽 경계) */
+.ant-table-thead th.ant-table-cell {
+  position: relative;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  z-index: 2;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  /* 클릭 영역만 확보, 시각적으로는 보이지 않음 */
+  background-image: none;
+  touch-action: none;
+  user-select: none;
+}
+
+/* 드래그 중 텍스트 선택 방지 */
+.react-resizable {
+  background-clip: padding-box;
+}

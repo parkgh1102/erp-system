@@ -32,6 +32,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { api, businessAPI } from '../../utils/api';
 import { useMessage } from '../../hooks/useMessage';
 import TrackPagination from '../Common/TrackPagination';
+import { useResizableColumns } from '../../hooks/useResizableColumns';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Title, Text } = Typography;
@@ -363,6 +364,12 @@ const UserManagement: React.FC = () => {
     },
   ];
 
+  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+    'user',
+    columns,
+    { baseWidth: 1200 }
+  );
+
   return (
     <Card>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -381,7 +388,8 @@ const UserManagement: React.FC = () => {
         />
 
         <Table
-          columns={columns}
+          columns={resizableColumns}
+          components={resizableComponents}
           dataSource={pagedUsers}
           rowKey="id"
           loading={loading}
