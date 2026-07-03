@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Select } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { useThemeStore } from '../../stores/themeStore';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 interface TrackPaginationProps {
   current: number;
@@ -34,6 +35,7 @@ const TrackPagination: React.FC<TrackPaginationProps> = ({
   extra,
 }) => {
   const { isDark } = useThemeStore();
+  const { isMobile } = useMediaQuery();
 
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const page = Math.min(Math.max(1, current), pageCount);
@@ -107,7 +109,9 @@ const TrackPagination: React.FC<TrackPaginationProps> = ({
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: 12,
-        padding: '14px 4px 4px',
+        // 우하단 고정 AI 챗봇 버튼(모바일 상단 ~130px, 데스크톱 ~90px)이
+        // 페이지네이션을 가리지 않도록 하단 여백 확보
+        padding: `14px 4px ${isMobile ? 136 : 96}px`,
       }}
     >
       <div style={{ fontSize: 13, color: colors.text, minHeight: 20 }}>{extra}</div>
