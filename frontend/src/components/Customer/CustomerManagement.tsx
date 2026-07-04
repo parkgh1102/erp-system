@@ -47,6 +47,7 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
 import TrackPagination from '../Common/TrackPagination';
 import MobileStickyBar from '../Common/MobileStickyBar';
+import TableColumnSettings from '../Common/TableColumnSettings';
 
 const { Option } = Select;
 
@@ -673,10 +674,10 @@ const CustomerManagement: React.FC = () => {
     },
   ];
 
-  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+  const { columns: resizableColumns, components: resizableComponents, columnMeta, toggleColumn, reset: resetColumns } = useResizableColumns(
     'customer',
     columns,
-    { baseWidth: 1200, enabled: !isMobile }
+    { baseWidth: 1200, enabled: !isMobile, alwaysVisibleKeys: ['actions'] }
   );
 
 
@@ -1151,6 +1152,7 @@ const CustomerManagement: React.FC = () => {
               >
                 인쇄
               </Button>
+              <TableColumnSettings columns={columnMeta} onToggle={toggleColumn} onReset={resetColumns} />
             </Space>
           </Col>
         </Row>

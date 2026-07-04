@@ -3,6 +3,7 @@ import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfir
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
+import TableColumnSettings from '../Common/TableColumnSettings';
 import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
 import { createExportMenuItems, exportNTSInvoiceExcel } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
@@ -1756,10 +1757,10 @@ const SalesManagement: React.FC = () => {
   const columns = allColumns.filter(col => !col.hidden);
 
   // 데스크톱: 마우스로 컬럼 폭 조절 + localStorage 저장 (모바일은 비활성)
-  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+  const { columns: resizableColumns, components: resizableComponents, columnMeta, toggleColumn, reset: resetColumns } = useResizableColumns(
     'sales',
     columns,
-    { baseWidth: 1200, enabled: !isMobile }
+    { baseWidth: 1200, enabled: !isMobile, alwaysVisibleKeys: ['action'] }
   );
 
   const actionMenuItems = createExportMenuItems(
@@ -2126,6 +2127,7 @@ const SalesManagement: React.FC = () => {
                   </Button>
                 </>
               )}
+              <TableColumnSettings columns={columnMeta} onToggle={toggleColumn} onReset={resetColumns} />
             </Space>
             </Space>
           </Col>

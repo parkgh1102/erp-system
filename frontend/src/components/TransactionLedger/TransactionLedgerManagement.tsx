@@ -16,6 +16,7 @@ import TransactionLedgerPrintModal from '../Print/TransactionLedgerPrintModal';
 import dayjs from 'dayjs';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
+import TableColumnSettings from '../Common/TableColumnSettings';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -573,7 +574,7 @@ const TransactionLedgerManagement: React.FC = () => {
     },
   ];
 
-  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+  const { columns: resizableColumns, components: resizableComponents, columnMeta, toggleColumn, reset: resetColumns } = useResizableColumns(
     'transaction-ledger',
     columns,
     { baseWidth: 1200, enabled: !isMobile }
@@ -914,6 +915,7 @@ const TransactionLedgerManagement: React.FC = () => {
                 >
                   인쇄
                 </Button>
+                <TableColumnSettings columns={columnMeta} onToggle={toggleColumn} onReset={resetColumns} />
               </Space>
             </Space>
           </Col>
