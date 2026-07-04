@@ -947,11 +947,11 @@ const PaymentManagement: React.FC = () => {
               <Button icon={<MoreOutlined />} onClick={() => setMobileActionDrawerVisible(true)} size="middle">
                 더보기
               </Button>
+              <DateRangeFilter
+                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                isMobile={true}
+              />
             </Space>
-            <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              isMobile={true}
-            />
           </Space>
         </div>
       ) : (
@@ -984,6 +984,11 @@ const PaymentManagement: React.FC = () => {
                   onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
                   format="YYYY-MM-DD"
                 />
+                <DateRangeFilter
+                  onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                />
+              </Space>
+              <Space size="small" wrap>
                 <Button
                   type="primary"
                   icon={<MoneyCollectOutlined />}
@@ -1072,9 +1077,6 @@ const PaymentManagement: React.FC = () => {
                   인쇄
                 </Button>
               </Space>
-              <DateRangeFilter
-                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              />
             </Space>
           </Col>
         </Row>

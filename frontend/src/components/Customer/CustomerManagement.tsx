@@ -79,8 +79,9 @@ const CustomerManagement: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [form] = Form.useForm();
-  const { currentBusiness } = useAuthStore();
+  const { currentBusiness, user } = useAuthStore();
   const { isDark } = useThemeStore();
+  const isSalesViewer = user?.role === 'sales_viewer';
 
   const [pagination, setPagination] = useState({
     current: 1,
@@ -494,13 +495,17 @@ const CustomerManagement: React.FC = () => {
       },
       render: (text: string, record: Customer) => (
         <Tooltip placement="topLeft" title={text}>
-          <Button
-            type="link"
-            onClick={() => handleEditCustomer(record)}
-            style={{ padding: 0, height: 'auto', textAlign: 'left', width: '100%' }}
-          >
-            {text}
-          </Button>
+          {isSalesViewer ? (
+            <span>{text}</span>
+          ) : (
+            <Button
+              type="link"
+              onClick={() => handleEditCustomer(record)}
+              style={{ padding: 0, height: 'auto', textAlign: 'left', width: '100%' }}
+            >
+              {text}
+            </Button>
+          )}
         </Tooltip>
       ),
     },
@@ -635,6 +640,7 @@ const CustomerManagement: React.FC = () => {
       width: 90,
       align: 'center' as const,
       fixed: 'right' as const,
+      hidden: isSalesViewer,
       render: (_: any, record: Customer) => (
         <Space size="small">
           <Tooltip title="수정">
@@ -801,7 +807,7 @@ const CustomerManagement: React.FC = () => {
               size="small"
               style={{ marginBottom: 8, borderColor: checked ? '#1B61A8' : undefined }}
               styles={{ body: { padding: 12 } }}
-              onClick={(e) => {
+              onClick={isSalesViewer ? undefined : (e) => {
                 const target = e.target as HTMLElement;
                 if (
                   target.closest('.ant-checkbox') ||
@@ -815,26 +821,43 @@ const CustomerManagement: React.FC = () => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', minWidth: 0, flex: 1 }}>
-                  <Checkbox
-                    checked={checked}
-                    onChange={() => toggleCardSelection(customer.id)}
-                    style={{ marginTop: 2 }}
-                  />
+                  {!isSalesViewer && (
+                    <Checkbox
+                      checked={checked}
+                      onChange={() => toggleCardSelection(customer.id)}
+                      style={{ marginTop: 2 }}
+                    />
+                  )}
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                      <a
-                        onClick={() => handleEditCustomer(customer)}
-                        style={{
-                          fontWeight: 600,
-                          fontSize: 15,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          color: isDark ? '#7db4e8' : '#1B61A8',
-                        }}
-                      >
-                        {customer.name}
-                      </a>
+                      {isSalesViewer ? (
+                        <span
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 15,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            color: isDark ? '#e6e6e6' : '#1f1f1f',
+                          }}
+                        >
+                          {customer.name}
+                        </span>
+                      ) : (
+                        <a
+                          onClick={() => handleEditCustomer(customer)}
+                          style={{
+                            fontWeight: 600,
+                            fontSize: 15,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            color: isDark ? '#7db4e8' : '#1B61A8',
+                          }}
+                        >
+                          {customer.name}
+                        </a>
+                      )}
                       <Tag style={{ marginRight: 0, flexShrink: 0 }}>{customer.customerCode}</Tag>
                     </div>
                     {(customer.representative || customer.businessNumber) && (
@@ -846,30 +869,32 @@ const CustomerManagement: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <Space size={0} style={{ flexShrink: 0 }}>
-                  <Button
-                    type="text"
-                    icon={<EditOutlined />}
-                    onClick={() => handleEditCustomer(customer)}
-                    style={{ color: '#1B61A8', minWidth: 40, minHeight: 40 }}
-                    aria-label="수정"
-                  />
-                  <Popconfirm
-                    title="정말로 삭제하시겠습니까?"
-                    onConfirm={() => handleDeleteCustomer(customer.id)}
-                    okText="삭제"
-                    cancelText="취소"
-                    okButtonProps={{ danger: true }}
-                  >
+                {!isSalesViewer && (
+                  <Space size={0} style={{ flexShrink: 0 }}>
                     <Button
                       type="text"
-                      danger
-                      icon={<DeleteOutlined />}
-                      style={{ minWidth: 40, minHeight: 40 }}
-                      aria-label="삭제"
+                      icon={<EditOutlined />}
+                      onClick={() => handleEditCustomer(customer)}
+                      style={{ color: '#1B61A8', minWidth: 40, minHeight: 40 }}
+                      aria-label="수정"
                     />
-                  </Popconfirm>
-                </Space>
+                    <Popconfirm
+                      title="정말로 삭제하시겠습니까?"
+                      onConfirm={() => handleDeleteCustomer(customer.id)}
+                      okText="삭제"
+                      cancelText="취소"
+                      okButtonProps={{ danger: true }}
+                    >
+                      <Button
+                        type="text"
+                        danger
+                        icon={<DeleteOutlined />}
+                        style={{ minWidth: 40, minHeight: 40 }}
+                        aria-label="삭제"
+                      />
+                    </Popconfirm>
+                  </Space>
+                )}
               </div>
               {(customer.phone || customer.address) && (
                 <div
@@ -953,18 +978,20 @@ const CustomerManagement: React.FC = () => {
                 onSearch={handleSearch}
                 width="100%"
               />
-              <Space size="small" wrap>
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCustomer} size="middle">
-                  추가
-                </Button>
-                <Button
-                  icon={<MoreOutlined />}
-                  onClick={() => setMobileActionDrawerVisible(true)}
-                  size="middle"
-                >
-                  더보기
-                </Button>
-              </Space>
+              {!isSalesViewer && (
+                <Space size="small" wrap>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCustomer} size="middle">
+                    추가
+                  </Button>
+                  <Button
+                    icon={<MoreOutlined />}
+                    onClick={() => setMobileActionDrawerVisible(true)}
+                    size="middle"
+                  >
+                    더보기
+                  </Button>
+                </Space>
+              )}
             </Space>
           </MobileStickyBar>
           <div style={{ height: 8 }} />
@@ -989,6 +1016,8 @@ const CustomerManagement: React.FC = () => {
                 onSearch={handleSearch}
                 width={300}
               />
+              {!isSalesViewer && (
+              <>
               <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCustomer}>
                 추가
               </Button>
@@ -1099,6 +1128,8 @@ const CustomerManagement: React.FC = () => {
                   전체 삭제
                 </Button>
               </Popconfirm>
+              </>
+              )}
               <Button
                 onClick={() => handleExport('excel')}
                 icon={<FileExcelOutlined />}
@@ -1147,13 +1178,13 @@ const CustomerManagement: React.FC = () => {
           dataSource={customers}
           rowKey="id"
           loading={loading}
-          rowSelection={{
+          rowSelection={isSalesViewer ? undefined : {
             selectedRowKeys,
             onChange: setSelectedRowKeys,
           }}
           pagination={false}
           onChange={handleTableChange}
-          onRow={(record) => ({
+          onRow={isSalesViewer ? undefined : (record) => ({
             onClick: (e) => {
               // 체크박스, 버튼, 링크 클릭은 제외
               const target = e.target as HTMLElement;

@@ -481,9 +481,6 @@ const PurchaseOrderManagement: React.FC = () => {
           <FileDoneOutlined style={{ marginRight: 8, color: '#ff7a45' }} />
           발주서 관리
         </Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
-          {!isMobile && '발주서 작성'}
-        </Button>
       </div>
 
       {/* 통계 카드 */}
@@ -526,6 +523,9 @@ const PurchaseOrderManagement: React.FC = () => {
             style={{ width: isMobile ? '100%' : 200 }}
             allowClear
           />
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()}>
+            {!isMobile && '발주서 작성'}
+          </Button>
           <Dropdown
             menu={{
               items: [

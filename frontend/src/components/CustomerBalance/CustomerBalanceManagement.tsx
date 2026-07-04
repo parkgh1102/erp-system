@@ -36,6 +36,7 @@ import {
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { customerAPI, salesAPI, purchaseAPI, paymentAPI } from '../../utils/api';
+import { formatBusinessNumber } from '../../utils/formatters';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -315,6 +316,7 @@ const CustomerBalanceManagement: React.FC = () => {
       key: 'businessNumber',
       width: 130,
       responsive: ['md'] as any,
+      render: (val: string) => val ? formatBusinessNumber(val) : '-',
     },
     ...(activeTab !== 'payable' ? [{
       title: '미수금',
@@ -411,7 +413,7 @@ const CustomerBalanceManagement: React.FC = () => {
                     </a>
                     <div>
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        {b.customerCode}{b.businessNumber ? ` · ${b.businessNumber}` : ''}
+                        {b.customerCode}{b.businessNumber ? ` · ${formatBusinessNumber(b.businessNumber)}` : ''}
                       </Text>
                     </div>
                   </div>
@@ -687,7 +689,7 @@ const CustomerBalanceManagement: React.FC = () => {
             style: { cursor: 'pointer' }
           })}
           pagination={false}
-          scroll={{ x: 700 }}
+          scroll={isMobile ? { x: 700 } : undefined}
           size={isMobile ? 'small' : 'middle'}
           summary={() => (
             <Table.Summary fixed>

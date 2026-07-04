@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip, Checkbox, Progress, Drawer, Collapse } from 'antd';
+import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, Popconfirm, Card, Row, Col, InputNumber, AutoComplete, Spin, Typography, Dropdown, Tooltip, Checkbox, Progress, Drawer, Collapse, Tag, Empty } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, MinusCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, DownOutlined, PrinterOutlined, CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
@@ -1771,6 +1771,102 @@ const SalesManagement: React.FC = () => {
 
   const { totalAmount, vatAmount } = calculateTotals();
 
+  // 모바일 카드 리스트 (테이블 대체)
+  const renderSalesCards = () => {
+    if (!loading && pagedSales.length === 0) {
+      return (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description="조회된 매출이 없습니다."
+          style={{ padding: '32px 0' }}
+        />
+      );
+    }
+    return (
+      <div className="erp-stagger">
+        {pagedSales.map((sale) => {
+          const checked = selectedRowKeys.includes(sale.id);
+          const date = sale.transactionDate || sale.saleDate;
+          const dateStr = date ? dayjs(date).format('YYYY-MM-DD') : '';
+          const items: SaleItem[] = sale.items || [];
+          const itemLabel =
+            items.length === 0
+              ? '-'
+              : items.length === 1
+                ? items[0].itemName || items[0].productName || '-'
+                : `${items[0].itemName || items[0].productName || '품목'} 외 ${items.length - 1}`;
+          const qty = items.reduce((s, it) => s + (Number(it.quantity) || 0), 0);
+          const qtyStr = qty % 1 === 0 ? qty.toLocaleString() : qty.toLocaleString(undefined, { maximumFractionDigits: 2 });
+          const total = Math.round((Number(sale.totalAmount) || 0) + (Number(sale.vatAmount) || 0));
+          const customerName = sale.customer?.name || '-';
+          const signed = !!(sale.signedBy && sale.signedAt);
+          return (
+            <Card
+              key={sale.id}
+              size="small"
+              style={{ marginBottom: 8, borderColor: checked ? '#1B61A8' : undefined }}
+              styles={{ body: { padding: 12 } }}
+              onClick={isSalesViewer ? undefined : (e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest('.ant-checkbox') || target.closest('button') || target.closest('a')) return;
+                if (checked) {
+                  setSelectedRowKeys(selectedRowKeys.filter((k) => k !== sale.id));
+                } else {
+                  setSelectedRowKeys([...selectedRowKeys, sale.id]);
+                }
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', minWidth: 0, flex: 1 }}>
+                  {!isSalesViewer && (
+                    <Checkbox
+                      checked={checked}
+                      onChange={() => {
+                        if (checked) {
+                          setSelectedRowKeys(selectedRowKeys.filter((k) => k !== sale.id));
+                        } else {
+                          setSelectedRowKeys([...selectedRowKeys, sale.id]);
+                        }
+                      }}
+                      style={{ marginTop: 2 }}
+                    />
+                  )}
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      {isSalesViewer ? (
+                        <span style={{ fontWeight: 600, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isDark ? '#e6e6e6' : '#1f1f1f' }}>
+                          {customerName}
+                        </span>
+                      ) : (
+                        <a
+                          onClick={() => handleEdit(sale)}
+                          style={{ fontWeight: 600, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: isDark ? '#7db4e8' : '#1B61A8' }}
+                        >
+                          {customerName}
+                        </a>
+                      )}
+                      {signed && <Tag color="green" style={{ marginRight: 0, flexShrink: 0 }}>서명</Tag>}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {dateStr}
+                      {itemLabel !== '-' ? ` · ${itemLabel}` : ''}
+                      {qty > 0 ? ` · ${qtyStr}개` : ''}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15, color: total < 0 ? '#C0392B' : (isDark ? '#7db4e8' : '#1B61A8') }}>
+                    {total.toLocaleString()}원
+                  </div>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
   // 모바일 액션 드로어 내용
   const mobileActionDrawerContent = !isSalesViewer && (
     <Space direction="vertical" style={{ width: '100%' }} size="small">
@@ -1884,11 +1980,11 @@ const SalesManagement: React.FC = () => {
               <Button icon={<MoreOutlined />} onClick={() => setMobileActionDrawerVisible(true)} size="middle">
                 더보기
               </Button>
+              <DateRangeFilter
+                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                isMobile={true}
+              />
             </Space>
-            <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              isMobile={true}
-            />
           </Space>
         </div>
       ) : (
@@ -1924,6 +2020,11 @@ const SalesManagement: React.FC = () => {
                   format="YYYY-MM-DD"
                   size="middle"
                 />
+                <DateRangeFilter
+                  onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                />
+              </Space>
+              <Space size="small" wrap>
                 {!isSalesViewer && (
                 <>
                   <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size="middle">
@@ -2015,21 +2116,16 @@ const SalesManagement: React.FC = () => {
                       인쇄 <DownOutlined />
                     </Button>
                   </Dropdown>
+                  <Button
+                    icon={<EditOutlined />}
+                    size="middle"
+                    onClick={prepareESignature}
+                    style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
+                  >
+                    전자서명
+                  </Button>
                 </>
               )}
-            </Space>
-            <Space size="small" wrap>
-              <Button
-                icon={<EditOutlined />}
-                size="middle"
-                onClick={prepareESignature}
-                style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
-              >
-                전자서명
-              </Button>
-              <DateRangeFilter
-                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              />
             </Space>
             </Space>
           </Col>
@@ -2066,45 +2162,29 @@ const SalesManagement: React.FC = () => {
         </div>
       )}
 
-      <Table
-        id="sales-table"
-        className={isMobile ? 'mobile-compact-table' : ''}
-        columns={isMobile ? columns.filter(col => ['transactionDate', 'customerName', 'productName', 'total'].includes(col.key as string)) : resizableColumns}
-        components={isMobile ? undefined : resizableComponents}
-        dataSource={pagedSales}
-        rowKey="id"
-        loading={false}
-        rowSelection={rowSelection}
-        showSorterTooltip={false}
-        onRow={(record) => ({
-          onClick: (e) => handleRowClick(record, e),
-          onDoubleClick: () => handleEdit(record),
-          onTouchStart: () => {
-            if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-            longPressTimerRef.current = setTimeout(() => {
-              handleEdit(record);
-              longPressTimerRef.current = null;
-            }, 500);
-          },
-          onTouchEnd: () => {
-            if (longPressTimerRef.current) {
-              clearTimeout(longPressTimerRef.current);
-              longPressTimerRef.current = null;
-            }
-          },
-          onTouchMove: () => {
-            if (longPressTimerRef.current) {
-              clearTimeout(longPressTimerRef.current);
-              longPressTimerRef.current = null;
-            }
-          },
-          style: { cursor: 'pointer' }
-        })}
-        scroll={{ x: isMobile ? 320 : 1200 }}
-        size={isMobile ? "small" : "middle"}
-        onChange={handleTableChange}
-        pagination={false}
-      />
+      {isMobile ? (
+        renderSalesCards()
+      ) : (
+        <Table
+          id="sales-table"
+          columns={resizableColumns}
+          components={resizableComponents}
+          dataSource={pagedSales}
+          rowKey="id"
+          loading={false}
+          rowSelection={rowSelection}
+          showSorterTooltip={false}
+          onRow={(record) => ({
+            onClick: (e) => handleRowClick(record, e),
+            onDoubleClick: () => handleEdit(record),
+            style: { cursor: 'pointer' }
+          })}
+          scroll={{ x: 1200 }}
+          size="middle"
+          onChange={handleTableChange}
+          pagination={false}
+        />
+      )}
 
       <TrackPagination
         current={pagination.current}

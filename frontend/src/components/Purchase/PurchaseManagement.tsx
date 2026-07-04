@@ -1330,11 +1330,11 @@ const PurchaseManagement: React.FC = () => {
               <Button icon={<MoreOutlined />} onClick={() => setMobileActionDrawerVisible(true)} size="middle">
                 더보기
               </Button>
+              <DateRangeFilter
+                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                isMobile={true}
+              />
             </Space>
-            <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              isMobile={true}
-            />
           </Space>
         </div>
       ) : (
@@ -1369,6 +1369,11 @@ const PurchaseManagement: React.FC = () => {
                   onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
                   format="YYYY-MM-DD"
                 />
+                <DateRangeFilter
+                  onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                />
+              </Space>
+              <Space size="small" wrap>
                 <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
                   추가
                 </Button>
@@ -1449,9 +1454,6 @@ const PurchaseManagement: React.FC = () => {
                   </Button>
                 </Dropdown>
               </Space>
-              <DateRangeFilter
-                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              />
             </Space>
           </Col>
         </Row>

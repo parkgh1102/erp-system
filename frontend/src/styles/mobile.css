@@ -30,6 +30,20 @@
     font-size: 16px !important; /* iOS 확대 방지 */
   }
 
+  /* 검색/비밀번호/prefix 등 affix wrapper 안의 입력:
+     래퍼(부모)가 44px 터치영역을 담당하고, 내부 input의 강제 min-height는 해제해야
+     input이 래퍼보다 커져 글씨가 아래로 밀리는 문제가 안 생김 */
+  .ant-input-affix-wrapper,
+  .ant-input-search .ant-input-affix-wrapper {
+    min-height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+  .ant-input-affix-wrapper > .ant-input,
+  .ant-input-affix-wrapper > input.ant-input {
+    min-height: 0 !important;
+  }
+
   .ant-input-sm {
     min-height: 40px !important;
     font-size: 15px !important;

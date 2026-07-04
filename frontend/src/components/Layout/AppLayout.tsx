@@ -109,7 +109,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       key: '/customers',
       icon: <TeamOutlined style={{ color: '#52c41a' }} />,
       label: '거래처 관리',
-      roles: ['admin'],
+      roles: ['admin', 'sales_viewer'],
     },
     {
       key: '/products',
@@ -505,11 +505,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       {isTabletOrSmaller && (() => {
         const primaryItems = [
           { key: '/dashboard', icon: <DashboardOutlined />, label: '대시보드', roles: ['admin'] },
-          { key: '/customers', icon: <TeamOutlined />, label: '거래처', roles: ['admin'] },
+          { key: '/customers', icon: <TeamOutlined />, label: '거래처', roles: ['admin', 'sales_viewer'] },
           { key: '/sales', icon: <ShoppingCartOutlined />, label: '매출', roles: ['admin', 'sales_viewer'] },
           { key: '/transaction-ledger', icon: <FileTextOutlined />, label: '거래원장', roles: ['admin', 'sales_viewer'] },
           // 매출 조회 사용자는 더보기 메뉴가 비어 있으므로 거래처 잔액·내 정보를 기본 탭으로 노출
-          { key: '/customer-balance', icon: <BankOutlined />, label: '거래처잔액', roles: ['sales_viewer'] },
+          { key: '/customer-balance', icon: <BankOutlined />, label: '잔액', roles: ['sales_viewer'] },
           { key: '/profile', icon: <UserOutlined />, label: '내 정보', roles: ['sales_viewer'] },
         ].filter(item => item.roles.includes(user?.role || 'admin'));
 
