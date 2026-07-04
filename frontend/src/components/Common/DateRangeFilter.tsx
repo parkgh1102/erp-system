@@ -1,9 +1,8 @@
 import React from 'react';
-import { Button, Dropdown, Space, Menu } from 'antd';
-import { DownOutlined } from '@ant-design/icons';
+import { Button, Dropdown, Space } from 'antd';
+import { DownOutlined, CalendarOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import dayjs from 'dayjs';
-import { useThemeStore } from '../../stores/themeStore';
 
 interface DateRangeFilterProps {
   onDateRangeChange: (startDate: string, endDate: string) => void;
@@ -11,16 +10,29 @@ interface DateRangeFilterProps {
   isMobile?: boolean;
 }
 
+/**
+ * 기간 선택 필터.
+ * 기존에는 프리셋 6개 버튼(각각 드롭다운)이 나열되어 있었으나,
+ * 단일 "기간 선택" 드롭다운 하나로 통합(자주 쓰는 프리셋은 최상위, 월/분기/반기/연도는 하위 메뉴).
+ * 드롭다운 메뉴는 antd darkAlgorithm이 자동 테마 처리하므로 별도 다크모드 분기 불필요.
+ */
 const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, onLimitChange, isMobile = false }) => {
-  const { isDark } = useThemeStore();
   const currentYear = dayjs().year();
   const lastYear = currentYear - 1;
   const currentMonth = dayjs().month() + 1;
+  const currentQuarter = Math.ceil(currentMonth / 3);
 
   // 최근 N일
   const handleRecentDays = (days: number) => {
     const endDate = dayjs().format('YYYY-MM-DD');
     const startDate = dayjs().subtract(days - 1, 'day').format('YYYY-MM-DD');
+    onDateRangeChange(startDate, endDate);
+  };
+
+  // 최근 N개월 (이번 달 포함, 월초~월말)
+  const handleRecentMonths = (months: number) => {
+    const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
+    const startDate = dayjs().subtract(months - 1, 'month').startOf('month').format('YYYY-MM-DD');
     onDateRangeChange(startDate, endDate);
   };
 
@@ -42,442 +54,125 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
   // 반기
   const handleHalf = (year: number, half: number) => {
     if (half === 1) {
-      // 전반기 (1-6월)
-      const startDate = dayjs(`${year}-01-01`).format('YYYY-MM-DD');
-      const endDate = dayjs(`${year}-06-30`).format('YYYY-MM-DD');
-      onDateRangeChange(startDate, endDate);
+      onDateRangeChange(dayjs(`${year}-01-01`).format('YYYY-MM-DD'), dayjs(`${year}-06-30`).format('YYYY-MM-DD'));
     } else {
-      // 하반기 (7-12월)
-      const startDate = dayjs(`${year}-07-01`).format('YYYY-MM-DD');
-      const endDate = dayjs(`${year}-12-31`).format('YYYY-MM-DD');
-      onDateRangeChange(startDate, endDate);
+      onDateRangeChange(dayjs(`${year}-07-01`).format('YYYY-MM-DD'), dayjs(`${year}-12-31`).format('YYYY-MM-DD'));
     }
   };
 
   // 연도
   const handleYear = (year: number) => {
-    const startDate = dayjs(`${year}-01-01`).format('YYYY-MM-DD');
-    const endDate = dayjs(`${year}-12-31`).format('YYYY-MM-DD');
-    onDateRangeChange(startDate, endDate);
+    onDateRangeChange(dayjs(`${year}-01-01`).format('YYYY-MM-DD'), dayjs(`${year}-12-31`).format('YYYY-MM-DD'));
   };
 
-  // 최근 N일 메뉴
-  const recentDaysMenu: MenuProps = {
-    items: [
-      { key: '2', label: '최근 2일', onClick: () => handleRecentDays(2) },
-      { key: '3', label: '최근 3일', onClick: () => handleRecentDays(3) },
-      { key: '5', label: '최근 5일', onClick: () => handleRecentDays(5) },
-      { key: '7', label: '최근 7일', onClick: () => handleRecentDays(7) },
-      { key: '10', label: '최근 10일', onClick: () => handleRecentDays(10) },
-      { key: '14', label: '최근 14일 (2주)', onClick: () => handleRecentDays(14) },
-      { key: '21', label: '최근 21일 (3주)', onClick: () => handleRecentDays(21) },
-    ],
-  };
+  const monthItems = (year: number): MenuProps['items'] =>
+    Array.from({ length: 12 }, (_, i) => {
+      const m = i + 1;
+      const isThisMonth = year === currentYear && m === currentMonth;
+      return {
+        key: `m-${year}-${m}`,
+        label: `${m}월${isThisMonth ? ' (이번달)' : ''}`,
+        danger: isThisMonth,
+        onClick: () => handleMonth(year, m),
+      };
+    });
 
-  // 최근 한달 메뉴 - 2열 그리드 레이아웃
-  const monthMenuContent = (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '0',
-      minWidth: '400px',
-      backgroundColor: isDark ? '#1f1f1f' : '#fff',
-      border: `1px solid ${isDark ? '#424242' : '#d9d9d9'}`,
-      borderRadius: '8px',
-      boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.45)' : '0 2px 8px rgba(0,0,0,0.15)'
-    }}>
-      {/* 전년도 */}
-      <div style={{ padding: '8px', borderRight: `1px solid ${isDark ? '#424242' : '#f0f0f0'}` }}>
-        <div style={{
-          padding: '8px 12px',
-          fontWeight: 'bold',
-          fontSize: '13px',
-          color: isDark ? '#a0a0a0' : '#666',
-          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
-          marginBottom: '4px'
-        }}>
-          전년도 ({lastYear}년)
-        </div>
-        {Array.from({ length: 12 }, (_, i) => (
-          <div
-            key={`last-${i + 1}`}
-            onClick={() => handleMonth(lastYear, i + 1)}
-            style={{
-              padding: '8px 12px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              color: isDark ? '#d1d5db' : 'inherit',
-              transition: 'all 0.2s',
-              borderRadius: '4px',
-              margin: '2px 4px'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            {lastYear}년 {i + 1}월
-          </div>
-        ))}
-      </div>
+  const quarterItems = (year: number): MenuProps['items'] =>
+    [1, 2, 3, 4].map((q) => {
+      const isThisQuarter = year === currentYear && currentQuarter === q;
+      return {
+        key: `q-${year}-${q}`,
+        label: `${q}/4 분기${isThisQuarter ? ' (이번분기)' : ''}`,
+        danger: isThisQuarter,
+        onClick: () => handleQuarter(year, q),
+      };
+    });
 
-      {/* 이번년도 */}
-      <div style={{ padding: '8px' }}>
-        <div style={{
-          padding: '8px 12px',
-          fontWeight: 'bold',
-          fontSize: '13px',
-          color: isDark ? '#4da3ff' : '#1B61A8',
-          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
-          marginBottom: '4px'
-        }}>
-          이번년도 ({currentYear}년)
-        </div>
-        {Array.from({ length: 12 }, (_, i) => (
-          <div
-            key={`current-${i + 1}`}
-            onClick={() => handleMonth(currentYear, i + 1)}
-            style={{
-              padding: '8px 12px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              transition: 'all 0.2s',
-              borderRadius: '4px',
-              margin: '2px 4px',
-              color: i + 1 === currentMonth ? '#ff4d4f' : (isDark ? '#d1d5db' : 'inherit'),
-              fontWeight: i + 1 === currentMonth ? 'bold' : 'normal'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = isDark ? '#1a3a5c' : '#e6f7ff';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            {currentYear}년 {i + 1}월{i + 1 === currentMonth ? ' (이번달)' : ''}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  // 이번분기 메뉴 - 세로 레이아웃
-  const quarterMenuContent = (
-    <div style={{
-      minWidth: '280px',
-      backgroundColor: isDark ? '#1f1f1f' : '#fff',
-      border: `1px solid ${isDark ? '#424242' : '#d9d9d9'}`,
-      borderRadius: '8px',
-      boxShadow: isDark ? '0 2px 8px rgba(0,0,0,0.45)' : '0 2px 8px rgba(0,0,0,0.15)',
-      padding: '8px'
-    }}>
-      {/* 전년도 분기 */}
-      <div style={{ marginBottom: '8px' }}>
-        <div style={{
-          padding: '8px 12px',
-          fontWeight: 'bold',
-          fontSize: '13px',
-          color: isDark ? '#a0a0a0' : '#666',
-          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
-          marginBottom: '4px'
-        }}>
-          전년도 분기 ({lastYear}년)
-        </div>
-        {[1, 2, 3, 4].map((q) => (
-          <div
-            key={`last-q${q}`}
-            onClick={() => handleQuarter(lastYear, q)}
-            style={{
-              padding: '8px 12px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              color: isDark ? '#d1d5db' : 'inherit',
-              transition: 'all 0.2s',
-              borderRadius: '4px',
-              margin: '2px 4px'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-            }}
-          >
-            {lastYear}년 {q}/4 분기
-          </div>
-        ))}
-      </div>
-
-      {/* 이번년도 분기 */}
-      <div style={{ marginBottom: '8px' }}>
-        <div style={{
-          padding: '8px 12px',
-          fontWeight: 'bold',
-          fontSize: '13px',
-          color: isDark ? '#4da3ff' : '#1B61A8',
-          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
-          marginBottom: '4px'
-        }}>
-          이번년도 분기 ({currentYear}년)
-        </div>
-        {[1, 2, 3, 4].map((q) => {
-          const isCurrentQuarter = Math.ceil(currentMonth / 3) === q;
-          return (
-            <div
-              key={`current-q${q}`}
-              onClick={() => handleQuarter(currentYear, q)}
-              style={{
-                padding: '8px 12px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                transition: 'all 0.2s',
-                borderRadius: '4px',
-                margin: '2px 4px',
-                color: isCurrentQuarter ? '#ff4d4f' : (isDark ? '#d1d5db' : 'inherit'),
-                fontWeight: isCurrentQuarter ? 'bold' : 'normal'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isDark ? '#1a3a5c' : '#e6f7ff';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-            >
-              {currentYear}년 {q}/4 분기{isCurrentQuarter ? ' (이번분기)' : ''}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 구분선 */}
-      <div style={{ borderTop: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`, margin: '8px 0' }} />
-
-      {/* 반기 */}
-      <div>
-        <div style={{
-          padding: '8px 12px',
-          fontWeight: 'bold',
-          fontSize: '13px',
-          color: isDark ? '#a0a0a0' : '#666',
-          borderBottom: `1px solid ${isDark ? '#424242' : '#f0f0f0'}`,
-          marginBottom: '4px'
-        }}>
-          반기
-        </div>
-        <div
-          onClick={() => handleHalf(lastYear, 1)}
-          style={{
-            padding: '8px 12px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            color: isDark ? '#d1d5db' : 'inherit',
-            transition: 'all 0.2s',
-            borderRadius: '4px',
-            margin: '2px 4px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-        >
-          {lastYear}년 전반기
-        </div>
-        <div
-          onClick={() => handleHalf(lastYear, 2)}
-          style={{
-            padding: '8px 12px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            color: isDark ? '#d1d5db' : 'inherit',
-            transition: 'all 0.2s',
-            borderRadius: '4px',
-            margin: '2px 4px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = isDark ? '#333' : '#f0f0f0';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-        >
-          {lastYear}년 하반기
-        </div>
-        <div
-          onClick={() => handleHalf(currentYear, 1)}
-          style={{
-            padding: '8px 12px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            color: isDark ? '#d1d5db' : 'inherit',
-            transition: 'all 0.2s',
-            borderRadius: '4px',
-            margin: '2px 4px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = isDark ? '#1a3a5c' : '#e6f7ff';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-        >
-          {currentYear}년 전반기
-        </div>
-        <div
-          onClick={() => handleHalf(currentYear, 2)}
-          style={{
-            padding: '8px 12px',
-            cursor: 'pointer',
-            fontSize: '13px',
-            transition: 'all 0.2s',
-            borderRadius: '4px',
-            margin: '2px 4px',
-            color: currentMonth >= 7 ? '#ff4d4f' : (isDark ? '#d1d5db' : 'inherit'),
-            fontWeight: currentMonth >= 7 ? 'bold' : 'normal'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = isDark ? '#1a3a5c' : '#e6f7ff';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-        >
-          {currentYear}년 하반기{currentMonth >= 7 ? ' (이번반기)' : ''}
-        </div>
-      </div>
-    </div>
-  );
-
-  // 이번년도 메뉴 - 동적으로 생성
-  const yearMenuItems = [];
+  const yearItems: MenuProps['items'] = [];
   for (let year = currentYear; year >= 2015; year--) {
-    const isCurrentYear = year === currentYear;
-    const isLastYear = year === lastYear;
-    yearMenuItems.push({
-      key: String(year),
-      label: `${year}년${isCurrentYear ? ' (올해)' : isLastYear ? ' (작년)' : ''}`,
+    yearItems.push({
+      key: `y-${year}`,
+      label: `${year}년${year === currentYear ? ' (올해)' : year === lastYear ? ' (작년)' : ''}`,
+      danger: year === currentYear,
       onClick: () => handleYear(year),
-      danger: isCurrentYear,
     });
   }
-  const yearMenu: MenuProps = { items: yearMenuItems };
 
-  // 최근자료 메뉴
-  const limitMenu: MenuProps = {
+  // 통합 기간 메뉴
+  const periodMenu: MenuProps = {
     items: [
-      { key: '100', label: '100개', onClick: () => onLimitChange?.(100) },
-      { key: '300', label: '300개', onClick: () => onLimitChange?.(300) },
-      { key: '500', label: '500개', onClick: () => onLimitChange?.(500) },
-      { key: '1000', label: '1000개', onClick: () => onLimitChange?.(1000) },
-      { key: '2000', label: '2000개', onClick: () => onLimitChange?.(2000) },
+      { key: 'r7', label: '최근 7일', onClick: () => handleRecentDays(7) },
+      { key: 'r30', label: '최근 30일', onClick: () => handleRecentDays(30) },
+      { key: 'r3m', label: '최근 3개월', onClick: () => handleRecentMonths(3) },
+      { key: 'r6m', label: '최근 6개월', onClick: () => handleRecentMonths(6) },
+      { type: 'divider' },
+      {
+        key: 'days',
+        label: '일 단위 선택',
+        children: [2, 3, 5, 7, 10, 14, 21].map((d) => ({
+          key: `d-${d}`,
+          label: `최근 ${d}일`,
+          onClick: () => handleRecentDays(d),
+        })),
+      },
+      {
+        key: 'month',
+        label: '월별 선택',
+        children: [
+          { type: 'group', label: `올해 (${currentYear}년)`, children: monthItems(currentYear) },
+          { type: 'group', label: `작년 (${lastYear}년)`, children: monthItems(lastYear) },
+        ],
+      },
+      {
+        key: 'quarter',
+        label: '분기별 선택',
+        children: [
+          { type: 'group', label: `올해 (${currentYear}년)`, children: quarterItems(currentYear) },
+          { type: 'group', label: `작년 (${lastYear}년)`, children: quarterItems(lastYear) },
+        ],
+      },
+      {
+        key: 'half',
+        label: '반기별 선택',
+        children: [
+          { key: `h-${currentYear}-1`, label: `${currentYear}년 전반기`, onClick: () => handleHalf(currentYear, 1) },
+          {
+            key: `h-${currentYear}-2`,
+            label: `${currentYear}년 하반기${currentMonth >= 7 ? ' (이번반기)' : ''}`,
+            danger: currentMonth >= 7,
+            onClick: () => handleHalf(currentYear, 2),
+          },
+          { key: `h-${lastYear}-1`, label: `${lastYear}년 전반기`, onClick: () => handleHalf(lastYear, 1) },
+          { key: `h-${lastYear}-2`, label: `${lastYear}년 하반기`, onClick: () => handleHalf(lastYear, 2) },
+        ],
+      },
+      { key: 'year', label: '연도별 선택', children: yearItems },
     ],
   };
 
-  // 데스크톱: 기존 컬러 버튼 / 모바일: 통일된 회색 칩 스타일
-  // (모바일에서는 인라인 무지개색을 덮어써 일관된 톤으로 정리)
-  const chip = (color: string): React.CSSProperties =>
-    isMobile
-      ? {
-          padding: '0 12px',
-          fontSize: '13px',
-          whiteSpace: 'nowrap',
-          flexShrink: 0,
-          borderRadius: '999px',
-          background: isDark ? '#1f1f1f' : '#ffffff',
-          borderColor: isDark ? '#434343' : '#d9dde3',
-          color: isDark ? '#d1d5db' : '#374151',
-        }
-      : { backgroundColor: color, borderColor: color, color: 'white' };
+  // 최근자료(건수) 메뉴 — onLimitChange가 있을 때만 노출
+  const limitMenu: MenuProps = {
+    items: [100, 300, 500, 1000, 2000].map((n) => ({
+      key: `limit-${n}`,
+      label: `${n}개`,
+      onClick: () => onLimitChange?.(n),
+    })),
+  };
 
-  const buttons = (
-    <>
-      <Dropdown menu={recentDaysMenu} trigger={['click']}>
-        <Button size={isMobile ? 'small' : 'middle'} style={chip('#1B61A8')}>
-          최근7일 <DownOutlined />
+  return (
+    <Space size="small" wrap={!isMobile}>
+      <Dropdown menu={periodMenu} trigger={['click']}>
+        <Button size={isMobile ? 'small' : 'middle'} icon={<CalendarOutlined />}>
+          기간 선택 <DownOutlined />
         </Button>
       </Dropdown>
-
-      <Dropdown popupRender={() => monthMenuContent} trigger={['click']}>
-        <Button size={isMobile ? 'small' : 'middle'} style={chip('#52c41a')}>
-          최근 한달 <DownOutlined />
-        </Button>
-      </Dropdown>
-
-      <Dropdown popupRender={() => quarterMenuContent} trigger={['click']}>
-        <Button size={isMobile ? 'small' : 'middle'} style={chip('#fa8c16')}>
-          이번분기 <DownOutlined />
-        </Button>
-      </Dropdown>
-
-      <Dropdown menu={yearMenu} trigger={['click']}>
-        <Button size={isMobile ? 'small' : 'middle'} style={chip('#722ed1')}>
-          이번년도 <DownOutlined />
-        </Button>
-      </Dropdown>
-
-      <Button
-        size={isMobile ? 'small' : 'middle'}
-        style={chip('#13c2c2')}
-        onClick={() => {
-          const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
-          const startDate = dayjs().subtract(2, 'month').startOf('month').format('YYYY-MM-DD');
-          onDateRangeChange(startDate, endDate);
-        }}
-      >
-        최근 3달
-      </Button>
-
-      <Button
-        size={isMobile ? 'small' : 'middle'}
-        style={chip('#eb2f96')}
-        onClick={() => {
-          const endDate = dayjs().endOf('month').format('YYYY-MM-DD');
-          const startDate = dayjs().subtract(5, 'month').startOf('month').format('YYYY-MM-DD');
-          onDateRangeChange(startDate, endDate);
-        }}
-      >
-        최근 6달
-      </Button>
-
       {onLimitChange && (
         <Dropdown menu={limitMenu} trigger={['click']}>
-          <Button size={isMobile ? 'small' : 'middle'} style={chip('#595959')}>
+          <Button size={isMobile ? 'small' : 'middle'}>
             최근자료 <DownOutlined />
           </Button>
         </Dropdown>
       )}
-    </>
-  );
-
-  // 모바일: 가로 스크롤 단일 행 (Space 대신 일반 flex 사용 — 전역 .ant-space wrap 강제 회피)
-  if (isMobile) {
-    return (
-      <div style={{
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-        margin: '0 -8px',
-        padding: '4px 8px'
-      }}>
-        <style>{`.date-range-filter-mobile::-webkit-scrollbar { display: none; }`}</style>
-        <div
-          className="date-range-filter-mobile"
-          style={{ display: 'flex', flexWrap: 'nowrap', gap: '6px', width: 'max-content' }}
-        >
-          {buttons}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <Space size="small" wrap>
-      {buttons}
     </Space>
   );
 };
