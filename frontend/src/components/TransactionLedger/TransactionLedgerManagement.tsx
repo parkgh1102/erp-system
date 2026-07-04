@@ -873,11 +873,11 @@ const TransactionLedgerManagement: React.FC = () => {
           <Col>
             <h2 style={{ margin: 0, color: isDark ? '#ffffff' : '#000000', fontSize: '24px', fontWeight: 'bold' }}>거래원장 조회</h2>
           </Col>
-          <Col style={{ marginLeft: '100px' }}>
+          <Col style={{ marginLeft: '32px' }}>
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
-              <Space size="middle" wrap>
+              <Space size="small" wrap>
                 <Select
-                  style={{ width: 350 }}
+                  style={{ width: 240 }}
                   showSearch
                   placeholder="거래처 선택"
                   size="middle"
@@ -901,7 +901,7 @@ const TransactionLedgerManagement: React.FC = () => {
                   onClear={() => { setSelectedCustomer(null); setCustomerSearchText(''); }}
                 />
                 <RangePicker
-                  style={{ width: 300 }}
+                  style={{ width: 250 }}
                   value={dateRange}
                   onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
                   format="YYYY-MM-DD"
@@ -913,8 +913,6 @@ const TransactionLedgerManagement: React.FC = () => {
                 <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} size="middle">
                   조회
                 </Button>
-              </Space>
-              <Space size="middle" wrap>
                 <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
                   <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white' }}>
                     파일저장
