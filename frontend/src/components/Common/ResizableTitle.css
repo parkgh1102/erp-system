@@ -8,16 +8,52 @@
   right: -5px;
   bottom: 0;
   z-index: 2;
-  width: 10px;
+  width: 12px;
   height: 100%;
   cursor: col-resize;
-  /* 클릭 영역만 확보, 시각적으로는 보이지 않음 */
-  background-image: none;
   touch-action: none;
   user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: none;
+}
+
+/* 보이는 그립: 헤더 셀 경계에 세로 바 — '여기를 끌면 폭 조절' 표시 */
+.react-resizable-handle::after {
+  content: '';
+  width: 2px;
+  height: 55%;
+  border-radius: 2px;
+  background: #b8bfc9;
+  transition: background 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+.dark-mode .react-resizable-handle::after {
+  background: #5c6673;
+}
+
+/* 헤더 셀에 마우스 올리거나 핸들에 직접 올리면 파랑으로 강조 + 두껍게 */
+.ant-table-thead th:hover .react-resizable-handle::after,
+.react-resizable-handle:hover::after {
+  background: #1B61A8;
+  width: 3px;
+  height: 75%;
+}
+
+.dark-mode .ant-table-thead th:hover .react-resizable-handle::after,
+.dark-mode .react-resizable-handle:hover::after {
+  background: #4da3ff;
 }
 
 /* 드래그 중 텍스트 선택 방지 */
 .react-resizable {
   background-clip: padding-box;
+}
+
+/* 인쇄 시 핸들 숨김 */
+@media print {
+  .react-resizable-handle {
+    display: none !important;
+  }
 }

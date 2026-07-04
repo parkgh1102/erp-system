@@ -99,7 +99,8 @@ export function useResizableColumns(
           dragStartRef.current[key] ?? defaultsRef.current[key] ?? data.size.width;
         const damped = base0 + (data.size.width - base0) * RESIZE_DAMP;
         setWidths((prev) => {
-          const next = { ...prev, [key]: Math.max(40, Math.round(damped)) };
+          // 최소 폭을 20px 까지 허용(기존 40px 은 좁은 컬럼(수량 등)이 더 안 줄어드는 원인이었음)
+          const next = { ...prev, [key]: Math.max(20, Math.round(damped)) };
           try {
             localStorage.setItem(PREFIX + storageKey, JSON.stringify(next));
           } catch {
