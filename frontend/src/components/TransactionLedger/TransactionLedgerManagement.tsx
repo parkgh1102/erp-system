@@ -846,11 +846,11 @@ const TransactionLedgerManagement: React.FC = () => {
               <Button icon={<MoreOutlined />} onClick={() => setMobileActionDrawerVisible(true)} size="middle">
                 더보기
               </Button>
+              <DateRangeFilter
+                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                isMobile={true}
+              />
             </Space>
-            <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              isMobile={true}
-            />
           </Space>
         </div>
       ) : (
@@ -893,9 +893,14 @@ const TransactionLedgerManagement: React.FC = () => {
                   format="YYYY-MM-DD"
                   size="middle"
                 />
+                <DateRangeFilter
+                  onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                />
                 <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} size="middle">
                   조회
                 </Button>
+              </Space>
+              <Space size="middle" wrap>
                 <Dropdown menu={{ items: actionMenuItems }} placement="bottomRight">
                   <Button icon={<ExportOutlined />} size="middle" style={{ backgroundColor: '#1B61A8', borderColor: '#1B61A8', color: 'white' }}>
                     파일저장
@@ -910,9 +915,6 @@ const TransactionLedgerManagement: React.FC = () => {
                   인쇄
                 </Button>
               </Space>
-              <DateRangeFilter
-                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              />
             </Space>
           </Col>
         </Row>

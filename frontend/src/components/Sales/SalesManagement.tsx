@@ -1980,11 +1980,11 @@ const SalesManagement: React.FC = () => {
               <Button icon={<MoreOutlined />} onClick={() => setMobileActionDrawerVisible(true)} size="middle">
                 더보기
               </Button>
+              <DateRangeFilter
+                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                isMobile={true}
+              />
             </Space>
-            <DateRangeFilter
-              onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              isMobile={true}
-            />
           </Space>
         </div>
       ) : (
@@ -2020,6 +2020,11 @@ const SalesManagement: React.FC = () => {
                   format="YYYY-MM-DD"
                   size="middle"
                 />
+                <DateRangeFilter
+                  onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
+                />
+              </Space>
+              <Space size="small" wrap>
                 {!isSalesViewer && (
                 <>
                   <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size="middle">
@@ -2111,21 +2116,16 @@ const SalesManagement: React.FC = () => {
                       인쇄 <DownOutlined />
                     </Button>
                   </Dropdown>
+                  <Button
+                    icon={<EditOutlined />}
+                    size="middle"
+                    onClick={prepareESignature}
+                    style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
+                  >
+                    전자서명
+                  </Button>
                 </>
               )}
-            </Space>
-            <Space size="small" wrap>
-              <Button
-                icon={<EditOutlined />}
-                size="middle"
-                onClick={prepareESignature}
-                style={{ backgroundColor: '#13c2c2', borderColor: '#13c2c2', color: 'white' }}
-              >
-                전자서명
-              </Button>
-              <DateRangeFilter
-                onDateRangeChange={(startDate, endDate) => setDateRange([dayjs(startDate), dayjs(endDate)])}
-              />
             </Space>
             </Space>
           </Col>
