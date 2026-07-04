@@ -759,6 +759,49 @@ const CustomerBalanceManagement: React.FC = () => {
             </Row>
 
             <Title level={5}>거래 내역</Title>
+            {isMobile ? (
+              /* 모바일: 카드 리스트 (테이블은 금액이 숫자 중간에서 줄바꿈되어 조잡함) */
+              <div>
+                {transactionDetails.map((t: any) => {
+                  const typeLabel = t.type === 'sales' ? '매출' : t.type === 'receipt' ? '수금' : t.type === 'purchase' ? '매입' : '지급';
+                  const isReceiptOrPayment = t.type === 'receipt' || t.type === 'payment';
+                  return (
+                    <div
+                      key={t.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: 10,
+                        padding: '10px 0',
+                        borderBottom: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
+                      }}
+                    >
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Tag color={isReceiptOrPayment ? 'green' : 'blue'} style={{ marginRight: 0 }}>{typeLabel}</Tag>
+                          <Text style={{ fontSize: 12, color: '#8c8c8c' }}>{t.date}</Text>
+                        </div>
+                        <div style={{ fontSize: 13, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {t.description}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                          <Text type={t.amount > 0 ? 'danger' : 'success'} style={{ fontSize: 13 }}>
+                            {formatCurrency(Math.abs(t.amount))}
+                          </Text>
+                        </div>
+                        <div style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>
+                          <Text type="secondary" style={{ fontSize: 12 }}>잔액 </Text>
+                          <Text strong style={{ fontSize: 12 }}>{formatCurrency(t.balance)}</Text>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
             <Table
               dataSource={transactionDetails}
               columns={[
@@ -782,7 +825,7 @@ const CustomerBalanceManagement: React.FC = () => {
                   width: 130,
                   align: 'right',
                   render: (val: number) => (
-                    <Text type={val > 0 ? 'danger' : 'success'}>{formatCurrency(Math.abs(val))}</Text>
+                    <Text type={val > 0 ? 'danger' : 'success'} style={{ whiteSpace: 'nowrap' }}>{formatCurrency(Math.abs(val))}</Text>
                   ),
                 },
                 {
@@ -791,13 +834,14 @@ const CustomerBalanceManagement: React.FC = () => {
                   key: 'balance',
                   width: 130,
                   align: 'right',
-                  render: (val: number) => <Text strong>{formatCurrency(val)}</Text>,
+                  render: (val: number) => <Text strong style={{ whiteSpace: 'nowrap' }}>{formatCurrency(val)}</Text>,
                 },
               ]}
               pagination={false}
               size="small"
               rowKey="id"
             />
+            )}
           </div>
         )}
       </Modal>

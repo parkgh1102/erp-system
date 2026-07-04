@@ -772,28 +772,41 @@ const TransactionLedgerManagement: React.FC = () => {
           );
         })}
 
-        {/* 요약 카드 */}
+        {/* 요약 카드 — 라벨 위 / 공급·세액·합계는 아래 행에 정렬(모바일 숫자 줄바꿈 방지) */}
         <Card size="small" style={{ marginTop: 4, background: isDark ? '#1f1f1f' : '#fafafa' }} styles={{ body: { padding: 12 } }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text strong>합계</Text>
-            <Text style={{ fontWeight: 'bold', color: balColorOf(finalBalance) }}>잔액 {fmt(finalBalance)}</Text>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <Text strong style={{ fontSize: 15 }}>합계</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: 15, color: balColorOf(finalBalance) }}>잔액 {fmt(finalBalance)}</Text>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-            <Text style={{ color: isDark ? '#40a9ff' : '#1B61A8' }}>매출 합계</Text>
-            <Text style={{ color: isDark ? '#40a9ff' : '#1B61A8' }}>
-              공급 {Math.round(totalSalesSupply).toLocaleString()} · 세액 {Math.round(totalSalesVat).toLocaleString()} · 합계 {fmt(totalSales)}
-            </Text>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-            <Text>매입 합계</Text>
-            <Text>
-              공급 {Math.round(totalPurchaseSupply).toLocaleString()} · 세액 {Math.round(totalPurchaseVat).toLocaleString()} · 합계 {fmt(totalPurchase)}
-            </Text>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-            <Text style={{ color: isDark ? '#ff7875' : '#ff4d4f' }}>수금 합계 {fmt(totalReceipt)}</Text>
-            <Text>지급 합계 {fmt(totalPayment)}</Text>
-          </div>
+
+          {(() => {
+            const salesColor = isDark ? '#40a9ff' : '#1B61A8';
+            const cell: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', fontSize: 12, marginTop: 2 };
+            const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, marginBottom: 2 };
+            const numStyle: React.CSSProperties = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' };
+            return (
+              <>
+                <div style={{ borderTop: `1px solid ${isDark ? '#303030' : '#eee'}`, paddingTop: 8 }}>
+                  <div style={{ ...labelStyle, color: salesColor }}>매출 합계</div>
+                  <div style={cell}><Text type="secondary">공급가액</Text><span style={numStyle}>{Math.round(totalSalesSupply).toLocaleString()}원</span></div>
+                  <div style={cell}><Text type="secondary">세액</Text><span style={numStyle}>{Math.round(totalSalesVat).toLocaleString()}원</span></div>
+                  <div style={cell}><Text strong style={{ fontSize: 12 }}>합계</Text><span style={{ ...numStyle, fontWeight: 700, color: salesColor }}>{fmt(totalSales)}</span></div>
+                </div>
+
+                <div style={{ borderTop: `1px solid ${isDark ? '#303030' : '#eee'}`, paddingTop: 8, marginTop: 8 }}>
+                  <div style={labelStyle}>매입 합계</div>
+                  <div style={cell}><Text type="secondary">공급가액</Text><span style={numStyle}>{Math.round(totalPurchaseSupply).toLocaleString()}원</span></div>
+                  <div style={cell}><Text type="secondary">세액</Text><span style={numStyle}>{Math.round(totalPurchaseVat).toLocaleString()}원</span></div>
+                  <div style={cell}><Text strong style={{ fontSize: 12 }}>합계</Text><span style={{ ...numStyle, fontWeight: 700 }}>{fmt(totalPurchase)}</span></div>
+                </div>
+
+                <div style={{ borderTop: `1px solid ${isDark ? '#303030' : '#eee'}`, paddingTop: 8, marginTop: 8 }}>
+                  <div style={cell}><Text style={{ fontSize: 12, color: isDark ? '#ff7875' : '#ff4d4f' }}>수금 합계</Text><span style={{ ...numStyle, color: isDark ? '#ff7875' : '#ff4d4f' }}>{fmt(totalReceipt)}</span></div>
+                  <div style={cell}><Text style={{ fontSize: 12 }}>지급 합계</Text><span style={numStyle}>{fmt(totalPayment)}</span></div>
+                </div>
+              </>
+            );
+          })()}
         </Card>
       </div>
     );

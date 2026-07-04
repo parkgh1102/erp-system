@@ -160,6 +160,7 @@ const SalesManagement: React.FC = () => {
   const [unitOptions, setUnitOptions] = useState<string[]>(DEFAULT_UNIT_OPTIONS);
   const [showBankAccount, setShowBankAccount] = useState(true); // 계좌번호 입력 체크박스 (기본: 체크)
   const [mobileActionDrawerVisible, setMobileActionDrawerVisible] = useState(false);
+  const [saleDetail, setSaleDetail] = useState<Sale | null>(null);
   const { currentBusiness, user } = useAuthStore();
   const isSalesViewer = user?.role === 'sales_viewer';
   const { isDark } = useThemeStore();
@@ -1805,17 +1806,23 @@ const SalesManagement: React.FC = () => {
             <Card
               key={sale.id}
               size="small"
-              style={{ marginBottom: 8, borderColor: checked ? '#1B61A8' : undefined }}
+              style={{ marginBottom: 8, borderColor: checked ? '#1B61A8' : undefined, cursor: isSalesViewer ? 'pointer' : undefined }}
               styles={{ body: { padding: 12 } }}
-              onClick={isSalesViewer ? undefined : (e) => {
-                const target = e.target as HTMLElement;
-                if (target.closest('.ant-checkbox') || target.closest('button') || target.closest('a')) return;
-                if (checked) {
-                  setSelectedRowKeys(selectedRowKeys.filter((k) => k !== sale.id));
-                } else {
-                  setSelectedRowKeys([...selectedRowKeys, sale.id]);
-                }
-              }}
+              onClick={isSalesViewer
+                ? (e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest('button') || target.closest('a')) return;
+                    setSaleDetail(sale);
+                  }
+                : (e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest('.ant-checkbox') || target.closest('button') || target.closest('a')) return;
+                    if (checked) {
+                      setSelectedRowKeys(selectedRowKeys.filter((k) => k !== sale.id));
+                    } else {
+                      setSelectedRowKeys([...selectedRowKeys, sale.id]);
+                    }
+                  }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', minWidth: 0, flex: 1 }}>
@@ -1947,24 +1954,22 @@ const SalesManagement: React.FC = () => {
       {isMobile ? (
         <div style={{ marginBottom: 16 }}>
           <h2 style={{ margin: '0 0 12px 0', color: isDark ? '#ffffff' : '#000000', fontSize: '20px', fontWeight: 'bold' }}>매출 관리</h2>
-          <Space direction="vertical" style={{ width: '100%' }} size="small">
-            <AnimatedSearchBar width="100%">
-              <AutoComplete
-                options={autoCompleteOptions}
-                value={searchText}
-                onChange={handleSearchChange}
-                onSelect={(value) => setSearchText(value)}
-                style={{ width: '100%' }}
-              >
-                <Input.Search
-                  placeholder="거래처, 품목명, 금액 검색"
-                  allowClear
-                  enterButton={<SearchOutlined />}
-                  size="middle"
-                  onSearch={handleSearch}
-                />
-              </AutoComplete>
-            </AnimatedSearchBar>
+          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <AutoComplete
+              options={autoCompleteOptions}
+              value={searchText}
+              onChange={handleSearchChange}
+              onSelect={(value) => setSearchText(value)}
+              style={{ width: '100%' }}
+            >
+              <Input.Search
+                placeholder="거래처, 품목명, 금액 검색"
+                allowClear
+                enterButton={<SearchOutlined />}
+                size="middle"
+                onSearch={handleSearch}
+              />
+            </AutoComplete>
             <RangePicker
               style={{ width: '100%' }}
               value={dateRange}
@@ -2145,6 +2150,79 @@ const SalesManagement: React.FC = () => {
       >
         {mobileActionDrawerContent}
       </Drawer>
+
+      {/* 매출 상세 모달 (모바일 카드 탭 시) */}
+      <Modal
+        title="매출 상세"
+        open={!!saleDetail}
+        onCancel={() => setSaleDetail(null)}
+        footer={[<Button key="close" onClick={() => setSaleDetail(null)}>닫기</Button>]}
+        width={isMobile ? '100%' : 560}
+        style={isMobile ? { top: 0, maxWidth: '100vw', margin: 0, paddingBottom: 0 } : undefined}
+        styles={isMobile ? { body: { maxHeight: 'calc(100vh - 160px)', overflowY: 'auto' } } : undefined}
+      >
+        {saleDetail && (() => {
+          const d = saleDetail;
+          const dt = d.transactionDate || d.saleDate;
+          const items: SaleItem[] = d.items || [];
+          const supply = Math.round(Number(d.totalAmount) || 0);
+          const vat = Math.round(Number(d.vatAmount) || 0);
+          const grand = supply + vat;
+          const won = (n: number) => n.toLocaleString() + '원';
+          const rowStyle: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', gap: 12, padding: '6px 0', fontSize: 14 };
+          const numStyle: React.CSSProperties = { whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' };
+          return (
+            <div>
+              <div style={{ ...rowStyle, borderBottom: `1px solid ${isDark ? '#303030' : '#f0f0f0'}` }}>
+                <Typography.Text type="secondary">거래처</Typography.Text>
+                <Typography.Text strong>{d.customer?.name || '-'}</Typography.Text>
+              </div>
+              <div style={{ ...rowStyle, borderBottom: `1px solid ${isDark ? '#303030' : '#f0f0f0'}` }}>
+                <Typography.Text type="secondary">매출일자</Typography.Text>
+                <span style={numStyle}>{dt ? dayjs(dt).format('YYYY-MM-DD') : '-'}</span>
+              </div>
+
+              <div style={{ marginTop: 12, marginBottom: 4, fontWeight: 600 }}>품목</div>
+              {items.length === 0 ? (
+                <Typography.Text type="secondary">품목 없음</Typography.Text>
+              ) : (
+                items.map((it, idx) => {
+                  const nm = it.itemName || it.productName || '-';
+                  const spec = (it as any).specification || (it as any).spec;
+                  const unit = it.unit;
+                  const q = Number(it.quantity) || 0;
+                  const up = Math.round(Number(it.unitPrice) || 0);
+                  const amt = Math.round(Number((it as any).supplyAmount ?? (it as any).amount) || 0);
+                  return (
+                    <div key={idx} style={{ padding: '8px 0', borderBottom: `1px solid ${isDark ? '#303030' : '#f5f5f5'}` }}>
+                      <div style={{ fontSize: 14 }}>{nm}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 3, fontSize: 12, color: '#8c8c8c' }}>
+                        <span>{[spec, unit].filter(Boolean).join(' · ')}{(spec || unit) ? ' · ' : ''}수량 {q.toLocaleString()} × {won(up)}</span>
+                        <span style={{ ...numStyle, color: isDark ? '#e6e6e6' : '#1f1f1f', fontWeight: 600 }}>{won(amt)}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              <div style={{ marginTop: 12, paddingTop: 8, borderTop: `1px solid ${isDark ? '#303030' : '#eee'}` }}>
+                <div style={rowStyle}><Typography.Text type="secondary">공급가액</Typography.Text><span style={numStyle}>{won(supply)}</span></div>
+                <div style={rowStyle}><Typography.Text type="secondary">세액</Typography.Text><span style={numStyle}>{won(vat)}</span></div>
+                <div style={{ ...rowStyle, borderTop: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`, marginTop: 4 }}>
+                  <Typography.Text strong>합계</Typography.Text>
+                  <span style={{ ...numStyle, fontWeight: 700, fontSize: 16, color: grand < 0 ? '#C0392B' : (isDark ? '#7db4e8' : '#1B61A8') }}>{won(grand)}</span>
+                </div>
+              </div>
+
+              {d.memo && (
+                <div style={{ marginTop: 12 }}>
+                  <Typography.Text type="secondary" style={{ fontSize: 12 }}>비고: {d.memo}</Typography.Text>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+      </Modal>
 
       {loading && !uploadProgress.visible && (
         <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9999 }}>
