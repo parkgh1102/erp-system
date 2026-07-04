@@ -5,6 +5,7 @@ import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
 import TrackPagination from '../Common/TrackPagination';
 import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
+import TableColumnSettings from '../Common/TableColumnSettings';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import * as ExcelJS from 'exceljs';
 import { useAuthStore } from '../../stores/authStore';
@@ -1221,10 +1222,10 @@ const PurchaseManagement: React.FC = () => {
   ];
 
   // 데스크톱: 마우스로 컬럼 폭 조절 + localStorage 저장 (모바일은 비활성)
-  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+  const { columns: resizableColumns, components: resizableComponents, columnMeta, toggleColumn, reset: resetColumns } = useResizableColumns(
     'purchase',
     columns,
-    { baseWidth: 1200, enabled: !isMobile }
+    { baseWidth: 1200, enabled: !isMobile, alwaysVisibleKeys: ['action'] }
   );
 
   const actionMenuItems = createExportMenuItems(
@@ -1453,6 +1454,7 @@ const PurchaseManagement: React.FC = () => {
                     인쇄 <DownOutlined />
                   </Button>
                 </Dropdown>
+                <TableColumnSettings columns={columnMeta} onToggle={toggleColumn} onReset={resetColumns} />
               </Space>
             </Space>
           </Col>

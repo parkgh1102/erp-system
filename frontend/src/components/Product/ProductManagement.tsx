@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Space, message, Popconfirm, Radio, Row, Col, AutoComplete, Spin, Dropdown, Select, Tag, Card, Checkbox, Empty, Drawer } from 'antd';
 import MobileStickyBar from '../Common/MobileStickyBar';
 import TrackPagination from '../Common/TrackPagination';
+import TableColumnSettings from '../Common/TableColumnSettings';
 import { PlusOutlined, EditOutlined, DeleteOutlined, PrinterOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ExportOutlined, ImportOutlined, CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import UploadResultModal, { UploadResultItem } from '../Common/UploadResultModal';
@@ -675,10 +676,10 @@ const ProductManagement: React.FC = () => {
     },
   ];
 
-  const { columns: resizableColumns, components: resizableComponents } = useResizableColumns(
+  const { columns: resizableColumns, components: resizableComponents, columnMeta, toggleColumn, reset: resetColumns } = useResizableColumns(
     'product',
     columns,
-    { baseWidth: 1200, enabled: !isMobile }
+    { baseWidth: 1200, enabled: !isMobile, alwaysVisibleKeys: ['action'] }
   );
 
   const actionMenuItems = createExportMenuItems(
@@ -990,6 +991,7 @@ const ProductManagement: React.FC = () => {
               >
                 인쇄
               </Button>
+              <TableColumnSettings columns={columnMeta} onToggle={toggleColumn} onReset={resetColumns} />
             </Space>
           </Space>
         </Col>

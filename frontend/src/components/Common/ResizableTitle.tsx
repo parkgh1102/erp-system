@@ -5,6 +5,8 @@ import './ResizableTitle.css';
 
 interface ResizableTitleProps extends React.HTMLAttributes<HTMLTableCellElement> {
   onResize?: (e: React.SyntheticEvent, data: ResizeCallbackData) => void;
+  onResizeStart?: (e: React.SyntheticEvent, data: ResizeCallbackData) => void;
+  onResizeStop?: (e: React.SyntheticEvent, data: ResizeCallbackData) => void;
   width?: number;
 }
 
@@ -14,7 +16,7 @@ interface ResizableTitleProps extends React.HTMLAttributes<HTMLTableCellElement>
  * width/onResize 가 없으면(리사이즈 비활성 컬럼) 일반 <th> 로 렌더한다.
  */
 const ResizableTitle: React.FC<ResizableTitleProps> = (props) => {
-  const { onResize, width, ...restProps } = props;
+  const { onResize, onResizeStart, onResizeStop, width, ...restProps } = props;
 
   if (!width || !onResize) {
     return <th {...restProps} />;
@@ -32,6 +34,8 @@ const ResizableTitle: React.FC<ResizableTitleProps> = (props) => {
         />
       }
       onResize={onResize}
+      onResizeStart={onResizeStart}
+      onResizeStop={onResizeStop}
       draggableOpts={{ enableUserSelectHack: false }}
     >
       <th {...restProps} />
