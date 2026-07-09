@@ -347,3 +347,298 @@
     opacity: 1 !important;
   }
 }
+
+/* ---------- ⑥ 카드형 라디오 (Common/PremiumRadioCard.tsx) ---------- */
+.erp-radio-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px 14px 44px;
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.08s;
+  font: inherit;
+  color: inherit;
+}
+
+/* 좌측 라디오 점 */
+.erp-radio-dot {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #c4c8ce;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+.erp-radio-dot::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.erp-radio-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.erp-radio-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.erp-radio-title {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.3;
+  color: #1f2937;
+}
+.erp-radio-desc {
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: #9ca3af;
+}
+
+/* 선택 상태 */
+.erp-radio-card-selected {
+  border-color: #2563eb;
+  background: linear-gradient(#fafdff, #f2f7ff);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.14);
+}
+.erp-radio-card-selected .erp-radio-dot {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+.erp-radio-card-selected .erp-radio-dot::after {
+  transform: translate(-50%, -50%) scale(1);
+}
+.erp-radio-card-selected .erp-radio-title {
+  color: #2563eb;
+}
+
+.erp-radio-card-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* PC hover 한정 */
+@media (hover: hover) {
+  .erp-radio-card:not(.erp-radio-card-selected):not(.erp-radio-card-disabled):hover {
+    border-color: #2563eb;
+    background: #fafdff;
+  }
+  .erp-radio-card:active:not(.erp-radio-card-disabled) {
+    transform: scale(0.985);
+  }
+}
+
+/* 다크모드 */
+.dark-mode .erp-radio-card {
+  background: #1f1f1f;
+  border-color: #333;
+}
+.dark-mode .erp-radio-dot {
+  background: #1f1f1f;
+  border-color: #555;
+}
+.dark-mode .erp-radio-title {
+  color: #e5e7eb;
+}
+.dark-mode .erp-radio-desc {
+  color: #7b828c;
+}
+.dark-mode .erp-radio-dot::after {
+  background: #4da3ff;
+}
+.dark-mode .erp-radio-card-selected {
+  border-color: #4da3ff;
+  background: linear-gradient(rgba(77, 163, 255, 0.08), rgba(77, 163, 255, 0.03));
+  box-shadow: 0 12px 28px rgba(77, 163, 255, 0.12);
+}
+.dark-mode .erp-radio-card-selected .erp-radio-dot {
+  border-color: #4da3ff;
+  box-shadow: 0 0 0 4px rgba(77, 163, 255, 0.14);
+}
+.dark-mode .erp-radio-card-selected .erp-radio-title {
+  color: #4da3ff;
+}
+@media (hover: hover) {
+  .dark-mode .erp-radio-card:not(.erp-radio-card-selected):not(.erp-radio-card-disabled):hover {
+    border-color: #4da3ff;
+    background: #242424;
+  }
+}
+
+@media print {
+  .erp-radio-card {
+    box-shadow: none !important;
+    transform: none !important;
+  }
+}
+
+/* ---------- ⑦ 프리미엄 토스트 (antd message 전역 업그레이드) ---------- */
+/* 호출부(message.success/error/…) 수정 없이 전역 DOM만 스타일링.
+   static message는 ConfigProvider 밖 body 포털이라 항상 라이트 카드 → 라이트 기준 디자인.
+   타입별 색은 아이콘 + 하단 진행바로 표현(배경은 antd 기본 유지해 가독성 안전). */
+@keyframes erpToastProgress {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@keyframes erpToastIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 카드 base(배경/그림자/라운드/패딩/등장 애니메이션)는 index.css의
+   `.ant-message-notice-content { … !important }` 블록이 소유(기존 override와 일원화).
+   여기서는 그 블록이 안 다루는 아이콘·타입색·진행바만 담당. */
+
+/* 아이콘 살짝 키우기 */
+.ant-message .ant-message-notice-wrapper .ant-message-notice-content .ant-message-custom-content > .anticon {
+  font-size: 17px;
+  vertical-align: -3px;
+}
+
+/* 타입별 색 변수 */
+.ant-message-notice-content:has(.ant-message-success) {
+  --erp-toast: #16a34a;
+}
+.ant-message-notice-content:has(.ant-message-error) {
+  --erp-toast: #dc2626;
+}
+.ant-message-notice-content:has(.ant-message-warning) {
+  --erp-toast: #d97706;
+}
+.ant-message-notice-content:has(.ant-message-info) {
+  --erp-toast: #2563eb;
+}
+
+/* 하단 진행바 — 전역 duration 2s와 동일. 로딩(무한)에는 제외 */
+.ant-message-notice-content:not(:has(.ant-message-loading))::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--erp-toast, #2563eb);
+  transform-origin: left;
+  animation: erpToastProgress 2s linear forwards;
+  opacity: 0.85;
+}
+
+/* 다크모드 토스트 — static message는 body 포털이라 <html>.erp-dark 신호로 판별
+   (App.tsx ThemeWrapper가 다크&비공개페이지일 때만 부여). index.css의 흰 배경
+   !important를 이기려면 .erp-dark 접두사(specificity ↑) + !important 필요. */
+.erp-dark .ant-message-notice-content {
+  background-color: #262626 !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+}
+/* 다크에서 진행바는 약간 더 밝게 */
+.erp-dark .ant-message-notice-content:has(.ant-message-success) {
+  --erp-toast: #22c55e;
+}
+.erp-dark .ant-message-notice-content:has(.ant-message-error) {
+  --erp-toast: #f87171;
+}
+.erp-dark .ant-message-notice-content:has(.ant-message-warning) {
+  --erp-toast: #fbbf24;
+}
+.erp-dark .ant-message-notice-content:has(.ant-message-info) {
+  --erp-toast: #60a5fa;
+}
+
+/* 다크모드 notification — message와 동일 신호(erp-dark)로 판별.
+   index.css의 흰 배경/검은 텍스트 !important를 .erp-dark 접두사(specificity ↑)+!important로 override.
+   (notification은 App.useApp 훅으로 쓰이며 body 포털이라 antd 테마도 index.css !important에 눌림) */
+.erp-dark .ant-notification-notice {
+  background-color: #262626 !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+}
+.erp-dark .ant-notification-notice-message,
+.erp-dark .ant-notification-notice-description {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+.erp-dark .ant-notification-notice-close {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+.erp-dark .ant-notification-notice-close:hover {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ant-message-notice .ant-message-notice-content {
+    animation: none;
+  }
+  .ant-message-notice-content::after {
+    animation: none;
+    transform: scaleX(0);
+  }
+}
+
+@media print {
+  .ant-message {
+    display: none !important;
+  }
+}
+
+/* ---------- ⑧ 프리미엄 CTA 버튼 (히어로 버튼 한정, .erp-cta) ---------- */
+.erp-cta {
+  position: relative;
+  overflow: hidden;
+}
+/* hover 시 좌→우로 스치는 광택 */
+.erp-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.erp-cta .erp-cta-arrow {
+  display: inline-flex;
+  margin-left: 8px;
+  transition: transform 0.25s ease;
+}
+@media (hover: hover) {
+  .erp-cta:hover::before {
+    transform: translateX(120%);
+  }
+  .erp-cta:hover .erp-cta-arrow {
+    transform: translateX(5px);
+  }
+}
+@media print {
+  .erp-cta::before {
+    display: none !important;
+  }
+}

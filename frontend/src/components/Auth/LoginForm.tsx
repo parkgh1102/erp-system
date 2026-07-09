@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Button, Typography, Alert, Divider, Segmented } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, QuestionCircleOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../../utils/api';
 import { useAuthStore } from '../../stores/authStore';
@@ -192,6 +192,7 @@ const LoginFormContent: React.FC = () => {
               type="primary"
               htmlType="submit"
               loading={loading}
+              className="erp-cta"
               style={{
                 width: '100%',
                 height: '48px',
@@ -202,7 +203,16 @@ const LoginFormContent: React.FC = () => {
                 border: 'none',
               }}
             >
-              {loading ? '로그인 중...' : '로그인'}
+              {loading ? (
+                '로그인 중...'
+              ) : (
+                <>
+                  로그인
+                  <span className="erp-cta-arrow">
+                    <ArrowRightOutlined />
+                  </span>
+                </>
+              )}
             </Button>
           </Form.Item>
 

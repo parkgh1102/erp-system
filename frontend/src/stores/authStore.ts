@@ -42,7 +42,7 @@ interface AuthState {
   clearNewUserFlag: () => void;
   hasRole: (role: string) => boolean;
   canAccessSales: () => boolean;
-  refreshToken: () => void; // 토큰 갱신
+  refreshToken: (token?: string) => void; // 토큰 갱신 (새 access token 반영)
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -83,10 +83,14 @@ export const useAuthStore = create<AuthState>()(
         const state = useAuthStore.getState();
         return state.user?.role === 'admin' || state.user?.role === 'sales_viewer';
       },
-      refreshToken: () => {
-        // 토큰 갱신 시 로그인 시간 업데이트
-        set({ loginTime: Date.now() });
-      }
+      refreshToken: (token?: string) =>
+        // 세션 연장/자동 갱신 시: 서버가 준 새 access token을 반드시 저장해야 한다.
+        // (이전엔 loginTime만 갱신하고 token을 안 바꿔서, 연장해도 원본 토큰을 계속 써
+        //  로그인+만료시간에 도달하면 요청이 401로 실패하던 버그가 있었음)
+        set((state) => ({
+          token: token ?? state.token,
+          loginTime: Date.now()
+        }))
     }),
     {
       name: 'erp-auth-storage',

@@ -5,6 +5,7 @@ import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
 import TableColumnSettings from '../Common/TableColumnSettings';
 import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
+import { useRecentSearches, buildRecentOptions } from '../../hooks/useRecentSearches';
 import { createExportMenuItems, exportNTSInvoiceExcel } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
@@ -375,8 +376,11 @@ const SalesManagement: React.FC = () => {
     }
   }, [filteredSales.length, effectivePageSize, pagination.current]);
 
+  const { recent, addRecent, clearRecent } = useRecentSearches('sales');
+
   const handleSearch = (value: string) => {
     setSearchText(value);
+    addRecent(value);
   };
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1956,10 +1960,10 @@ const SalesManagement: React.FC = () => {
           <h2 style={{ margin: '0 0 12px 0', color: isDark ? '#ffffff' : '#000000', fontSize: '20px', fontWeight: 'bold' }}>매출 관리</h2>
           <Space direction="vertical" style={{ width: '100%' }} size="middle">
             <AutoComplete
-              options={autoCompleteOptions}
+              options={buildRecentOptions({ searchText, suggestions: autoCompleteOptions, recent, onClear: clearRecent, isDark })}
               value={searchText}
               onChange={handleSearchChange}
-              onSelect={(value) => setSearchText(value)}
+              onSelect={(value) => { setSearchText(value); addRecent(value); }}
               style={{ width: '100%' }}
             >
               <Input.Search
@@ -2004,10 +2008,10 @@ const SalesManagement: React.FC = () => {
               <Space size={8} wrap>
                 <AnimatedSearchBar width={300}>
                   <AutoComplete
-                    options={autoCompleteOptions}
+                    options={buildRecentOptions({ searchText, suggestions: autoCompleteOptions, recent, onClear: clearRecent, isDark })}
                     value={searchText}
                     onChange={handleSearchChange}
-                    onSelect={(value) => setSearchText(value)}
+                    onSelect={(value) => { setSearchText(value); addRecent(value); }}
                     style={{ width: '100%' }}
                   >
                     <Input.Search
@@ -2993,7 +2997,7 @@ const SalesManagement: React.FC = () => {
             name="memo"
             label="메모"
           >
-            <TextArea rows={3} placeholder="메모를 입력하세요" style={{ resize: 'none' }} />
+            <TextArea rows={3} placeholder="메모를 입력하세요" style={{ resize: 'none' }} showCount maxLength={200} />
           </Form.Item>
 
           <Form.Item
@@ -3039,7 +3043,7 @@ const SalesManagement: React.FC = () => {
                 <Button onClick={closeModal} style={{ flex: '0 0 72px', height: 46 }}>
                   취소
                 </Button>
-                <Button type="primary" htmlType="submit" style={{ flex: 1, height: 46, fontWeight: 600 }}>
+                <Button type="primary" htmlType="submit" className="erp-cta" style={{ flex: 1, height: 46, fontWeight: 600 }}>
                   저장 · {(((totalAmount || 0) + (vatAmount || 0))).toLocaleString()}원
                 </Button>
               </div>
@@ -3067,7 +3071,7 @@ const SalesManagement: React.FC = () => {
                 <Button size="middle" onClick={closeModal}>
                   취소
                 </Button>
-                <Button size="middle" type="primary" htmlType="submit">
+                <Button size="middle" type="primary" htmlType="submit" className="erp-cta">
                   저장 (F8)
                 </Button>
                 {!editingSale && (

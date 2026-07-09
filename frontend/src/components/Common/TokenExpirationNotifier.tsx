@@ -3,8 +3,9 @@ import { Modal, App } from 'antd';
 import { useAuthStore } from '../../stores/authStore';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
+import { getSessionTimeoutMs, getSessionTimeoutLabel } from '../../utils/session';
 
-const TOKEN_EXPIRATION_MS = 2 * 60 * 60 * 1000; // 2시간 (밀리초)
+// 세션 길이는 실제 값(localStorage 'sessionTimeout')을 사용 — utils/session.getSessionTimeoutMs()
 const WARNING_TIME_MS = 5 * 60 * 1000; // 5분 전 (밀리초)
 const CHECK_INTERVAL_MS = 30 * 1000; // 30초마다 체크
 
@@ -26,9 +27,10 @@ export const TokenExpirationNotifier: React.FC = () => {
     try {
       const response = await api.post('/auth/refresh-token');
       if (response.data.success) {
-        refreshToken();
+        // 서버가 발급한 새 access token을 스토어에 반영 (핵심: 토큰 미갱신 버그 수정)
+        refreshToken(response.data.data?.token);
         warningShownRef.current = false;
-        message.success('세션이 2시간 연장되었습니다.');
+        message.success(`세션이 ${getSessionTimeoutLabel()} 연장되었습니다.`);
       }
     } catch (error) {
       console.error('토큰 갱신 실패:', error);
@@ -65,7 +67,7 @@ export const TokenExpirationNotifier: React.FC = () => {
     // 즉시 한 번 체크
     const checkExpiration = () => {
       const now = Date.now();
-      const expirationTime = loginTime + TOKEN_EXPIRATION_MS;
+      const expirationTime = loginTime + getSessionTimeoutMs();
       const warningTime = expirationTime - WARNING_TIME_MS;
 
       // 이미 만료된 경우
@@ -87,7 +89,7 @@ export const TokenExpirationNotifier: React.FC = () => {
     const intervalId = setInterval(checkExpiration, CHECK_INTERVAL_MS);
 
     // 만료 시간에 맞춰 정확한 타이머 설정
-    const expirationTime = loginTime + TOKEN_EXPIRATION_MS;
+    const expirationTime = loginTime + getSessionTimeoutMs();
     const timeUntilExpiration = expirationTime - Date.now();
 
     let expirationTimer: NodeJS.Timeout | null = null;

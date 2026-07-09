@@ -61,6 +61,28 @@ const isRetryableError = (error: any): boolean => {
   return [502, 503, 504].includes(error.response?.status);
 };
 
+// ── access token 자동 갱신 (401 시 refresh-token 쿠키로 새 토큰 발급 후 원요청 재시도) ──
+// 동시 401이 여러 개 떠도 refresh는 한 번만 수행 (single-flight)
+let refreshPromise: Promise<string | null> | null = null;
+const refreshAccessToken = (): Promise<string | null> => {
+  if (!refreshPromise) {
+    // api 인스턴스가 아닌 raw axios로 호출해 인터셉터 재귀를 피한다.
+    refreshPromise = axios
+      .post(`${API_BASE_URL}/auth/refresh-token`, {}, { withCredentials: true })
+      .then((res) => {
+        const newToken: string | null = res.data?.data?.token || null;
+        if (newToken) {
+          useAuthStore.getState().refreshToken(newToken);
+        }
+        return newToken;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+};
+
 // 재시도 로직
 const retryRequest = async (error: any, retryCount: number = 0): Promise<any> => {
   if (retryCount >= MAX_RETRIES || !isRetryableError(error)) {
@@ -124,7 +146,28 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    const status = error.response?.status;
+    const original = error.config || {};
+    const reqUrl: string = typeof original.url === 'string' ? original.url : '';
+    // 로그인/토큰갱신 자체의 실패는 갱신 대상이 아님 (무한 루프 방지)
+    const isAuthEndpoint =
+      reqUrl.includes('/auth/login') || reqUrl.includes('/auth/refresh-token');
+
+    // 401(토큰 만료)이면 한 번만 조용히 refresh 후 원요청 재시도
+    if (status === 401 && !original._retriedAuth && !isAuthEndpoint) {
+      original._retriedAuth = true;
+      try {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          original.headers = { ...(original.headers || {}), Authorization: `Bearer ${newToken}` };
+          return api.request(original);
+        }
+      } catch {
+        // refresh 실패 → 아래에서 로그아웃 처리
+      }
+    }
+
+    if (status === 401 || status === 403) {
       useAuthStore.getState().logout();
       window.location.href = '/login';
     }

@@ -1,9 +1,10 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ConfigProvider, App as AntApp, theme, Spin } from 'antd';
 import { useAuthStore } from './stores/authStore';
 import { useThemeStore } from './stores/themeStore';
 import { antdSeedToken } from './styles/tokens';
+import { getSessionTimeoutMs } from './utils/session';
 import AppLayout from './components/Layout/AppLayout';
 import koKR from 'antd/locale/ko_KR';
 import 'dayjs/locale/ko';
@@ -36,17 +37,7 @@ const PageLoader: React.FC = () => (
   </div>
 );
 
-// 세션 타임아웃 시간 계산 (밀리초)
-const getSessionTimeoutMs = (): number => {
-  const sessionTimeout = localStorage.getItem('sessionTimeout') || '8h';
-  const timeoutMap: Record<string, number> = {
-    '1h': 1 * 60 * 60 * 1000,
-    '4h': 4 * 60 * 60 * 1000,
-    '8h': 8 * 60 * 60 * 1000,
-    '24h': 24 * 60 * 60 * 1000,
-  };
-  return timeoutMap[sessionTimeout] || 8 * 60 * 60 * 1000;
-};
+// 세션 타임아웃 계산은 utils/session.ts로 단일화 (getSessionTimeoutMs)
 
 // 보호된 라우트 컴포넌트
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -102,11 +93,21 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 // 테마 래퍼 컴포넌트 (라우터 내부에서 사용)
 const ThemeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const { getThemeConfig } = useThemeStore();
+  const { getThemeConfig, isDark } = useThemeStore();
 
   // 공개 페이지 경로 목록 (다크모드 비활성화)
   const publicPaths = ['/login', '/signup', '/password-reset', '/password-change'];
   const isPublicPage = publicPaths.includes(location.pathname);
+
+  // static message/notification은 body 포털이라 AppLayout의 .dark-mode 조상에 못 닿음.
+  // 토스트 전용 다크 신호를 <html>에 부여(기존 .dark-mode 포털 죽은규칙을 깨우지 않도록 전용 클래스 사용).
+  useEffect(() => {
+    const on = isDark && !isPublicPage;
+    document.documentElement.classList.toggle('erp-dark', on);
+    return () => {
+      // 언마운트 시 정리(공개 페이지 전환 등)
+    };
+  }, [isDark, isPublicPage]);
 
   // 공개 페이지는 항상 라이트 테마 사용
   const themeConfig = isPublicPage

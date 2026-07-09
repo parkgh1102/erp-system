@@ -14,6 +14,7 @@ import { productAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
+import { useRecentSearches, buildRecentOptions } from '../../hooks/useRecentSearches';
 
 const { TextArea } = Input;
 
@@ -163,8 +164,11 @@ const ProductManagement: React.FC = () => {
     if (prodPage > pc) setProdPage(pc);
   }, [filteredProducts.length, pageSize, prodPage]);
 
+  const { recent, addRecent, clearRecent } = useRecentSearches('product');
+
   const handleSearch = (value: string) => {
     setSearchText(value);
+    addRecent(value);
   };
 
   const generateAutoCompleteOptions = (keyword: string) => {
@@ -848,10 +852,10 @@ const ProductManagement: React.FC = () => {
           <MobileStickyBar>
             <Space direction="vertical" style={{ width: '100%' }} size="small">
               <AutoComplete
-                options={autoCompleteOptions}
+                options={buildRecentOptions({ searchText, suggestions: autoCompleteOptions, recent, onClear: clearRecent, isDark })}
                 value={searchText}
                 onChange={handleSearchChange}
-                onSelect={(value) => setSearchText(value)}
+                onSelect={(value) => { setSearchText(value); addRecent(value); }}
                 style={{ width: '100%' }}
               >
                 <Input.Search
@@ -887,10 +891,10 @@ const ProductManagement: React.FC = () => {
           <Space direction="vertical" size="small" style={{ width: '100%' }}>
             <Space size="middle" wrap>
               <AutoComplete
-                options={autoCompleteOptions}
+                options={buildRecentOptions({ searchText, suggestions: autoCompleteOptions, recent, onClear: clearRecent, isDark })}
                 value={searchText}
                 onChange={handleSearchChange}
-                onSelect={(value) => setSearchText(value)}
+                onSelect={(value) => { setSearchText(value); addRecent(value); }}
                 style={{ width: 300 }}
               >
                 <Input.Search
@@ -1348,6 +1352,8 @@ const ProductManagement: React.FC = () => {
               rows={isMobile ? 2 : 3}
               placeholder="비고 사항을 입력하세요"
               size={isMobile ? 'small' : 'middle'}
+              showCount
+              maxLength={200}
             />
           </Form.Item>
 
@@ -1377,6 +1383,7 @@ const ProductManagement: React.FC = () => {
                 size={isMobile ? 'small' : 'middle'}
                 type="primary"
                 htmlType="submit"
+                className="erp-cta"
                 style={{ width: isMobile ? '200px' : 'auto' }}
               >
                 저장
