@@ -5,6 +5,7 @@ import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
 import TrackPagination from '../Common/TrackPagination';
 import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
+import { useRecentSearches, buildRecentOptions } from '../../hooks/useRecentSearches';
 import TableColumnSettings from '../Common/TableColumnSettings';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import * as ExcelJS from 'exceljs';
@@ -302,8 +303,11 @@ const PurchaseManagement: React.FC = () => {
     }
   }, [filteredPurchases.length, effectivePageSize, pagination.current]);
 
+  const { recent, addRecent, clearRecent } = useRecentSearches('purchase');
+
   const handleSearch = (value: string) => {
     setSearchText(value);
+    addRecent(value);
   };
 
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1302,10 +1306,10 @@ const PurchaseManagement: React.FC = () => {
           <Space direction="vertical" style={{ width: '100%' }} size="small">
             <AnimatedSearchBar width="100%">
               <AutoComplete
-                options={autoCompleteOptions}
+                options={buildRecentOptions({ searchText, suggestions: autoCompleteOptions, recent, onClear: clearRecent, isDark })}
                 value={searchText}
                 onChange={handleSearchChange}
-                onSelect={(value) => setSearchText(value)}
+                onSelect={(value) => { setSearchText(value); addRecent(value); }}
                 style={{ width: '100%' }}
               >
                 <Input.Search
@@ -1349,10 +1353,10 @@ const PurchaseManagement: React.FC = () => {
               <Space size="middle" wrap>
                 <AnimatedSearchBar width={300}>
                   <AutoComplete
-                    options={autoCompleteOptions}
+                    options={buildRecentOptions({ searchText, suggestions: autoCompleteOptions, recent, onClear: clearRecent, isDark })}
                     value={searchText}
                     onChange={handleSearchChange}
-                    onSelect={(value) => setSearchText(value)}
+                    onSelect={(value) => { setSearchText(value); addRecent(value); }}
                     style={{ width: '100%' }}
                   >
                   <Input.Search
@@ -2240,7 +2244,7 @@ const PurchaseManagement: React.FC = () => {
             name="memo"
             label="메모"
           >
-            <TextArea rows={3} placeholder="메모를 입력하세요" style={{ resize: 'none' }} />
+            <TextArea rows={3} placeholder="메모를 입력하세요" style={{ resize: 'none' }} showCount maxLength={200} />
           </Form.Item>
 
           <Form.Item
@@ -2268,7 +2272,7 @@ const PurchaseManagement: React.FC = () => {
                 <Button onClick={closeModal} style={{ flex: '0 0 72px', height: 46 }}>
                   취소
                 </Button>
-                <Button type="primary" htmlType="submit" style={{ flex: 1, height: 46, fontWeight: 600 }}>
+                <Button type="primary" htmlType="submit" className="erp-cta" style={{ flex: 1, height: 46, fontWeight: 600 }}>
                   저장 · {(((totalAmount || 0) + (vatAmount || 0))).toLocaleString()}원
                 </Button>
               </div>
@@ -2296,7 +2300,7 @@ const PurchaseManagement: React.FC = () => {
                 <Button size="middle" onClick={closeModal}>
                   취소
                 </Button>
-                <Button size="middle" type="primary" htmlType="submit">
+                <Button size="middle" type="primary" htmlType="submit" className="erp-cta">
                   저장 (F8)
                 </Button>
                 {!editingPurchase && (

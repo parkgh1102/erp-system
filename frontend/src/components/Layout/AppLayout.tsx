@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Menu, Avatar, Dropdown, Typography, Badge, Button, Select, Drawer } from 'antd';
 import ThemeToggle from '../Common/ThemeToggle';
+import { prefetchRoute } from '../../utils/routePreload';
 import {
   DashboardOutlined,
   UserOutlined,
@@ -168,9 +169,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   ];
 
   // 사용자 권한에 따라 메뉴 필터링
-  const menuItems = allMenuItems.filter(item =>
-    item.roles.includes(user?.role || 'admin')
-  );
+  const menuItems = allMenuItems
+    .filter(item => item.roles.includes(user?.role || 'admin'))
+    // 메뉴 항목 hover 시 해당 라우트 청크 프리페치 (라벨을 span으로 감싸 onMouseEnter 부여)
+    .map(item => ({
+      ...item,
+      label: <span onMouseEnter={() => prefetchRoute(item.key)}>{item.label}</span>,
+    }));
 
   const userMenuItems = [
     {

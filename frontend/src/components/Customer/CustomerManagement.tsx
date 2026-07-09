@@ -1254,6 +1254,7 @@ const CustomerManagement: React.FC = () => {
                 type="primary"
                 loading={loading}
                 onClick={() => handleModalOk()}
+                className="erp-cta"
                 style={{ width: '100%' }}
               >
                 저장
@@ -1280,7 +1281,7 @@ const CustomerManagement: React.FC = () => {
             <Button key="cancel" size="middle" onClick={handleModalCancel}>
               취소
             </Button>,
-            <Button key="save" size="middle" type="primary" loading={loading} onClick={() => handleModalOk()}>
+            <Button key="save" size="middle" type="primary" loading={loading} onClick={() => handleModalOk()} className="erp-cta">
               저장
             </Button>,
             !editingCustomer && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, message, Popconfirm, Card, Row, Col, InputNumber, Tabs, Spin, AutoComplete, Typography, Dropdown, Radio, Alert, Drawer } from 'antd';
+import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, message, Popconfirm, Card, Row, Col, InputNumber, Tabs, Spin, AutoComplete, Typography, Dropdown, Alert, Drawer } from 'antd';
 import { EditOutlined, DeleteOutlined, MoneyCollectOutlined, PayCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, PrinterOutlined, MoreOutlined } from '@ant-design/icons';
 import { createExportMenuItems, exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
@@ -9,6 +9,7 @@ import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
 import TrackPagination from '../Common/TrackPagination';
 import PaymentPrintModal from '../Print/PaymentPrintModal';
+import PremiumRadioCard from '../Common/PremiumRadioCard';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 
@@ -1292,7 +1293,7 @@ const PaymentManagement: React.FC = () => {
             name="memo"
             label="메모"
           >
-            <TextArea rows={3} placeholder="메모를 입력하세요" />
+            <TextArea rows={3} placeholder="메모를 입력하세요" showCount maxLength={200} />
           </Form.Item>
 
           <div style={{ textAlign: 'center', marginBottom: 0, paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
@@ -1304,7 +1305,7 @@ const PaymentManagement: React.FC = () => {
               }}>
                 취소
               </Button>
-              <Button size="middle" type="primary" htmlType="submit">
+              <Button size="middle" type="primary" htmlType="submit" className="erp-cta">
                 저장
               </Button>
               {!editingPayment && (
@@ -1407,10 +1408,22 @@ const PaymentManagement: React.FC = () => {
                 label="유형"
                 rules={[{ required: true, message: '유형을 선택해주세요!' }]}
               >
-                <Radio.Group>
-                  <Radio value="receipt">수금</Radio>
-                  <Radio value="payment">지급</Radio>
-                </Radio.Group>
+                <PremiumRadioCard
+                  options={[
+                    {
+                      value: 'receipt',
+                      label: '수금',
+                      description: '거래처로부터 받는 금액',
+                      icon: <MoneyCollectOutlined style={{ color: '#2563eb' }} />,
+                    },
+                    {
+                      value: 'payment',
+                      label: '지급',
+                      description: '거래처에 지급하는 금액',
+                      icon: <PayCircleOutlined style={{ color: '#f5222d' }} />,
+                    },
+                  ]}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -1471,7 +1484,7 @@ const PaymentManagement: React.FC = () => {
             name="memo"
             label="메모"
           >
-            <TextArea rows={3} placeholder="메모를 입력하세요" />
+            <TextArea rows={3} placeholder="메모를 입력하세요" showCount maxLength={200} />
           </Form.Item>
 
           <div style={{ textAlign: 'center', marginBottom: 0, paddingTop: '16px', borderTop: '1px solid #f0f0f0' }}>
@@ -1482,7 +1495,7 @@ const PaymentManagement: React.FC = () => {
               }}>
                 취소
               </Button>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" className="erp-cta">
                 일괄 등록
               </Button>
             </Space>

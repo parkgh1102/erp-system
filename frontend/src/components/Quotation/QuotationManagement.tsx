@@ -618,6 +618,7 @@ const QuotationManagement: React.FC = () => {
         styles={isMobile ? { body: { maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' } } : undefined}
         okText="저장"
         cancelText="취소"
+        okButtonProps={{ className: 'erp-cta' }}
       >
         <Form form={form} layout="vertical">
           <Row gutter={16}>
@@ -857,7 +858,7 @@ const QuotationManagement: React.FC = () => {
           </Row>
 
           <Form.Item name="memo" label="비고" style={{ marginTop: 16 }}>
-            <TextArea rows={2} placeholder="비고 사항" />
+            <TextArea rows={2} placeholder="비고 사항" showCount maxLength={200} />
           </Form.Item>
         </Form>
       </Modal>
