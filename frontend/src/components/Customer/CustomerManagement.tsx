@@ -1235,8 +1235,8 @@ const CustomerManagement: React.FC = () => {
         title={editingCustomer ? '거래처 수정' : '거래처 등록'}
         open={isModalVisible}
         onCancel={handleModalCancel}
-        width={isMobile ? '95%' : 800}
-        style={{ top: isMobile ? 20 : undefined }}
+        width={isMobile ? '100%' : 800}
+        style={isMobile ? { top: 0, maxWidth: '100vw', margin: 0, paddingBottom: 0 } : undefined}
         footer={
           isMobile ? (
             <Space direction="vertical" style={{ width: '100%' }}>
