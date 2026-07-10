@@ -127,9 +127,18 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
               margin: 10mm;
             }
             html, body {
+              margin: 0 !important;
+              padding: 0 !important;
               background: white !important;
               print-color-adjust: exact;
               -webkit-print-color-adjust: exact;
+            }
+            /* 표 아래 하단 여백(패딩/마진)이 다음 페이지로 밀려 빈 페이지가 찍히는 것 방지 */
+            .ledger-print-root {
+              padding-bottom: 0 !important;
+            }
+            .ledger-print-root > table {
+              margin-bottom: 0 !important;
             }
           }
         `}
@@ -137,6 +146,7 @@ export const TransactionLedgerPrintModal: React.FC<TransactionLedgerPrintModalPr
 
       <div
         ref={printRef}
+        className="ledger-print-root"
         style={{
           fontFamily: 'Malgun Gothic, sans-serif',
           fontSize: '10pt',
