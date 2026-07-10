@@ -3017,6 +3017,8 @@ const SalesManagement: React.FC = () => {
               </Space>
             }
             name="bankAccount"
+            // 모바일: 하단 고정 저장바(sticky)가 계좌번호 필드를 가리지 않도록 여백 확보
+            style={{ marginBottom: isMobile ? 96 : undefined }}
           >
             <Input
               placeholder="계좌번호를 입력하세요 (예: 국민은행 123-456-789012)"
