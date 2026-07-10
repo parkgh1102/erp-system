@@ -284,31 +284,6 @@ const Dashboard: React.FC = () => {
     },
   ];
 
-  // 기간 필터 요소 (모바일에선 순서를 바꿔 배치: 날짜 위 / 기간Select 아래
-  //  → Select 드롭다운이 아래로 열려도 날짜칸이 아니라 카드 영역을 덮어 날짜가 계속 보임)
-  const periodSelectEl = (
-    <Select
-      key="period"
-      value={selectedPeriod}
-      onChange={setSelectedPeriod}
-      style={{ width: isMobile ? '100%' : 120 }}
-      size={isMobile ? 'small' : 'middle'}
-    >
-      <Select.Option value="week">이번 주</Select.Option>
-      <Select.Option value="month">이번 달</Select.Option>
-      <Select.Option value="year">올해</Select.Option>
-    </Select>
-  );
-  const rangePickerEl = (
-    <RangePicker
-      key="range"
-      value={dateRange}
-      onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
-      style={{ width: isMobile ? '100%' : 'auto' }}
-      size={isMobile ? 'small' : 'middle'}
-    />
-  );
-
   return (
     <div style={{
       padding: isMobile ? '16px 8px' : '24px',
@@ -333,9 +308,24 @@ const Dashboard: React.FC = () => {
             <Space
               direction={isMobile ? "vertical" : "horizontal"}
               style={{ width: '100%' }}
-              size={isMobile ? 14 : 16}
+              size={isMobile ? 8 : 16}
             >
-              {isMobile ? [rangePickerEl, periodSelectEl] : [periodSelectEl, rangePickerEl]}
+              <Select
+                value={selectedPeriod}
+                onChange={setSelectedPeriod}
+                style={{ width: isMobile ? '100%' : 120 }}
+                size={isMobile ? 'small' : 'middle'}
+              >
+                <Select.Option value="week">이번 주</Select.Option>
+                <Select.Option value="month">이번 달</Select.Option>
+                <Select.Option value="year">올해</Select.Option>
+              </Select>
+              <RangePicker
+                value={dateRange}
+                onChange={(dates) => setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
+                style={{ width: isMobile ? '100%' : 'auto' }}
+                size={isMobile ? 'small' : 'middle'}
+              />
             </Space>
           </Col>
         </Row>
