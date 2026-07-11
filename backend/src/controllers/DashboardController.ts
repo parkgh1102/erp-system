@@ -82,8 +82,11 @@ export class DashboardController {
       ]);
 
       // 이전 기간과 비교를 위한 날짜 계산
-      const prevStartDate = dayjs(queryStartDate).subtract(1, period as 'year' | 'month' | 'week').toDate();
-      const prevEndDate = dayjs(queryEndDate).subtract(1, period as 'year' | 'month' | 'week').toDate();
+      // 커스텀 기간에도 정확하도록 실제 조회 기간 길이만큼 직전 구간과 비교
+      // (기존: period(기본 month)로 고정 감산 → 커스텀 범위에서 비교 구간이 어긋남)
+      const rangeDays = dayjs(queryEndDate).diff(dayjs(queryStartDate), 'day');
+      const prevEndDate = dayjs(queryStartDate).subtract(1, 'day').toDate();
+      const prevStartDate = dayjs(queryStartDate).subtract(rangeDays + 1, 'day').toDate();
 
       const [prevSalesResult, prevPurchasesResult] = await Promise.all([
         salesRepo
