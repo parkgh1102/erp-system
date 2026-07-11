@@ -11,6 +11,7 @@ pnpm-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.postgres
 # Keep .env.production and .env.example for deployment reference
 
 # Security and sensitive files
