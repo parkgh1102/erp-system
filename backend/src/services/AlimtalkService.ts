@@ -19,7 +19,9 @@ interface AlimtalkResponse {
 }
 
 export class AlimtalkService {
-  private static API_URL = process.env.ALIMTALK_API_URL || 'http://221.139.14.189/API/alimtalk_api';
+  // 기본값을 HTTPS로 지정 (평문 HTTP는 OTP/전화번호가 전송 중 노출됨).
+  // 벤더(alimtalkme.com)가 동일 경로를 유효 인증서로 HTTPS 제공함을 확인.
+  private static API_URL = process.env.ALIMTALK_API_URL || 'https://www.alimtalkme.com/API/alimtalk_api';
   private static API_KEY = process.env.ALIMTALK_API_KEY!;
   private static OTP_TEMPLATE_CODE = 'SJT_123168'; // OTP 템플릿
   private static WELCOME_TEMPLATE_CODE = 'SJT_123166'; // 회원가입 환영 템플릿
