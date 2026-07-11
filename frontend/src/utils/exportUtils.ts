@@ -5,6 +5,19 @@ import { message } from 'antd';
 import React from 'react';
 import { exportToVectorPdf, exportTransactionLedgerToVectorPdf, VectorPdfColumn } from './vectorPdfExport';
 
+/**
+ * innerHTML 문자열에 사용자 데이터를 넣기 전 HTML 이스케이프.
+ * (거래처명/메모/품목명 등에 <img onerror=...> 같은 페이로드가 있으면 PDF 내보내기 시
+ *  스크립트가 실행되는 DOM XSS를 방지)
+ */
+const escapeHtml = (v: unknown): string =>
+  String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 export interface ExportColumn {
   key: string;
   title: string;
@@ -200,7 +213,7 @@ export const exportToPDFLegacy = async (options: ExportOptions) => {
     const today = new Date().toLocaleDateString('ko-KR');
 
     // 테이블 헤더
-    const headers = columns.map(col => `<th style="border: 1px solid #333; padding: 8px; background-color: #f5f5f5; font-weight: bold; text-align: center; font-size: 12px;">${col.title}</th>`).join('');
+    const headers = columns.map(col => `<th style="border: 1px solid #333; padding: 8px; background-color: #f5f5f5; font-weight: bold; text-align: center; font-size: 12px;">${escapeHtml(col.title)}</th>`).join('');
 
     // 테이블 데이터
     const rows = exportData.map((record: any) => {
@@ -215,7 +228,7 @@ export const exportToPDFLegacy = async (options: ExportOptions) => {
             for (const key of keys) {
               value = value?.[key];
             }
-            cellValue = String(value || '');
+            cellValue = escapeHtml(value);
           }
         } catch (err) {
           console.warn('PDF column render error:', err);
@@ -236,13 +249,13 @@ export const exportToPDFLegacy = async (options: ExportOptions) => {
 
     tempDiv.innerHTML = `
       <div style="margin-bottom: 20px;">
-        <h1 style="text-align: center; margin: 0 0 15px 0; font-size: 20px; font-weight: bold; color: #333;">${title || '문서 출력'}</h1>
+        <h1 style="text-align: center; margin: 0 0 15px 0; font-size: 20px; font-weight: bold; color: #333;">${escapeHtml(title || '문서 출력')}</h1>
         <div style="text-align: right; font-size: 11px; color: #666; margin-bottom: 15px;">출력일자: ${today} ${new Date().toLocaleTimeString('ko-KR')}</div>
         <div style="font-size: 11px; margin-bottom: 20px; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd;">
-          <strong>회사명:</strong> ${company.name || '-'} |
-          <strong>사업자번호:</strong> ${company.businessNumber || '-'} |
-          <strong>연락처:</strong> ${company.phone || '-'} |
-          <strong>이메일:</strong> ${company.email || '-'}
+          <strong>회사명:</strong> ${escapeHtml(company.name || '-')} |
+          <strong>사업자번호:</strong> ${escapeHtml(company.businessNumber || '-')} |
+          <strong>연락처:</strong> ${escapeHtml(company.phone || '-')} |
+          <strong>이메일:</strong> ${escapeHtml(company.email || '-')}
         </div>
       </div>
       <table style="width: 100%; border-collapse: collapse; border: 2px solid #333; background: white;">
@@ -311,7 +324,7 @@ export const printData = (options: ExportOptions) => {
     }
 
     // HTML 테이블 생성
-    const headers = columns.map(col => `<th style="border: 1px solid #333; padding: 8px; background-color: #f5f5f5; font-weight: bold; text-align: center;">${col.title}</th>`).join('');
+    const headers = columns.map(col => `<th style="border: 1px solid #333; padding: 8px; background-color: #f5f5f5; font-weight: bold; text-align: center;">${escapeHtml(col.title)}</th>`).join('');
 
     const rows = printData.map((record: any) => {
       const cells = columns.map(col => {
@@ -325,7 +338,7 @@ export const printData = (options: ExportOptions) => {
             for (const key of keys) {
               value = value?.[key];
             }
-            cellValue = String(value || '');
+            cellValue = escapeHtml(value);
           }
         } catch (err) {
           console.warn('Print column render error:', err);
@@ -345,7 +358,7 @@ export const printData = (options: ExportOptions) => {
       <html>
         <head>
           <meta charset="UTF-8">
-          <title>${title || '인쇄'}</title>
+          <title>${escapeHtml(title || '인쇄')}</title>
           <style>
             @page {
               size: A4 landscape;
@@ -435,7 +448,7 @@ export const printData = (options: ExportOptions) => {
         </head>
         <body>
           <div class="print-header">
-            <h1>${title || '문서 출력'}</h1>
+            <h1>${escapeHtml(title || '문서 출력')}</h1>
             <div class="print-info">
               <div><strong>출력일시:</strong> ${today} ${currentTime}</div>
               <div><strong>총 ${printData.length}건</strong></div>
@@ -745,7 +758,7 @@ export const exportTransactionLedgerToPDFLegacy = async (options: TransactionLed
     const carryOverRow = previousBalance !== 0 ? `
       <tr style="background-color: #fffbe6;">
         <td style="border: 1px solid #000; padding: 6px; text-align: center;">${dateRange.start}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${customer.name}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${escapeHtml(customer.name)}</td>
         <td style="border: 1px solid #000; padding: 6px; text-align: center; color: #faad14;">이월</td>
         <td style="border: 1px solid #000; padding: 6px; text-align: center;">전잔금</td>
         <td style="border: 1px solid #000; padding: 6px; text-align: right;"></td>
@@ -808,14 +821,14 @@ export const exportTransactionLedgerToPDFLegacy = async (options: TransactionLed
       return `
         <tr>
           <td style="border: 1px solid #000; padding: 6px; text-align: center;">${isFirstRow ? dateStr : ''}</td>
-          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${isFirstRow ? (entry.customerName || customer.name) : ''}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${isFirstRow ? escapeHtml(entry.customerName || customer.name) : ''}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: center; color: ${typeColorMap[entry.type] || '#000'};">${isFirstRow ? (typeNameMap[entry.type] || '') : ''}</td>
-          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${itemDisplay}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center;">${escapeHtml(itemDisplay)}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: right;">${supplyAmountHtml}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: right;">${taxAmountHtml}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: right;">${totalAmountHtml}</td>
           <td style="border: 1px solid #000; padding: 6px; text-align: right; font-weight: bold; color: ${(cumulativeBalance ?? 0) >= 0 ? '#1890ff' : '#ff4d4f'};">${(cumulativeBalance ?? 0).toLocaleString()}원</td>
-          <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 9px;">${isFirstRow ? (entry.memo || '') : ''}</td>
+          <td style="border: 1px solid #000; padding: 6px; text-align: center; font-size: 9px;">${isFirstRow ? escapeHtml(entry.memo || '') : ''}</td>
         </tr>
       `;
     }).join('');
@@ -824,21 +837,21 @@ export const exportTransactionLedgerToPDFLegacy = async (options: TransactionLed
       <div style="font-family: 'Malgun Gothic', sans-serif; font-size: 10pt; line-height: 1.4; color: #000;">
         <!-- 제목 -->
         <div style="font-size: 22pt; font-weight: bold; text-align: left; margin-bottom: 20px;">
-          ${title}
+          ${escapeHtml(title)}
         </div>
 
         <!-- 거래처 정보 -->
         <div style="background-color: #f8f9fa; padding: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; font-size: 10pt;">
           <div style="display: flex; margin-bottom: 6px;">
-            <div style="flex: 1;"><strong>거래처명:</strong> ${customer.name}</div>
-            <div style="flex: 1;"><strong>거래처코드:</strong> ${customer.customerCode}</div>
-            <div style="flex: 1;"><strong>사업자번호:</strong> ${formatBusinessNumber(customer.businessNumber)}</div>
-            <div style="flex: 1;"><strong>대표자:</strong> ${customer.representative || '미등록'}</div>
+            <div style="flex: 1;"><strong>거래처명:</strong> ${escapeHtml(customer.name)}</div>
+            <div style="flex: 1;"><strong>거래처코드:</strong> ${escapeHtml(customer.customerCode)}</div>
+            <div style="flex: 1;"><strong>사업자번호:</strong> ${escapeHtml(formatBusinessNumber(customer.businessNumber))}</div>
+            <div style="flex: 1;"><strong>대표자:</strong> ${escapeHtml(customer.representative || '미등록')}</div>
           </div>
-          <div style="margin-bottom: 4px; word-break: break-word;"><strong>주소:</strong> ${customer.address || '미등록'}</div>
+          <div style="margin-bottom: 4px; word-break: break-word;"><strong>주소:</strong> ${escapeHtml(customer.address || '미등록')}</div>
           <div style="display: flex;">
-            <div style="flex: 1;"><strong>전화번호:</strong> ${customer.phone || '미등록'}</div>
-            <div style="flex: 1;"><strong>이메일:</strong> ${customer.email || '미등록'}</div>
+            <div style="flex: 1;"><strong>전화번호:</strong> ${escapeHtml(customer.phone || '미등록')}</div>
+            <div style="flex: 1;"><strong>이메일:</strong> ${escapeHtml(customer.email || '미등록')}</div>
             <div style="flex: 2;"><strong>조회기간:</strong> ${dateRange.start} ~ ${dateRange.end}</div>
           </div>
         </div>

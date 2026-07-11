@@ -12,6 +12,7 @@ import { PurchaseOrderController } from '../controllers/PurchaseOrderController'
 import { authenticateToken } from '../middleware/auth';
 import { businessAccessMiddleware } from '../middleware/businessAccessMiddleware';
 import { requireBusinessAdmin } from '../middleware/requireBusinessAdmin';
+import { requireWriteRole } from '../middleware/requireWriteRole';
 import multer from 'multer';
 
 const router: Router = Router();
@@ -26,6 +27,8 @@ const upload = multer({
 
 // 모든 business 라우트에 인증 미들웨어 적용
 router.use(authenticateToken);
+// 조회 전용 역할(sales_viewer)의 쓰기(POST/PUT/PATCH/DELETE) 서버측 차단
+router.use(requireWriteRole);
 
 // 사업자 관리 API 라우트
 // 특정 경로를 파라미터 경로보다 먼저 정의
