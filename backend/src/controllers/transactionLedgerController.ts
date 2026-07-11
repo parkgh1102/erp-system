@@ -291,19 +291,31 @@ export const transactionLedgerController = {
         const itemCount = purchase.items?.length || 0;
 
         // 전체 품목 배열 생성 (세액, 합계 포함) - product.taxType 기반 세액 계산
+        // 매입 품목은 세액을 저장하지 않으므로 매입 전체 세액을 품목별로 안분한다.
+        // 분모는 '과세 품목 공급가액 합계'(면세 제외)여야 안분 세액 합이 총세액과 일치한다.
         const totalPurchaseVat = Number(purchase.vatAmount) || 0;
-        const allPurchaseItems: LedgerItemInfo[] = purchase.items?.map(item => {
+        const purchaseItems = purchase.items || [];
+        const isTaxable = (it: any) => ((it.product?.taxType || 'tax_separate') !== 'tax_free');
+        const taxableBase = purchaseItems.reduce(
+          (sum, it) => (isTaxable(it) ? sum + (Number(it.amount) || 0) : sum),
+          0
+        );
+        // 반올림 잔차를 몰아줄 마지막 과세 품목 인덱스
+        let lastTaxableIdx = -1;
+        purchaseItems.forEach((it, i) => { if (isTaxable(it)) lastTaxableIdx = i; });
+        let allocatedVat = 0;
+        const allPurchaseItems: LedgerItemInfo[] = purchaseItems.map((item, i) => {
           const itemSupplyAmount = Number(item.amount) || 0;
-          // product의 taxType 확인하여 세액 계산
-          const taxType = (item as any).product?.taxType || 'tax_separate';
           let itemTaxAmount = 0;
 
-          if (taxType === 'tax_free') {
-            // 면세: 세액 0
-            itemTaxAmount = 0;
-          } else if (supplyAmount > 0) {
-            // 과세: 전체 세액을 품목별 공급가액 비율로 배분
-            itemTaxAmount = Math.round(totalPurchaseVat * (itemSupplyAmount / supplyAmount));
+          if (isTaxable(item) && taxableBase > 0) {
+            if (i === lastTaxableIdx) {
+              // 마지막 과세 품목: 남은 세액을 모두 배정 → 합계 = 총세액 보장
+              itemTaxAmount = totalPurchaseVat - allocatedVat;
+            } else {
+              itemTaxAmount = Math.round(totalPurchaseVat * (itemSupplyAmount / taxableBase));
+              allocatedVat += itemTaxAmount;
+            }
           }
 
           return {
@@ -316,7 +328,7 @@ export const transactionLedgerController = {
             taxAmount: itemTaxAmount,
             totalAmount: itemSupplyAmount + itemTaxAmount
           };
-        }) || [];
+        });
 
         entries.push({
           id: purchase.id + 10000,
@@ -386,11 +398,13 @@ export const transactionLedgerController = {
       });
 
       // 집계 계산 - NaN 방어를 위해 || 0 추가
-      const totalSales = entries.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.amount || 0), 0);
-      const totalPurchase = entries.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.amount || 0), 0);
+      // 매출/매입 합계는 공급가액+세액(totalAmount) 기준으로 통일 (getLedgerSummary·행잔액·인쇄와 일치).
+      const totalSales = entries.filter(e => e.type === 'sales').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
+      const totalPurchase = entries.filter(e => e.type === 'purchase').reduce((sum, e) => sum + (e.totalAmount || 0), 0);
       const totalReceipt = entries.filter(e => e.type === 'receipt').reduce((sum, e) => sum + (e.amount || 0), 0);
       const totalPayment = entries.filter(e => e.type === 'payment').reduce((sum, e) => sum + (e.amount || 0), 0);
-      const finalBalance = previousBalance + (totalSales || 0) - (totalPurchase || 0) - (totalReceipt || 0) + (totalPayment || 0);
+      // 마감잔액은 행 잔액 재계산 결과(마지막 행)와 정확히 일치시킴 (VAT 포함)
+      const finalBalance = recalculatedBalance;
       const totalQuantity = entries.reduce((sum, e) => sum + (e.itemInfo?.quantity || 0), 0);
 
       const ledgerData: LedgerData = {
