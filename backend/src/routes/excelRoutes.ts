@@ -1,6 +1,8 @@
 import express, { Router } from 'express';
 import multer from 'multer';
 import { authenticateToken } from '../middleware/auth';
+import { businessAccessMiddleware } from '../middleware/businessAccessMiddleware';
+import { requireWriteRole } from '../middleware/requireWriteRole';
 import {
   generateCustomerTemplate,
   generateProductTemplate,
@@ -39,10 +41,10 @@ router.get('/template/purchases', authenticateToken, generatePurchaseTemplate);
 router.get('/template/receivables', authenticateToken, generateReceivableTemplate);
 router.get('/template/payables', authenticateToken, generatePayableTemplate);
 
-// 업로드
-router.post('/:businessId/upload/customers', authenticateToken, upload.single('file'), uploadCustomers);
-router.post('/:businessId/upload/products', authenticateToken, upload.single('file'), uploadProducts);
-router.post('/:businessId/upload/sales', authenticateToken, upload.single('file'), uploadSales);
-router.post('/:businessId/upload/purchases', authenticateToken, upload.single('file'), uploadPurchases);
+// 업로드 (접근권 검증 + 조회전용 역할 쓰기 차단)
+router.post('/:businessId/upload/customers', authenticateToken, businessAccessMiddleware, requireWriteRole, upload.single('file'), uploadCustomers);
+router.post('/:businessId/upload/products', authenticateToken, businessAccessMiddleware, requireWriteRole, upload.single('file'), uploadProducts);
+router.post('/:businessId/upload/sales', authenticateToken, businessAccessMiddleware, requireWriteRole, upload.single('file'), uploadSales);
+router.post('/:businessId/upload/purchases', authenticateToken, businessAccessMiddleware, requireWriteRole, upload.single('file'), uploadPurchases);
 
 export default router;

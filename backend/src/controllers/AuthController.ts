@@ -947,9 +947,8 @@ export const AuthController = {
         message: '인증코드를 발송했습니다.',
         data: {
           email: user.email,
-          phoneMasked: maskPhone(targetPhoneRaw),
-          // 개발 환경에서만 코드 노출 (운영 미노출)
-          devCode: isProd ? undefined : code
+          phoneMasked: maskPhone(targetPhoneRaw)
+          // OTP 코드는 응답에 절대 반환하지 않음(NODE_ENV 오설정 시 탈취 방지). 로컬 개발은 서버 콘솔 로그로 확인.
         }
       });
     } catch (error: unknown) {
@@ -1025,9 +1024,8 @@ export const AuthController = {
         message: '인증코드를 발송했습니다.',
         data: {
           email: user.email,
-          phoneMasked: maskPhone(cleanedPhone),
-          // 개발 환경에서만 코드 노출 (운영 미노출)
-          devCode: isProd ? undefined : code
+          phoneMasked: maskPhone(cleanedPhone)
+          // OTP 코드는 응답에 절대 반환하지 않음(NODE_ENV 오설정 시 탈취 방지). 로컬 개발은 서버 콘솔 로그로 확인.
         }
       });
     } catch (error: unknown) {

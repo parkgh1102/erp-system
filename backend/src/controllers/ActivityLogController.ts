@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { ActivityLog } from '../entities/ActivityLog';
 import { User } from '../entities/User';
+import { Business } from '../entities/Business';
 
 export class ActivityLogController {
   private activityLogRepository = AppDataSource.getRepository(ActivityLog);
@@ -145,6 +146,7 @@ export class ActivityLogController {
   async deleteLog(req: Request, res: Response): Promise<Response> {
     try {
       const logId = Number(req.params.id);
+      const userId = (req as any).user?.userId;
 
       const log = await this.activityLogRepository.findOne({
         where: { id: logId }
@@ -154,6 +156,17 @@ export class ActivityLogController {
         return res.status(404).json({
           success: false,
           message: '활동 로그를 찾을 수 없습니다.'
+        });
+      }
+
+      // 요청자가 해당 로그의 사업체 소유자(admin)인지 검증 → 크로스테넌트 삭제 차단
+      const business = await AppDataSource.getRepository(Business).findOne({
+        where: { id: log.businessId, userId }
+      });
+      if (!business) {
+        return res.status(403).json({
+          success: false,
+          message: '해당 로그를 삭제할 권한이 없습니다.'
         });
       }
 
