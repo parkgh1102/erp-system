@@ -6,54 +6,107 @@ import { Sales } from '../entities/Sales';
 import { SalesItem } from '../entities/SalesItem';
 import { Purchase } from '../entities/Purchase';
 import { PurchaseItem } from '../entities/PurchaseItem';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+
+// ─────────────────────────────────────────────────────────────
+// exceljs 헬퍼 (xlsx 대체)
+// - xlsx는 npm 레지스트리에 보안 패치가 없어(prototype pollution/ReDoS) exceljs로 이관.
+// - 아래 두 헬퍼로 기존 XLSX.utils.json_to_sheet / sheet_to_json 동작을 동일하게 재현.
+// ─────────────────────────────────────────────────────────────
+
+/** 헤더 1행 + 샘플 1행짜리 템플릿 워크북 버퍼 생성 (기존 json_to_sheet 대체) */
+async function buildTemplateBuffer(
+  sheetName: string,
+  headers: string[],
+  widths: number[],
+  sampleRow: Record<string, unknown>
+): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(sheetName);
+  ws.columns = headers.map((h, i) => ({ header: h, key: h, width: widths[i] }));
+  ws.addRow(sampleRow);
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
+
+/** exceljs 셀 값을 원시 값으로 정규화 (Date는 유지, 리치텍스트/수식/하이퍼링크 평탄화) */
+function normalizeCellValue(value: ExcelJS.CellValue): unknown {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === 'object') {
+    const v = value as unknown as Record<string, unknown>;
+    if ('richText' in v && Array.isArray(v.richText)) {
+      return (v.richText as Array<{ text?: string }>).map(t => t.text ?? '').join('');
+    }
+    if ('text' in v) return v.text; // 하이퍼링크
+    if ('result' in v) return v.result; // 수식 결과
+    if ('error' in v) return null;
+    return String(value);
+  }
+  return value; // string | number | boolean
+}
+
+/**
+ * 업로드된 xlsx 버퍼의 첫 시트를 객체 배열로 파싱 (기존 XLSX.utils.sheet_to_json 대체).
+ * 1행을 헤더로 사용하고, 업로드 파일의 실제 헤더명을 키로 그대로 사용한다(기존 동작 보존).
+ * 완전히 빈 행은 건너뛴다.
+ */
+async function readSheetToJson(buffer: Buffer): Promise<Record<string, unknown>[]> {
+  const wb = new ExcelJS.Workbook();
+  // @types/node의 제네릭 Buffer<ArrayBufferLike>와 exceljs의 Buffer 타입 마찰 회피
+  await wb.xlsx.load(buffer as unknown as ExcelJS.Buffer);
+  const ws = wb.worksheets[0];
+  if (!ws) return [];
+
+  // 헤더(1행) 수집 — 열 인덱스(1-based) 기준 sparse 배열
+  const headers: string[] = [];
+  ws.getRow(1).eachCell({ includeEmpty: false }, (cell, col) => {
+    const text = normalizeCellValue(cell.value);
+    if (text !== null && text !== undefined && String(text).trim() !== '') {
+      headers[col] = String(text).trim();
+    }
+  });
+
+  const rows: Record<string, unknown>[] = [];
+  for (let r = 2; r <= ws.rowCount; r++) {
+    const row = ws.getRow(r);
+    const obj: Record<string, unknown> = {};
+    let hasValue = false;
+    for (let c = 1; c < headers.length; c++) {
+      const key = headers[c];
+      if (!key) continue;
+      const v = normalizeCellValue(row.getCell(c).value);
+      if (v !== null && v !== undefined && v !== '') {
+        obj[key] = v;
+        hasValue = true;
+      }
+    }
+    if (hasValue) rows.push(obj);
+  }
+  return rows;
+}
 
 // Excel 템플릿 생성
 export const generateCustomerTemplate = async (req: Request, res: Response) => {
   try {
-    const wb = XLSX.utils.book_new();
-
     // 거래처 템플릿 데이터
-    const templateData = [
-      {
-        '거래처코드': 'C001',
-        '거래처명': '예시거래처',
-        '사업자번호': '123-45-67890',
-        '주소': '서울시 강남구',
-        '업태': '도소매',
-        '종목': '사무용품',
-        '대표자': '홍길동',
-        '전화번호': '02-1234-5678',
-        '팩스번호': '02-1234-5679',
-        '이메일': 'example@email.com',
-        '담당자 연락처': '010-1234-5678',
-        '거래처구분': '매출처',
-        '활성여부': 'Y'
-      }
-    ];
+    const sampleRow = {
+      '거래처코드': 'C001',
+      '거래처명': '예시거래처',
+      '사업자번호': '123-45-67890',
+      '주소': '서울시 강남구',
+      '업태': '도소매',
+      '종목': '사무용품',
+      '대표자': '홍길동',
+      '전화번호': '02-1234-5678',
+      '팩스번호': '02-1234-5679',
+      '이메일': 'example@email.com',
+      '담당자 연락처': '010-1234-5678',
+      '거래처구분': '매출처',
+      '활성여부': 'Y'
+    };
+    const widths = [15, 25, 15, 30, 12, 12, 15, 15, 15, 25, 15, 12, 10];
 
-    const ws = XLSX.utils.json_to_sheet(templateData);
-
-    // 컬럼 너비 설정
-    ws['!cols'] = [
-      { wch: 15 }, // 거래처코드
-      { wch: 25 }, // 거래처명
-      { wch: 15 }, // 사업자번호
-      { wch: 30 }, // 주소
-      { wch: 12 }, // 업태
-      { wch: 12 }, // 종목
-      { wch: 15 }, // 대표자
-      { wch: 15 }, // 전화번호
-      { wch: 15 }, // 팩스번호
-      { wch: 25 }, // 이메일
-      { wch: 15 }, // 담당자 연락처
-      { wch: 12 }, // 거래처구분
-      { wch: 10 }  // 활성여부
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, '거래처');
-
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await buildTemplateBuffer('거래처', Object.keys(sampleRow), widths, sampleRow);
 
     res.setHeader('Content-Disposition', 'attachment; filename=customer_template.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -66,43 +119,22 @@ export const generateCustomerTemplate = async (req: Request, res: Response) => {
 
 export const generateProductTemplate = async (req: Request, res: Response) => {
   try {
-    const wb = XLSX.utils.book_new();
-
     // 품목 템플릿 데이터
-    const templateData = [
-      {
-        '품목코드': 'P001',
-        '품목명': '예시품목',
-        '규격': 'A4',
-        '단위': 'EA',
-        '매입단가': '10000',
-        '매출단가': '15000',
-        '분류': '사무용품',
-        '세금구분': 'tax_separate',
-        '비고': '',
-        '활성여부': 'Y'
-      }
-    ];
+    const sampleRow = {
+      '품목코드': 'P001',
+      '품목명': '예시품목',
+      '규격': 'A4',
+      '단위': 'EA',
+      '매입단가': '10000',
+      '매출단가': '15000',
+      '분류': '사무용품',
+      '세금구분': 'tax_separate',
+      '비고': '',
+      '활성여부': 'Y'
+    };
+    const widths = [15, 25, 15, 10, 12, 12, 15, 15, 25, 10];
 
-    const ws = XLSX.utils.json_to_sheet(templateData);
-
-    // 컬럼 너비 설정
-    ws['!cols'] = [
-      { wch: 15 }, // 품목코드
-      { wch: 25 }, // 품목명
-      { wch: 15 }, // 규격
-      { wch: 10 }, // 단위
-      { wch: 12 }, // 매입단가
-      { wch: 12 }, // 매출단가
-      { wch: 15 }, // 분류
-      { wch: 15 }, // 세금구분
-      { wch: 25 }, // 비고
-      { wch: 10 }  // 활성여부
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, '품목');
-
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await buildTemplateBuffer('품목', Object.keys(sampleRow), widths, sampleRow);
 
     res.setHeader('Content-Disposition', 'attachment; filename=product_template.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -115,43 +147,22 @@ export const generateProductTemplate = async (req: Request, res: Response) => {
 
 export const generateSalesTemplate = async (req: Request, res: Response) => {
   try {
-    const wb = XLSX.utils.book_new();
-
     // 매출 템플릿 데이터 - 새로운 순서
-    const templateData = [
-      {
-        '매출일자': '2025-01-01',
-        '거래처명': '예시거래처',
-        '품목명': '예시품목',
-        '규격': 'A4',
-        '수량': '10',
-        '단위': 'EA',
-        '단가': '15000',
-        '공급가액': '150000',
-        '세액': '15000',
-        '비고': ''
-      }
-    ];
+    const sampleRow = {
+      '매출일자': '2025-01-01',
+      '거래처명': '예시거래처',
+      '품목명': '예시품목',
+      '규격': 'A4',
+      '수량': '10',
+      '단위': 'EA',
+      '단가': '15000',
+      '공급가액': '150000',
+      '세액': '15000',
+      '비고': ''
+    };
+    const widths = [12, 20, 25, 15, 10, 10, 12, 15, 12, 25];
 
-    const ws = XLSX.utils.json_to_sheet(templateData);
-
-    // 컬럼 너비 설정
-    ws['!cols'] = [
-      { wch: 12 }, // 매출일자
-      { wch: 20 }, // 거래처명
-      { wch: 25 }, // 품목명
-      { wch: 15 }, // 규격
-      { wch: 10 }, // 수량
-      { wch: 10 }, // 단위
-      { wch: 12 }, // 단가
-      { wch: 15 }, // 공급가액
-      { wch: 12 }, // 세액
-      { wch: 25 }  // 비고
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, '매출');
-
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await buildTemplateBuffer('매출', Object.keys(sampleRow), widths, sampleRow);
 
     res.setHeader('Content-Disposition', 'attachment; filename=sales_template.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -164,43 +175,22 @@ export const generateSalesTemplate = async (req: Request, res: Response) => {
 
 export const generatePurchaseTemplate = async (req: Request, res: Response) => {
   try {
-    const wb = XLSX.utils.book_new();
-
     // 매입 템플릿 데이터 - 새로운 순서
-    const templateData = [
-      {
-        '매입일자': '2025-01-01',
-        '거래처명': '예시거래처',
-        '품목명': '예시품목',
-        '규격': 'A4',
-        '수량': '10',
-        '단위': 'EA',
-        '단가': '10000',
-        '공급가액': '100000',
-        '세액': '10000',
-        '비고': ''
-      }
-    ];
+    const sampleRow = {
+      '매입일자': '2025-01-01',
+      '거래처명': '예시거래처',
+      '품목명': '예시품목',
+      '규격': 'A4',
+      '수량': '10',
+      '단위': 'EA',
+      '단가': '10000',
+      '공급가액': '100000',
+      '세액': '10000',
+      '비고': ''
+    };
+    const widths = [12, 20, 25, 15, 10, 10, 12, 15, 12, 25];
 
-    const ws = XLSX.utils.json_to_sheet(templateData);
-
-    // 컬럼 너비 설정
-    ws['!cols'] = [
-      { wch: 12 }, // 매입일자
-      { wch: 20 }, // 거래처명
-      { wch: 25 }, // 품목명
-      { wch: 15 }, // 규격
-      { wch: 10 }, // 수량
-      { wch: 10 }, // 단위
-      { wch: 12 }, // 단가
-      { wch: 15 }, // 공급가액
-      { wch: 12 }, // 세액
-      { wch: 25 }  // 비고
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, '매입');
-
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await buildTemplateBuffer('매입', Object.keys(sampleRow), widths, sampleRow);
 
     res.setHeader('Content-Disposition', 'attachment; filename=purchase_template.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -214,33 +204,17 @@ export const generatePurchaseTemplate = async (req: Request, res: Response) => {
 // 수금 템플릿 생성
 export const generateReceivableTemplate = async (req: Request, res: Response) => {
   try {
-    const wb = XLSX.utils.book_new();
-
     // 수금 템플릿 데이터
-    const templateData = [
-      {
-        'No.': '1',
-        '수금일자': '2025-01-01',
-        '거래처': '예시거래처',
-        '수금금액': '1000000',
-        '메모': ''
-      }
-    ];
+    const sampleRow = {
+      'No.': '1',
+      '수금일자': '2025-01-01',
+      '거래처': '예시거래처',
+      '수금금액': '1000000',
+      '메모': ''
+    };
+    const widths = [8, 12, 20, 15, 25];
 
-    const ws = XLSX.utils.json_to_sheet(templateData);
-
-    // 컬럼 너비 설정
-    ws['!cols'] = [
-      { wch: 8 },  // No.
-      { wch: 12 }, // 수금일자
-      { wch: 20 }, // 거래처
-      { wch: 15 }, // 수금금액
-      { wch: 25 }  // 메모
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, '수금');
-
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await buildTemplateBuffer('수금', Object.keys(sampleRow), widths, sampleRow);
 
     res.setHeader('Content-Disposition', 'attachment; filename=receivable_template.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -254,33 +228,17 @@ export const generateReceivableTemplate = async (req: Request, res: Response) =>
 // 지급 템플릿 생성
 export const generatePayableTemplate = async (req: Request, res: Response) => {
   try {
-    const wb = XLSX.utils.book_new();
-
     // 지급 템플릿 데이터
-    const templateData = [
-      {
-        'No.': '1',
-        '지급일자': '2025-01-01',
-        '거래처': '예시거래처',
-        '지급금액': '1000000',
-        '메모': ''
-      }
-    ];
+    const sampleRow = {
+      'No.': '1',
+      '지급일자': '2025-01-01',
+      '거래처': '예시거래처',
+      '지급금액': '1000000',
+      '메모': ''
+    };
+    const widths = [8, 12, 20, 15, 25];
 
-    const ws = XLSX.utils.json_to_sheet(templateData);
-
-    // 컬럼 너비 설정
-    ws['!cols'] = [
-      { wch: 8 },  // No.
-      { wch: 12 }, // 지급일자
-      { wch: 20 }, // 거래처
-      { wch: 15 }, // 지급금액
-      { wch: 25 }  // 메모
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, '지급');
-
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await buildTemplateBuffer('지급', Object.keys(sampleRow), widths, sampleRow);
 
     res.setHeader('Content-Disposition', 'attachment; filename=payable_template.xlsx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -299,10 +257,7 @@ export const uploadCustomers = async (req: Request, res: Response) => {
     }
 
     const businessId = parseInt(req.params.businessId);
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(sheet);
+    const data = await readSheetToJson(req.file.buffer);
 
     const customerRepo = AppDataSource.getRepository(Customer);
     const results = { success: 0, failed: 0, errors: [] as string[] };
@@ -385,10 +340,7 @@ export const uploadProducts = async (req: Request, res: Response) => {
     }
 
     const businessId = parseInt(req.params.businessId);
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(sheet);
+    const data = await readSheetToJson(req.file.buffer);
 
     const productRepo = AppDataSource.getRepository(Product);
     const results = { success: 0, failed: 0, errors: [] as string[] };
@@ -481,10 +433,7 @@ export const uploadSales = async (req: Request, res: Response) => {
     }
 
     const businessId = parseInt(req.params.businessId);
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(sheet);
+    const data = await readSheetToJson(req.file.buffer);
 
     const salesRepo = AppDataSource.getRepository(Sales);
     const salesItemRepo = AppDataSource.getRepository(SalesItem);
@@ -573,10 +522,7 @@ export const uploadPurchases = async (req: Request, res: Response) => {
     }
 
     const businessId = parseInt(req.params.businessId);
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(sheet);
+    const data = await readSheetToJson(req.file.buffer);
 
     const purchaseRepo = AppDataSource.getRepository(Purchase);
     const purchaseItemRepo = AppDataSource.getRepository(PurchaseItem);
