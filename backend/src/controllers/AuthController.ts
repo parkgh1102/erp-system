@@ -627,7 +627,7 @@ export const AuthController = {
           // 토큰 만료까지 남은 시간 계산
           const expiresIn = (decoded.exp || 0) * 1000 - Date.now();
           if (expiresIn > 0) {
-            tokenBlacklist.add(authToken, expiresIn);
+            await tokenBlacklist.add(authToken, expiresIn);
           }
         } catch {
           // 이미 만료된 토큰은 무시
@@ -639,7 +639,7 @@ export const AuthController = {
           const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as JwtPayload;
           const expiresIn = (decoded.exp || 0) * 1000 - Date.now();
           if (expiresIn > 0) {
-            tokenBlacklist.add(refreshToken, expiresIn);
+            await tokenBlacklist.add(refreshToken, expiresIn);
           }
         } catch {
           // 이미 만료된 토큰은 무시
@@ -1108,7 +1108,7 @@ export const AuthController = {
       let decoded: JwtPayload;
 
       // 토큰이 이미 사용되었는지 확인 (블랙리스트)
-      if (tokenBlacklist.isBlacklisted(resetToken)) {
+      if (await tokenBlacklist.isBlacklisted(resetToken)) {
         return res.status(401).json({
           success: false,
           message: '이미 사용된 토큰입니다. 비밀번호 재설정을 다시 요청해주세요.'
@@ -1168,7 +1168,7 @@ export const AuthController = {
       await userRepository.save(user);
 
       // 사용된 토큰을 블랙리스트에 추가 (5분 유효기간)
-      tokenBlacklist.add(resetToken, 5 * 60 * 1000);
+      await tokenBlacklist.add(resetToken, 5 * 60 * 1000);
 
       securityLogger.logPasswordReset(user.id, user.email);
       logger.info('Password reset successfully', { userId: user.id });

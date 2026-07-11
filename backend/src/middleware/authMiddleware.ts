@@ -13,7 +13,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   // 쿠키에서 토큰 가져오기 (우선순위: 쿠키 > Authorization 헤더)
   const token = req.cookies.authToken ||
                 (req.headers.authorization && req.headers.authorization.split(' ')[1]);
@@ -26,7 +26,7 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
   }
 
   // 로그아웃된(블랙리스트) 토큰 차단 — auth.ts와 동일하게 무효화 보장
-  if (tokenBlacklist.isBlacklisted(token)) {
+  if (await tokenBlacklist.isBlacklisted(token)) {
     return res.status(401).json({
       success: false,
       message: '로그아웃된 토큰입니다. 다시 로그인해주세요.'
