@@ -96,21 +96,22 @@ const Dashboard: React.FC = () => {
         dashboardAPI.getRecentTransactions(currentBusiness.id, { limit: 5 })
       ]);
 
+      // 비정상 응답(배포 직후 cold start 등)에도 예외로 대시보드 전체가 죽지 않도록
+      // 옵셔널 체이닝으로 안전 접근 (실패/부분실패는 조용히 기본값 사용)
       if (statsResponse.status === 'fulfilled') {
-        setDashboardStats(statsResponse.value.data.data);
+        setDashboardStats(statsResponse.value?.data?.data ?? null);
       } else {
         logger.error('Stats API failed:', statsResponse.reason);
       }
 
       if (transactionsResponse.status === 'fulfilled') {
-        setRecentTransactions(transactionsResponse.value.data.data || []);
+        setRecentTransactions(transactionsResponse.value?.data?.data || []);
       } else {
         logger.error('Transactions API failed:', transactionsResponse.reason);
       }
 
     } catch (error) {
       logger.error('Dashboard data fetch error:', error);
-      message.error('대시보드 데이터를 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
