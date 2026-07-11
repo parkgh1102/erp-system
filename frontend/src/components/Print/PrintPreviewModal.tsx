@@ -643,9 +643,16 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
       csvRows.push(['공지사항', data.notice]);
     }
 
+    // CSV 수식 인젝션 방지: =,+,-,@,탭,CR로 시작하는 값 앞에 '를 붙여 수식 실행 차단
+    // (엑셀은 따옴표로 감싼 값이라도 선행 =를 수식으로 해석하므로 이스케이프 필요)
+    const sanitizeCsvField = (v: unknown): string => {
+      const s = String(v ?? '');
+      return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+    };
+
     // CSV 문자열로 변환 (UTF-8 BOM 추가)
     const csvString = '\uFEFF' + csvRows.map(row =>
-      row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+      row.map(field => `"${sanitizeCsvField(field).replace(/"/g, '""')}"`).join(',')
     ).join('\n');
 
     return csvString;
