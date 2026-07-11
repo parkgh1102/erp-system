@@ -30,7 +30,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 
   try {
     const env = getValidatedEnv();
-    const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] }) as JwtPayload;
 
     req.user = {
       userId: decoded.userId,

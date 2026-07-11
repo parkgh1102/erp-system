@@ -529,7 +529,7 @@ export const AuthController = {
       }
 
       const env = getValidatedEnv();
-      const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as JwtPayload & { type: string };
+      const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as JwtPayload & { type: string };
 
       if (decoded.type !== 'refresh') {
         return res.status(403).json({
@@ -623,7 +623,7 @@ export const AuthController = {
 
       if (authToken) {
         try {
-          const decoded = jwt.verify(authToken, env.JWT_SECRET) as JwtPayload;
+          const decoded = jwt.verify(authToken, env.JWT_SECRET, { algorithms: ['HS256'] }) as JwtPayload;
           // 토큰 만료까지 남은 시간 계산
           const expiresIn = (decoded.exp || 0) * 1000 - Date.now();
           if (expiresIn > 0) {
@@ -636,7 +636,7 @@ export const AuthController = {
 
       if (refreshToken) {
         try {
-          const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET) as JwtPayload;
+          const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as JwtPayload;
           const expiresIn = (decoded.exp || 0) * 1000 - Date.now();
           if (expiresIn > 0) {
             tokenBlacklist.add(refreshToken, expiresIn);
@@ -1116,7 +1116,7 @@ export const AuthController = {
       }
 
       try {
-        decoded = jwt.verify(resetToken, env.JWT_SECRET) as JwtPayload;
+        decoded = jwt.verify(resetToken, env.JWT_SECRET, { algorithms: ['HS256'] }) as JwtPayload;
       } catch (err) {
         return res.status(401).json({
           success: false,
