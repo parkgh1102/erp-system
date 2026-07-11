@@ -5,9 +5,10 @@ import { securityLogger } from './securityLogger';
 const WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10); // 15분
 
 // 전역 안전망 (DoS/폭주 방지). 정상 사용자에 영향 없도록 넉넉하게.
+// 배포 env에 낮은 RATE_LIMIT_MAX(예: 100)가 남아 있어도 최소 1000은 보장(정상 사용자 429 방지).
 export const generalRateLimit = rateLimit({
   windowMs: WINDOW_MS,
-  max: parseInt(process.env.RATE_LIMIT_MAX || '1000', 10), // IP당 15분 1000회
+  max: Math.max(parseInt(process.env.RATE_LIMIT_MAX || '2000', 10), 1000), // IP당 15분 최소 1000회
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
