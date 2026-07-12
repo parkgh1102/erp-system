@@ -99,6 +99,9 @@ DB 마이그레이션: `cd backend && npm run migration:run` / `migration:genera
 - 모바일 숫자 키패드, Select 드롭다운, 다크모드 등 UI 개선
 - 사업체 정보 수정 즉시 반영, 거래명세표 단독 인쇄 주소 문제 수정
 
+### 2026-07-12
+- 📱 모바일 메뉴 아이콘 드래그 편집(핸드폰 홈화면식) 신규. 요구: 하단바(dock)·더보기(drawer) 안에서 순서 이동 + 두 구역 **교차 이동**, dock **4칸 고정**, 편집버튼 방식(A안). 구현: `@dnd-kit/core`+`sortable`+`modifiers` 설치(신규 의존성, npm audit 4건 유지=새 취약점 0). ① 신규 `hooks/useMobileNav.tsx` — 메뉴 registry(`NAV_ITEMS`, 아이콘 색 미지정→담기는 위치 색 상속)+역할별 배치(`ROLE_NAV`: admin dock4+drawer9, sales_viewer dock5+drawer0=편집불가), `localStorage erp:mobileNav:<role>` 저장, `normalizeCapacity`(초과분→drawer 앞/부족분←drawer 앞으로 dock 정확히 N칸 유지), 로드 시 재조정(중복/무효키 제거·신규 메뉴 drawer 끝 보충). ② 신규 `components/Layout/MobileNavEditor.tsx` — dnd-kit 멀티컨테이너(dock/drawer 2 Zone), MouseSensor(6px)/TouchSensor(150ms 롱프레스, 스크롤·탭 충돌 방지), onDragOver 교차이동+onDragEnd 정규화 후 `queueMicrotask(onChange)`로 저장, DragOverlay 부양 타일, `autoScroll={false}`(짧은 바텀시트라 불필요+드래그 시 rAF 오토스크롤이 헤드리스에서 무한루프로 hang 유발). ③ `AppLayout.tsx` — 기존 하드코딩 primaryItems/moreItems 제거하고 하단바=`mobileNav.dock`+더보기, 더보기 드로어에 편집/완료·초기화(`extra`), 편집 시 `MobileNavEditor`(reset은 `navEditSeed` 키로 리마운트)·아니면 기존 그리드(`mobileNav.drawer`) 렌더. ④ `effects.css` `.erp-nav-jiggle`(홈화면 흔들림, 드래그 중·reduced-motion·print 정지). sales_viewer는 drawer 비어 편집버튼·더보기 미노출로 기존 5탭 UX 그대로. Preview 실검증(임시 `/preview-nav` 공개 라우트→삭제, 헤드리스 screenshot 타임아웃이라 합성 마우스이벤트+DOM/localStorage 확인): drawer→dock(4칸 유지·초과분 drawer행), dock→drawer(drawer앞에서 보충해 4칸 유지), dock 내 재정렬, 새로고침 후 순서 유지, 무효키(/BOGUS) 제거+누락키 보충 재조정, 콘솔 에러 0. vite build 통과. ⚠️ 로드 시 재조정은 메모리에서만 반영(다음 저장 때 localStorage 자가치유) — 무해.
+
 ### 2026-06-04
 - CLAUDE.md 신규 작성: 프로젝트 가이드 + 활동 기록 체계 수립.
 
