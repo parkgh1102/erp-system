@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Typography, Badge, Button, Select, Drawer } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Typography, Badge, Button, Select, Drawer, Space } from 'antd';
 import ThemeToggle from '../Common/ThemeToggle';
+import MobileNavEditor from './MobileNavEditor';
+import { useMobileNav, NAV_ITEMS } from '../../hooks/useMobileNav';
 import { prefetchRoute } from '../../utils/routePreload';
 import {
   DashboardOutlined,
@@ -38,12 +40,16 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { isMobile } = useMediaQuery();
   const [collapsed, setCollapsed] = useState(false);
   const [moreDrawerVisible, setMoreDrawerVisible] = useState(false);
+  const [navEditMode, setNavEditMode] = useState(false);
+  const [navEditSeed, setNavEditSeed] = useState(0);
   const [isTabletOrSmaller, setIsTabletOrSmaller] = useState(window.innerWidth <= 992);
   const { user, currentBusiness, setCurrentBusiness, logout } = useAuthStore();
   const { isDark, toggleTheme } = useThemeStore();
   const { unreadCount, fetchUnreadCount, initPushNotifications } = useNotificationStore();
   const navigate = useNavigate();
   const location = useLocation();
+  // 모바일 하단바(dock) + 더보기(drawer) 커스텀 순서 (역할별 localStorage 저장)
+  const mobileNav = useMobileNav(user?.role);
 
   // 태블릿 감지 (992px 이하)
   useEffect(() => {
@@ -506,38 +512,18 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </Content>
       </Layout>
 
-      {/* 모바일 하단 탭바 (주요 5개: 핵심 4 + 더보기) */}
+      {/* 모바일 하단 탭바 (dock 4칸 + 더보기, 순서는 useMobileNav 로 커스텀) */}
       {isTabletOrSmaller && (() => {
-        const primaryItems = [
-          { key: '/dashboard', icon: <DashboardOutlined />, label: '대시보드', roles: ['admin'] },
-          { key: '/customers', icon: <TeamOutlined />, label: '거래처', roles: ['admin', 'sales_viewer'] },
-          { key: '/sales', icon: <ShoppingCartOutlined />, label: '매출', roles: ['admin', 'sales_viewer'] },
-          { key: '/transaction-ledger', icon: <FileTextOutlined />, label: '거래원장', roles: ['admin', 'sales_viewer'] },
-          // 매출 조회 사용자는 더보기 메뉴가 비어 있으므로 거래처 잔액·내 정보를 기본 탭으로 노출
-          { key: '/customer-balance', icon: <BankOutlined />, label: '잔액', roles: ['sales_viewer'] },
-          { key: '/profile', icon: <UserOutlined />, label: '내 정보', roles: ['sales_viewer'] },
-        ].filter(item => item.roles.includes(user?.role || 'admin'));
-
-        // 더보기 드로어에 담을 나머지 메뉴 (주요 탭 제외)
-        const moreItems = [
-          { key: '/purchases', icon: <FileTextOutlined />, label: '매입 관리', roles: ['admin'] },
-          { key: '/inventory', icon: <ShoppingOutlined />, label: '재고 관리', roles: ['admin'] },
-          { key: '/products', icon: <ShoppingOutlined />, label: '품목 관리', roles: ['admin'] },
-          { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
-          { key: '/quotations', icon: <SolutionOutlined />, label: '견적서', roles: ['admin'] },
-          { key: '/purchase-orders', icon: <FileTextOutlined />, label: '발주서', roles: ['admin'] },
-          { key: '/customer-balance', icon: <BankOutlined />, label: '거래처 잔액', roles: ['admin'] },
-          { key: '/settings', icon: <SettingOutlined />, label: '설정', roles: ['admin'] },
-        ].filter(item => item.roles.includes(user?.role || 'admin'));
-
         const activeColor = brand.primary;
         const inactiveColor = isDark ? '#8c8c8c' : '#6b7280';
-        const moreActive = moreItems.some(m => m.key === location.pathname);
+        const hasDrawer = mobileNav.drawer.length > 0;
+        const moreActive = hasDrawer && mobileNav.drawer.includes(location.pathname);
 
-        const tabItems: { key: string; icon: React.ReactNode; label: string; isMore?: boolean }[] = [
-          ...primaryItems.map(i => ({ key: i.key, icon: i.icon, label: i.label })),
-        ];
-        if (moreItems.length > 0) {
+        const tabItems: { key: string; icon: React.ReactNode; label: string; isMore?: boolean }[] =
+          mobileNav.dock
+            .filter(k => NAV_ITEMS[k])
+            .map(k => ({ key: k, icon: NAV_ITEMS[k].icon, label: NAV_ITEMS[k].label }));
+        if (hasDrawer) {
           tabItems.push({ key: '__more__', icon: <AppstoreOutlined />, label: '더보기', isMore: true });
         }
 
@@ -598,51 +584,85 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
       {/* 더보기 드로어 (하단 시트) */}
       <Drawer
-        title="전체 메뉴"
+        title={navEditMode ? '메뉴 편집' : '전체 메뉴'}
         placement="bottom"
         height="auto"
         open={moreDrawerVisible}
-        onClose={() => setMoreDrawerVisible(false)}
-        styles={{ body: { padding: '12px 8px 24px' } }}
-      >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-          {[
-            { key: '/purchases', icon: <FileTextOutlined />, label: '매입 관리', roles: ['admin'] },
-            { key: '/inventory', icon: <ShoppingOutlined />, label: '재고 관리', roles: ['admin'] },
-            { key: '/products', icon: <ShoppingOutlined />, label: '품목 관리', roles: ['admin'] },
-            { key: '/payments', icon: <WalletOutlined />, label: '수금/지급', roles: ['admin'] },
-            { key: '/quotations', icon: <SolutionOutlined />, label: '견적서', roles: ['admin'] },
-            { key: '/purchase-orders', icon: <FileTextOutlined />, label: '발주서', roles: ['admin'] },
-            { key: '/customer-balance', icon: <BankOutlined />, label: '거래처 잔액', roles: ['admin'] },
-            { key: '/settings', icon: <SettingOutlined />, label: '설정', roles: ['admin'] },
-            { key: '/profile', icon: <UserOutlined />, label: '내 정보', roles: ['admin', 'sales_viewer'] },
-          ].filter(item => item.roles.includes(user?.role || 'admin')).map((item) => {
-            const isActive = location.pathname === item.key;
-            return (
-              <div
-                key={item.key}
-                onClick={() => { setMoreDrawerVisible(false); navigate(item.key); }}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  padding: '14px 4px',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  background: isActive ? (isDark ? '#15314f' : brand.primary + '14') : (isDark ? '#262626' : '#f7f8fa'),
-                  color: isActive ? brand.primary : (isDark ? '#d1d5db' : '#374151'),
-                }}
+        onClose={() => { setMoreDrawerVisible(false); setNavEditMode(false); }}
+        extra={mobileNav.editable ? (
+          <Space>
+            {navEditMode && (
+              <Button
+                size="small"
+                onClick={() => { mobileNav.reset(); setNavEditSeed(s => s + 1); }}
               >
-                <div style={{ fontSize: '24px' }}>{item.icon}</div>
-                <Text style={{ fontSize: '12px', color: isActive ? brand.primary : (isDark ? '#d1d5db' : '#374151') }}>
-                  {item.label}
-                </Text>
-              </div>
-            );
-          })}
-        </div>
+                초기화
+              </Button>
+            )}
+            <Button
+              size="small"
+              type={navEditMode ? 'primary' : 'default'}
+              onClick={() => setNavEditMode(v => !v)}
+            >
+              {navEditMode ? '완료' : '편집'}
+            </Button>
+          </Space>
+        ) : undefined}
+        styles={{ body: { padding: '12px 12px 24px' } }}
+      >
+        {navEditMode ? (
+          <>
+            <MobileNavEditor
+              key={navEditSeed}
+              initial={{ dock: mobileNav.dock, drawer: mobileNav.drawer }}
+              dockCapacity={mobileNav.dockCapacity}
+              isDark={isDark}
+              brandPrimary={brand.primary}
+              onChange={mobileNav.save}
+            />
+            <Text
+              style={{
+                display: 'block',
+                textAlign: 'center',
+                marginTop: '12px',
+                fontSize: '11px',
+                color: isDark ? '#8c8c8c' : '#9ca3af',
+              }}
+            >
+              아이콘을 길게 눌러 원하는 위치로 옮기세요
+            </Text>
+          </>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+            {mobileNav.drawer.filter(k => NAV_ITEMS[k]).map((key) => {
+              const meta = NAV_ITEMS[key];
+              const isActive = location.pathname === key;
+              return (
+                <div
+                  key={key}
+                  onClick={() => { setMoreDrawerVisible(false); navigate(key); }}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '14px 4px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    background: isActive ? (isDark ? '#15314f' : brand.primary + '14') : (isDark ? '#262626' : '#f7f8fa'),
+                    color: isActive ? brand.primary : (isDark ? '#d1d5db' : '#374151'),
+                  }}
+                >
+                  <div style={{ fontSize: '24px' }}>{meta.icon}</div>
+                  <Text style={{ fontSize: '12px', color: isActive ? brand.primary : (isDark ? '#d1d5db' : '#374151') }}>
+                    {meta.label}
+                  </Text>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Drawer>
     </Layout>
   );

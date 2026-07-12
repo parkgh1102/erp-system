@@ -642,3 +642,28 @@
     display: none !important;
   }
 }
+
+/* ⑨ 모바일 메뉴 편집 흔들림 (핸드폰 홈화면 아이콘 편집 느낌) */
+@keyframes erpNavJiggle {
+  0% { transform: rotate(-1.1deg); }
+  50% { transform: rotate(1.1deg); }
+  100% { transform: rotate(-1.1deg); }
+}
+.erp-nav-jiggle {
+  animation: erpNavJiggle 0.32s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+/* 드래그 중인 항목은 dnd-kit transform 을 써야 하므로 흔들림 정지 */
+.erp-nav-jiggle:active {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .erp-nav-jiggle {
+    animation: none;
+  }
+}
+@media print {
+  .erp-nav-jiggle {
+    animation: none !important;
+  }
+}
