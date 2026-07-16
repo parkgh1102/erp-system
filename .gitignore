@@ -28,7 +28,9 @@ ssl/
 keys/
 
 # Production builds
-/dist
+# 앞의 '/'는 루트만 매치해 frontend/dist·backend/dist가 추적되던 문제가 있었음.
+# 'dist/'는 모든 하위 경로의 dist 디렉터리를 매치(배포는 전부 소스에서 새로 빌드함).
+dist/
 /build
 
 # Database files
