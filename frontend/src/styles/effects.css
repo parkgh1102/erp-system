@@ -521,6 +521,227 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
 }
 
+/* ---------- ⑩ 대시보드 (KPI 카드 · 차트 · 빠른작업) ---------- */
+/* KPI 카드: 값이 주인공. 라벨/캡션은 뒤로 물러남 */
+.erp-stat-card {
+  height: 100%;
+  border-radius: 12px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .erp-stat-card:hover {
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  }
+
+  .dark-mode .erp-stat-card:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.erp-stat-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.dark-mode .erp-stat-label {
+  color: #a1a1aa;
+}
+
+/* 큰 숫자는 비례 숫자(proportional) — tabular은 열 정렬이 필요한 표에만 */
+.erp-stat-value {
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark-mode .erp-stat-value {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.erp-stat-suffix {
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  margin-left: 3px;
+}
+
+.dark-mode .erp-stat-suffix {
+  color: #a1a1aa;
+}
+
+.erp-stat-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  min-height: 28px;
+}
+
+.erp-stat-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.erp-stat-delta .anticon {
+  font-size: 11px;
+}
+
+/* 비교 대상은 증감값보다 뒤로 */
+.erp-stat-delta-label,
+.erp-stat-caption {
+  font-size: 12px;
+  font-weight: 400;
+  color: #94a3b8;
+  margin-left: 2px;
+}
+
+.dark-mode .erp-stat-delta-label,
+.dark-mode .erp-stat-caption {
+  color: #8c8c8c;
+}
+
+/* 스파크라인은 카드 우측 하단에서 폭을 양보받음 */
+.erp-stat-spark {
+  flex: 0 1 96px;
+  min-width: 56px;
+}
+
+/* 모바일: 2열 그리드라 폭이 좁음 — 스파크라인 숨기고 숫자에 집중 */
+@media (max-width: 575px) {
+  .erp-stat-value {
+    font-size: 20px;
+  }
+
+  .erp-stat-spark {
+    display: none;
+  }
+
+  .erp-stat-delta-label {
+    display: none;
+  }
+}
+
+.erp-chart-card {
+  border-radius: 12px;
+}
+
+.erp-chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+}
+
+/* 빠른 작업: 점선 버튼 → 카드형 행 */
+.erp-quick-action {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.dark-mode .erp-quick-action {
+  background: transparent;
+  border-color: #303030;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .erp-quick-action:hover {
+    border-color: #1b61a8;
+    box-shadow: 0 4px 14px rgba(27, 97, 168, 0.14);
+    transform: translateY(-2px);
+  }
+
+  .dark-mode .erp-quick-action:hover {
+    border-color: #378add;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+
+  .erp-quick-action:hover .erp-quick-action-arrow {
+    transform: translateX(3px);
+    opacity: 1;
+  }
+}
+
+.erp-quick-action:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.erp-quick-action:focus-visible {
+  outline: 2px solid #1b61a8;
+  outline-offset: 2px;
+}
+
+.erp-quick-action-icon {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.erp-quick-action-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.dark-mode .erp-quick-action-title {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.erp-quick-action-arrow {
+  flex: none;
+  font-size: 11px;
+  color: #cbd5e1;
+  opacity: 0.8;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.dark-mode .erp-quick-action-arrow {
+  color: #595959;
+}
+
+@media (max-width: 575px) {
+  .erp-quick-action {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .erp-quick-action-title {
+    font-size: 13px;
+  }
+
+  .erp-quick-action-arrow {
+    display: none;
+  }
+}
+
 /* ---------- 모바일 sticky 검색바 (거래처·품목) ---------- */
 @media (max-width: 767px) {
   .erp-sticky-search {
@@ -560,8 +781,16 @@
   .ant-btn,
   .erp-theme-knob,
   .erp-theme-sun,
-  .erp-theme-moon {
+  .erp-theme-moon,
+  .erp-stat-card,
+  .erp-quick-action,
+  .erp-quick-action-arrow {
     transition: none !important;
+  }
+
+  .erp-quick-action:hover,
+  .erp-quick-action:active {
+    transform: none !important;
   }
 }
 

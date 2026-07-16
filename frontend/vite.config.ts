@@ -159,6 +159,10 @@ export default defineConfig({
       'axios',
       'dayjs',
       'zustand',
+      // 대시보드 차트. 목록에 없으면 vite가 뒤늦게 발견해 별도 해시로 재최적화하고,
+      // 그 번들이 React 복사본을 따로 물어 'Invalid hook call'로 차트가 크래시함.
+      'chart.js',
+      'react-chartjs-2',
     ],
 
     // 제외할 의존성
