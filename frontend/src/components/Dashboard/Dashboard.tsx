@@ -3,7 +3,6 @@ import {
   Row,
   Col,
   Card,
-  Statistic,
   Button,
   DatePicker,
   Select,
@@ -15,22 +14,25 @@ import {
   Input,
 } from 'antd';
 import {
-  ArrowUpOutlined,
-  ArrowDownOutlined,
   ShoppingCartOutlined,
   FileTextOutlined,
   WalletOutlined,
   TeamOutlined,
   EyeOutlined,
   SearchOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
+import { useThemeStore } from '../../stores/themeStore';
 import { useNavigate } from 'react-router-dom';
 import { dashboardAPI } from '../../utils/api';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import dayjs from 'dayjs';
 import logger from '../../utils/logger';
+import StatCard from './StatCard';
+import SalesTrendChart from './SalesTrendChart';
+import { getChartTheme } from './chartTheme';
 
 const { Title: AntTitle, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -55,10 +57,16 @@ interface TransactionRecord {
   status: string;
 }
 
+// 매출/매입 추이 차트 데이터 (백엔드가 Chart.js 형태로 반환)
+interface SalesChartData {
+  labels: string[];
+  datasets: { label: string; data: number[] }[];
+}
+
 const Dashboard: React.FC = () => {
   const message = useMessage();
   const { isMobile } = useMediaQuery();
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
     dayjs().startOf('month'),
     dayjs().endOf('month')
@@ -73,8 +81,11 @@ const Dashboard: React.FC = () => {
     dayjs()
   ]);
   const [allTransactions, setAllTransactions] = useState<TransactionRecord[]>([]);
+  const [salesChart, setSalesChart] = useState<SalesChartData | null>(null);
 
   const { currentBusiness, isNewUser, clearNewUserFlag } = useAuthStore();
+  const { isDark } = useThemeStore();
+  const chartTheme = getChartTheme(isDark);
   const navigate = useNavigate();
 
   const fetchDashboardData = useCallback(async () => {
@@ -90,10 +101,12 @@ const Dashboard: React.FC = () => {
 
       const [
         statsResponse,
-        transactionsResponse
+        transactionsResponse,
+        salesChartResponse
       ] = await Promise.allSettled([
         dashboardAPI.getStats(currentBusiness.id, params),
-        dashboardAPI.getRecentTransactions(currentBusiness.id, { limit: 5 })
+        dashboardAPI.getRecentTransactions(currentBusiness.id, { limit: 5 }),
+        dashboardAPI.getSalesChart(currentBusiness.id, { period: selectedPeriod })
       ]);
 
       // 비정상 응답(배포 직후 cold start 등)에도 예외로 대시보드 전체가 죽지 않도록
@@ -108,6 +121,12 @@ const Dashboard: React.FC = () => {
         setRecentTransactions(transactionsResponse.value?.data?.data || []);
       } else {
         logger.error('Transactions API failed:', transactionsResponse.reason);
+      }
+
+      if (salesChartResponse.status === 'fulfilled') {
+        setSalesChart(salesChartResponse.value?.data?.data ?? null);
+      } else {
+        logger.error('Sales chart API failed:', salesChartResponse.reason);
       }
 
     } catch (error) {
@@ -191,12 +210,31 @@ const Dashboard: React.FC = () => {
   // 현재 사용할 거래 내역 데이터
   const currentTransactions = recentTransactions.length > 0 ? recentTransactions : defaultRecentTransactions;
 
+  // 차트/스파크라인 데이터 — 백엔드가 Chart.js 형태로 주므로 라벨로 계열을 찾음
+  const findSeries = (name: string): number[] =>
+    salesChart?.datasets?.find((d) => d.label === name)?.data ?? [];
+  const trendSales = findSeries('매출');
+  const trendPurchases = findSeries('매입');
 
+  // 값이 전부 0이면 차트를 그려도 읽을 게 없어 빈 상태로 안내
+  const hasChartData =
+    !!salesChart?.labels?.length &&
+    [...trendSales, ...trendPurchases].some((v) => v > 0);
+
+  // getStats의 증감은 '직전 동일 길이 구간' 대비 (period 라벨이 아니라 실제 조회범위 기준)
+  const growthLabel =
+    selectedPeriod === 'week' ? '지난주 대비'
+    : selectedPeriod === 'year' ? '작년 대비'
+    : '지난달 대비';
+
+
+  // tint는 아이콘 칩 배경 — 아이콘 색과 같은 계열의 옅은 단계
   const quickActions = [
     {
       title: '매출 전표 작성',
       icon: <ShoppingCartOutlined />,
-      color: '#52c41a',
+      color: '#1B61A8',
+      tint: 'rgba(27, 97, 168, 0.10)',
       action: () => {
         navigate('/sales');
         // 매출 페이지에서 새 전표 작성 모달을 열기 위해 state 전달
@@ -208,7 +246,8 @@ const Dashboard: React.FC = () => {
     {
       title: '매입 전표 작성',
       icon: <FileTextOutlined />,
-      color: '#1B61A8',
+      color: '#cf1322',
+      tint: 'rgba(207, 19, 34, 0.10)',
       action: () => {
         navigate('/purchases');
         setTimeout(() => {
@@ -220,6 +259,7 @@ const Dashboard: React.FC = () => {
       title: '거래처 등록',
       icon: <TeamOutlined />,
       color: '#722ed1',
+      tint: 'rgba(114, 46, 209, 0.10)',
       action: () => {
         navigate('/customers');
         setTimeout(() => {
@@ -230,7 +270,8 @@ const Dashboard: React.FC = () => {
     {
       title: '수금 처리',
       icon: <WalletOutlined />,
-      color: '#fa8c16',
+      color: '#d46b08',
+      tint: 'rgba(212, 107, 8, 0.10)',
       action: () => {
         navigate('/payments');
         setTimeout(() => {
@@ -335,90 +376,74 @@ const Dashboard: React.FC = () => {
       {/* 주요 지표 카드 */}
       <Row gutter={[16, 16]} style={{ marginBottom: isMobile ? '16px' : '24px' }}>
         <Col xs={12} sm={12} md={6}>
-          <Card
-            size={isMobile ? 'small' : 'default'}
-            style={{ height: isMobile ? '120px' : '140px' }}
-          >
-            <Statistic
-              title="총 매출"
-              value={currentStats.totalSales}
-              precision={0}
-              valueStyle={{
-                color: '#3f8600',
-                fontSize: isMobile ? '20px' : '24px'
-              }}
-              prefix={<ArrowUpOutlined />}
-              suffix="원"
-            />
-            <div style={{ marginTop: '8px' }}>
-              <Text type="secondary" style={{ fontSize: isMobile ? '12px' : '14px' }}>
-                전월 대비 <Text style={{ color: '#3f8600' }}>+{currentStats.salesGrowth}%</Text>
-              </Text>
-            </div>
-          </Card>
+          <StatCard
+            label="총 매출"
+            value={currentStats.totalSales}
+            suffix="원"
+            delta={currentStats.salesGrowth}
+            deltaLabel={growthLabel}
+            upIsGood
+            trend={trendSales}
+            trendColor={chartTheme.sales}
+            compact={isMobile}
+            loading={loading}
+          />
         </Col>
         <Col xs={12} sm={12} md={6}>
-          <Card
-            size={isMobile ? 'small' : 'default'}
-            style={{ height: isMobile ? '120px' : '140px' }}
-          >
-            <Statistic
-              title="총 매입"
-              value={currentStats.totalPurchases}
-              precision={0}
-              valueStyle={{
-                color: '#cf1322',
-                fontSize: isMobile ? '20px' : '24px'
-              }}
-              prefix={<ArrowDownOutlined />}
-              suffix="원"
-            />
-            <div style={{ marginTop: '8px' }}>
-              <Text type="secondary" style={{ fontSize: isMobile ? '12px' : '14px' }}>
-                전월 대비 <Text style={{ color: '#cf1322' }}>{currentStats.purchaseGrowth}%</Text>
-              </Text>
-            </div>
-          </Card>
+          <StatCard
+            label="총 매입"
+            value={currentStats.totalPurchases}
+            suffix="원"
+            delta={currentStats.purchaseGrowth}
+            deltaLabel={growthLabel}
+            /* 매입 증가의 좋고나쁨은 단정할 수 없어(매출 성장과 동반 증가) 중립 표시 */
+            trend={trendPurchases}
+            trendColor={chartTheme.purchase}
+            compact={isMobile}
+            loading={loading}
+          />
         </Col>
         <Col xs={12} sm={12} md={6}>
-          <Card
-            size={isMobile ? 'small' : 'default'}
-            style={{ height: isMobile ? '120px' : '140px' }}
-          >
-            <Statistic
-              title="총 거래처"
-              value={currentStats.totalCustomers}
-              prefix={<TeamOutlined />}
-              suffix="개"
-              valueStyle={{ fontSize: isMobile ? '20px' : '24px' }}
-            />
-            <div style={{ marginTop: '8px', minHeight: '20px' }}>
-              <Text type="secondary" style={{ fontSize: isMobile ? '12px' : '14px' }}>
-                활성 거래처
-              </Text>
-            </div>
-          </Card>
+          <StatCard
+            label="총 거래처"
+            value={currentStats.totalCustomers}
+            suffix="개"
+            caption="활성 거래처"
+            loading={loading}
+          />
         </Col>
         <Col xs={12} sm={12} md={6}>
-          <Card
-            size={isMobile ? 'small' : 'default'}
-            style={{ height: isMobile ? '120px' : '140px' }}
-          >
-            <Statistic
-              title="등록 품목"
-              value={currentStats.totalProducts}
-              prefix={<FileTextOutlined />}
-              suffix="개"
-              valueStyle={{ fontSize: isMobile ? '20px' : '24px' }}
-            />
-            <div style={{ marginTop: '8px', minHeight: '20px' }}>
-              <Text type="secondary" style={{ fontSize: isMobile ? '12px' : '14px' }}>
-                활성 품목
-              </Text>
-            </div>
-          </Card>
+          <StatCard
+            label="등록 품목"
+            value={currentStats.totalProducts}
+            suffix="개"
+            caption="활성 품목"
+            loading={loading}
+          />
         </Col>
       </Row>
+
+      {/* 매출·매입 추이 */}
+      <Card
+        className="erp-chart-card"
+        title="매출·매입 추이"
+        size={isMobile ? 'small' : 'default'}
+        style={{ marginBottom: isMobile ? '16px' : '24px' }}
+        loading={loading}
+      >
+        {hasChartData ? (
+          <SalesTrendChart
+            labels={salesChart!.labels}
+            sales={trendSales}
+            purchases={trendPurchases}
+            height={isMobile ? 220 : 300}
+          />
+        ) : (
+          <div className="erp-chart-empty">
+            <Text type="secondary">표시할 거래 데이터가 아직 없습니다.</Text>
+          </div>
+        )}
+      </Card>
 
       {/* 빠른 작업 버튼 */}
       <Card
@@ -429,36 +454,16 @@ const Dashboard: React.FC = () => {
         <Row gutter={[16, 16]}>
           {quickActions.map((action, index) => (
             <Col xs={12} sm={12} md={6} key={index}>
-              <Button
-                type="dashed"
-                style={{
-                  width: '100%',
-                  height: isMobile ? '60px' : '80px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: isMobile ? '4px' : '8px',
-                }}
-                onClick={action.action}
-              >
-                <div style={{
-                  fontSize: isMobile ? '18px' : '24px',
-                  color: action.color
-                }}>
-                  {action.icon}
-                </div>
-                <Text
-                  strong
-                  style={{
-                    fontSize: isMobile ? '11px' : '14px',
-                    textAlign: 'center',
-                    lineHeight: 1.2
-                  }}
+              <button type="button" className="erp-quick-action" onClick={action.action}>
+                <span
+                  className="erp-quick-action-icon"
+                  style={{ color: action.color, background: action.tint }}
                 >
-                  {action.title}
-                </Text>
-              </Button>
+                  {action.icon}
+                </span>
+                <span className="erp-quick-action-title">{action.title}</span>
+                <RightOutlined className="erp-quick-action-arrow" />
+              </button>
             </Col>
           ))}
         </Row>

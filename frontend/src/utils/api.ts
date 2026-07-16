@@ -288,19 +288,31 @@ export const transactionLedgerAPI = {
     api.get(`/transaction-ledger/${businessId}/customers-with-transactions`, { params }),
 };
 
+// 대시보드 조회 파라미터 (PaginationQuery엔 기간 필드가 없어 별도 정의)
+export interface DashboardQuery {
+  period?: 'week' | 'month' | 'year';
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+  search?: string;
+}
+
 export const dashboardAPI = {
-  getStats: (businessId: number, params?: PaginationQuery) =>
+  getStats: (businessId: number, params?: DashboardQuery) =>
     api.get(`/businesses/${businessId}/dashboard/stats`, { params }),
-  getRecentTransactions: (businessId: number, params?: PaginationQuery) =>
+  getRecentTransactions: (businessId: number, params?: DashboardQuery) =>
     api.get(`/businesses/${businessId}/dashboard/recent-transactions`, { params }),
-  getSalesChart: (businessId: number, params?: PaginationQuery) =>
+  getSalesChart: (businessId: number, params?: DashboardQuery) =>
     api.get(`/businesses/${businessId}/dashboard/sales-chart`, { params }),
-  getCategoryData: (businessId: number, params?: PaginationQuery) =>
+  getCategoryData: (businessId: number, params?: DashboardQuery) =>
     api.get(`/businesses/${businessId}/dashboard/category-data`, { params }),
-  getMonthlyTrend: (businessId: number, params?: PaginationQuery) =>
+  getMonthlyTrend: (businessId: number, params?: DashboardQuery) =>
     api.get(`/businesses/${businessId}/dashboard/monthly-trend`, { params }),
-  getTopCustomers: (businessId: number, params?: PaginationQuery) =>
+  getTopCustomers: (businessId: number, params?: DashboardQuery) =>
     api.get(`/businesses/${businessId}/dashboard/top-customers`, { params }),
+  // 백엔드 라우트는 있었으나 이 메서드가 없어 '전체보기' 모달이 TypeError로 항상 비어 있었음
+  getAllTransactions: (businessId: number, params?: DashboardQuery) =>
+    api.get(`/businesses/${businessId}/dashboard/all-transactions`, { params }),
 };
 
 export const businessAPI = {
