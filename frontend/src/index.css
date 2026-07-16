@@ -345,36 +345,3 @@ body {
     display: none !important;
   }
 }
-
-/* 로그인 페이지 관리자/사용자 탭 스타일 */
-.login-segmented.ant-segmented {
-  background-color: var(--color-primary-bg) !important;
-  border: 2px solid var(--color-primary) !important;
-  border-radius: 8px !important;
-}
-
-.login-segmented .ant-segmented-group {
-  display: flex !important;
-  width: 100% !important;
-}
-
-.login-segmented .ant-segmented-item {
-  flex: 1 !important;
-  color: var(--color-primary) !important;
-  font-weight: 600 !important;
-  font-size: 15px !important;
-  padding: 8px 24px !important;
-  text-align: center !important;
-}
-
-.login-segmented .ant-segmented-item-selected {
-  background-color: #fadb14 !important;
-  color: #000000 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 2px 8px rgba(250, 219, 20, 0.4) !important;
-}
-
-.login-segmented .ant-segmented-thumb {
-  background-color: #fadb14 !important;
-  border-radius: 6px !important;
-}

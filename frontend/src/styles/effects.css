@@ -276,6 +276,251 @@
   -webkit-backdrop-filter: blur(14px);
 }
 
+/* ---------- ⑨ 로그인 스플릿 스크린 (LoginForm 전용) ---------- */
+.erp-auth-split {
+  display: flex;
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+/* 좌측 브랜드 패널 — 데스크톱 전용 */
+.erp-auth-brand {
+  position: relative;
+  overflow: hidden;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 56px;
+  color: #ffffff;
+  background: linear-gradient(150deg, #0f2c4c 0%, #164a80 55%, #1b61a8 100%);
+}
+
+/* 우상단 광원 */
+.erp-auth-brand::before {
+  content: '';
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  top: -160px;
+  right: -140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(88, 166, 255, 0.3) 0%, rgba(88, 166, 255, 0) 70%);
+  pointer-events: none;
+}
+
+/* 옅은 격자 (중앙에서 서서히 사라짐) */
+.erp-auth-brand::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(circle at 28% 50%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(circle at 28% 50%, #000 0%, transparent 72%);
+  pointer-events: none;
+}
+
+.erp-auth-brand > * {
+  position: relative;
+  z-index: 1;
+}
+
+.erp-auth-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #ffffff;
+  margin-bottom: 28px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.erp-auth-headline {
+  font-size: 38px;
+  line-height: 1.28;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  color: #ffffff;
+}
+
+.erp-auth-sub {
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0 0 36px;
+  max-width: 420px;
+}
+
+.erp-auth-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.erp-auth-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.erp-auth-feature-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #8fc4f5;
+  flex: none;
+}
+
+.erp-auth-foot {
+  margin-top: 44px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 우측 폼 영역 */
+.erp-auth-pane {
+  flex: 0 0 clamp(400px, 40%, 560px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: #ffffff;
+}
+
+.erp-auth-form {
+  width: 100%;
+  max-width: 380px;
+}
+
+/* 모바일: 브랜드 패널 숨기고 폼만 */
+@media (max-width: 991px) {
+  .erp-auth-brand {
+    display: none;
+  }
+
+  .erp-auth-pane {
+    flex: 1 1 auto;
+    padding: 28px 18px;
+  }
+}
+
+/* 모바일 상단 브랜드 마크 (데스크톱은 좌측 패널이 대신함) */
+.erp-auth-mark {
+  display: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1b61a8, #0f2c4c);
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #ffffff;
+  margin-bottom: 18px;
+  box-shadow: 0 8px 20px rgba(27, 97, 168, 0.28);
+}
+
+@media (max-width: 991px) {
+  .erp-auth-mark {
+    display: flex;
+  }
+}
+
+.erp-auth-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+  margin: 0 0 6px;
+}
+
+.erp-auth-desc {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 28px;
+}
+
+/* 입력창: 옅은 slate 필드 → 포커스 시 흰 배경 + 브랜드 테두리 */
+.erp-auth-form .ant-input-affix-wrapper {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  border-radius: 10px;
+}
+
+.erp-auth-form .ant-input-affix-wrapper:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.erp-auth-form .ant-input-affix-wrapper-focused {
+  background: #ffffff;
+  border-color: #1b61a8;
+}
+
+.erp-auth-form .ant-input-affix-wrapper .ant-input {
+  background: transparent;
+}
+
+.erp-auth-form .ant-input-prefix {
+  color: #94a3b8;
+  margin-inline-end: 10px;
+}
+
+/* 관리자/사용자 전환 */
+.erp-auth-form .ant-segmented {
+  width: 100%;
+  padding: 4px;
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.erp-auth-form .ant-segmented .ant-segmented-item {
+  flex: 1;
+}
+
+.erp-auth-form .ant-segmented .ant-segmented-item-label {
+  height: 36px;
+  line-height: 36px;
+  font-size: 14px;
+  font-weight: 600;
+  /* 트랙(#f1f5f9) 위 대비 6.8:1 — #64748b는 4.29:1로 WCAG 4.5 미달 */
+  color: #475569;
+}
+
+.erp-auth-form .ant-segmented .ant-segmented-item-selected {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.erp-auth-form .ant-segmented .ant-segmented-item-selected .ant-segmented-item-label {
+  color: #1b61a8;
+}
+
+/* 전환 중 미끄러지는 thumb도 선택 상태와 동일하게 */
+.erp-auth-form .ant-segmented .ant-segmented-thumb {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
 /* ---------- 모바일 sticky 검색바 (거래처·품목) ---------- */
 @media (max-width: 767px) {
   .erp-sticky-search {
