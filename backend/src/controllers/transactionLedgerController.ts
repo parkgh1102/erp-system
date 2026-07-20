@@ -4,6 +4,8 @@ import { Customer } from '../entities/Customer';
 import { Sales } from '../entities/Sales';
 import { Purchase } from '../entities/Purchase';
 import { Payment } from '../entities/Payment';
+import { Business } from '../entities/Business';
+import { AlimtalkService } from '../services/AlimtalkService';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
@@ -957,5 +959,276 @@ export const transactionLedgerController = {
         message: '기간 내 거래 업체 조회 중 오류가 발생했습니다.'
       });
     }
+  },
+
+  /**
+   * 미수금 안내 알림톡 전송 (템플릿 SJT_256790)
+   *
+   * 보안상 수신번호와 금액을 클라이언트에서 받지 않는다.
+   * - 수신번호: 거래처 마스터의 phone만 사용 (임의 번호로의 대량 발송 차단)
+   * - 금액/연체일수/최근거래일: 서버가 DB에서 직접 재계산 (조작 방지)
+   * 계산 규칙은 프론트 receivableAging.ts와 동일하게 맞춘다:
+   *   문서 합계 = totalAmount + vatAmount, 수금은 오래된 매출부터 FIFO 차감
+   */
+  async sendReceivableNotice(req: Request, res: Response) {
+    try {
+      const { businessId, customerId } = req.params;
+
+      const customerRepository = AppDataSource.getRepository(Customer);
+      const salesRepository = AppDataSource.getRepository(Sales);
+      const purchaseRepository = AppDataSource.getRepository(Purchase);
+      const paymentRepository = AppDataSource.getRepository(Payment);
+      const businessRepository = AppDataSource.getRepository(Business);
+
+      const customer = await customerRepository.findOne({
+        where: { id: Number(customerId), businessId: Number(businessId) }
+      });
+      if (!customer) {
+        return res.status(404).json({ success: false, message: '거래처를 찾을 수 없습니다.' });
+      }
+
+      const business = await businessRepository.findOne({ where: { id: Number(businessId) } });
+      if (!business) {
+        return res.status(404).json({ success: false, message: '사업체를 찾을 수 없습니다.' });
+      }
+
+      // 수신번호는 거래처에 등록된 번호만 사용한다
+      const phone = (customer.phone || '').replace(/[^0-9]/g, '');
+      if (!phone) {
+        return res.status(400).json({
+          success: false,
+          message: '거래처에 등록된 전화번호가 없습니다. 거래처 정보에 연락처를 먼저 등록해주세요.'
+        });
+      }
+      if (!/^(01[0-9]|02|0[3-9][0-9])[0-9]{7,8}$/.test(phone)) {
+        return res.status(400).json({
+          success: false,
+          message: '거래처 전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)'
+        });
+      }
+
+      const where = { businessId: Number(businessId), customerId: Number(customerId) };
+      const [sales, purchases, payments] = await Promise.all([
+        salesRepository.find({ where }),
+        purchaseRepository.find({ where }),
+        paymentRepository.find({ where })
+      ]);
+
+      const docTotal = (d: { totalAmount?: any; vatAmount?: any }) =>
+        (Number(d.totalAmount) || 0) + (Number(d.vatAmount) || 0);
+
+      const totalSales = sales.reduce((sum, s) => sum + docTotal(s), 0);
+      const totalReceipts = payments
+        .filter(p => p.paymentType === '수금')
+        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      const receivable = totalSales - totalReceipts;
+
+      if (receivable <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: '미수금이 없는 거래처입니다.'
+        });
+      }
+
+      // 연체일수: 수금액을 오래된 매출부터 FIFO 차감하고, 잔액이 남은 가장 오래된 매출의 경과일
+      const sorted = [...sales].sort(
+        (a, b) => dayjs(a.transactionDate).valueOf() - dayjs(b.transactionDate).valueOf()
+      );
+      let remaining = Math.max(0, totalReceipts);
+      let oldestUnpaid: dayjs.Dayjs | null = null;
+      for (const s of sorted) {
+        let unpaid = docTotal(s);
+        if (remaining > 0) {
+          const applied = Math.min(remaining, unpaid);
+          unpaid -= applied;
+          remaining -= applied;
+        }
+        if (unpaid > 0) {
+          oldestUnpaid = dayjs(s.transactionDate);
+          break;
+        }
+      }
+      const overdueDays = oldestUnpaid ? dayjs().diff(oldestUnpaid, 'day') : 0;
+
+      // 최근거래일: 매출/매입/수금·지급 중 가장 최근 날짜
+      const allDates = [
+        ...sales.map(s => s.transactionDate),
+        ...purchases.map(p => p.purchaseDate),
+        ...payments.map(p => p.paymentDate)
+      ].filter(Boolean);
+      const lastTradeDate = allDates.length
+        ? dayjs(Math.max(...allDates.map(d => dayjs(d).valueOf()))).format('YYYY-MM-DD')
+        : '';
+
+      const sent = await AlimtalkService.sendReceivableNotice(
+        phone,
+        customer.name,
+        receivable,
+        overdueDays,
+        lastTradeDate,
+        business.companyName
+      );
+
+      if (!sent) {
+        return res.status(502).json({ success: false, message: '알림톡 전송에 실패했습니다.' });
+      }
+
+      res.json({
+        success: true,
+        message: `${customer.name}님에게 미수금 안내를 전송했습니다.`,
+        data: { customerId: customer.id, receivable, overdueDays, lastTradeDate }
+      });
+    } catch (error) {
+      console.error('미수금 안내 알림톡 전송 오류:', error);
+      res.status(500).json({
+        success: false,
+        message: '알림톡 전송 중 오류가 발생했습니다.'
+      });
+    }
+  },
+
+  /**
+   * 미수금 안내 알림톡 일괄 전송.
+   * body: { customerIds: number[] } — 화면에서 선택한 거래처만 대상으로 한다.
+   * 단건과 동일하게 수신번호·금액은 서버가 DB에서 산출하며,
+   * 실수로 대량 발송되는 것을 막기 위해 1회 상한(BULK_LIMIT)을 둔다.
+   */
+  async sendReceivableNoticesBulk(req: Request, res: Response) {
+    const BULK_LIMIT = 50;
+    try {
+      const { businessId } = req.params;
+      const { customerIds } = req.body || {};
+
+      if (!Array.isArray(customerIds) || customerIds.length === 0) {
+        return res.status(400).json({ success: false, message: '전송할 거래처를 선택해주세요.' });
+      }
+      if (customerIds.length > BULK_LIMIT) {
+        return res.status(400).json({
+          success: false,
+          message: `한 번에 최대 ${BULK_LIMIT}건까지만 전송할 수 있습니다. (요청 ${customerIds.length}건)`
+        });
+      }
+
+      const businessRepository = AppDataSource.getRepository(Business);
+      const business = await businessRepository.findOne({ where: { id: Number(businessId) } });
+      if (!business) {
+        return res.status(404).json({ success: false, message: '사업체를 찾을 수 없습니다.' });
+      }
+
+      const results = { sent: 0, skipped: 0, failed: 0, details: [] as string[] };
+
+      for (const rawId of customerIds) {
+        const customerId = Number(rawId);
+        try {
+          const result = await computeReceivableNoticePayload(Number(businessId), customerId);
+          if (result.ok === false) {
+            const label = result.name || '#' + customerId;
+            results.skipped++;
+            results.details.push(label + ': ' + result.reason);
+            continue;
+          }
+
+          const sent = await AlimtalkService.sendReceivableNotice(
+            result.phone,
+            result.name,
+            result.receivable,
+            result.overdueDays,
+            result.lastTradeDate,
+            business.companyName
+          );
+
+          if (sent) {
+            results.sent++;
+          } else {
+            results.failed++;
+            results.details.push(`${result.name}: 전송 실패`);
+          }
+        } catch (e) {
+          results.failed++;
+          results.details.push(`#${customerId}: 처리 중 오류`);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `전송 ${results.sent}건 · 제외 ${results.skipped}건 · 실패 ${results.failed}건`,
+        data: results
+      });
+    } catch (error) {
+      console.error('미수금 안내 일괄 전송 오류:', error);
+      res.status(500).json({ success: false, message: '일괄 전송 중 오류가 발생했습니다.' });
+    }
   }
 };
+
+/**
+ * 한 거래처의 미수금 안내 발송 데이터를 서버에서 산출한다.
+ * 계산 규칙은 프론트 receivableAging.ts와 동일(문서합계=totalAmount+vatAmount, 수금 FIFO 차감).
+ */
+async function computeReceivableNoticePayload(businessId: number, customerId: number): Promise<
+  | { ok: true; name: string; phone: string; receivable: number; overdueDays: number; lastTradeDate: string }
+  | { ok: false; name?: string; reason: string }
+> {
+  const customer = await AppDataSource.getRepository(Customer).findOne({
+    where: { id: customerId, businessId }
+  });
+  if (!customer) return { ok: false, reason: '거래처를 찾을 수 없음' };
+
+  const phone = (customer.phone || '').replace(/[^0-9]/g, '');
+  if (!phone) return { ok: false, name: customer.name, reason: '전화번호 미등록' };
+  if (!/^(01[0-9]|02|0[3-9][0-9])[0-9]{7,8}$/.test(phone)) {
+    return { ok: false, name: customer.name, reason: '전화번호 형식 오류' };
+  }
+
+  const where = { businessId, customerId };
+  const [sales, purchases, payments] = await Promise.all([
+    AppDataSource.getRepository(Sales).find({ where }),
+    AppDataSource.getRepository(Purchase).find({ where }),
+    AppDataSource.getRepository(Payment).find({ where })
+  ]);
+
+  const docTotal = (d: { totalAmount?: any; vatAmount?: any }) =>
+    (Number(d.totalAmount) || 0) + (Number(d.vatAmount) || 0);
+
+  const totalSales = sales.reduce((sum, s) => sum + docTotal(s), 0);
+  const totalReceipts = payments
+    .filter(p => p.paymentType === '수금')
+    .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const receivable = totalSales - totalReceipts;
+  if (receivable <= 0) return { ok: false, name: customer.name, reason: '미수금 없음' };
+
+  const sorted = [...sales].sort(
+    (a, b) => dayjs(a.transactionDate).valueOf() - dayjs(b.transactionDate).valueOf()
+  );
+  let remaining = Math.max(0, totalReceipts);
+  let oldestUnpaid: dayjs.Dayjs | null = null;
+  for (const s of sorted) {
+    let unpaid = docTotal(s);
+    if (remaining > 0) {
+      const applied = Math.min(remaining, unpaid);
+      unpaid -= applied;
+      remaining -= applied;
+    }
+    if (unpaid > 0) {
+      oldestUnpaid = dayjs(s.transactionDate);
+      break;
+    }
+  }
+
+  const allDates = [
+    ...sales.map(s => s.transactionDate),
+    ...purchases.map(p => p.purchaseDate),
+    ...payments.map(p => p.paymentDate)
+  ].filter(Boolean);
+
+  return {
+    ok: true,
+    name: customer.name,
+    phone,
+    receivable,
+    overdueDays: oldestUnpaid ? dayjs().diff(oldestUnpaid, 'day') : 0,
+    lastTradeDate: allDates.length
+      ? dayjs(Math.max(...allDates.map(d => dayjs(d).valueOf()))).format('YYYY-MM-DD')
+      : ''
+  };
+}

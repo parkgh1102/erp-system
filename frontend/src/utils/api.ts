@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { message } from 'antd';
 import { useAuthStore } from '../stores/authStore';
 import {
   UserCreateData,
@@ -167,13 +168,47 @@ api.interceptors.response.use(
       }
     }
 
-    if (status === 401 || status === 403) {
+    // 401(인증 실패)만 로그아웃한다.
+    // 403은 '권한 부족'이지 세션 만료가 아니다 — 조회 전용 계정이 쓰기를 시도했을 때
+    // 강제 로그아웃되던 문제가 있었다.
+    if (status === 401) {
       useAuthStore.getState().logout();
       window.location.href = '/login';
+      return Promise.reject(error);
     }
+
+    // 전역 에러 알림.
+    // 개별 catch가 없는 호출이 조용히 실패해 사용자가 실패 자체를 인지하지 못하던 문제를 막는다.
+    // 개별 catch가 이미 메시지를 띄우는 경우와 겹치지 않도록 같은 문구는 3초간 억제한다.
+    notifyRequestError(status, error);
+
     return Promise.reject(error);
   }
 );
+
+// 최근에 띄운 에러 문구 (중복 토스트 억제용)
+const recentErrorMessages = new Map<string, number>();
+
+function notifyRequestError(status: number | undefined, error: any) {
+  let text: string;
+  if (status === 403) {
+    text = error.response?.data?.message || '이 작업을 수행할 권한이 없습니다.';
+  } else if (status && status >= 500) {
+    text = error.response?.data?.message || '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+  } else if (!error.response) {
+    text = '서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.';
+  } else {
+    // 4xx는 각 화면이 상황에 맞는 문구를 띄우는 편이라 전역에서는 다루지 않는다
+    return;
+  }
+
+  const now = Date.now();
+  const last = recentErrorMessages.get(text);
+  if (last && now - last < 3000) return;
+  recentErrorMessages.set(text, now);
+
+  message.error(text);
+}
 
 export const authAPI = {
   login: (data: { email: string; password: string }) =>
@@ -286,6 +321,12 @@ export const transactionLedgerAPI = {
     api.get(`/transaction-ledger/${businessId}/ledger/balances`, { params }),
   getCustomersWithTransactions: (businessId: number, params: { startDate: string; endDate: string }) =>
     api.get(`/transaction-ledger/${businessId}/customers-with-transactions`, { params }),
+  // 미수금 안내 알림톡 전송. 금액·연체일수·수신번호는 서버가 DB에서 직접 산출하므로 body 없음
+  sendReceivableNotice: (businessId: number, customerId: number) =>
+    api.post(`/transaction-ledger/${businessId}/customer/${customerId}/receivable-notice`),
+  // 일괄 전송 (선택한 거래처만, 서버에서 1회 50건 상한)
+  sendReceivableNoticesBulk: (businessId: number, customerIds: number[]) =>
+    api.post(`/transaction-ledger/${businessId}/receivable-notices`, { customerIds }),
 };
 
 // 대시보드 조회 파라미터 (PaginationQuery엔 기간 필드가 없어 별도 정의)

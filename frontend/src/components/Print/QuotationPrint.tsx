@@ -4,6 +4,7 @@ import { PrinterOutlined, DownloadOutlined, FilePdfOutlined, FileImageOutlined, 
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import { exportQuotationToVectorPdf } from '../../utils/vectorPdfExport';
+import { formatBusinessNumber } from '../../utils/formatters';
 
 interface QuotationItem {
   productName: string;
@@ -380,7 +381,7 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
                         </tr>
                         <tr>
                           <td style={{ padding: 4, color: '#666' }}>사업자번호</td>
-                          <td style={{ padding: 4 }}>{data.supplier.businessNumber}</td>
+                          <td style={{ padding: 4 }}>{formatBusinessNumber(data.supplier.businessNumber || '')}</td>
                         </tr>
                         <tr>
                           <td style={{ padding: 4, color: '#666' }}>대표자</td>

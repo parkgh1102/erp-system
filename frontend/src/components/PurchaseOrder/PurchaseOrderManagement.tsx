@@ -41,7 +41,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { customerAPI, productAPI, purchaseOrderAPI } from '../../utils/api';
+import { customerAPI, productAPI, purchaseOrderAPI, purchaseAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -144,11 +144,11 @@ const PurchaseOrderManagement: React.FC = () => {
       ]);
       if (customerRes.data.success) {
         const data = customerRes.data.data;
-        setSuppliers(Array.isArray(data) ? data : []);
+        setSuppliers(Array.isArray(data) ? data : (data?.customers || []));
       }
       if (productRes.data.success) {
         const data = productRes.data.data;
-        setProducts(Array.isArray(data) ? data : []);
+        setProducts(Array.isArray(data) ? data : (data?.products || []));
       }
       if (orderRes.data.success) {
         const data = orderRes.data.data;
@@ -201,7 +201,7 @@ const PurchaseOrderManagement: React.FC = () => {
       const search = searchText.toLowerCase();
       result = result.filter(o =>
         o.orderNumber.toLowerCase().includes(search) ||
-        o.supplier?.name.toLowerCase().includes(search)
+        (o.supplier?.name || '').toLowerCase().includes(search)
       );
     }
     return result;
@@ -307,11 +307,11 @@ const PurchaseOrderManagement: React.FC = () => {
         orderNumber: editingOrder ? editingOrder.orderNumber : nextNumber,
         orderDate: values.orderDate.format('YYYY-MM-DD'),
         deliveryDate: values.deliveryDate.format('YYYY-MM-DD'),
-        supplierId: null,
+        supplierId: values.supplierId ?? null,
         supplyAmount: totals.supplyAmount,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
-        memo: values.supplierName ? `[공급업체: ${values.supplierName}] ${values.memo || ''}` : (values.memo || ''),
+        memo: values.memo || '',
         deliveryLocation: values.deliveryLocation || '',
         paymentTerms: values.paymentTerms || '',
         status: values.status || 'draft',
@@ -342,10 +342,60 @@ const PurchaseOrderManagement: React.FC = () => {
     }
   };
 
-  // 매입 전환
+  // 매입 전환 — 발주서 내용으로 매입을 생성하고 발주 상태를 'completed'로 변경.
+  // (기존에는 API 호출 없이 성공 토스트만 띄워 실제로는 아무 일도 일어나지 않았음)
   const convertToPurchase = async (order: PurchaseOrder) => {
-    message.success('발주서가 매입으로 전환되었습니다.');
-    fetchData();
+    if (!currentBusiness) return;
+    try {
+      await purchaseAPI.create(currentBusiness.id, {
+        customerId: order.supplierId ?? null,
+        purchaseDate: dayjs(order.orderDate).format('YYYY-MM-DD'),
+        totalAmount: Number(order.supplyAmount) || 0,
+        vatAmount: Number(order.vatAmount) || 0,
+        memo: `발주서 ${order.orderNumber} 전환`,
+        items: (order.items || []).map(item => ({
+          productId: item.productId || null,
+          productCode: item.productCode || '',
+          productName: item.productName,
+          spec: item.spec || '',
+          unit: item.unit || '',
+          quantity: Number(item.quantity) || 0,
+          unitPrice: Number(item.unitPrice) || 0,
+          amount: Number(item.supplyAmount) || 0,
+        })),
+      } as any);
+
+      // 전환된 발주서는 '입고완료'로 바꿔 중복 전환을 막는다.
+      // update Joi는 전체 필드를 요구하므로(orderNumber/orderDate/deliveryDate/totalAmount required)
+      // 기존 값을 그대로 실어 보낸다.
+      await purchaseOrderAPI.update(currentBusiness.id, order.id, {
+        supplierId: order.supplierId ?? null,
+        orderNumber: order.orderNumber,
+        orderDate: dayjs(order.orderDate).format('YYYY-MM-DD'),
+        deliveryDate: dayjs(order.deliveryDate).format('YYYY-MM-DD'),
+        supplyAmount: Number(order.supplyAmount) || 0,
+        vatAmount: Number(order.vatAmount) || 0,
+        totalAmount: Number(order.totalAmount) || 0,
+        memo: order.memo || '',
+        status: 'received',
+        items: (order.items || []).map(item => ({
+          productId: item.productId || null,
+          itemName: item.productName,
+          specification: item.spec || '',
+          unit: item.unit || '',
+          quantity: Number(item.quantity) || 0,
+          unitPrice: Number(item.unitPrice) || 0,
+          supplyAmount: Number(item.supplyAmount) || 0,
+          vatAmount: Number(item.vatAmount) || 0,
+        })),
+      } as any);
+
+      message.success('발주서가 매입으로 전환되었습니다.');
+      fetchData();
+    } catch (error: any) {
+      console.error('매입 전환 오류:', error);
+      message.error(error?.response?.data?.message || '매입 전환에 실패했습니다.');
+    }
   };
 
   // 삭제
@@ -666,8 +716,14 @@ const PurchaseOrderManagement: React.FC = () => {
               </Form.Item>
             </Col>
             <Col xs={24} sm={8}>
-              <Form.Item name="supplierName" label="공급업체">
-                <Input placeholder="공급업체명 입력" />
+              <Form.Item name="supplierId" label="공급업체" rules={[{ required: true, message: '공급업체를 선택해주세요.' }]}>
+                <Select
+                  placeholder="공급업체명 입력"
+                  showSearch
+                  allowClear
+                  optionFilterProp="label"
+                  options={suppliers.map(s => ({ value: s.id, label: s.name }))}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -825,7 +881,7 @@ const PurchaseOrderManagement: React.FC = () => {
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
-          <Button key="print" icon={<PrinterOutlined />} onClick={() => setPrintModalVisible(true)}>인쇄</Button>,
+          <Button key="print" icon={<PrinterOutlined />} onClick={() => { setDetailModalVisible(false); setPrintModalVisible(true); }}>인쇄</Button>,
           <Button key="close" onClick={() => setDetailModalVisible(false)}>닫기</Button>,
         ]}
         width={800}

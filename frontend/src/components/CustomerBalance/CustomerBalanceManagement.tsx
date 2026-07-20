@@ -18,6 +18,7 @@ import {
   Dropdown,
   Checkbox,
   Empty,
+  Popconfirm,
 } from 'antd';
 import {
   SearchOutlined,
@@ -32,10 +33,11 @@ import {
   FileImageOutlined,
   CopyOutlined,
   ExportOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { customerAPI, salesAPI, purchaseAPI, paymentAPI } from '../../utils/api';
+import { customerAPI, salesAPI, purchaseAPI, paymentAPI, transactionLedgerAPI } from '../../utils/api';
 import { formatBusinessNumber } from '../../utils/formatters';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
@@ -75,6 +77,20 @@ interface TransactionDetail {
   balance: number;
 }
 
+/**
+ * 거래 내용 표시용 라벨. 매출조회 화면과 동일한 규칙:
+ *   품목 1건 → 품목명 / 2건 이상 → "품목명 외 N"
+ * 품목이 없을 때만 비고·메모로 폴백한다(내부 ID는 노출하지 않음).
+ */
+const describeItems = (doc: any, fallback: string): string => {
+  const items = doc?.items;
+  if (Array.isArray(items) && items.length > 0) {
+    const first = items[0]?.itemName || items[0]?.productName || '품목';
+    return items.length === 1 ? first : `${first} 외 ${items.length - 1}`;
+  }
+  return doc?.description || doc?.memo || fallback;
+};
+
 const CustomerBalanceManagement: React.FC = () => {
   const message = useMessage();
   const { isMobile } = useMediaQuery();
@@ -93,20 +109,36 @@ const CustomerBalanceManagement: React.FC = () => {
   const [autoSaveType, setAutoSaveType] = useState<'pdf' | 'png' | 'jpg' | 'clipboard' | null>(null);
   // 거래처별 거래 내역 (상세보기/인쇄용) — fetchData 시 함께 계산해 보관
   const [detailsMap, setDetailsMap] = useState<Record<number, TransactionDetail[]>>({});
+  // 미수금 안내 알림톡 전송 중인 거래처 id
+  const [sendingNoticeId, setSendingNoticeId] = useState<number | null>(null);
+  const [bulkSending, setBulkSending] = useState(false);
 
-  // 데이터 로드 + 미수금/미지급 및 연령분석 계산
+  // 데이터 로드 + 미수금/미지급 및 일자분석 계산
   const fetchData = useCallback(async () => {
     if (!currentBusiness) return;
     setLoading(true);
     try {
-      // 일부 API가 실패(예: 권한/404)해도 전체가 깨지지 않도록 개별 방어 처리
-      const safeGet = (p: Promise<any>) => p.catch(() => ({ data: { data: {} } }));
+      // 일부 API가 실패(예: 권한/404)해도 전체가 깨지지 않도록 개별 방어 처리.
+      // 다만 실패를 조용히 빈 배열로 두면 '잔액 0원'이라는 틀린 금액을 보여주게 되므로
+      // 어떤 데이터가 빠졌는지 추적해 사용자에게 경고한다.
+      const failed: string[] = [];
+      const safeGet = (p: Promise<any>, label: string) =>
+        p.catch(() => {
+          failed.push(label);
+          return { data: { data: {} } };
+        });
       const [customersRes, salesRes, purchasesRes, paymentsRes] = await Promise.all([
-        safeGet(customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 })),
-        safeGet(salesAPI.getAll(currentBusiness.id)),
-        safeGet(purchaseAPI.getAll(currentBusiness.id)),
-        safeGet(paymentAPI.getAll(currentBusiness.id)),
+        safeGet(customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }), '거래처'),
+        safeGet(salesAPI.getAll(currentBusiness.id), '매출'),
+        safeGet(purchaseAPI.getAll(currentBusiness.id), '매입'),
+        safeGet(paymentAPI.getAll(currentBusiness.id), '수금/지급'),
       ]);
+
+      if (failed.length > 0) {
+        message.warning(
+          `${failed.join('·')} 데이터를 불러오지 못해 잔액이 실제와 다를 수 있습니다. 새로고침 후 다시 확인해주세요.`
+        );
+      }
 
       const customers: any[] = customersRes.data?.data?.customers || [];
       const sales: any[] = salesRes.data?.data?.sales || [];
@@ -142,19 +174,19 @@ const CustomerBalanceManagement: React.FC = () => {
         const receivableBalance = totalSales - totalReceipts;
         const payableBalance = totalPurchases - totalPayments;
 
-        // 미수금 연령분석 (수금액을 오래된 매출부터 FIFO 차감)
+        // 미수금 일자분석 (수금액을 오래된 매출부터 FIFO 차감)
         const { aging, overdueDays } = computeAging(g.sales, totalReceipts);
 
         // 거래 내역 타임라인 (순 미수 포지션 기준 잔액)
         const timeline: Array<{ date: string; type: TransactionDetail['type']; description: string; amount: number }> = [];
-        g.sales.forEach((s, i) => timeline.push({ date: dayjs(s.transactionDate).format('YYYY-MM-DD'), type: 'sales', description: s.description || s.memo || `매출 #${s.id ?? i + 1}`, amount: docTotal(s) }));
-        g.purchases.forEach((p, i) => timeline.push({ date: dayjs(p.transactionDate).format('YYYY-MM-DD'), type: 'purchase', description: p.description || p.memo || `매입 #${p.id ?? i + 1}`, amount: -docTotal(p) }));
-        payments.filter(p => p.customerId === c.id).forEach((p, i) => {
+        g.sales.forEach(s => timeline.push({ date: dayjs(s.transactionDate).format('YYYY-MM-DD'), type: 'sales', description: describeItems(s, '매출'), amount: docTotal(s) }));
+        g.purchases.forEach(p => timeline.push({ date: dayjs(p.transactionDate).format('YYYY-MM-DD'), type: 'purchase', description: describeItems(p, '매입'), amount: -docTotal(p) }));
+        payments.filter(p => p.customerId === c.id).forEach(p => {
           const amt = Number(p.amount) || 0;
           timeline.push({
             date: dayjs(p.paymentDate).format('YYYY-MM-DD'),
             type: p.paymentType === '수금' ? 'receipt' : 'payment',
-            description: p.description || `${p.paymentType} #${p.id ?? i + 1}`,
+            description: p.description || p.memo || p.paymentType,
             amount: p.paymentType === '수금' ? -amt : amt,
           });
         });
@@ -285,6 +317,51 @@ const CustomerBalanceManagement: React.FC = () => {
     setDetailModalVisible(true);
   };
 
+  /**
+   * 미수금 안내 알림톡 전송 (템플릿 SJT_256790).
+   * 수신번호·금액·연체일수는 서버가 DB에서 직접 산출하므로 여기서는 거래처 id만 넘긴다.
+   */
+  const handleSendNotice = async (customer: CustomerBalance) => {
+    if (!currentBusiness) return;
+    setSendingNoticeId(customer.id);
+    try {
+      const res = await transactionLedgerAPI.sendReceivableNotice(currentBusiness.id, customer.id);
+      message.success(res.data?.message || '미수금 안내를 전송했습니다.');
+    } catch (error: any) {
+      // 서버가 사유(전화번호 미등록, 미수금 없음 등)를 내려주면 그대로 노출
+      message.error(error?.response?.data?.message || '알림톡 전송에 실패했습니다.');
+    } finally {
+      setSendingNoticeId(null);
+    }
+  };
+
+  /** 일괄 전송 대상: 선택한 거래처 중 미수금이 있는 것만 */
+  const noticeTargets = useMemo(
+    () => filteredBalances.filter(b => selectedRowKeys.includes(b.id) && b.receivableBalance > 0),
+    [filteredBalances, selectedRowKeys]
+  );
+
+  const handleSendNoticesBulk = async () => {
+    if (!currentBusiness || noticeTargets.length === 0) return;
+    setBulkSending(true);
+    try {
+      const res = await transactionLedgerAPI.sendReceivableNoticesBulk(
+        currentBusiness.id,
+        noticeTargets.map(b => b.id)
+      );
+      const data = res.data?.data;
+      message.success(res.data?.message || '일괄 전송이 완료되었습니다.');
+      // 제외/실패 사유가 있으면 사용자가 알 수 있게 함께 보여준다
+      if (data?.details?.length) {
+        message.warning(`제외·실패 내역: ${data.details.slice(0, 5).join(' / ')}`, 6);
+      }
+    } catch (error: any) {
+      message.error(error?.response?.data?.message || '일괄 전송에 실패했습니다.');
+    } finally {
+      setBulkSending(false);
+    }
+  };
+
   // 인쇄
   const openPrint = (customer: CustomerBalance) => {
     loadTransactionDetails(customer);
@@ -356,11 +433,41 @@ const CustomerBalanceManagement: React.FC = () => {
     {
       title: '관리',
       key: 'action',
-      width: 80,
+      width: 120,
       render: (_: any, record: CustomerBalance) => (
-        <Tooltip title="상세보기">
-          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
-        </Tooltip>
+        <Space size={0}>
+          <Tooltip title="상세보기">
+            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
+          </Tooltip>
+          <Popconfirm
+            title="미수금 안내 전송"
+            description={
+              <div style={{ maxWidth: 260 }}>
+                <div><strong>{record.name}</strong>님에게 카카오 알림톡을 보냅니다.</div>
+                <div style={{ marginTop: 6, fontSize: 12, color: '#8c8c8c' }}>
+                  미수금 {formatCurrency(record.receivableBalance)} · 연체 {record.overdueDays || 0}일
+                </div>
+                <div style={{ marginTop: 6, fontSize: 12, color: '#8c8c8c' }}>
+                  거래처에 등록된 전화번호로 발송됩니다.
+                </div>
+              </div>
+            }
+            okText="전송"
+            cancelText="취소"
+            onConfirm={() => handleSendNotice(record)}
+            disabled={record.receivableBalance <= 0}
+          >
+            <Tooltip title={record.receivableBalance > 0 ? '미수금 안내 알림톡' : '미수금이 없습니다'}>
+              <Button
+                type="text"
+                size="small"
+                icon={<MessageOutlined />}
+                loading={sendingNoticeId === record.id}
+                disabled={record.receivableBalance <= 0}
+              />
+            </Tooltip>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -561,9 +668,9 @@ const CustomerBalanceManagement: React.FC = () => {
         </Row>
       </Card>
 
-      {/* 미수금 연령분석 */}
+      {/* 미수금 일자분석 */}
       {stats.totalReceivable > 0 && (
-        <Card size="small" title={<span><WarningOutlined style={{ color: '#fa8c16', marginRight: 6 }} />미수금 연령분석</span>} style={{ marginBottom: 16 }}>
+        <Card size="small" title={<span><WarningOutlined style={{ color: '#fa8c16', marginRight: 6 }} />미수금 일자분석</span>} style={{ marginBottom: 16 }}>
           {(() => {
             const buckets = [
               { key: 'b0_30', label: '0~30일', value: stats.aging.b0_30, color: '#52c41a' },
@@ -657,6 +764,34 @@ const CustomerBalanceManagement: React.FC = () => {
           >
             인쇄
           </Button>
+          <Popconfirm
+            title="미수금 안내 일괄 전송"
+            description={
+              <div style={{ maxWidth: 300 }}>
+                <div>
+                  선택한 <strong>{noticeTargets.length}개 거래처</strong>에 카카오 알림톡을 보냅니다.
+                </div>
+                <div style={{ marginTop: 6, fontSize: 12, color: '#8c8c8c' }}>
+                  각 거래처에 등록된 전화번호로 발송되며, 미수금이 없거나 번호가 없는 거래처는 자동 제외됩니다.
+                </div>
+                <div style={{ marginTop: 6, fontSize: 12, color: '#fa8c16' }}>
+                  전송 후에는 취소할 수 없습니다.
+                </div>
+              </div>
+            }
+            okText={`${noticeTargets.length}건 전송`}
+            cancelText="취소"
+            onConfirm={handleSendNoticesBulk}
+            disabled={noticeTargets.length === 0}
+          >
+            <Button
+              icon={<MessageOutlined />}
+              loading={bulkSending}
+              disabled={noticeTargets.length === 0}
+            >
+              미수금 안내 {noticeTargets.length > 0 ? `(${noticeTargets.length})` : ''}
+            </Button>
+          </Popconfirm>
         </Space>
       </Card>
 

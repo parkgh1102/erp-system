@@ -26,6 +26,7 @@ export class AlimtalkService {
   private static OTP_TEMPLATE_CODE = 'SJT_123168'; // OTP 템플릿
   private static WELCOME_TEMPLATE_CODE = 'SJT_123166'; // 회원가입 환영 템플릿
   private static ESIGNATURE_TEMPLATE_CODE = 'SJT_125177'; // 전자서명 완료 안내 템플릿
+  private static RECEIVABLE_TEMPLATE_CODE = 'SJT_256790'; // 미수금 안내 템플릿
   private static SENDER_KEY = process.env.ALIMTALK_SENDER_KEY!;
   private static CALLBACK = process.env.ALIMTALK_CALLBACK!; // 발신번호
 
@@ -185,6 +186,80 @@ export class AlimtalkService {
       }
     } catch (error: any) {
       console.error('전자서명 완료 알림톡 오류:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * 미수금 안내 알림톡 전송
+   * 템플릿: SJT_256790
+   * 안녕하세요! #{업체명}님
+   * 현재 미수금 안내입니다.
+   * ▷미수금액 : #{미수금액}원
+   * ▶연체일자 : #{연체일수}일
+   * ▷최근거래일 : #{최근거래일}
+   * 확인 부탁드립니다
+   * #{날짜}
+   * #{메모}
+   *
+   * @param phone            수신자(거래처) 전화번호
+   * @param customerName     거래처명 → #{업체명}
+   * @param receivableAmount 미수금액(숫자) → #{미수금액} (천단위 구분 후 전송)
+   * @param overdueDays      연체일수 → #{연체일수}
+   * @param lastTradeDate    최근거래일 'YYYY-MM-DD' → #{최근거래일}
+   * @param senderCompany    발신 사업체명 → #{메모}
+   */
+  static async sendReceivableNotice(
+    phone: string,
+    customerName: string,
+    receivableAmount: number,
+    overdueDays: number,
+    lastTradeDate: string,
+    senderCompany: string
+  ): Promise<boolean> {
+    try {
+      const cleanPhone = phone.replace(/\D/g, '');
+
+      // 템플릿 변수는 본문에 나타나는 순서대로 '|' 구분 (기존 템플릿들과 동일한 규약)
+      const variables = [
+        customerName,                                 // #{업체명}
+        Math.round(receivableAmount).toLocaleString('ko-KR'), // #{미수금액}
+        String(overdueDays),                          // #{연체일수}
+        lastTradeDate || '-',                         // #{최근거래일}
+        new Date().toLocaleDateString('sv-SE'),       // #{날짜} 전송일자 YYYY-MM-DD
+        senderCompany,                                // #{메모}
+      ].join('|');
+
+      const formData = new FormData();
+      formData.append('api_key', this.API_KEY);
+      formData.append('template_code', this.RECEIVABLE_TEMPLATE_CODE);
+      formData.append('variable', variables);
+      formData.append('callback', this.CALLBACK);
+      formData.append('dstaddr', cleanPhone);
+      // 미수금 안내는 광고성 오인 소지가 있어 SMS 대체발송을 쓰지 않음
+      formData.append('next_type', '0');
+      formData.append('send_reserve', '0');
+
+      const response = await axios.post<AlimtalkResponse>(
+        this.API_URL,
+        formData,
+        {
+          headers: {
+            ...formData.getHeaders(),
+          },
+          timeout: 10000,
+        }
+      );
+
+      const resultCode = response.data.result || response.data.code;
+      if (resultCode === '100' || resultCode === 100) {
+        return true;
+      } else {
+        console.error('미수금 안내 알림톡 전송 실패 - 코드:', resultCode);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('미수금 안내 알림톡 오류:', error.message);
       return false;
     }
   }

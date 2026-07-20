@@ -34,7 +34,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { quotationAPI } from '../../utils/api';
+import { quotationAPI, customerAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -118,6 +118,7 @@ const QuotationManagement: React.FC = () => {
   const { isDark } = useThemeStore();
 
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -144,7 +145,11 @@ const QuotationManagement: React.FC = () => {
     if (!currentBusiness) return;
     setLoading(true);
     try {
-      const quotationRes = await quotationAPI.getAll(currentBusiness.id);
+      const [quotationRes, customerRes] = await Promise.all([
+        quotationAPI.getAll(currentBusiness.id),
+        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
+      ]);
+      setCustomers(customerRes.data.data.customers || []);
       if (quotationRes.data.success) {
         const data = quotationRes.data.data;
         setQuotations(Array.isArray(data) ? data.map((q: any) => ({
@@ -192,7 +197,8 @@ const QuotationManagement: React.FC = () => {
     if (searchText) {
       const search = searchText.toLowerCase();
       result = result.filter(q =>
-        q.quotationNumber.toLowerCase().includes(search)
+        q.quotationNumber.toLowerCase().includes(search) ||
+        (q.customer?.name || '').toLowerCase().includes(search)
       );
     }
     return result;
@@ -248,24 +254,6 @@ const QuotationManagement: React.FC = () => {
     }
   };
 
-  // 품목 선택
-  const handleProductSelect = (index: number, productId: number) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      const newItems = [...quotationItems];
-      newItems[index] = {
-        ...newItems[index],
-        productId: product.id,
-        productCode: product.productCode,
-        productName: product.name,
-        spec: product.spec || '',
-        unit: product.unit || '',
-        unitPrice: product.sellPrice || 0,
-      };
-      calculateItemAmount(index, 'unitPrice', product.sellPrice || 0);
-    }
-  };
-
   // 모달 열기
   const openModal = async (quotation?: Quotation) => {
     if (quotation) {
@@ -315,7 +303,7 @@ const QuotationManagement: React.FC = () => {
         quotationNumber: editingQuotation ? editingQuotation.quotationNumber : nextNumber,
         quotationDate: values.quotationDate.format('YYYY-MM-DD'),
         validUntil: values.validUntil.format('YYYY-MM-DD'),
-        customerId: null,
+        customerId: values.customerId ?? null,
         supplyAmount: totals.supplyAmount,
         vatAmount: totals.vatAmount,
         totalAmount: totals.totalAmount,
@@ -633,8 +621,14 @@ const QuotationManagement: React.FC = () => {
               </Form.Item>
             </Col>
             <Col xs={24} sm={8}>
-              <Form.Item name="customerName" label="거래처">
-                <Input placeholder="거래처명 입력" />
+              <Form.Item name="customerId" label="거래처" rules={[{ required: true, message: '거래처를 선택해주세요.' }]}>
+                <Select
+                  placeholder="거래처명 입력"
+                  showSearch
+                  allowClear
+                  optionFilterProp="label"
+                  options={customers.map(c => ({ value: c.id, label: c.name }))}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -869,7 +863,7 @@ const QuotationManagement: React.FC = () => {
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
-          <Button key="print" icon={<PrinterOutlined />} onClick={() => setPrintModalVisible(true)}>인쇄</Button>,
+          <Button key="print" icon={<PrinterOutlined />} onClick={() => { setDetailModalVisible(false); setPrintModalVisible(true); }}>인쇄</Button>,
           <Button key="close" onClick={() => setDetailModalVisible(false)}>닫기</Button>,
         ]}
         width={800}
