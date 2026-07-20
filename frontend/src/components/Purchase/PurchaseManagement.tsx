@@ -786,9 +786,11 @@ const PurchaseManagement: React.FC = () => {
     let totalVatAmount = 0;
 
     purchaseItems.forEach(item => {
-      if (item.productId > 0) {
-        totalSupplyAmount += item.supplyAmount;
-        totalVatAmount += item.vatAmount;
+      // 저장 대상 필터(handleSubmit의 filteredItems)와 조건 일치 — 미등록 품목이
+      // 합계에서만 빠져 무편집 저장 시 0원이 되던 문제 방지
+      if (item.productId > 0 || item.productName) {
+        totalSupplyAmount += Number(item.supplyAmount) || 0;
+        totalVatAmount += Number(item.vatAmount) || 0;
       }
     });
 

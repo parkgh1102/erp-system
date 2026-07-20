@@ -461,10 +461,20 @@ export const uploadSales = async (req: Request, res: Response) => {
         }
         const firstRow = rows[0];
 
-        // 거래처 찾기
+        // 거래처 찾기.
+        // 매칭 실패 시 customerId 없이 저장하면 거래원장·미수금에서 영구 누락되는데
+        // 응답은 '실패 0'으로 나가 사용자가 알 수 없었다 → 실패로 집계하고 건너뛴다.
         const customer = await customerRepo.findOne({
           where: { businessId, customerCode: firstRow['거래처코드'] }
         });
+
+        if (!customer) {
+          results.failed++;
+          results.errors.push(
+            `거래처코드 '${firstRow['거래처코드']}'에 해당하는 거래처가 없습니다. 거래처를 먼저 등록해주세요.`
+          );
+          continue;
+        }
 
         // 매출 생성
         const totalAmount = rows.reduce((sum, r) => sum + parseFloat(r['공급가액']), 0);
@@ -550,14 +560,22 @@ export const uploadPurchases = async (req: Request, res: Response) => {
         }
         const firstRow = rows[0];
 
-        // 거래처 찾기
+        // 거래처 찾기 (매출 업로드와 동일하게, 미매칭은 성공으로 집계하지 않는다)
         const customer = await customerRepo.findOne({
           where: { businessId, customerCode: firstRow['거래처코드'] }
         });
 
+        if (!customer) {
+          results.failed++;
+          results.errors.push(
+            `거래처코드 '${firstRow['거래처코드']}'에 해당하는 거래처가 없습니다. 거래처를 먼저 등록해주세요.`
+          );
+          continue;
+        }
+
         // 매입 생성
         const totalAmount = rows.reduce((sum, r) => sum + parseFloat(r['금액'] || 0), 0);
-        const vatAmount = totalAmount * 0.1; // 10% 부가세
+        const vatAmount = Math.round(totalAmount * 0.1); // 10% 부가세 (원 단위 반올림)
 
         const purchase = purchaseRepo.create({
           businessId,

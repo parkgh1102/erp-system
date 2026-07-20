@@ -91,14 +91,24 @@ export const CustomerController = {
         });
       }
 
-      // customerCode 자동 생성
-      const maxCustomerCode = await customerRepository.createQueryBuilder('customer')
-        .select('MAX(CAST(SUBSTRING(customer.customerCode, 2) AS INTEGER))', 'maxCode')
+      // customerCode 자동 생성.
+      // 과거엔 SQL에서 CAST(SUBSTRING(code,2) AS INTEGER)로 계산했으나,
+      // LIKE 'C%'는 첫 글자만 보장할 뿐이라 'CUST01' 같은 코드가 한 건이라도 있으면
+      // PostgreSQL에서 invalid input syntax 로 거래처 등록 자체가 막혔다(SQLite는 0 반환이라 미검출).
+      // 방언 차이와 캐스팅 실패를 모두 피하려고 코드만 읽어 JS에서 파싱한다.
+      const codeRows = await customerRepository.createQueryBuilder('customer')
+        .select('customer.customerCode', 'customerCode')
         .where('customer.businessId = :businessId', { businessId: business.id })
         .andWhere('customer.customerCode LIKE :pattern', { pattern: 'C%' })
-        .getRawOne();
+        .getRawMany();
 
-      const nextNumber = (maxCustomerCode.maxCode || 0) + 1;
+      const maxCode = codeRows.reduce((max, row) => {
+        // 'C' 뒤가 전부 숫자인 것만 채번 대상으로 인정
+        const m = /^C(\d+)$/.exec(String(row.customerCode || '').trim());
+        return m ? Math.max(max, parseInt(m[1], 10)) : max;
+      }, 0);
+
+      const nextNumber = maxCode + 1;
       const customerCode = `C${nextNumber.toString().padStart(4, '0')}`;
 
       if (value.businessNumber) {
@@ -191,8 +201,10 @@ export const CustomerController = {
         .andWhere('customer.isActive = :isActive', { isActive: true });
 
       if (search) {
+        // LOWER() 양변 적용 — SQLite는 ASCII 대소문자를 무시하지만 PostgreSQL은 구분해서
+        // 영문 거래처명 검색이 운영에서만 0건이 되던 문제를 막는다(한글은 영향 없어 발견이 어려웠음).
         queryBuilder.andWhere(
-          '(customer.name LIKE :search OR customer.businessNumber LIKE :search)',
+          '(LOWER(customer.name) LIKE LOWER(:search) OR LOWER(customer.businessNumber) LIKE LOWER(:search))',
           { search: `%${search}%` }
         );
       }
