@@ -233,6 +233,16 @@ export class QuotationController {
         await quotationItemRepository.remove(quotation.items);
       }
 
+      // customerId가 이 사업체 소속인지 재검증 (create에는 있으나 update에 누락돼 있었음)
+      if (value.customerId) {
+        const owned = await customerRepository.findOne({
+          where: { id: value.customerId, businessId: parseInt(businessId) }
+        });
+        if (!owned) {
+          return res.status(400).json({ success: false, message: '유효하지 않은 거래처입니다.' });
+        }
+      }
+
       await quotationRepository.update(parseInt(id), {
         customerId: value.customerId || null,
         quotationNumber: value.quotationNumber,

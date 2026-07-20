@@ -416,9 +416,22 @@ export class SalesController {
       // 날짜 처리 (saleDate가 있으면 사용, 없으면 transactionDate 사용)
       const transactionDate = value.saleDate || value.transactionDate;
 
+      // customerId가 이 사업체 소속인지 재검증 (create에는 있으나 update에 누락돼 있었음).
+      // 검증 없이 저장하면 타 사업체 거래처가 응답 relations에 실려 상호·연락처가 노출된다.
+      let validCustomerId: number | null = null;
+      if (value.customerId) {
+        const owned = await customerRepository.findOne({
+          where: { id: value.customerId, businessId: parseInt(businessId) }
+        });
+        if (!owned) {
+          return res.status(400).json({ success: false, message: '유효하지 않은 거래처입니다.' });
+        }
+        validCustomerId = owned.id;
+      }
+
       // 매출 정보 업데이트
       await salesRepository.update(parseInt(id), {
-        customerId: value.customerId || null,
+        customerId: validCustomerId,
         transactionDate: transactionDate,
         totalAmount: value.totalAmount,
         vatAmount: value.vatAmount,

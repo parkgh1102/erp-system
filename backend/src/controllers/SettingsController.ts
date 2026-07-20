@@ -801,7 +801,8 @@ export const SettingsController = {
   async deleteAccount(req: Request, res: Response) {
     try {
       const businessId = parseInt(req.params.businessId);
-      const userId = (req as any).user?.id;
+      // JWT 페이로드 키는 userId다. user?.id는 항상 undefined라 계정 삭제 쿼리가 실행되지 않았다.
+      const userId = (req as any).user?.userId;
       const { confirmText } = req.body;
 
       // 확인 텍스트 검증

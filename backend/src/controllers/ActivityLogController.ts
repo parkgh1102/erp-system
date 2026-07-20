@@ -12,8 +12,12 @@ export class ActivityLogController {
   async createLog(req: Request, res: Response): Promise<Response> {
     try {
       const { actionType, entity, entityId, description, metadata } = req.body;
-      const userId = (req as any).userId;
-      const businessId = (req as any).businessId;
+      // 로그 주체는 토큰에서만 취한다 (클라이언트가 타인 명의로 로그를 심지 못하게)
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        return res.status(401).json({ success: false, message: '인증이 필요합니다.' });
+      }
+      const businessId = Number(req.body?.businessId) || undefined;
 
       const log = this.activityLogRepository.create({
         actionType,
@@ -46,14 +50,19 @@ export class ActivityLogController {
   // 사용자의 활동 로그 조회
   async getUserLogs(req: Request, res: Response): Promise<Response> {
     try {
-      const userId = (req as any).userId;
+      // authMiddleware는 req.user에 토큰 페이로드를 넣는다. req.userId는 어디서도 설정되지 않으므로
+      // 이 값을 그대로 where에 넣으면 TypeORM이 undefined 조건을 버려 전 사업체 로그가 반환된다.
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        return res.status(401).json({ success: false, message: '인증이 필요합니다.' });
+      }
       const { limit = 50, offset = 0 } = req.query;
 
       const [logs, total] = await this.activityLogRepository.findAndCount({
         where: { userId },
         order: { createdAt: 'DESC' },
-        take: Number(limit),
-        skip: Number(offset),
+        take: Math.min(Number(limit) || 50, 200),
+        skip: Number(offset) || 0,
         relations: ['user', 'business']
       });
 
@@ -78,7 +87,10 @@ export class ActivityLogController {
   // 최근 활동 로그 조회 (설정 페이지용)
   async getRecentLogs(req: Request, res: Response): Promise<Response> {
     try {
-      const userId = (req as any).userId;
+      const userId = (req as any).user?.userId;
+      if (!userId) {
+        return res.status(401).json({ success: false, message: '인증이 필요합니다.' });
+      }
 
       const logs = await this.activityLogRepository.find({
         where: { userId },
@@ -197,8 +209,10 @@ export const logActivity = async (
 ) => {
   try {
     const activityLogRepository = AppDataSource.getRepository(ActivityLog);
-    const userId = (req as any).userId;
-    const businessId = (req as any).businessId;
+    // req.userId/req.businessId는 설정되는 곳이 없어 그동안 모든 로그가 null로 기록됐다.
+    // userId는 토큰에서, businessId는 라우트 파라미터(businessAccessMiddleware가 이미 검증)에서 취한다.
+    const userId = (req as any).user?.userId;
+    const businessId = Number((req.params as any)?.businessId) || undefined;
 
     const log = activityLogRepository.create({
       actionType,

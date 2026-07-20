@@ -199,15 +199,20 @@ export const AuthController = {
       const step1Start = Date.now();
       let user: User | null = null;
       if (email) {
-        user = await userRepository.findOne({
-          where: { email, isActive: true }
-        });
+        // password는 엔티티에서 select:false이므로 비밀번호 검증용으로 명시 조회한다
+        user = await userRepository
+          .createQueryBuilder('user')
+          .addSelect('user.password')
+          .where('user.email = :email', { email })
+          .andWhere('user.isActive = :isActive', { isActive: true })
+          .getOne();
       } else if (phone) {
         // 전화번호 정규화 후 LIKE 패턴으로 검색 (더 빠름)
         const cleanPhone = phone.replace(/[^0-9]/g, '');
         // 다양한 형식 지원: 01012345678, 010-1234-5678, 010.1234.5678
         user = await userRepository
           .createQueryBuilder('user')
+          .addSelect('user.password') // select:false 컬럼 — 비밀번호 검증용
           .where('user.isActive = :isActive', { isActive: true })
           .andWhere('REPLACE(REPLACE(REPLACE(user.phone, \'-\', \'\'), \' \', \'\'), \'.\', \'\') = :phone', { phone: cleanPhone })
           .getOne();
@@ -483,7 +488,12 @@ export const AuthController = {
 
       const { currentPassword, newPassword } = value;
 
-      const user = await userRepository.findOne({ where: { id: userId } });
+      // 현재 비밀번호 검증이 필요하므로 select:false인 password를 명시적으로 포함시킨다
+      const user = await userRepository
+        .createQueryBuilder('user')
+        .addSelect('user.password')
+        .where('user.id = :userId', { userId })
+        .getOne();
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -528,6 +538,15 @@ export const AuthController = {
         });
       }
 
+      // 로그아웃 시 블랙리스트에 등록된 리프레시 토큰으로는 재발급을 허용하지 않는다.
+      // (로그아웃 전에 탈취된 토큰이 계속 access 토큰을 찍어내는 것을 차단)
+      if (await tokenBlacklist.isBlacklisted(refreshToken)) {
+        return res.status(403).json({
+          success: false,
+          message: '만료된 리프레시 토큰입니다. 다시 로그인해주세요.'
+        });
+      }
+
       const env = getValidatedEnv();
       const decoded = jwt.verify(refreshToken, env.JWT_REFRESH_SECRET, { algorithms: ['HS256'] }) as JwtPayload & { type: string };
 
@@ -564,7 +583,9 @@ export const AuthController = {
           const timeoutValue = settings.settingValue;
           const hours = parseInt(timeoutValue.replace('h', ''));
           if (!isNaN(hours) && hours > 0) {
-            sessionTimeoutHours = hours;
+            // login과 동일하게 24시간 상한을 적용한다.
+            // (설정 저장은 키 화이트리스트가 없어 임의 값이 들어올 수 있음)
+            sessionTimeoutHours = Math.min(hours, 24);
           }
         }
       }
