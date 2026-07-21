@@ -33,8 +33,8 @@ import {
   FileImageOutlined,
   CopyOutlined,
   ExportOutlined,
-  MessageOutlined,
 } from '@ant-design/icons';
+import KakaoIcon from '../Common/KakaoIcon';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { customerAPI, salesAPI, purchaseAPI, paymentAPI, transactionLedgerAPI } from '../../utils/api';
@@ -461,7 +461,7 @@ const CustomerBalanceManagement: React.FC = () => {
               <Button
                 type="text"
                 size="small"
-                icon={<MessageOutlined />}
+                icon={sendingNoticeId === record.id ? undefined : <KakaoIcon size={20} />}
                 loading={sendingNoticeId === record.id}
                 disabled={record.receivableBalance <= 0}
               />
@@ -785,7 +785,7 @@ const CustomerBalanceManagement: React.FC = () => {
             disabled={noticeTargets.length === 0}
           >
             <Button
-              icon={<MessageOutlined />}
+              icon={bulkSending ? undefined : <KakaoIcon size={18} />}
               loading={bulkSending}
               disabled={noticeTargets.length === 0}
             >
