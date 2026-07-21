@@ -255,9 +255,16 @@ export class AlimtalkService {
       if (resultCode === '100' || resultCode === 100) {
         return { ok: true, code: resultCode };
       }
-      // 벤더가 준 코드/메시지를 그대로 올려서 사유를 알 수 있게 한다
-      console.error('미수금 안내 알림톡 전송 실패 - 응답:', JSON.stringify(response.data));
-      return { ok: false, code: resultCode, message: response.data.message };
+      // 벤더가 코드만 주고 설명이 없는 경우가 있어(예: 155) 응답 전문을 그대로 올려
+      // 정확한 사유를 알 수 있게 한다. 보낸 변수 개수도 함께 남긴다(순서/개수 진단용).
+      const rawBody = JSON.stringify(response.data);
+      console.error('미수금 안내 알림톡 전송 실패 - 응답:', rawBody, '| 보낸 변수:', variables);
+      const varCount = variables.split('|').length;
+      return {
+        ok: false,
+        code: resultCode,
+        message: response.data.message || `${rawBody} (보낸 변수 ${varCount}개)`
+      };
     } catch (error: any) {
       // 네트워크/HTTP 오류는 벤더 응답 본문이 있으면 함께 남긴다
       const vendorBody = error.response?.data;
