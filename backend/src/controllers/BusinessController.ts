@@ -57,7 +57,7 @@ export class BusinessController {
 
       if (search) {
         query = query.andWhere(
-          '(business.companyName LIKE :search OR business.businessNumber LIKE :search OR business.representative LIKE :search)',
+          '(LOWER(business.companyName) LIKE LOWER(:search) OR LOWER(business.businessNumber) LIKE LOWER(:search) OR LOWER(business.representative) LIKE LOWER(:search))',
           { search: `%${search}%` }
         );
       }

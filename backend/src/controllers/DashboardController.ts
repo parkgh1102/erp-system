@@ -217,39 +217,40 @@ export class DashboardController {
       const endDate = dayjs().endOf('month');
       const startDate = dayjs().subtract(months - 1, 'month').startOf('month');
 
-      // 매출 데이터 조회 (월별) - SQLite 버전
-      const salesData = await salesRepo
+      // 월별 집계는 DB 날짜함수(strftime 등) 대신 JS에서 수행 —
+      // strftime은 SQLite 전용이라 운영 PostgreSQL에서 쿼리가 실패했음.
+      const salesRows = await salesRepo
         .createQueryBuilder('sales')
-        .select([
-          "strftime('%Y', sales.transactionDate) as year",
-          "strftime('%m', sales.transactionDate) as month",
-          'COALESCE(SUM(sales.totalAmount + sales.vatAmount), 0) as total'
-        ])
+        .select(['sales.transactionDate AS date', 'sales.totalAmount AS amount', 'sales.vatAmount AS vat'])
         .where('sales.businessId = :businessId', { businessId })
         .andWhere('sales.transactionDate BETWEEN :startDate AND :endDate', {
           startDate: startDate.toDate(),
           endDate: endDate.toDate()
         })
-        .groupBy("strftime('%Y', sales.transactionDate), strftime('%m', sales.transactionDate)")
-        .orderBy('year, month')
         .getRawMany();
 
-      // 매입 데이터 조회 (월별) - SQLite 버전
-      const purchaseData = await purchaseRepo
+      const purchaseRows = await purchaseRepo
         .createQueryBuilder('purchases')
-        .select([
-          "strftime('%Y', purchases.purchaseDate) as year",
-          "strftime('%m', purchases.purchaseDate) as month",
-          'COALESCE(SUM(purchases.totalAmount + purchases.vatAmount), 0) as total'
-        ])
+        .select(['purchases.purchaseDate AS date', 'purchases.totalAmount AS amount', 'purchases.vatAmount AS vat'])
         .where('purchases.businessId = :businessId', { businessId })
         .andWhere('purchases.purchaseDate BETWEEN :startDate AND :endDate', {
           startDate: startDate.toDate(),
           endDate: endDate.toDate()
         })
-        .groupBy("strftime('%Y', purchases.purchaseDate), strftime('%m', purchases.purchaseDate)")
-        .orderBy('year, month')
         .getRawMany();
+
+      // 'YYYY-MM' 키로 합계 집계 (DB가 Date/문자열 어느 쪽을 주든 dayjs가 처리)
+      const bucketByMonth = (rows: any[]) => {
+        const map = new Map<string, number>();
+        for (const row of rows) {
+          const key = dayjs(row.date).format('YYYY-MM');
+          const value = Number(row.amount || 0) + Number(row.vat || 0);
+          map.set(key, (map.get(key) || 0) + value);
+        }
+        return map;
+      };
+      const salesByMonth = bucketByMonth(salesRows);
+      const purchaseByMonth = bucketByMonth(purchaseRows);
 
       // 모든 월에 대한 배열 생성
       const labels: string[] = [];
@@ -258,22 +259,15 @@ export class DashboardController {
 
       for (let i = 0; i < months; i++) {
         const currentMonth = dayjs().subtract(months - 1 - i, 'month');
-        const yearString = currentMonth.year().toString();
-        const monthString = (currentMonth.month() + 1).toString().padStart(2, '0');
+        const key = currentMonth.format('YYYY-MM');
 
-        labels.push(currentMonth.format('MM월'));
+        // 12개월 조회 시 'MM월'만 쓰면 라벨이 중복되므로 해가 바뀌면 연도 표기
+        labels.push(months > 12 || currentMonth.year() !== dayjs().year()
+          ? currentMonth.format('YY년 MM월')
+          : currentMonth.format('MM월'));
 
-        // 매출 데이터 찾기 (SQLite는 문자열로 반환)
-        const salesItem = salesData.find(item =>
-          item.year === yearString && item.month === monthString
-        );
-        salesAmounts.push(salesItem ? parseFloat(salesItem.total) : 0);
-
-        // 매입 데이터 찾기 (SQLite는 문자열로 반환)
-        const purchaseItem = purchaseData.find(item =>
-          item.year === yearString && item.month === monthString
-        );
-        purchaseAmounts.push(purchaseItem ? parseFloat(purchaseItem.total) : 0);
+        salesAmounts.push(salesByMonth.get(key) || 0);
+        purchaseAmounts.push(purchaseByMonth.get(key) || 0);
       }
 
       const chartData = {
@@ -368,21 +362,23 @@ export class DashboardController {
       const startOfMonth = currentMonth.startOf('month').toDate();
       const endOfMonth = currentMonth.endOf('month').toDate();
 
-      // 일별 매출 데이터 조회 - SQLite 버전
-      const dailySales = await salesRepo
+      // 일별 집계도 JS에서 수행 (strftime은 SQLite 전용이라 PostgreSQL에서 실패)
+      const dailyRows = await salesRepo
         .createQueryBuilder('sales')
-        .select([
-          "strftime('%d', sales.transactionDate) as day",
-          'COALESCE(SUM(sales.totalAmount + sales.vatAmount), 0) as total'
-        ])
+        .select(['sales.transactionDate AS date', 'sales.totalAmount AS amount', 'sales.vatAmount AS vat'])
         .where('sales.businessId = :businessId', { businessId })
         .andWhere('sales.transactionDate BETWEEN :startDate AND :endDate', {
           startDate: startOfMonth,
           endDate: endOfMonth
         })
-        .groupBy("strftime('%d', sales.transactionDate)")
-        .orderBy('day')
         .getRawMany();
+
+      const salesByDay = new Map<number, number>();
+      for (const row of dailyRows) {
+        const day = dayjs(row.date).date();
+        const value = Number(row.amount || 0) + Number(row.vat || 0);
+        salesByDay.set(day, (salesByDay.get(day) || 0) + value);
+      }
 
       // 현재 월의 총 일수
       const daysInMonth = currentMonth.daysInMonth();
@@ -392,10 +388,7 @@ export class DashboardController {
       // 모든 일에 대해 데이터 생성
       for (let day = 1; day <= daysInMonth; day++) {
         labels.push(`${day}일`);
-
-        // 해당 일의 매출 데이터 찾기 (SQLite는 문자열로 반환)
-        const salesItem = dailySales.find(item => parseInt(item.day) === day);
-        data.push(salesItem ? parseFloat(salesItem.total) : 0);
+        data.push(salesByDay.get(day) || 0);
       }
 
       const trendData = {
@@ -442,7 +435,7 @@ export class DashboardController {
 
       if (search) {
         salesQuery = salesQuery.andWhere(
-          '(customer.name LIKE :search OR CAST(sales.totalAmount AS TEXT) LIKE :search)',
+          '(LOWER(customer.name) LIKE LOWER(:search) OR CAST(sales.totalAmount AS TEXT) LIKE :search)',
           { search: `%${search}%` }
         );
       }
@@ -464,7 +457,7 @@ export class DashboardController {
 
       if (search) {
         purchaseQuery = purchaseQuery.andWhere(
-          '(customer.name LIKE :search OR CAST(purchase.totalAmount AS TEXT) LIKE :search)',
+          '(LOWER(customer.name) LIKE LOWER(:search) OR CAST(purchase.totalAmount AS TEXT) LIKE :search)',
           { search: `%${search}%` }
         );
       }

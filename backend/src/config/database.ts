@@ -83,11 +83,14 @@ const baseConfig = {
     BackupHistory
   ],
 
-  // 마이그레이션 파일 경로
-  migrations: ['src/migrations/*.ts'],
+  // 마이그레이션 파일 경로.
+  // 과거엔 'src/migrations/*.ts' 고정이라, 운영(node dist/index.js)에서는 컴파일된 .js를
+  // 찾지 못해 migrationsRun:true여도 실제로 실행되는 마이그레이션이 0개였다.
+  // __dirname 기준 + {ts,js} 로 개발(ts-node-dev)과 운영(dist) 양쪽을 모두 잡는다.
+  migrations: [path.join(__dirname, '..', 'migrations', '*.{ts,js}')],
 
   // 구독자 경로
-  subscribers: ['src/subscribers/*.ts'],
+  subscribers: [path.join(__dirname, '..', 'subscribers', '*.{ts,js}')],
 
   // CLI 설정
   cli: {

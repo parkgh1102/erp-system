@@ -8,6 +8,7 @@ import { PurchaseItem } from '../entities/PurchaseItem';
 import { Payment, PaymentType } from '../entities/Payment';
 import { Customer } from '../entities/Customer';
 import { Product } from '../entities/Product';
+import { User } from '../entities/User';
 import { Between, MoreThanOrEqual, LessThanOrEqual, Like } from 'typeorm';
 
 // Gemini API 초기화
@@ -87,7 +88,7 @@ class ERPDataHelper {
 
     if (searchTerm) {
       query.andWhere(
-        '(customer.name LIKE :search OR customer.businessNumber LIKE :search OR customer.phone LIKE :search)',
+        '(LOWER(customer.name) LIKE LOWER(:search) OR LOWER(customer.businessNumber) LIKE LOWER(:search) OR LOWER(customer.phone) LIKE LOWER(:search))',
         { search: `%${searchTerm}%` }
       );
     }
@@ -109,7 +110,7 @@ class ERPDataHelper {
 
     if (searchTerm) {
       query.andWhere(
-        '(product.name LIKE :search OR product.productCode LIKE :search)',
+        '(LOWER(product.name) LIKE LOWER(:search) OR LOWER(product.productCode) LIKE LOWER(:search))',
         { search: `%${searchTerm}%` }
       );
     }
@@ -925,6 +926,20 @@ ERP 시스템 데이터:${context}
               return sum + Math.round(item.amount * 0.1);
             }
           }, 0);
+        }
+
+        // 조회 전용 역할(sales_viewer) 차단.
+        // 이 라우트는 POST /message 하나로 조회와 등록을 모두 처리하므로 requireWriteRole을
+        // 라우트에 걸면 조회 질문까지 막힌다. 따라서 실제 '등록' 직전에만 검사한다.
+        // (JWT에는 role이 없어 DB에서 확인)
+        const writer = await AppDataSource.getRepository(User).findOne({
+          where: { id: user.userId }
+        });
+        if (writer?.role === 'sales_viewer') {
+          return res.json({
+            response: '조회 전용 권한으로는 거래를 등록할 수 없습니다. 조회는 계속 이용하실 수 있습니다.',
+            success: false
+          });
         }
 
         // 4단계: 거래 유형별 처리

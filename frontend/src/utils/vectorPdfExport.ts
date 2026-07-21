@@ -11,6 +11,7 @@ import jsPDF from 'jspdf';
 import autoTable, { RowInput, CellDef } from 'jspdf-autotable';
 import { message } from 'antd';
 import { createPDFWithKoreanFont } from './pdfFontLoader';
+import { formatBusinessNumber } from './formatters';
 
 export interface VectorPdfColumn {
   key: string;
@@ -924,7 +925,7 @@ export const exportQuotationToVectorPdf = async (options: QuotationVectorPdfOpti
 
     const supplierRows = [
       ['상호', supplier.name || ''],
-      ['사업자번호', supplier.businessNumber || ''],
+      ['사업자번호', formatBusinessNumber(supplier.businessNumber || '')],
       ['대표자', supplier.representative || ''],
       ['주소', supplier.address || ''],
       ['연락처', [supplier.phone && `Tel: ${supplier.phone}`, supplier.fax && `Fax: ${supplier.fax}`].filter(Boolean).join(' / ')],

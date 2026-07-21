@@ -350,19 +350,17 @@ const Profile: React.FC = () => {
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
+                  {/*
+                    이메일은 로그인 아이디라 변경을 지원하지 않는다(백엔드 updateProfile은
+                    name/phone만 반영). 편집 가능한 것처럼 보이면 저장 후 새로고침 시
+                    원래 값으로 돌아가 혼란을 주므로 항상 읽기 전용으로 둔다.
+                  */}
                   <Form.Item
-                    label="이메일"
+                    label="이메일 (로그인 아이디)"
                     name="email"
-                    rules={[
-                      { required: true, message: '이메일을 입력해주세요.' },
-                      { type: 'email', message: '올바른 이메일 형식이 아닙니다.' }
-                    ]}
+                    extra="이메일은 변경할 수 없습니다."
                   >
-                    <Input
-                      prefix={<MailOutlined />}
-                      disabled={!editing}
-                      placeholder="이메일을 입력하세요"
-                    />
+                    <Input prefix={<MailOutlined />} disabled />
                   </Form.Item>
                 </Col>
               </Row>

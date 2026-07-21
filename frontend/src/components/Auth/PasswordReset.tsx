@@ -98,7 +98,8 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onBack, onLoginSuccess, o
       });
 
       if (response.success) {
-        setFoundUserId(response.data.fullEmail);
+        // 백엔드는 마스킹된 email을 내려준다 (fullEmail이라는 필드는 없음)
+        setFoundUserId(response.data.email);
         setCurrentStep(1);
         message.success('아이디를 찾았습니다!');
       } else {

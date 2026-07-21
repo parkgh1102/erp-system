@@ -233,6 +233,16 @@ export class PurchaseOrderController {
         await purchaseOrderItemRepository.remove(purchaseOrder.items);
       }
 
+      // supplierId가 이 사업체 소속인지 재검증 (create에는 있으나 update에 누락돼 있었음)
+      if (value.supplierId) {
+        const owned = await customerRepository.findOne({
+          where: { id: value.supplierId, businessId: parseInt(businessId) }
+        });
+        if (!owned) {
+          return res.status(400).json({ success: false, message: '유효하지 않은 공급업체입니다.' });
+        }
+      }
+
       await purchaseOrderRepository.update(parseInt(id), {
         supplierId: value.supplierId || null,
         orderNumber: value.orderNumber,

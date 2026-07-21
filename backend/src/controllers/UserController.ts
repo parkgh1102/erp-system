@@ -48,7 +48,10 @@ const updateUserSchema = Joi.object({
     'string.pattern.base': '비밀번호는 숫자 4자리여야 합니다.'
   }),
   role: Joi.string().valid('admin', 'sales_viewer').optional(),
-  businessId: Joi.number().optional(),
+  // businessId(단수)는 의도적으로 제외한다.
+  // businessAccessMiddleware가 user.businessId만으로 접근을 허용하므로, 이 값을 그대로 받으면
+  // 자기 사업체 admin이 소속 계정을 타 사업체 소속으로 바꿔 남의 데이터에 접근할 수 있다.
+  // 접근 사업체 변경은 아래 businessIds(요청자 소유 사업체로 필터링됨) 경로로만 처리한다.
   businessIds: Joi.array().items(Joi.number()).optional(),
   isActive: Joi.boolean().optional()
 });

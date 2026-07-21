@@ -644,7 +644,11 @@ const SalesManagement: React.FC = () => {
           // 백엔드에서 저장된 값 사용 (백엔드는 taxAmount, 프론트엔드는 vatAmount)
           const savedSupplyAmount = Number(item.supplyAmount) || 0;
           // 면세인 경우 세액은 무조건 0
-          const savedVatAmount = isTaxFree ? 0 : (Number(item.vatAmount) || Number(item.taxAmount) || 0);
+          // 저장된 세액이 '0'인 것과 '없는' 것을 구분해야 한다.
+          // ||로 폴백하면 사용자가 0으로 저장한 과세 품목에 인쇄 시 10%가 되살아나
+          // DB에 없는 부가세가 찍힌 거래명세표가 고객에게 나간다.
+          const hasSavedVat = item.vatAmount != null || item.taxAmount != null;
+          const savedVatAmount = isTaxFree ? 0 : Number(item.vatAmount ?? item.taxAmount ?? 0);
           const savedTotalAmount = savedSupplyAmount + savedVatAmount;
 
           return {
@@ -656,7 +660,7 @@ const SalesManagement: React.FC = () => {
             unitPrice: Number(item.unitPrice) || 0,
             amount: baseAmount,
             supplyAmount: savedSupplyAmount || calculatedSupplyAmount,
-            vatAmount: isTaxFree ? 0 : (savedVatAmount || calculatedVatAmount),
+            vatAmount: isTaxFree ? 0 : (hasSavedVat ? savedVatAmount : calculatedVatAmount),
             totalAmount: savedTotalAmount || calculatedTotalAmount,
             taxExempt: isTaxFree,
             taxType: taxType,
@@ -750,7 +754,11 @@ const SalesManagement: React.FC = () => {
           // 백엔드에서 저장된 값 사용 (백엔드는 taxAmount, 프론트엔드는 vatAmount)
           const savedSupplyAmount = Number(item.supplyAmount) || 0;
           // 면세인 경우 세액은 무조건 0
-          const savedVatAmount = isTaxFree ? 0 : (Number(item.vatAmount) || Number(item.taxAmount) || 0);
+          // 저장된 세액이 '0'인 것과 '없는' 것을 구분해야 한다.
+          // ||로 폴백하면 사용자가 0으로 저장한 과세 품목에 인쇄 시 10%가 되살아나
+          // DB에 없는 부가세가 찍힌 거래명세표가 고객에게 나간다.
+          const hasSavedVat = item.vatAmount != null || item.taxAmount != null;
+          const savedVatAmount = isTaxFree ? 0 : Number(item.vatAmount ?? item.taxAmount ?? 0);
           const savedTotalAmount = savedSupplyAmount + savedVatAmount;
 
           return {
@@ -762,7 +770,7 @@ const SalesManagement: React.FC = () => {
             unitPrice: Number(item.unitPrice) || 0,
             amount: baseAmount,
             supplyAmount: savedSupplyAmount || calculatedSupplyAmount,
-            vatAmount: isTaxFree ? 0 : (savedVatAmount || calculatedVatAmount),
+            vatAmount: isTaxFree ? 0 : (hasSavedVat ? savedVatAmount : calculatedVatAmount),
             totalAmount: savedTotalAmount || calculatedTotalAmount,
             taxExempt: isTaxFree,
             taxType: taxType,
@@ -853,7 +861,11 @@ const SalesManagement: React.FC = () => {
             // 백엔드에서 저장된 값 사용 (백엔드는 taxAmount, 프론트엔드는 vatAmount)
             const savedSupplyAmount = Number(item.supplyAmount) || 0;
             // 면세인 경우 세액은 무조건 0
-            const savedVatAmount = isTaxFree ? 0 : (Number(item.vatAmount) || Number(item.taxAmount) || 0);
+            // 저장된 세액이 '0'인 것과 '없는' 것을 구분해야 한다.
+          // ||로 폴백하면 사용자가 0으로 저장한 과세 품목에 인쇄 시 10%가 되살아나
+          // DB에 없는 부가세가 찍힌 거래명세표가 고객에게 나간다.
+          const hasSavedVat = item.vatAmount != null || item.taxAmount != null;
+          const savedVatAmount = isTaxFree ? 0 : Number(item.vatAmount ?? item.taxAmount ?? 0);
             const savedTotalAmount = savedSupplyAmount + savedVatAmount;
 
             return {
@@ -865,7 +877,7 @@ const SalesManagement: React.FC = () => {
               unitPrice: Number(item.unitPrice) || 0,
               amount: baseAmount,
               supplyAmount: savedSupplyAmount || calculatedSupplyAmount,
-              vatAmount: isTaxFree ? 0 : (savedVatAmount || calculatedVatAmount),
+              vatAmount: isTaxFree ? 0 : (hasSavedVat ? savedVatAmount : calculatedVatAmount),
               totalAmount: savedTotalAmount || calculatedTotalAmount,
               taxExempt: isTaxFree,
               taxType: taxType,
@@ -1345,9 +1357,12 @@ const SalesManagement: React.FC = () => {
     let totalVatAmount = 0;
 
     saleItems.forEach(item => {
-      if (item.productId > 0) {
-        totalSupplyAmount += item.supplyAmount;
-        totalVatAmount += item.vatAmount;
+      // 저장 대상 필터(handleSubmit의 filteredItems)와 조건을 일치시킨다.
+      // 기존엔 productId>0만 합산해서, 엑셀로 들어온 미등록 품목(productId 없음 + 품목명만 있음)은
+      // 품목으로는 저장되는데 헤더 합계에서만 빠져 무편집 저장 시 합계가 0원이 됐다.
+      if (item.productId > 0 || item.productName) {
+        totalSupplyAmount += Number(item.supplyAmount) || 0;
+        totalVatAmount += Number(item.vatAmount) || 0;
       }
     });
 

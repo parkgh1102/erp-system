@@ -162,7 +162,7 @@ export const ProductController = {
 
       if (search) {
         queryBuilder.andWhere(
-          '(product.name LIKE :search OR product.productCode LIKE :search OR product.category LIKE :search)',
+          '(LOWER(product.name) LIKE LOWER(:search) OR LOWER(product.productCode) LIKE LOWER(:search) OR LOWER(product.category) LIKE LOWER(:search))',
           { search: `%${search}%` }
         );
       }

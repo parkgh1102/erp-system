@@ -197,7 +197,10 @@ export const BusinessList: React.FC = () => {
         response = await businessAPI.create(values);
       }
 
-      if (response.success) {
+      // businessAPI는 axios 응답을 그대로 반환하므로 success 플래그는 response.data에 있다.
+      // response.success는 항상 undefined라 등록이 성공해도 모달이 닫히지 않아
+      // 사용자가 재시도 → 409 중복 등록으로 이어졌다.
+      if (response.data?.success) {
         message.success(
           editingBusiness
             ? '사업자 정보가 수정되었습니다.'
