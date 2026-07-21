@@ -216,7 +216,7 @@ export class AlimtalkService {
     overdueDays: number,
     lastTradeDate: string,
     senderCompany: string
-  ): Promise<boolean> {
+  ): Promise<{ ok: boolean; code?: string | number; message?: string }> {
     try {
       const cleanPhone = phone.replace(/\D/g, '');
 
@@ -236,8 +236,8 @@ export class AlimtalkService {
       formData.append('variable', variables);
       formData.append('callback', this.CALLBACK);
       formData.append('dstaddr', cleanPhone);
-      // 미수금 안내는 광고성 오인 소지가 있어 SMS 대체발송을 쓰지 않음
-      formData.append('next_type', '0');
+      // 실패 시 SMS 대체발송 (기존 OTP/전자서명 템플릿과 동일하게 '1')
+      formData.append('next_type', '1');
       formData.append('send_reserve', '0');
 
       const response = await axios.post<AlimtalkResponse>(
@@ -253,14 +253,16 @@ export class AlimtalkService {
 
       const resultCode = response.data.result || response.data.code;
       if (resultCode === '100' || resultCode === 100) {
-        return true;
-      } else {
-        console.error('미수금 안내 알림톡 전송 실패 - 코드:', resultCode);
-        return false;
+        return { ok: true, code: resultCode };
       }
+      // 벤더가 준 코드/메시지를 그대로 올려서 사유를 알 수 있게 한다
+      console.error('미수금 안내 알림톡 전송 실패 - 응답:', JSON.stringify(response.data));
+      return { ok: false, code: resultCode, message: response.data.message };
     } catch (error: any) {
-      console.error('미수금 안내 알림톡 오류:', error.message);
-      return false;
+      // 네트워크/HTTP 오류는 벤더 응답 본문이 있으면 함께 남긴다
+      const vendorBody = error.response?.data;
+      console.error('미수금 안내 알림톡 오류:', error.message, vendorBody ? JSON.stringify(vendorBody) : '');
+      return { ok: false, message: vendorBody?.message || error.message };
     }
   }
 

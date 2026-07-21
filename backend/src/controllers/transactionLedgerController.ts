@@ -1069,8 +1069,13 @@ export const transactionLedgerController = {
         business.companyName
       );
 
-      if (!sent) {
-        return res.status(502).json({ success: false, message: '알림톡 전송에 실패했습니다.' });
+      if (!sent.ok) {
+        // 벤더가 준 코드/사유를 그대로 노출해 원인(템플릿 미승인·발신번호 등)을 알 수 있게 한다
+        const detail = sent.message || (sent.code != null ? `응답코드 ${sent.code}` : '알 수 없는 오류');
+        return res.status(502).json({
+          success: false,
+          message: `알림톡 전송에 실패했습니다. (${detail})`
+        });
       }
 
       res.json({
@@ -1137,11 +1142,12 @@ export const transactionLedgerController = {
             business.companyName
           );
 
-          if (sent) {
+          if (sent.ok) {
             results.sent++;
           } else {
             results.failed++;
-            results.details.push(`${result.name}: 전송 실패`);
+            const detail = sent.message || (sent.code != null ? `응답코드 ${sent.code}` : '전송 실패');
+            results.details.push(`${result.name}: ${detail}`);
           }
         } catch (e) {
           results.failed++;
