@@ -18,7 +18,6 @@ import {
   Dropdown,
   Checkbox,
   Empty,
-  Popconfirm,
 } from 'antd';
 import {
   SearchOutlined,
@@ -34,10 +33,9 @@ import {
   CopyOutlined,
   ExportOutlined,
 } from '@ant-design/icons';
-import KakaoIcon from '../Common/KakaoIcon';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { customerAPI, salesAPI, purchaseAPI, paymentAPI, transactionLedgerAPI } from '../../utils/api';
+import { customerAPI, salesAPI, purchaseAPI, paymentAPI } from '../../utils/api';
 import { formatBusinessNumber } from '../../utils/formatters';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
@@ -109,9 +107,6 @@ const CustomerBalanceManagement: React.FC = () => {
   const [autoSaveType, setAutoSaveType] = useState<'pdf' | 'png' | 'jpg' | 'clipboard' | null>(null);
   // 거래처별 거래 내역 (상세보기/인쇄용) — fetchData 시 함께 계산해 보관
   const [detailsMap, setDetailsMap] = useState<Record<number, TransactionDetail[]>>({});
-  // 미수금 안내 알림톡 전송 중인 거래처 id
-  const [sendingNoticeId, setSendingNoticeId] = useState<number | null>(null);
-  const [bulkSending, setBulkSending] = useState(false);
 
   // 데이터 로드 + 미수금/미지급 및 일자분석 계산
   const fetchData = useCallback(async () => {
@@ -317,51 +312,6 @@ const CustomerBalanceManagement: React.FC = () => {
     setDetailModalVisible(true);
   };
 
-  /**
-   * 미수금 안내 알림톡 전송 (템플릿 SJT_256790).
-   * 수신번호·금액·연체일수는 서버가 DB에서 직접 산출하므로 여기서는 거래처 id만 넘긴다.
-   */
-  const handleSendNotice = async (customer: CustomerBalance) => {
-    if (!currentBusiness) return;
-    setSendingNoticeId(customer.id);
-    try {
-      const res = await transactionLedgerAPI.sendReceivableNotice(currentBusiness.id, customer.id);
-      message.success(res.data?.message || '미수금 안내를 전송했습니다.');
-    } catch (error: any) {
-      // 서버가 사유(전화번호 미등록, 미수금 없음 등)를 내려주면 그대로 노출
-      message.error(error?.response?.data?.message || '알림톡 전송에 실패했습니다.');
-    } finally {
-      setSendingNoticeId(null);
-    }
-  };
-
-  /** 일괄 전송 대상: 선택한 거래처 중 미수금이 있는 것만 */
-  const noticeTargets = useMemo(
-    () => filteredBalances.filter(b => selectedRowKeys.includes(b.id) && b.receivableBalance > 0),
-    [filteredBalances, selectedRowKeys]
-  );
-
-  const handleSendNoticesBulk = async () => {
-    if (!currentBusiness || noticeTargets.length === 0) return;
-    setBulkSending(true);
-    try {
-      const res = await transactionLedgerAPI.sendReceivableNoticesBulk(
-        currentBusiness.id,
-        noticeTargets.map(b => b.id)
-      );
-      const data = res.data?.data;
-      message.success(res.data?.message || '일괄 전송이 완료되었습니다.');
-      // 제외/실패 사유가 있으면 사용자가 알 수 있게 함께 보여준다
-      if (data?.details?.length) {
-        message.warning(`제외·실패 내역: ${data.details.slice(0, 5).join(' / ')}`, 6);
-      }
-    } catch (error: any) {
-      message.error(error?.response?.data?.message || '일괄 전송에 실패했습니다.');
-    } finally {
-      setBulkSending(false);
-    }
-  };
-
   // 인쇄
   const openPrint = (customer: CustomerBalance) => {
     loadTransactionDetails(customer);
@@ -433,41 +383,11 @@ const CustomerBalanceManagement: React.FC = () => {
     {
       title: '관리',
       key: 'action',
-      width: 120,
+      width: 80,
       render: (_: any, record: CustomerBalance) => (
-        <Space size={0}>
-          <Tooltip title="상세보기">
-            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
-          </Tooltip>
-          <Popconfirm
-            title="미수금 안내 전송"
-            description={
-              <div style={{ maxWidth: 260 }}>
-                <div><strong>{record.name}</strong>님에게 카카오 알림톡을 보냅니다.</div>
-                <div style={{ marginTop: 6, fontSize: 12, color: '#8c8c8c' }}>
-                  미수금 {formatCurrency(record.receivableBalance)} · 연체 {record.overdueDays || 0}일
-                </div>
-                <div style={{ marginTop: 6, fontSize: 12, color: '#8c8c8c' }}>
-                  거래처에 등록된 전화번호로 발송됩니다.
-                </div>
-              </div>
-            }
-            okText="전송"
-            cancelText="취소"
-            onConfirm={() => handleSendNotice(record)}
-            disabled={record.receivableBalance <= 0}
-          >
-            <Tooltip title={record.receivableBalance > 0 ? '미수금 안내 알림톡' : '미수금이 없습니다'}>
-              <Button
-                type="text"
-                size="small"
-                icon={sendingNoticeId === record.id ? undefined : <KakaoIcon size={20} />}
-                loading={sendingNoticeId === record.id}
-                disabled={record.receivableBalance <= 0}
-              />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
+        <Tooltip title="상세보기">
+          <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetail(record)} />
+        </Tooltip>
       ),
     },
   ];
@@ -764,34 +684,6 @@ const CustomerBalanceManagement: React.FC = () => {
           >
             인쇄
           </Button>
-          <Popconfirm
-            title="미수금 안내 일괄 전송"
-            description={
-              <div style={{ maxWidth: 300 }}>
-                <div>
-                  선택한 <strong>{noticeTargets.length}개 거래처</strong>에 카카오 알림톡을 보냅니다.
-                </div>
-                <div style={{ marginTop: 6, fontSize: 12, color: '#8c8c8c' }}>
-                  각 거래처에 등록된 전화번호로 발송되며, 미수금이 없거나 번호가 없는 거래처는 자동 제외됩니다.
-                </div>
-                <div style={{ marginTop: 6, fontSize: 12, color: '#fa8c16' }}>
-                  전송 후에는 취소할 수 없습니다.
-                </div>
-              </div>
-            }
-            okText={`${noticeTargets.length}건 전송`}
-            cancelText="취소"
-            onConfirm={handleSendNoticesBulk}
-            disabled={noticeTargets.length === 0}
-          >
-            <Button
-              icon={bulkSending ? undefined : <KakaoIcon size={18} />}
-              loading={bulkSending}
-              disabled={noticeTargets.length === 0}
-            >
-              미수금 안내 {noticeTargets.length > 0 ? `(${noticeTargets.length})` : ''}
-            </Button>
-          </Popconfirm>
         </Space>
       </Card>
 

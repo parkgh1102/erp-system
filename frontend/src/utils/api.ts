@@ -321,12 +321,6 @@ export const transactionLedgerAPI = {
     api.get(`/transaction-ledger/${businessId}/ledger/balances`, { params }),
   getCustomersWithTransactions: (businessId: number, params: { startDate: string; endDate: string }) =>
     api.get(`/transaction-ledger/${businessId}/customers-with-transactions`, { params }),
-  // 미수금 안내 알림톡 전송. 금액·연체일수·수신번호는 서버가 DB에서 직접 산출하므로 body 없음
-  sendReceivableNotice: (businessId: number, customerId: number) =>
-    api.post(`/transaction-ledger/${businessId}/customer/${customerId}/receivable-notice`),
-  // 일괄 전송 (선택한 거래처만, 서버에서 1회 50건 상한)
-  sendReceivableNoticesBulk: (businessId: number, customerIds: number[]) =>
-    api.post(`/transaction-ledger/${businessId}/receivable-notices`, { customerIds }),
 };
 
 // 대시보드 조회 파라미터 (PaginationQuery엔 기간 필드가 없어 별도 정의)
