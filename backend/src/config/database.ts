@@ -89,6 +89,13 @@ const baseConfig = {
   // __dirname 기준 + {ts,js} 로 개발(ts-node-dev)과 운영(dist) 양쪽을 모두 잡는다.
   migrations: [path.join(__dirname, '..', 'migrations', '*.{ts,js}')],
 
+  // 마이그레이션을 트랜잭션 없이 실행한다.
+  // 운영은 부팅 시 migrationsRun:true로 자동 실행되는데, PostgreSQL은 트랜잭션 안에서
+  // 한 문장이 실패하면 트랜잭션이 오염돼 최종 커밋에서 터진다(→ initialize 실패 → 서버 종료).
+  // 'none'이면 각 문장이 독립 실행되어, 인덱스 마이그레이션의 문장별 try/catch가
+  // 실제 안전망으로 동작해 개별 실패가 부팅을 죽이지 않는다.
+  migrationsTransactionMode: 'none' as const,
+
   // 구독자 경로
   subscribers: [path.join(__dirname, '..', 'subscribers', '*.{ts,js}')],
 

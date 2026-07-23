@@ -55,7 +55,7 @@ const envSchema = Joi.object({
   MAX_FILE_SIZE: Joi.number().positive().default(10485760),
 
   // 보안 설정
-  BCRYPT_ROUNDS: Joi.number().min(12).max(15).default(12), // 최소 12
+  BCRYPT_ROUNDS: Joi.number().min(10).max(15).default(10), // 10 = 표준(로그인 체감 개선), 최소 10
   SESSION_SECRET: Joi.string().min(32).required(), // 최소 32자 (Render 호환)
   RATE_LIMIT_WINDOW_MS: Joi.number().positive().default(900000),
   RATE_LIMIT_MAX: Joi.number().positive().default(100),
@@ -114,9 +114,9 @@ export const validateEnvImproved = () => {
     throw new Error('SESSION_SECRET은 32자 이상이어야 합니다. (현재: ' + value.SESSION_SECRET.length + '자)');
   }
 
-  // 2. bcrypt rounds 검증
-  if (value.BCRYPT_ROUNDS < 12) {
-    throw new Error('BCRYPT_ROUNDS는 12 이상이어야 합니다. (현재: ' + value.BCRYPT_ROUNDS + ')');
+  // 2. bcrypt rounds 검증 (10 미만은 약함 — 표준 하한 10)
+  if (value.BCRYPT_ROUNDS < 10) {
+    throw new Error('BCRYPT_ROUNDS는 10 이상이어야 합니다. (현재: ' + value.BCRYPT_ROUNDS + ')');
   }
 
   // 3. 기본 시크릿 키 사용 방지 (확장된 목록)

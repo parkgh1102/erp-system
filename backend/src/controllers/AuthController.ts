@@ -243,6 +243,20 @@ export const AuthController = {
       // 로그인 성공 로깅 (비동기)
       securityLogger.logAuthSuccess(req, user.id);
 
+      // 기존 비밀번호가 높은 bcrypt 라운드로 해싱돼 있으면(예: 과거 12), 설정된 라운드로
+      // 다시 해싱해 다음 로그인부터 검증 속도를 높인다. 현재 응답을 늦추지 않도록 백그라운드 처리.
+      // (bcrypt.compare는 해시에 박힌 라운드를 쓰므로, 재해싱 전까지는 기존 라운드로 검증됨)
+      try {
+        const currentRounds = bcrypt.getRounds(user.password);
+        if (currentRounds > env.BCRYPT_ROUNDS) {
+          bcrypt.hash(password, env.BCRYPT_ROUNDS)
+            .then(newHash => userRepository.update(user.id, { password: newHash }))
+            .catch(err => logger.warn(`비밀번호 재해싱 실패(무해, 다음 로그인 재시도): ${err?.message || err}`));
+        }
+      } catch {
+        // getRounds 파싱 실패 등은 무시 (로그인 자체엔 영향 없음)
+      }
+
       // 3단계: 병렬 쿼리 실행 (businesses + settings + sales_viewer 권한)
       const step3Start = Date.now();
       const businessId = user.businessId || 0;
