@@ -41,8 +41,6 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
 import TrackPagination from '../Common/TrackPagination';
 import QuotationPrint from '../Print/QuotationPrint';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;

@@ -8,7 +8,6 @@ import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
 import { useRecentSearches, buildRecentOptions } from '../../hooks/useRecentSearches';
 import TableColumnSettings from '../Common/TableColumnSettings';
 import { createExportMenuItems } from '../../utils/exportUtils';
-import * as ExcelJS from 'exceljs';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import api, { purchaseAPI, customerAPI, productAPI } from '../../utils/api';

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Modal, Button, message } from 'antd';
 import PrintPreviewModal from './PrintPreviewModal';
-import html2canvas from 'html2canvas';
+// html2canvas(~585KB)는 인쇄/저장 클릭 시점에만 동적 로드 (초기 청크에서 제외).
+// 기존 호출부(await html2canvas(...))를 그대로 두기 위해 동명 async 래퍼로 감싼다.
+const html2canvas = async (element: HTMLElement, options?: any): Promise<HTMLCanvasElement> =>
+  (await import('html2canvas')).default(element, options);
 
 
 interface PrintModalProps {
