@@ -48,6 +48,16 @@ const loginSchema = Joi.object({
   password: Joi.string().required()
 }).or('email', 'phone');
 
+// 타이밍 공격 방지용 더미 해시. 설정된 라운드로 한 번만 생성해 캐시한다.
+// (기존엔 cost 12로 하드코딩돼, 없는 계정 로그인이 항상 느렸고 cost 10 사용자와 타이밍도 어긋났다)
+let __dummyHashCache: { rounds: number; hash: string } | null = null;
+const getDummyHash = (rounds: number): string => {
+  if (!__dummyHashCache || __dummyHashCache.rounds !== rounds) {
+    __dummyHashCache = { rounds, hash: bcrypt.hashSync('timing-attack-dummy', rounds) };
+  }
+  return __dummyHashCache.hash;
+};
+
 export const AuthController = {
   async signup(req: Request, res: Response) {
     try {
@@ -222,9 +232,8 @@ export const AuthController = {
       // 2단계: 비밀번호 검증 (가장 CPU 집약적)
       // 타이밍 공격 방지: 사용자가 없어도 bcrypt 비교 수행
       const step2Start = Date.now();
-      // 더미 해시: 사용자가 없을 때도 동일한 시간이 소요되도록 함
-      const dummyHash = '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.eAj6lEH7yKjS2.';
-      const passwordToCompare = user?.password || dummyHash;
+      // 더미 해시: 사용자가 없을 때도 동일한 시간이 소요되도록 함 (설정된 라운드로 생성)
+      const passwordToCompare = user?.password || getDummyHash(env.BCRYPT_ROUNDS);
       const isPasswordValid = await bcrypt.compare(password, passwordToCompare);
       logger.info(`[LOGIN TIMING] Step2 비밀번호검증: ${Date.now() - step2Start}ms`);
 
