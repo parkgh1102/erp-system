@@ -2,8 +2,10 @@ import React, { useRef, useEffect } from 'react';
 import { Modal, Button, Space, message, Dropdown } from 'antd';
 import { PrinterOutlined, DownloadOutlined, FilePdfOutlined, FileImageOutlined, CopyOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import html2canvas from 'html2canvas';
-import { exportQuotationToVectorPdf } from '../../utils/vectorPdfExport';
+// html2canvas(~585KB)는 인쇄/저장 클릭 시점에만 동적 로드 (초기 청크에서 제외).
+// 기존 호출부(await html2canvas(...))를 그대로 두기 위해 동명 async 래퍼로 감싼다.
+const html2canvas = async (element: HTMLElement, options?: any): Promise<HTMLCanvasElement> =>
+  (await import('html2canvas')).default(element, options);
 import { formatBusinessNumber } from '../../utils/formatters';
 
 interface QuotationItem {
@@ -118,6 +120,7 @@ const QuotationPrint: React.FC<QuotationPrintProps> = ({ open, onClose, data, au
 
   const handleDownloadPDF = async () => {
     if (!data) return;
+    const { exportQuotationToVectorPdf } = await import('../../utils/vectorPdfExport');
     await exportQuotationToVectorPdf({
       filename: `견적서_${data.quotationNumber}`,
       documentNumber: data.quotationNumber,

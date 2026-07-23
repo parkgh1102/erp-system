@@ -1,9 +1,9 @@
-import * as ExcelJS from 'exceljs';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+// 무거운 내보내기 라이브러리(exceljs ~935KB, html2canvas ~585KB, jspdf)는
+// 정적 import 하면 이 파일을 쓰는 6개 관리 화면 진입 시마다 함께 로드된다.
+// 실제로는 '엑셀/PDF 내보내기'를 눌러야만 필요하므로, 각 함수 안에서 동적 import 한다.
 import { message } from 'antd';
 import React from 'react';
-import { exportToVectorPdf, exportTransactionLedgerToVectorPdf, VectorPdfColumn } from './vectorPdfExport';
+import type { VectorPdfColumn } from './vectorPdfExport';
 
 /**
  * innerHTML 문자열에 사용자 데이터를 넣기 전 HTML 이스케이프.
@@ -56,7 +56,8 @@ export const exportToExcel = async (options: ExportOptions) => {
       return;
     }
 
-    // 워크북 생성
+    // 워크북 생성 (exceljs는 클릭 시점에 동적 로드)
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(title || 'Sheet1');
 
@@ -172,7 +173,8 @@ export const exportToPDF = async (options: ExportOptions) => {
     render: col.render,
   }));
 
-  // 벡터 PDF로 내보내기
+  // 벡터 PDF로 내보내기 (jspdf를 물고 있는 vectorPdfExport를 클릭 시점에 동적 로드)
+  const { exportToVectorPdf } = await import('./vectorPdfExport');
   await exportToVectorPdf({
     filename,
     title,
@@ -268,6 +270,10 @@ export const exportToPDFLegacy = async (options: ExportOptions) => {
     `;
 
     document.body.appendChild(tempDiv);
+
+    // html2canvas·jspdf를 클릭 시점에 동적 로드
+    const { default: html2canvas } = await import('html2canvas');
+    const { default: jsPDF } = await import('jspdf');
 
     // HTML을 캔버스로 변환 (고해상도)
     const canvas = await html2canvas(tempDiv, {
@@ -711,6 +717,7 @@ export interface TransactionLedgerExportOptions {
 
 // 거래원장 전용 PDF 내보내기 (벡터 기반 - 텍스트 선택/편집 가능)
 export const exportTransactionLedgerToPDF = async (options: TransactionLedgerExportOptions) => {
+  const { exportTransactionLedgerToVectorPdf } = await import('./vectorPdfExport');
   await exportTransactionLedgerToVectorPdf(options);
 };
 
@@ -911,6 +918,10 @@ export const exportTransactionLedgerToPDFLegacy = async (options: TransactionLed
 
     document.body.appendChild(tempDiv);
 
+    // html2canvas·jspdf를 클릭 시점에 동적 로드
+    const { default: html2canvas } = await import('html2canvas');
+    const { default: jsPDF } = await import('jspdf');
+
     // HTML을 캔버스로 변환 (고해상도)
     const canvas = await html2canvas(tempDiv, {
       useCORS: true,
@@ -994,7 +1005,8 @@ export const exportTransactionLedgerToExcel = async (options: TransactionLedgerE
       return num.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
     };
 
-    // 워크북 생성
+    // 워크북 생성 (exceljs는 클릭 시점에 동적 로드)
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(title);
 
@@ -1385,7 +1397,8 @@ export const exportNTSInvoiceExcel = async (options: NTSInvoiceExportOptions) =>
       return num.replace(/-/g, '');
     };
 
-    // 워크북 생성
+    // 워크북 생성 (exceljs는 클릭 시점에 동적 로드)
+    const ExcelJS = await import('exceljs');
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('엑셀업로드양식');
 

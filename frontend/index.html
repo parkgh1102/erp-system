@@ -13,7 +13,8 @@
                    frame-src https://postcode.map.daum.net;
                    connect-src 'self' http://localhost:3001 https://api.webapperp.ai.kr https://erp-backend-gaee.onrender.com https://erp-backend-p8eh.onrender.com ws://localhost:*;">
     <title>ERP 통합 시스템</title>
-    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <!-- 주소 검색(사업체·거래처·프로필)에만 쓰이므로 defer로 최초 렌더(로그인 포함)를 막지 않게 함 -->
+    <script defer src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
   </head>
   <body>
     <div id="root"></div>
