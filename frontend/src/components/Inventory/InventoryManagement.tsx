@@ -4,8 +4,8 @@ import TrackPagination from '../Common/TrackPagination';
 import { SearchOutlined, ReloadOutlined, ExportOutlined } from '@ant-design/icons';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
+import { useMasterDataStore } from '../../stores/masterDataStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { productAPI } from '../../utils/api';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
 
@@ -53,8 +53,7 @@ const InventoryManagement: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await productAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 });
-      const productList = response.data.data.products || response.data.data || [];
+      const productList = await useMasterDataStore.getState().loadProducts(currentBusiness.id);
       setProducts(productList);
     } catch (error) {
       message.error('재고 목록을 불러오는데 실패했습니다.');

@@ -33,8 +33,9 @@ import {
   CopyOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
+import { useMasterDataStore } from '../../stores/masterDataStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { quotationAPI, customerAPI } from '../../utils/api';
+import { quotationAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -143,11 +144,12 @@ const QuotationManagement: React.FC = () => {
     if (!currentBusiness) return;
     setLoading(true);
     try {
-      const [quotationRes, customerRes] = await Promise.all([
+      const { loadCustomers } = useMasterDataStore.getState();
+      const [quotationRes, customersData] = await Promise.all([
         quotationAPI.getAll(currentBusiness.id),
-        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
+        loadCustomers(currentBusiness.id),
       ]);
-      setCustomers(customerRes.data.data.customers || []);
+      setCustomers(customersData);
       if (quotationRes.data.success) {
         const data = quotationRes.data.data;
         setQuotations(Array.isArray(data) ? data.map((q: any) => ({

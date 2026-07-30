@@ -9,8 +9,9 @@ import { useRecentSearches, buildRecentOptions } from '../../hooks/useRecentSear
 import TableColumnSettings from '../Common/TableColumnSettings';
 import { createExportMenuItems } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
+import { useMasterDataStore } from '../../stores/masterDataStore';
 import { useThemeStore } from '../../stores/themeStore';
-import api, { purchaseAPI, customerAPI, productAPI } from '../../utils/api';
+import api, { purchaseAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { PrintPreviewModal } from '../Print/PrintPreviewModal';
@@ -245,15 +246,16 @@ const PurchaseManagement: React.FC = () => {
 
     setLoading(true);
     try {
-      const [purchasesRes, customersRes, productsRes] = await Promise.all([
+      const { loadCustomers, loadProducts } = useMasterDataStore.getState();
+      const [purchasesRes, customersData, productsData] = await Promise.all([
         purchaseAPI.getAll(currentBusiness.id),
-        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
-        productAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 })
+        loadCustomers(currentBusiness.id),
+        loadProducts(currentBusiness.id)
       ]);
 
       setPurchases(purchasesRes.data.data.purchases || []);
-      setCustomers(customersRes.data.data.customers || []);
-      setProducts(productsRes.data.data.products || []);
+      setCustomers(customersData);
+      setProducts(productsData);
 
     } catch (error) {
       message.error('데이터를 불러오는데 실패했습니다.', 2);
