@@ -547,7 +547,13 @@ export const TransactionStatement: React.FC<TransactionStatementProps> = ({
 
               const grandTotal = totalSupplyAmount + totalTax;
               const previousBalance = data?.balanceAmount || 0;
-              const totalBalance = grandTotal + previousBalance;
+              // 전잔금(balanceAmount)은 매출 기준 순잔액(매출+ / 매입−)이다.
+              // 매출 명세표는 이번 매출이 받을 돈을 늘리므로 더하고,
+              // 매입 명세표는 이번 매입이 우리가 받을 미수금과 상계되므로 뺀다.
+              // (이렇게 해야 저장 후 거래원장/잔액과 총잔금이 일치한다)
+              const totalBalance = type === 'purchase'
+                ? previousBalance - grandTotal
+                : previousBalance + grandTotal;
 
               return (
                 <>

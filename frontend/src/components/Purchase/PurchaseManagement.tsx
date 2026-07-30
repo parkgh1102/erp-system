@@ -1172,12 +1172,14 @@ const PurchaseManagement: React.FC = () => {
       width: isMobile ? 75 : '10%',
       align: 'right' as const,
       render: (record: Purchase) => {
-        const total = (record.totalAmount || 0) + (record.vatAmount || 0);
+        // 백엔드 decimal은 문자열로 오므로 Number()로 변환. 안 하면 "121600"+"11055"가
+        // 문자열 결합(12160011055)되거나, 비정상 값에서 Math.round가 NaN원을 만든다.
+        const total = (Number(record.totalAmount) || 0) + (Number(record.vatAmount) || 0);
         return <span style={{ fontSize: isMobile ? '11px' : 'inherit' }}>{Math.round(total).toLocaleString()}원</span>;
       },
       sorter: (a: Purchase, b: Purchase) => {
-        const totalA = (a.totalAmount || 0) + (a.vatAmount || 0);
-        const totalB = (b.totalAmount || 0) + (b.vatAmount || 0);
+        const totalA = (Number(a.totalAmount) || 0) + (Number(a.vatAmount) || 0);
+        const totalB = (Number(b.totalAmount) || 0) + (Number(b.vatAmount) || 0);
         return totalA - totalB;
       },
     },
@@ -2434,9 +2436,9 @@ const PurchaseManagement: React.FC = () => {
               taxInclusive: isTaxInclusive
             };
           }) || [],
-          totalAmount: selectedPurchaseForStatement.totalAmount || 0,
-          tax: selectedPurchaseForStatement.vatAmount || 0,
-          grandTotal: (selectedPurchaseForStatement.totalAmount || 0) + (selectedPurchaseForStatement.vatAmount || 0),
+          totalAmount: Number(selectedPurchaseForStatement.totalAmount) || 0,
+          tax: Number(selectedPurchaseForStatement.vatAmount) || 0,
+          grandTotal: (Number(selectedPurchaseForStatement.totalAmount) || 0) + (Number(selectedPurchaseForStatement.vatAmount) || 0),
           balanceAmount: (selectedPurchaseForStatement as any).balanceAmount || 0,
           memo: (selectedPurchaseForStatement as any).memo || '', // 저장된 메모 반영
           notice: (selectedPurchaseForStatement as any).notice || '', // 저장된 공지사항 반영
