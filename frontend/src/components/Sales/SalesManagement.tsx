@@ -8,8 +8,9 @@ import { AnimatedSearchBar } from '../ui/AnimatedSearchBar';
 import { useRecentSearches, buildRecentOptions } from '../../hooks/useRecentSearches';
 import { createExportMenuItems, exportNTSInvoiceExcel } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
+import { useMasterDataStore } from '../../stores/masterDataStore';
 import { useThemeStore } from '../../stores/themeStore';
-import api, { salesAPI, customerAPI, productAPI } from '../../utils/api';
+import api, { salesAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 
@@ -314,17 +315,18 @@ const SalesManagement: React.FC = () => {
 
     setLoading(true);
     try {
-      const [salesRes, customersRes, productsRes] = await Promise.all([
+      const { loadCustomers, loadProducts } = useMasterDataStore.getState();
+      const [salesRes, customersData, productsData] = await Promise.all([
         salesAPI.getAll(currentBusiness.id),
-        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
-        productAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 })
+        loadCustomers(currentBusiness.id),
+        loadProducts(currentBusiness.id)
       ]);
 
       const salesData = salesRes.data.data.sales || [];
 
       setSales(salesData);
-      setCustomers(customersRes.data.data.customers || []);
-      setProducts(productsRes.data.data.products || []);
+      setCustomers(customersData);
+      setProducts(productsData);
 
     } catch (error) {
       message.error('데이터를 불러오는데 실패했습니다.', 2);

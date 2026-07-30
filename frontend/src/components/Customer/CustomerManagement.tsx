@@ -38,6 +38,7 @@ import {
   CopyOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
+import { useMasterDataStore } from '../../stores/masterDataStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { customerAPI } from '../../utils/api';
 import { formatPhoneNumber, formatBusinessNumber } from '../../utils/formatters';
@@ -161,6 +162,10 @@ const CustomerManagement: React.FC = () => {
 
   const loadCustomers = async () => {
     if (!currentBusiness) return;
+
+    // 거래처 화면에서 목록을 다시 불러올 때(생성/수정/삭제 후 포함)는 마스터 캐시를 무효화해
+    // 다른 화면(매출·매입 등)의 거래처 드롭다운이 다음 진입 시 최신값을 받도록 한다.
+    useMasterDataStore.getState().invalidateCustomers();
 
     setLoading(true);
     try {

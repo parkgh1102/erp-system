@@ -3,8 +3,9 @@ import { Table, Button, Modal, Form, Select, DatePicker, Input, Space, message, 
 import { EditOutlined, DeleteOutlined, MoneyCollectOutlined, PayCircleOutlined, SearchOutlined, ExportOutlined, ImportOutlined, PrinterOutlined, MoreOutlined } from '@ant-design/icons';
 import { createExportMenuItems, exportToExcel, exportToPDF } from '../../utils/exportUtils';
 import { useAuthStore } from '../../stores/authStore';
+import { useMasterDataStore } from '../../stores/masterDataStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { paymentAPI, customerAPI } from '../../utils/api';
+import { paymentAPI } from '../../utils/api';
 import ExcelUploadModal from '../Common/ExcelUploadModal';
 import DateRangeFilter from '../Common/DateRangeFilter';
 import TrackPagination from '../Common/TrackPagination';
@@ -118,13 +119,14 @@ const PaymentManagement: React.FC = () => {
 
     setLoading(true);
     try {
-      const [paymentsRes, customersRes] = await Promise.all([
+      const { loadCustomers } = useMasterDataStore.getState();
+      const [paymentsRes, customersData] = await Promise.all([
         paymentAPI.getAll(currentBusiness.id),
-        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 })
+        loadCustomers(currentBusiness.id)
       ]);
 
       setPayments(paymentsRes.data.data.payments || []);
-      setCustomers(customersRes.data.data.customers || []);
+      setCustomers(customersData);
 
     } catch (error) {
       console.error('데이터 로드 오류:', error);

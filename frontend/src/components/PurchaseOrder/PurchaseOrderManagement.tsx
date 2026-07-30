@@ -40,8 +40,9 @@ import {
   CopyOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
+import { useMasterDataStore } from '../../stores/masterDataStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { customerAPI, productAPI, purchaseOrderAPI, purchaseAPI } from '../../utils/api';
+import { purchaseOrderAPI, purchaseAPI } from '../../utils/api';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -137,19 +138,14 @@ const PurchaseOrderManagement: React.FC = () => {
     if (!currentBusiness) return;
     setLoading(true);
     try {
-      const [customerRes, productRes, orderRes] = await Promise.all([
-        customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
-        productAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }),
+      const { loadCustomers, loadProducts } = useMasterDataStore.getState();
+      const [customersData, productsData, orderRes] = await Promise.all([
+        loadCustomers(currentBusiness.id),
+        loadProducts(currentBusiness.id),
         purchaseOrderAPI.getAll(currentBusiness.id),
       ]);
-      if (customerRes.data.success) {
-        const data = customerRes.data.data;
-        setSuppliers(Array.isArray(data) ? data : (data?.customers || []));
-      }
-      if (productRes.data.success) {
-        const data = productRes.data.data;
-        setProducts(Array.isArray(data) ? data : (data?.products || []));
-      }
+      setSuppliers(customersData);
+      setProducts(productsData);
       if (orderRes.data.success) {
         const data = orderRes.data.data;
         setOrders(Array.isArray(data) ? data.map((o: any) => ({

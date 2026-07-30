@@ -34,8 +34,9 @@ import {
   ExportOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/authStore';
+import { useMasterDataStore } from '../../stores/masterDataStore';
 import { useThemeStore } from '../../stores/themeStore';
-import { customerAPI, salesAPI, purchaseAPI, paymentAPI } from '../../utils/api';
+import { salesAPI, purchaseAPI, paymentAPI } from '../../utils/api';
 import { formatBusinessNumber } from '../../utils/formatters';
 import dayjs from 'dayjs';
 import { useMessage } from '../../hooks/useMessage';
@@ -122,8 +123,9 @@ const CustomerBalanceManagement: React.FC = () => {
           failed.push(label);
           return { data: { data: {} } };
         });
-      const [customersRes, salesRes, purchasesRes, paymentsRes] = await Promise.all([
-        safeGet(customerAPI.getAll(currentBusiness.id, { page: 1, limit: 10000 }), '거래처'),
+      const { loadCustomers } = useMasterDataStore.getState();
+      const [customersData, salesRes, purchasesRes, paymentsRes] = await Promise.all([
+        loadCustomers(currentBusiness.id).catch(() => { failed.push('거래처'); return [] as any[]; }),
         safeGet(salesAPI.getAll(currentBusiness.id), '매출'),
         safeGet(purchaseAPI.getAll(currentBusiness.id), '매입'),
         safeGet(paymentAPI.getAll(currentBusiness.id), '수금/지급'),
@@ -135,7 +137,7 @@ const CustomerBalanceManagement: React.FC = () => {
         );
       }
 
-      const customers: any[] = customersRes.data?.data?.customers || [];
+      const customers: any[] = customersData;
       const sales: any[] = salesRes.data?.data?.sales || [];
       const purchases: any[] = purchasesRes.data?.data?.purchases || [];
       const payments: any[] = paymentsRes.data?.data?.payments || [];
