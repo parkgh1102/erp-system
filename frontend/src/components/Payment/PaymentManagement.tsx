@@ -1450,9 +1450,13 @@ const PaymentManagement: React.FC = () => {
               showSearch
               allowClear
               optionFilterProp="children"
-              filterOption={(input, option) =>
-                (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-              }
+              filterOption={(input, option) => {
+                // option.children이 배열({name} ({code}))이라 toLowerCase가 터짐 →
+                // value로 거래처를 찾아 문자열로 검색
+                const customer = customers.find(c => c.id === option?.value);
+                if (!customer) return false;
+                return `${customer.name} ${customer.customerCode}`.toLowerCase().includes(input.toLowerCase());
+              }}
             >
               {customers.map(customer => (
                 <Option key={customer.id} value={customer.id}>

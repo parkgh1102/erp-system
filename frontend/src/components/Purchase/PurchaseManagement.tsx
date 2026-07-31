@@ -1709,9 +1709,13 @@ const PurchaseManagement: React.FC = () => {
                         popupMatchSelectWidth={false}
                         popupClassName="mobile-full-dropdown"
                         listHeight={300}
-                        filterOption={(input, option) =>
-                          (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-                        }
+                        filterOption={(input, option) => {
+                          // option.children이 배열({name} ({code}))이라 toLowerCase가 터짐 →
+                          // value로 품목을 찾아 문자열로 검색 (거래처 Select와 동일 패턴)
+                          const product = products.find(p => p.id === option?.value);
+                          if (!product) return false;
+                          return `${product.name} ${product.productCode}`.toLowerCase().includes(input.toLowerCase());
+                        }}
                       >
                         {products.map(product => (
                           <Option key={product.id} value={product.id}>
@@ -1959,9 +1963,13 @@ const PurchaseManagement: React.FC = () => {
                         optionFilterProp="children"
                         popupMatchSelectWidth={false}
                         styles={{ popup: { root: { minWidth: 400 } } }}
-                        filterOption={(input, option) =>
-                          (option?.children as string)?.toLowerCase().includes(input.toLowerCase())
-                        }
+                        filterOption={(input, option) => {
+                          // option.children이 배열({name} ({code}))이라 toLowerCase가 터짐 →
+                          // value로 품목을 찾아 문자열로 검색 (거래처 Select와 동일 패턴)
+                          const product = products.find(p => p.id === option?.value);
+                          if (!product) return false;
+                          return `${product.name} ${product.productCode}`.toLowerCase().includes(input.toLowerCase());
+                        }}
                       >
                         {products.map(product => (
                           <Option key={product.id} value={product.id}>
