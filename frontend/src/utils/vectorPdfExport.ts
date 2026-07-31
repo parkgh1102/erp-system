@@ -414,8 +414,8 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
           styles: { halign: 'right' }
         },
         { content: displaySupplyAmount !== null && displaySupplyAmount !== undefined ? displaySupplyAmount.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: amountColor } },
-        { content: displayTax !== null && displayTax !== undefined ? displayTax.toLocaleString() + '원' : '', styles: { halign: 'right' } },
-        { content: displayTotal !== null && displayTotal !== undefined ? displayTotal.toLocaleString() + '원' : '', styles: { halign: 'right' } },
+        { content: displayTax !== null && displayTax !== undefined ? displayTax.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: (displayTax != null && Number(displayTax) < 0) ? [255, 77, 79] : [0, 0, 0] } },
+        { content: displayTotal !== null && displayTotal !== undefined ? displayTotal.toLocaleString() + '원' : '', styles: { halign: 'right', textColor: (displayTotal != null && Number(displayTotal) < 0) ? [255, 77, 79] : [0, 0, 0] } },
         { content: (cumulativeBalance ?? 0).toLocaleString() + '원', styles: { halign: 'right', textColor: (cumulativeBalance ?? 0) > 0 ? [24, 144, 255] : (cumulativeBalance ?? 0) < 0 ? [255, 77, 79] : [0, 0, 0] } },
         { content: isFirstRow ? (entry.memo || '') : '', styles: { halign: 'center' } }
       ]);
