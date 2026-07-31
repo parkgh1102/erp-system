@@ -396,8 +396,11 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
 
       // 구분 컬럼 색상
       const typeColor = typeColorMap[entry.type] || [0, 0, 0];
-      // 공급가액 컬럼 색상
-      const amountColor = amountColorMap[entry.type] || [0, 0, 0];
+      // 공급가액 컬럼 색상: 음수(반품)는 빨강, 양수는 유형별 색 (웹과 동일하게 맞춤)
+      const amountColor: [number, number, number] =
+        (displaySupplyAmount != null && Number(displaySupplyAmount) < 0)
+          ? [255, 77, 79]
+          : (amountColorMap[entry.type] || [0, 0, 0]);
 
       tableData.push([
         { content: isFirstRow ? (entry.date?.substring(0, 10) || '') : '', styles: { halign: 'center' } },
