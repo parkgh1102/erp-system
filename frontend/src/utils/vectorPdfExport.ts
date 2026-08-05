@@ -341,7 +341,7 @@ export const exportTransactionLedgerToVectorPdf = async (options: TransactionLed
       'sales': [24, 144, 255],      // 파랑 (매출)
       'purchase': [255, 77, 79],    // 빨강 (매입)
       'receipt': [82, 196, 26],     // 초록 (수금)
-      'payment': [255, 77, 79],     // 빨강 (지급)
+      'payment': [114, 46, 209],    // 보라 (지급 — 매입 빨강과 구분)
       'carryover': [250, 140, 22],  // 주황 (이월)
     };
 
