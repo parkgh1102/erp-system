@@ -290,30 +290,47 @@ export const transactionLedgerController = {
         // 품목 개수 계산
         const itemCount = purchase.items?.length || 0;
 
-        // 전체 품목 배열 생성 (세액, 합계 포함) - product.taxType 기반 세액 계산
-        // 매입 품목은 세액을 저장하지 않으므로 매입 전체 세액을 품목별로 안분한다.
-        // 분모는 '과세 품목 공급가액 합계'(면세 제외)여야 안분 세액 합이 총세액과 일치한다.
+        // 전체 품목 배열 생성 (공급가액·세액·합계) — 매입 품목은 공급가액/세액을 저장하지 않고
+        // 원가(amount = 단가×수량)만 저장하므로, 레코드에 저장된 정확한 공급가액 총합
+        // (purchase.totalAmount)과 세액 총합(purchase.vatAmount)을 품목별로 안분한다.
+        //
+        // ⚠️ 과거엔 공급가액으로 item.amount를 그대로 썼는데, 과세포함(VAT포함) 품목은
+        // amount가 이미 세금 포함 금액이라 그 위에 세액을 또 얹어 이중계산됐다(세액이 10%가
+        // 아니라 9.09%로 표기). 레코드 공급가액을 안분하면 과세포함/별도 모두 정확해진다.
         const totalPurchaseVat = Number(purchase.vatAmount) || 0;
+        const totalPurchaseSupplyRec = Number(purchase.totalAmount) || 0; // 세금조정된 공급가액 총합
         const purchaseItems = purchase.items || [];
         const isTaxable = (it: any) => ((it.product?.taxType || 'tax_separate') !== 'tax_free');
+        // 안분 분모: 과세 품목의 원가(amount) 합계
         const taxableBase = purchaseItems.reduce(
           (sum, it) => (isTaxable(it) ? sum + (Number(it.amount) || 0) : sum),
           0
         );
+        // 면세 품목의 공급가액 합(면세는 amount가 곧 공급가액) → 과세분 공급가액 = 레코드공급가액 - 면세분
+        const freeSupply = purchaseItems.reduce(
+          (sum, it) => (!isTaxable(it) ? sum + (Number(it.amount) || 0) : sum),
+          0
+        );
+        const taxableSupplyTotal = totalPurchaseSupplyRec - freeSupply;
         // 반올림 잔차를 몰아줄 마지막 과세 품목 인덱스
         let lastTaxableIdx = -1;
         purchaseItems.forEach((it, i) => { if (isTaxable(it)) lastTaxableIdx = i; });
         let allocatedVat = 0;
+        let allocatedSupply = 0;
         const allPurchaseItems: LedgerItemInfo[] = purchaseItems.map((item, i) => {
-          const itemSupplyAmount = Number(item.amount) || 0;
+          const rawAmount = Number(item.amount) || 0;
+          let itemSupplyAmount = rawAmount; // 면세 기본값
           let itemTaxAmount = 0;
 
           if (isTaxable(item) && taxableBase > 0) {
             if (i === lastTaxableIdx) {
-              // 마지막 과세 품목: 남은 세액을 모두 배정 → 합계 = 총세액 보장
+              // 마지막 과세 품목: 남은 공급가액·세액을 모두 배정 → 합이 레코드와 정확히 일치
+              itemSupplyAmount = taxableSupplyTotal - allocatedSupply;
               itemTaxAmount = totalPurchaseVat - allocatedVat;
             } else {
-              itemTaxAmount = Math.round(totalPurchaseVat * (itemSupplyAmount / taxableBase));
+              itemSupplyAmount = Math.round(taxableSupplyTotal * (rawAmount / taxableBase));
+              itemTaxAmount = Math.round(totalPurchaseVat * (rawAmount / taxableBase));
+              allocatedSupply += itemSupplyAmount;
               allocatedVat += itemTaxAmount;
             }
           }
