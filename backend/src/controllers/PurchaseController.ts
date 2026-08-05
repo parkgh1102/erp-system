@@ -274,6 +274,9 @@ export class PurchaseController {
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             amount: item.amount,
+            // 프론트가 계산해 보낸 품목별 공급가액/세액 저장(과세포함이면 세금 분리된 값)
+            supplyAmount: item.supplyAmount != null ? item.supplyAmount : null,
+            taxAmount: item.vatAmount != null ? item.vatAmount : null,
             sortOrder: i  // 순서 저장
           });
           await purchaseItemRepository.save(purchaseItem);  // 순차적 저장
@@ -400,6 +403,9 @@ export class PurchaseController {
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             amount: item.amount,
+            // 프론트가 계산해 보낸 품목별 공급가액/세액 저장(과세포함이면 세금 분리된 값)
+            supplyAmount: item.supplyAmount != null ? item.supplyAmount : null,
+            taxAmount: item.vatAmount != null ? item.vatAmount : null,
             sortOrder: i  // 순서 저장
           });
           await purchaseItemRepository.save(purchaseItem);  // 순차적 저장

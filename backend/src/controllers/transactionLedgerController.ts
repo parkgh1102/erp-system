@@ -315,6 +315,10 @@ export const transactionLedgerController = {
         // 반올림 잔차를 몰아줄 마지막 과세 품목 인덱스
         let lastTaxableIdx = -1;
         purchaseItems.forEach((it, i) => { if (isTaxable(it)) lastTaxableIdx = i; });
+        // 품목에 공급가액/세액이 저장돼 있으면(신규/백필 데이터) 그 값을 그대로 쓰고,
+        // 없으면(구 데이터) 아래처럼 레코드 총액을 안분해 폴백한다.
+        const hasStoredItemAmounts = purchaseItems.length > 0
+          && purchaseItems.every((it: any) => it.supplyAmount != null);
         let allocatedVat = 0;
         let allocatedSupply = 0;
         const allPurchaseItems: LedgerItemInfo[] = purchaseItems.map((item, i) => {
@@ -322,7 +326,11 @@ export const transactionLedgerController = {
           let itemSupplyAmount = rawAmount; // 면세 기본값
           let itemTaxAmount = 0;
 
-          if (isTaxable(item) && taxableBase > 0) {
+          if (hasStoredItemAmounts) {
+            // 저장된 값 사용 (매출과 동일한 근본 방식)
+            itemSupplyAmount = Number((item as any).supplyAmount) || 0;
+            itemTaxAmount = Number((item as any).taxAmount) || 0;
+          } else if (isTaxable(item) && taxableBase > 0) {
             if (i === lastTaxableIdx) {
               // 마지막 과세 품목: 남은 공급가액·세액을 모두 배정 → 합이 레코드와 정확히 일치
               itemSupplyAmount = taxableSupplyTotal - allocatedSupply;
