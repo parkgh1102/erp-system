@@ -813,7 +813,7 @@ export const exportTransactionLedgerToPDFLegacy = async (options: TransactionLed
         'sales': '#1890ff',
         'purchase': '#000',
         'receipt': '#52c41a',
-        'payment': '#fa8c16'
+        'payment': '#722ed1'
       };
       const typeNameMap: Record<string, string> = {
         'sales': '매출',
@@ -1120,7 +1120,7 @@ export const exportTransactionLedgerToExcel = async (options: TransactionLedgerE
       'sales': 'FF1890FF',
       'purchase': 'FF000000',
       'receipt': 'FF52C41A',
-      'payment': 'FFFA8C16'
+      'payment': 'FF722ED1'
     };
     const typeNameMap: Record<string, string> = {
       'sales': '매출',

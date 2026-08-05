@@ -436,7 +436,7 @@ const TransactionLedgerManagement: React.FC = () => {
           'sales': 'blue',
           'purchase': 'red',
           'receipt': 'green',
-          'payment': 'red'
+          'payment': '#722ed1'  // 보라 (매입 빨강과 구분)
         };
         return <span style={{ color: colorMap[type as keyof typeof colorMap] }}>{typeMap[type as keyof typeof typeMap]}</span>;
       },
@@ -693,7 +693,7 @@ const TransactionLedgerManagement: React.FC = () => {
     }
 
     const typeMap: Record<string, string> = { sales: '매출', purchase: '매입', receipt: '수금', payment: '지급' };
-    const typeColor: Record<string, string> = { sales: 'blue', purchase: 'red', receipt: 'green', payment: 'red' };
+    const typeColor: Record<string, string> = { sales: 'blue', purchase: 'red', receipt: 'green', payment: '#722ed1' };
 
     // 요약 합계 (전체 데이터 기준)
     const sales = ledgerEntries.filter(e => e.type === 'sales');

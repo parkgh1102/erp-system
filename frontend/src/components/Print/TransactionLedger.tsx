@@ -232,7 +232,7 @@ export const TransactionLedger: React.FC<TransactionLedgerProps> = ({ data, type
                 <td style={{ ...cellBase, textAlign: 'center' }}>
                   {entry.customerName || data.companyName}
                 </td>
-                <td style={{ ...cellBase, textAlign: 'center', color: entry.type === 'sales' ? '#1B61A8' : entry.type === 'purchase' ? '#000' : entry.type === 'receipt' ? '#52c41a' : '#fa8c16' }}>
+                <td style={{ ...cellBase, textAlign: 'center', color: entry.type === 'sales' ? '#1B61A8' : entry.type === 'purchase' ? '#000' : entry.type === 'receipt' ? '#52c41a' : '#722ed1' }}>
                   {entry.type === 'sales' ? '매출' : entry.type === 'purchase' ? '매입' : entry.type === 'receipt' ? '수금' : '지급'}
                 </td>
                 <td style={{ ...cellBase, textAlign: 'center' }}>
