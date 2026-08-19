@@ -471,6 +471,51 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
     const printElements = document.querySelectorAll('.print-preview-content') as NodeListOf<HTMLElement>;
     if (!printElements || printElements.length === 0) return;
 
+    // 모바일 미리보기 캡처 깨짐 방지.
+    // 명세표는 width:210mm(≈794px) 고정폭 레이아웃(제목은 가운데, '귀중'은
+    // 우측 끝 absolute, 표는 %폭)인데, 모바일에서는 좁은(≈375px) 부모 안에서
+    // zoom으로 축소된 채 스크롤되고 있다. 이 엘리먼트를 그대로 html2canvas에
+    // 넘기면 캡처용 클론이 모바일 뷰포트 폭으로 리플로우되며 794px 레이아웃이
+    // 무너져 텍스트가 서로 겹친 이미지가 나온다(zoom 미지원 문제 포함).
+    // → 화면 밖에 자연 크기(zoom/transform 제거)로 복제한 뒤, 그 실제 크기를
+    //   windowWidth/windowHeight로 넘겨 리플로우 없이 캡처한다.
+    const captureAsCanvas = async (el: HTMLElement, options?: any) => {
+      const clone = el.cloneNode(true) as HTMLElement;
+      clone.style.zoom = '1';
+      clone.style.transform = 'none';
+      clone.style.margin = '0';
+      clone.style.boxShadow = 'none';
+      clone.style.border = 'none';
+
+      const host = document.createElement('div');
+      host.style.cssText =
+        'position:fixed;left:-100000px;top:0;z-index:-1;background:#ffffff;';
+      host.appendChild(clone);
+      document.body.appendChild(host);
+
+      // 오프스크린 클론의 실제 렌더 크기 측정(210mm 고정폭이 그대로 반영됨)
+      const width = clone.scrollWidth || el.scrollWidth;
+      const height = clone.scrollHeight || el.scrollHeight;
+
+      try {
+        return await html2canvas(clone, {
+          backgroundColor: '#ffffff',
+          allowTaint: true,
+          useCORS: true,
+          width,
+          height,
+          windowWidth: width,
+          windowHeight: height,
+          scrollX: 0,
+          scrollY: 0,
+          scale: 2, // 고화질
+          ...options
+        });
+      } finally {
+        document.body.removeChild(host);
+      }
+    };
+
     try {
       switch (format) {
         case 'pdf':
@@ -484,14 +529,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
           message.loading(`${printElements.length}개 페이지를 ${format.toUpperCase()}로 저장 중...`, 0);
 
           for (let i = 0; i < printElements.length; i++) {
-            const canvas = await html2canvas(printElements[i], {
-              background: '#ffffff',
-              allowTaint: true,
-              useCORS: true,
-              width: printElements[i].scrollWidth,
-              height: printElements[i].scrollHeight,
-              scale: 2 // 고화질
-            });
+            const canvas = await captureAsCanvas(printElements[i]);
 
             const link = document.createElement('a');
             const timestamp = new Date().getTime();
@@ -511,12 +549,7 @@ export const PrintPreviewModal: React.FC<PrintPreviewModalProps> = ({
 
         case 'clipboard': {
           // 첫 번째 페이지만 클립보드에 복사
-          const clipboardCanvas = await html2canvas(printElements[0], {
-            background: '#ffffff',
-            allowTaint: true,
-            useCORS: true,
-            scale: 2
-          });
+          const clipboardCanvas = await captureAsCanvas(printElements[0]);
 
           clipboardCanvas.toBlob(async (blob) => {
             if (blob) {
