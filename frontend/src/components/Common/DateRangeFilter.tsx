@@ -36,19 +36,16 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
     onDateRangeChange(startDate, endDate);
   };
 
-  // 특정 월
+  // 특정 월 (문자열 파싱 대신 숫자 세터로 구성 — 브라우저별 파싱 편차 방지)
   const handleMonth = (year: number, month: number) => {
-    const startDate = dayjs(`${year}-${month}-01`).format('YYYY-MM-DD');
-    const endDate = dayjs(`${year}-${month}-01`).endOf('month').format('YYYY-MM-DD');
-    onDateRangeChange(startDate, endDate);
+    const base = dayjs().year(year).month(month - 1).date(1).startOf('day');
+    onDateRangeChange(base.format('YYYY-MM-DD'), base.endOf('month').format('YYYY-MM-DD'));
   };
 
   // 분기
   const handleQuarter = (year: number, quarter: number) => {
-    const startMonth = (quarter - 1) * 3 + 1;
-    const startDate = dayjs(`${year}-${startMonth}-01`).format('YYYY-MM-DD');
-    const endDate = dayjs(`${year}-${startMonth}-01`).add(2, 'month').endOf('month').format('YYYY-MM-DD');
-    onDateRangeChange(startDate, endDate);
+    const base = dayjs().year(year).month((quarter - 1) * 3).date(1).startOf('day');
+    onDateRangeChange(base.format('YYYY-MM-DD'), base.add(2, 'month').endOf('month').format('YYYY-MM-DD'));
   };
 
   // 반기
@@ -71,7 +68,8 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
       const isThisMonth = year === currentYear && m === currentMonth;
       return {
         key: `m-${year}-${m}`,
-        label: `${m}월${isThisMonth ? ' (이번달)' : ''}`,
+        // 연도를 함께 표기해 모바일 중첩 메뉴에서 올해/작년 오선택 방지
+        label: `${year}년 ${m}월${isThisMonth ? ' (이번달)' : ''}`,
         danger: isThisMonth,
         onClick: () => handleMonth(year, m),
       };
@@ -82,7 +80,7 @@ const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onDateRangeChange, on
       const isThisQuarter = year === currentYear && currentQuarter === q;
       return {
         key: `q-${year}-${q}`,
-        label: `${q}/4 분기${isThisQuarter ? ' (이번분기)' : ''}`,
+        label: `${year}년 ${q}/4 분기${isThisQuarter ? ' (이번분기)' : ''}`,
         danger: isThisQuarter,
         onClick: () => handleQuarter(year, q),
       };
