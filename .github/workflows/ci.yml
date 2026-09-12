@@ -20,6 +20,8 @@ jobs:
         run: npm ci
       - name: Backend typecheck
         run: cd backend && npx tsc --noEmit
+      - name: Frontend typecheck
+        run: cd frontend && npm run typecheck
       - name: Frontend build
         run: cd frontend && npm run build
         env:
