@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import type { DefaultOptionType } from 'antd/es/select';
 import { ClockCircleOutlined } from '@ant-design/icons';
 
 /**
@@ -93,7 +94,7 @@ export function buildRecentOptions(params: {
   recent: string[];
   onClear: () => void;
   isDark?: boolean;
-}): OptionItem[] | { label: ReactNode; options: OptionItem[] }[] {
+}): DefaultOptionType[] {
   const { searchText, suggestions, recent, onClear, isDark } = params;
   if ((searchText || '').trim().length > 0) return suggestions;
   if (recent.length === 0) return suggestions;

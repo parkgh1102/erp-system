@@ -12,7 +12,14 @@ export interface PaginationQuery {
   limit?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: 'ASC' | 'DESC';
+  sortField?: string;
+  type?: string;
+  // 백엔드는 소문자 'asc'|'desc'를 받아 대문자로 정규화함(대·소문자 모두 허용)
+  sortOrder?: 'asc' | 'desc' | 'ASC' | 'DESC';
+  // 거래원장 등 기간·거래처 기반 조회에서 함께 사용
+  customerId?: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -111,11 +118,18 @@ export interface CustomerCreateData {
   representative?: string;
   address?: string;
   phone?: string;
+  fax?: string;
   email?: string;
+  managerContact?: string;
+  businessType?: string;
+  businessItem?: string;
+  memo?: string;
 }
 
 // 품목 관련 타입
-export type TaxType = '과세' | '면세' | '영세';
+// 런타임 실제 값은 tax_separate(과세별도) | tax_inclusive(과세포함) | tax_free(면세).
+// 일부 화면에서 한글 라벨('과세'/'면세'/'영세')도 쓰여 함께 허용.
+export type TaxType = 'tax_separate' | 'tax_inclusive' | 'tax_free' | '과세' | '면세' | '영세';
 
 export interface Product {
   id: number;
@@ -164,17 +178,20 @@ export interface TransactionItem {
 
 export interface TransactionItemData {
   productId?: number;
+  productCode?: string;
   productName: string;
   itemName?: string;
   quantity: number;
   unitPrice: number;
-  totalPrice: number;
+  totalPrice?: number;
   supplyAmount?: number;
   taxAmount?: number;
   vatRate?: number;
   unit?: string;
+  spec?: string;
   specification?: string;
   remark?: string;
+  amount?: number;
 }
 
 export interface Transaction {
@@ -198,20 +215,30 @@ export interface Transaction {
 
 export interface SalesCreateData {
   customerId: number;
-  transactionDate: string;
+  transactionDate?: string;
+  saleDate?: string;              // 백엔드는 saleDate || transactionDate 로 처리
+  customer?: { id: number; name: string };
   description?: string;
-  supplyAmount: number;
-  taxAmount: number;
+  supplyAmount?: number;
+  taxAmount?: number;
+  vatAmount?: number;
   totalAmount: number;
+  memo?: string;
+  businessId?: number;
   items: TransactionItemData[];
 }
 
 export interface PurchaseCreateData {
   supplierName?: string;
-  transactionDate: string;
+  transactionDate?: string;
+  purchaseDate?: string;         // 백엔드 매입 생성은 purchaseDate 를 받음
+  customerId?: number;
+  customer?: { id: number; name: string };
   description?: string;
   totalAmount: number;
   vatAmount: number;
+  memo?: string;
+  businessId?: number;
   items: TransactionItemData[];
 }
 
@@ -239,13 +266,16 @@ export interface Payment {
 export interface PaymentCreateData {
   customerId: number;
   paymentDate: string;
-  paymentType: PaymentType;
+  // 백엔드는 'receipt' | 'payment' 형태의 `type`을 받아 내부에서 paymentType으로 매핑함
+  type?: string;
+  paymentType?: PaymentType;
   paymentMethod?: PaymentMethod;
   amount: number;
   description?: string;
   memo?: string;
   bankAccount?: string;
   transactionId?: number;
+  businessId?: number;
 }
 
 // 거래원장 관련 타입

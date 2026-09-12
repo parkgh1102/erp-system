@@ -61,6 +61,7 @@ interface Customer {
   email?: string;
   address?: string;
   representative?: string;
+  bankAccount?: string;
 }
 
 interface PurchaseItem {
@@ -75,6 +76,7 @@ interface PurchaseItem {
   supplyAmount: number;  // 공급가액
   vatAmount: number;     // 세액
   totalAmount: number;   // 합계금액
+  amount?: number;       // 레거시 합계 필드(초기화/엑셀 업로드 경로)
 }
 
 interface Purchase {
@@ -893,7 +895,9 @@ const PurchaseManagement: React.FC = () => {
       unit: '',
       quantity: 1,
       unitPrice: 0,
-      amount: 0
+      supplyAmount: 0,
+      vatAmount: 0,
+      totalAmount: 0
     }]);
   };
 

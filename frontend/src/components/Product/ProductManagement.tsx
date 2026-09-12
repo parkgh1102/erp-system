@@ -12,6 +12,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useMasterDataStore } from '../../stores/masterDataStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { productAPI } from '../../utils/api';
+import type { TaxType } from '../../types';
 import dayjs from 'dayjs';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useResizableColumns } from '../../hooks/useResizableColumns';
@@ -53,7 +54,6 @@ const ProductManagement: React.FC = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState<string>('');
   const [autoCompleteOptions, setAutoCompleteOptions] = useState<{value: string}[]>([]);
-  const [uploadData, setUploadData] = useState<any[]>([]);
   const [excelUploadModalVisible, setExcelUploadModalVisible] = useState(false);
   const [uploadResultModalVisible, setUploadResultModalVisible] = useState(false);
   const [uploadResults, setUploadResults] = useState<UploadResultItem[]>([]);
@@ -304,7 +304,7 @@ const ProductManagement: React.FC = () => {
         const row = data[i];
         try {
           // 세금구분 매핑 - 기본값은 과세별도(tax_separate)
-          let taxType = 'tax_separate';
+          let taxType: TaxType = 'tax_separate';
           const taxTypeValue = row['세금구분']?.toString().trim();
           const taxTypeLower = taxTypeValue?.toLowerCase() || '';
 
@@ -469,112 +469,7 @@ const ProductManagement: React.FC = () => {
     }
   };
 
-  // 엑셀 업로드 관련 함수들
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleFileUpload = (_file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-        // 엑셀 데이터를 품목 형식으로 변환
-        const productData = jsonData.map((row: any, index: number) => {
-          return {
-            index: index + 1,
-            productCode: row['품목코드'] || row['productCode'] || '',
-            name: row['품목명'] || row['name'] || '',
-            spec: row['규격'] || row['spec'] || '',
-            unit: row['단위'] || row['unit'] || '',
-            buyPrice: row['매입단가'] || row['buyPrice'] || 0,
-            sellPrice: row['매출단가'] || row['sellPrice'] || 0,
-            category: row['분류'] || row['category'] || '',
-            taxType: row['세금구분'] || row['taxType'] || 'tax_separate',
-            memo: row['비고'] || row['memo'] || ''
-          };
-        });
-
-        setUploadData(productData);
-        setUploadModalVisible(true);
-      } catch (error) {
-        message.error('엑셀 파일 읽기에 실패했습니다.');
-        console.error(error);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-    return false; // 파일 업로드를 막음
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleUploadConfirm = async () => {
-    if (!currentBusiness || uploadData.length === 0) return;
-
-    setLoading(true);
-    try {
-      let successCount = 0;
-      let failCount = 0;
-
-      for (const productData of uploadData) {
-        try {
-          // 세금구분 변환
-          let taxType = productData.taxType;
-          if (taxType === '과세 10%별도') taxType = 'tax_separate';
-          else if (taxType === '과세 10%포함') taxType = 'tax_inclusive';
-          else if (taxType === '면세') taxType = 'tax_free';
-
-          await productAPI.create(currentBusiness.id, {
-            productCode: productData.productCode,
-            name: productData.name,
-            spec: productData.spec,
-            unit: productData.unit,
-            buyPrice: Number(productData.buyPrice) || 0,
-            sellPrice: Number(productData.sellPrice) || 0,
-            category: productData.category,
-            taxType: taxType,
-            memo: productData.memo
-          });
-          successCount++;
-        } catch (error) {
-          failCount++;
-          console.error('Product upload error:', error);
-        }
-      }
-
-      message.success(`${successCount}건 업로드 완료, ${failCount}건 실패`);
-      setUploadModalVisible(false);
-      setUploadData([]);
-      fetchProducts();
-    } catch (error) {
-      message.error('엑셀 업로드에 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const downloadTemplate = () => {
-    const template = [
-      {
-        '품목코드': 'P0001',
-        '품목명': '샘플품목',
-        '규격': 'box',
-        '단위': 'ea',
-        '매입단가': 1000,
-        '매출단가': 1200,
-        '분류': '일반',
-        '세금구분': '과세 10%별도',
-        '비고': '샘플 데이터'
-      }
-    ];
-
-    const worksheet = XLSX.utils.json_to_sheet(template);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, '품목');
-    XLSX.writeFile(workbook, '품목_업로드_템플릿.xlsx');
-  };
+  // 엑셀 업로드/템플릿은 ExcelUploadModal 컴포넌트에서 처리 (구 XLSX 직접구현 dead code 제거)
 
   const columns = [
     {
