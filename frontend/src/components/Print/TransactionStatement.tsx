@@ -3,15 +3,15 @@ import dayjs from 'dayjs';
 
 interface TransactionData {
   id: number;
-  date: string;
-  companyName: string;
+  date?: string;
+  companyName?: string;
   companyAddress?: string;
   companyPhone?: string;
   companyFax?: string;
   companyRegistrationNumber?: string;
   ceoName?: string;
   items: Array<{
-    itemName: string;
+    itemName?: string;
     specification?: string;
     spec?: string;
     unit?: string;
@@ -26,8 +26,8 @@ interface TransactionData {
     taxInclusive?: boolean; // 과세포함 여부 (backward compatibility)
   }>;
   totalAmount: number;
-  tax: number;
-  grandTotal: number;
+  tax?: number;
+  grandTotal?: number;
   balanceAmount?: number;
   notes?: string;
   memo?: string;

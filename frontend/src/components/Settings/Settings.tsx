@@ -595,7 +595,7 @@ const Settings: React.FC = () => {
             </Col>
 
             <Col xs={24} lg={12}>
-              <Card title="알림 설정" icon={<BellOutlined />}>
+              <Card title="알림 설정">
                 <Form layout="vertical">
                   <Form.Item label="이메일 알림">
                     <Space>
@@ -648,7 +648,8 @@ const Settings: React.FC = () => {
                             icon={<BellOutlined />}
                             onClick={async () => {
                               await requestPush();
-                              if (pushPermission === 'granted') {
+                              // 클로저의 pushPermission은 갱신 전 값(stale)이므로 실제 브라우저 권한을 직접 확인
+                              if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                                 showSuccess('푸시 알림이 활성화되었습니다');
                               }
                             }}

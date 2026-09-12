@@ -37,7 +37,7 @@ interface ExpandedLedgerEntry extends LedgerEntry {
   isFirstRow: boolean;
   itemIndex: number;
   currentItemInfo?: LedgerItemInfo;
-  cumulativeBalance: number;
+  cumulativeBalance?: number;
   isCarryOver?: boolean;
 }
 

@@ -1,6 +1,13 @@
 import axios from 'axios';
 import { message } from 'antd';
 import { useAuthStore } from '../stores/authStore';
+
+// 커스텀 요청 옵션: 특정 요청에서 전역 에러 인터셉터를 건너뛰기 위함
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    skipErrorHandler?: boolean;
+  }
+}
 import {
   UserCreateData,
   CustomerCreateData,
@@ -211,7 +218,7 @@ function notifyRequestError(status: number | undefined, error: any) {
 }
 
 export const authAPI = {
-  login: (data: { email: string; password: string }) =>
+  login: (data: { email?: string; phone?: string; password: string }) =>
     api.post('/auth/login', data, {
       // 로그인 실패(401)는 예상되는 응답이므로 인터셉터에서 리다이렉트하지 않도록 함
       skipErrorHandler: true
